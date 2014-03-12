@@ -1,0 +1,218 @@
+
+CVS: $Author: victor $ $Revision: 1.1 $ $Date: 2008/07/30 13:59:57 $
+
+1. Hier stehen alle wichtigen (chronologisch geordnet) Aenderungen an HELIUM V.
+   Wird eine Version beim Kunden oder auf der TEST installiert,
+   so sehe ich hier wichtige Informationen.
+
+2. Was:
+     DB .... Jegliche Tabellenaenderung; Tabelle angeben.
+     Libs .. Jegliche JBossaenderung; File angeben!
+     IMS ... Kundebugfix; bitte Nummer angeben!
+     F ..... Kundefeature.
+     Deploy. Deploycvstag anfuehren.
+
+
+3. Eine neue Zeile wird immer oben eingfuegt!
+
+4. Eine *** HELIUM -Zeile wird nach jedem Realeasezyklus eingefuegt.
+
+Datum   Wer Was     Text
+---------|--|-------|----------------------------------------------------------------------
+21.12.07 CK Deploy  HELIUM_V_5_10_034_3439
+18.12.07 CK Deploy  HELIUM_V_5_10_033_3438
+30.11.07 CK Deploy  HELIUM_V_5_10_032_3437
+23.11.07 CK Deploy  HELIUM_V_5_10_031_3436
+16.11.07 CK Deploy  HELIUM_V_5_10_030_3435
+31.10.07 CK Deploy  HELIUM_V_5_10_029_3434
+25.10.07 CK Deploy  HELIUM_V_5_10_028_3433
+12.10.07 CK Deploy  HELIUM_V_5_10_027_3432
+28.09.07 CK Deploy  HELIUM_V_5_10_026_3431
+14.09.07 CK Deploy  HELIUM_V_5_10_025_3430
+06.09.07 CK Libs    Neue Libs für XTAPI-Schnittstelle: xtapi.jar/mstapisp.jar/jtapi-1.3.1.jar
+31.08.07 CK Deploy  HELIUM_V_5_10_024_3429
+22.08.07 MB Libs    iReport Update auf Version 2.0.0
+                    lib\jasperreports-1.2.5.jar ersetzt durch jasperreports-1.3.4.jar
+20.08.07 SS Installer Sprache als Parameter 'loc' hinzugefuegt - lpclientpc.bat
+01.08.07 CK Libs    toedter.jar,MDateSelector14-00347.jar wg. neuem DateField entfernt
+27.07.07 CK Deploy  HELIUM_V_5_10_023_3428
+16.07.07 CK Deploy  HELIUM_V_5_10_022_3427
+04.07.07 MR Libs    jdic.jar Update von Version 20050623 (V 0.9.1) auf JDIC 20061102 fuer native Browser Unterstuetzung in OnlineHilfe.
+03.07.07 VF Libs    -XX:PermSize=64m -XX:MaxPermSize=256m in lpclientpc.jbx hinzugefuegt
+02.07.07 VF Deploy  HELIUM_V_5_10_021_3426
+15.06.07 CK Deploy  HELIUM_V_5_10_020_3425
+25.05.07 CK Deploy  HELIUM_V_5_10_019_3424
+23.05.07 MR IMS     6440 Datum Uhrzeit Bearbeiter auf Knopfdruck
+11.05.07 CK Deploy  HELIUM_V_5_10_018_3423
+27.04.07 CK Deploy  HELIUM_V_5_10_017_3422
+16.04.07 CK Deploy  HELIUM_V_5_10_016_3421
+29.03.07 AD Libs    jdic.jar und zugehörige Verzeichnisse (Betriebssystemabhängig) für Desktop Integration hinzu
+                    (zur Zeit wird die Filetyp-Association verwendet)
+16.03.07 CK Deploy  HELIUM_V_5_10_014_3419
+06.03.07 CK Deploy  HELIUM_V_5_10_013_3418
+28.02.07 CK Deploy  HELIUM_V_5_10_012_3417
+16.02.07 CK Deploy  HELIUM_V_5_10_011_3416
+31.01.07 MR F       OnlineHilfe hinzuegefuegt
+31.01.07 MR Libs    jhall.jar fuer JavaHelp Onlinehilfe hinzugefuegt
+29.01.07 CK Deploy  HELIUM_V_5_10_010_3415
+25.01.07 CK Deploy  HELIUM_V_5_10_009_3414
+11.01.07 CK Deploy  HELIUM_V_5_10_008_3413
+09.01.07 VF Libs    jai_codec.jar und jai_core.ajr für TiffViewer hinzugefuegt
+20.12.06 CK Deploy  HELIUM_V_5_10_007_3412
+19.12.06 MR F       Bestellung: Staffelauswahl keine smileys.
+19.12.06 MR IMS     2898 Neue Staffelmenge Vorschlag ok.
+18.12.06 MR IMS     3008 Copy und Paste von Stückliste in AngebotsStückliste funktioniert.
+18.12.06 MR IMS     2908 Anzeige Bestellnettopreis gleich
+13.12.06 CK Deploy  HELIUM_V_5_10_006_3411
+10.11.06 CK Deploy  HELIUM_V_5_10_005_3410
+20.10.06 CK Deploy  HELIUM_V_5_10_004_3409
+12.10.06 CK Deploy  HELIUM_V_5_10_003_3408
+22.08.06 JO F       HELIUM V hat ein ablaufdatum.
+21.08.06 JO Libs    WH: einstieg exakt auf jdk-1_5_0_08 pruefen.
+21.08.06 JO Libs    jdk-1_5_0_08-windows-i586-p.exe kommt 1.5.0_07->
+                    alle jre, jdk, ...deinstallieren, wenn möglich!
+                    dann jdk-1_5_0_08-windows-i586-p.exe installieren;
+                    JAVA_HOME=C:\Programme\Java\jdk1.5.0_08
+                    JBOSS_CLASSPATH=C:\jboss-4.0.4.GA\server\helium\ehcache
+                    JBOSS_HOME=C:\jboss-4.0.4.GA
+                    Path=...;C:\Programme\Java\jdk1.5.0_08\bin;...
+
+28.07.06 CK Deploy  HELIUM_V_5_10_002_3407
+
+30.06.06 VF Deploy  HELIUM_V_5_10_001_3259
+
+02.06.06 CK Deploy  HELIUM_V_5_09_010_3175
+
+29.05.06 CK Deploy  HELIUM_V_5_09_009_3141
+
+12.05.06 CK Deploy  HELIUM_V_5_09_008_3042
+
+01.05.06 CK Deploy  HELIUM_V_5_09_007_2961
+27.04.06 UW IMS     1950 Artikel Button und Artikel CNr gleichzeitig deaktiviert
+19.04.06 UW F       PanelPositionenPreiseingabe: Die Eingabe der ArtikelCNr ist direkt moeglich
+30.03.06 AD Deploy  HELIUM_V_5_09_006_2789
+20.03.06 UW IMS     1565 AG AGSTKL Position Preisvorschlag
+15.03.06 UW IMS     1815 Falscher Lieferschein nach Save ausgewaehlt
+07.03.06 UW IMS     1831 Artikel FLR Direktfilterauswahl bei 2x ENTER
+01.03.06 VF Deploy  HELIUM_V_5_09_005_2572
+07.02.06 MB Libs    iReport Update auf Version 1.1.0
+                    lib\jasperreports-1.0.1.jar ersetzt durch jasperreports-1.1.1.jar
+06.02.06 UW IMS     1553 LS Funktionalitaet SichtAuftrag ueberarbeitet
+                    1602, 1716
+03.02.06 UW IMS     1628, 1733
+02.02.06 CK Deploy  HELIUM_V_5_09_004_2415
+01.02.06 UW IMS     1553 SichtAuftrag Buchungslogik auf konsistenten Stand zurueckgestellt
+24.01.06 VF Deploy  HELIUM_V_5_09_003_2359
+19.01.06 CK Deploy  HELIUM_V_5_09_002_2329
+17.01.06 VF Deploy  HELIUM_V_5_09_001_2319
+12.01.06 CK Deploy  HELIUM_V_5_09_000_2296
+20.12.05 VF Deploy  HELIUM_V_5_09_000_2176
+13.12.05 VF Deploy  HELIUM_V_5_08_000_2132
+08.12.05 UW IMS     1512 Aendern der Auftrag Kopfdaten
+
+01.12.05 JE Deploy  HELIUM_V_5_08_000_2103
+05.12.05 VF F       LPMain JVM_VERSION von 1.4.2_04-b05 -> 1.4.2_04
+                    DialogLogin - Die Prüfung erfolgt bei 8 Stellen (1.4.2_04)
+01.12.05 JE Deploy  HELIUM_V_5_08_000_2070
+23.11.05 UW IMS     1450, 1476
+23.11.05 HK F       Buttons von 16x16 auf 24x24 umgestellt
+21.11.05 UW IMS     1422
+
+17.11.05 CK Deploy  HELIUM_V_5_08_000_2007
+
+16.11.05 CK Deploy  HELIUM_V_5_08_000_2000
+10.11.05 UW IMS     1389
+08.11.05 JO F       PA > Selektion
+
+03.11.05 AD Deploy  HELIUM_V_5_08_000_1946
+28.10.05 CK Lib     jbcl.jar entfernt
+24.10.05 JO IMS     1353
+24.10.05 JO IMS     1325
+21.10.05 JE Deploy  HELIUM_V_5_08_000_1899
+20.10.05 MB F       Fertigung: Los Ausgeben / Ausgabe zuruecknehmen
+                               Los stornieren / Storno zurücknehmen
+                               Theoretische Fehlmengenliste
+                               Ausgabeliste
+                               Fertigungsbegleitschein
+20.10.05 JO F       LFLiefergruppen sind mandantabhaengig.
+19.10.05 UW F       ANF Die Buttons der Panels sind in Abhaengigkeit vom Status aktiv.
+19.10.05 UW IMS     1305, 1295
+14.10.05 CK Libs    Neue libs hinzugefügt (wegen Hibernate): cglib-2.1.lib,asm.jar,asm-attr.jar
+13.10.05 UW IMS 1299 Keine Sortierung nach Bestellart.
+06.10.05 JE Deploy  HELIUM_V_5_07_000_1852
+06.10.05 CK Deploy  HELIUM_V_5_07_000_1821
+04.10.05 JO F       Lieferant gehört zu 0..n
+29.09.05 JO IMS     1169
+29.09.05 JO IMS     886
+29.09.05 JO IMS     1170
+29.09.05 JO IMS     1260
+
+30.09.05 AD Deploy  HELIUM_V_5_07_000_1795
+29.09.05 JO IMS 1260
+29.09.05 AD Deploy  HELIUM_V_5_07_000_1794
+29.09.05 UW IMS     1250 DirektFilter für Auftragskunden,...
+27.09.05 UW IMS     1232 Absturz bei Übernahme von 0.0 Preise im Preisdialog.
+26.09.05 JO F       Ansicht: System Look eingefuehrt.
+
+23.09.05 JE Deploy  HELIUM_V_5_07_000_1760
+
+08.09.05 CK Deploy  HELIUM_V_5_07_000_1752
+
+21.09.05 UW IMS 1204 Auftragszuordnung des Lieferscheins aendern.
+21.09.05 JO IMS     1210, 1197, 1195, 1196, 1217
+15.09.05 JO Deploy  HELIUM_V_5_08_000_1704
+
+08.09.05 CK Deploy  HELIUM_V_5_07_000_1656
+
+01.09.05 JE Deploy  HELIUM_V_5_07_000_1609
+
+23.08.05 JE Deploy HELIUM_V_5_07_000_1583
+
+23.08.05 JO,JE Deploy HELIUM_V_5_07_000_1570
+
+18.08.05 JE Deploy  HELIUM_V_5_07_000_1548
+
+10.08.05 CK Deploy  HELIUM_V_5_07_000_1515
+10.08.05 UW IMS 903, 912 LOCKME im Auftrag
+
+29.07.05 JO Deploy  HELIUM_V_5_06_000_1449
+
+27.07.05 JO Deploy  HELIUM_V_5_06_000_1436
+27.07.05 UW IMS 856, 879, 880
+27.07.05 UW IMS 882 Button Neu Aus Auftrag kopiert auch die Positionen
+27.07.05 UW IMS 833 Keine Vorschlagswerte in den Anfragepositionen
+24.07.05 JO IMS 849
+21.07.05 JO Deploy  HELIUM_V_5_05_000_1400
+
+21.07.05 UW IMS 825, 837 Bugfix Anfrage
+13.07.05 UW IMS 790 Belege manuell erledigen fuer AUFT, ANGB, ANF, LS
+12.07.05 UW IMS 803 Bug in Vorbelegung MwstsatzIId in PanelPositionenPreiseingabe behoben
+12.07.05 JO IMS 811
+12.07.05 JE Deploy  HELIUM_V_5_06_000_1355
+07.07.05 JE Deploy  HELIUM_V_5_06_000_1338
+07.07.05 UW IMS 778 Statusbar aktualisieren nach Drucken ueber Menue
+04.07.05 UW IMS 785 Belege koennen erst gedruckt werden, wenn die Konditionen
+                    bestaetigt wurden.
+30.06.05 CK Deploy  HELIUM_V_5_06_000_1313
+29.06.05 UW IMS 773 Liefertermin in PanelAuftragpositionen2 richtig abspeichern.
+27.06.05 UW IMS 664 Wartung Parametermandant korrigiert
+24.06.05 CK Deploy  HELIUM_V_5_05_000_1283
+23.06.05 UW IMS 126 Behandlung von Decimal-Werten > 15,4
+22.06.05 UW IMS 631 Bug in Berechnung des Bestellwerts behoben.
+20.06.05 JO F       Kreditoren und Debitorenkto.; IMS 533, 497
+                    Wie's geht: Glossar: http://helium/develop/systemdokumentation/glossar.htm
+16.06.05 JE Deploy  HELIUM_V_5_05_000_1256
+16.06.05 UW F       Anfrage Kopfdaten, Positionen, Konditionen
+15.06.05 UW IMS 482 Wartung fuer LP_PARAMETERMANDANT, LP_PARAMTERANWENDER ohne StammdatenCRUD
+15.06.05 UW IMS 320 Wartung fuer LP_MEDIAART/LP_MEDIAARTSPR mit StammdatenCRUD
+15.06.05 UW F       Wartung fuer Anfragetexte
+14.06.05 UW IMS 649 PanelTabelle: Spalten auf .setResizingAllowed(false) gesetzt
+14.06.05 UW IMS 553 Korrektur bei Berechnung des Lieferscheinwerts
+14.06.05 JE Deploy  HELIUM_V_5_05_000_1237
+10.06.05 JO Deploy  HELIUM_V_5_05_000_1227
+09.06.05 JO  F    Hilfe Info-Dialog; Versionsabfrage aktiviert.
+07.06.05 UW IMS 506 Dialogfenster Preisauswahl wird aus PanenPositionenArtikelVerkauf
+                    heraus aufgerufen
+07.06.05 UW IMS 608 Ueberarbeitung von Artikel Panel VK-Preise
+07.06.05 UW F       Neues Package fuer Modul Anfrage
+*** von HELIUM V 5.05.000 ******************************************************

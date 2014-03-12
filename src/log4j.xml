@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  HELIUM V, Open Source ERP software for sustained success
+  at small and medium-sized enterprises.
+  Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+  
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU Affero General Public License as published 
+  by the Free Software Foundation, either version 3 of theLicense, or 
+  (at your option) any later version.
+  
+  According to sec. 7 of the GNU Affero General Public License, version 3, 
+  the terms of the AGPL are supplemented with the following terms:
+  
+  "HELIUM V" and "HELIUM 5" are registered trademarks of 
+  HELIUM V IT-Solutions GmbH. The licensing of the program under the 
+  AGPL does not imply a trademark license. Therefore any rights, title and
+  interest in our trademarks remain entirely with us. If you want to propagate
+  modified versions of the Program under the name "HELIUM V" or "HELIUM 5",
+  you may only do so if you have a written permission by HELIUM V IT-Solutions 
+  GmbH (to acquire a permission please contact HELIUM V IT-Solutions
+  at trademark@heliumv.com).
+  
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU Affero General Public License for more details.
+  
+  You should have received a copy of the GNU Affero General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  
+  Contact: developers@heliumv.com
+-->
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+
+<!-- ===================================================================== -->
+<!--                                                                       -->
+<!--  Log4j Configuration                                                  -->
+<!--                                                                       -->
+<!-- ===================================================================== -->
+
+<!-- $Id: log4j.xml,v 1.2 2009/07/21 08:57:47 sebastian Exp $ -->
+
+<!--
+   | For more configuration infromation and examples see the Jakarta Log4j
+   | owebsite: http://jakarta.apache.org/log4j
+ -->
+
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/" debug="true">
+
+
+<!-- A time/date based rolling appender -->
+   <appender name="LP_CLIENT_LOG_LOCAL" class="org.jboss.logging.appender.DailyRollingFileAppender">
+      <errorHandler class="org.jboss.logging.util.OnlyOnceErrorHandler"/>
+      <param name="File" value="./log/lpclient_"/>
+      <param name="Append" value="true"/>
+
+      <!-- Rollover at midnight each day -->
+      <param name="DatePattern" value="yyyyMMdd'.log'"/>
+
+      <!-- Rollover at the top of each hour
+      <param name="DatePattern" value="'.'yyyy-MM-dd-HH"/>
+      -->
+
+      <layout class="org.apache.log4j.PatternLayout">
+         <!-- The default pattern: Date Priority [Category] Message\n -->
+         <param name="ConversionPattern" value="%d{yyyy-MM-dd HH:mm:ss:SSS} [%8r] %-5p %M(%C{1}:%L) - %m%n"/>
+
+         <!-- The full pattern: Date MS Priority [Category] (Thread:NDC) Message\n
+         <param name="ConversionPattern" value="%d %-5r %-5p [%c] (%t:%x) %m%n"/>
+          -->
+      </layout>
+   </appender>
+
+   <!-- ============================== -->
+   <!-- Append messages to the console -->
+   <!-- ============================== -->
+
+   <appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
+      <errorHandler class="org.jboss.logging.util.OnlyOnceErrorHandler"/>
+     <!-- <param name="Target" value="System.out"/>-->
+     <!-- <param name="Threshold" value="ALL"/>-->
+
+      <layout class="org.apache.log4j.PatternLayout">
+         <!-- The default pattern: Date Priority [Category] Message\n -->
+         <param name="ConversionPattern" value="%d{yyyyMMdd HH:mm:ss:SSS} %-5p [Link: %l] - %m%n"/>
+      </layout>
+   </appender>
+
+   <appender name="CONSOLE_WITHOUT_LINK" class="org.apache.log4j.ConsoleAppender">
+      <errorHandler class="org.jboss.logging.util.OnlyOnceErrorHandler"/>
+      <param name="Target" value="System.out"/>
+      <param name="Threshold" value="ALL"/>
+
+      <layout class="org.apache.log4j.PatternLayout">
+         <!-- The default pattern: Date Priority [Category] Message\n -->
+         <param name="ConversionPattern" value="%-5p %M(%C{1}:%L) - %m%n"/>
+      </layout>
+   </appender>
+
+
+   <appender name="JSR77" class="org.apache.log4j.FileAppender">
+      <errorHandler class="org.jboss.logging.util.OnlyOnceErrorHandler"/>
+      <param name="Append" value="false"/>
+      <param name="File" value="${jboss.server.home.dir}/log/jsr77.log"/>
+      <layout class="org.apache.log4j.PatternLayout">
+         <param name="ConversionPattern" value="%d{yyyyMMdd HH:mm:ss:SSS} 4 Server %-5p [%x] %M(%C{1}:%L) - %m%n"/>
+      </layout>
+   </appender>
+
+   <!-- ====================== -->
+   <!-- More Appender examples -->
+   <!-- ====================== -->
+
+   <!-- Buffer events and log them asynchronously
+   <appender name="ASYNC" class="org.apache.log4j.AsyncAppender">
+     <errorHandler class="org.jboss.logging.util.OnlyOnceErrorHandler"/>
+     <appender-ref ref="FILE"/>
+     <appender-ref ref="CONSOLE"/>
+     <appender-ref ref="SMTP"/>
+   </appender>
+   -->
+
+   <!-- EMail events to an administrator
+   <appender name="SMTP" class="org.apache.log4j.net.SMTPAppender">
+     <errorHandler class="org.jboss.logging.util.OnlyOnceErrorHandler"/>
+     <param name="Threshold" value="ERROR"/>
+     <param name="To" value="admin@myhost.domain.com"/>
+     <param name="From" value="nobody@myhost.domain.com"/>
+     <param name="Subject" value="JBoss Sever Errors"/>
+     <param name="SMTPHost" value="localhost"/>
+     <param name="BufferSize" value="10"/>
+     <layout class="org.apache.log4j.PatternLayout">
+       <param name="ConversionPattern" value="[%d{ABSOLUTE},%c{1}] %m%n"/>
+     </layout>
+   </appender>
+   -->
+
+   <!-- Syslog events
+   <appender name="SYSLOG" class="org.apache.log4j.net.SyslogAppender">
+     <errorHandler class="org.jboss.logging.util.OnlyOnceErrorHandler"/>
+     <param name="Facility" value="LOCAL7"/>
+     <param name="FacilityPrinting" value="true"/>
+     <param name="SyslogHost" value="localhost"/>
+   </appender>
+   -->
+
+   <!-- Log events to JMS (requires a topic to be created)
+   <appender name="JMS" class="org.apache.log4j.net.JMSAppender">
+     <errorHandler class="org.jboss.logging.util.OnlyOnceErrorHandler"/>
+     <param name="Threshold" value="ERROR"/>
+     <param name="TopicConnectionFactoryBindingName" value="java:/ConnectionFactory"/>
+     <param name="TopicBindingName" value="topic/MyErrorsTopic"/>
+   </appender>
+   -->
+
+   <!-- Log events through SNMP
+   <appender name="TRAP_LOG" class="org.apache.log4j.ext.SNMPTrapAppender">
+     <errorHandler class="org.jboss.logging.util.OnlyOnceErrorHandler"/>
+     <param name="ImplementationClassName" value="org.apache.log4j.ext.JoeSNMPTrapSender"/>
+     <param name="ManagementHost" value="127.0.0.1"/>
+     <param name="ManagementHostTrapListenPort" value="162"/>
+     <param name="EnterpriseOID" value="1.3.6.1.4.1.24.0"/>
+     <param name="LocalIPAddress" value="127.0.0.1"/>
+     <param name="LocalTrapSendPort" value="161"/>
+     <param name="GenericTrapType" value="6"/>
+     <param name="SpecificTrapType" value="12345678"/>
+     <param name="CommunityString" value="public"/>
+     <param name="ForwardStackTraceWithTrap" value="true"/>
+     <param name="Threshold" value="DEBUG"/>
+     <param name="ApplicationTrapOID" value="1.3.6.1.4.1.24.12.10.22.64"/>
+     <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d,%p,[%t],[%c],%m%n"/>
+     </layout>
+   </appender>
+   -->
+
+   <!-- ================ -->
+   <!-- Limit categories -->
+   <!-- ================ -->
+
+
+   <!-- Limit the org.apache.commons category to INFO as its DEBUG is verbose -->
+   <logger name="com.lp">
+      <level value="WARN"/>
+      <appender-ref ref="LP_CLIENT_LOG_LOCAL"/>
+   </logger>
+
+   <!-- Limit the org.apache.commons category to INFO as its DEBUG is verbose -->
+   <logger name="org.apache.commons">
+      <level value="WARN"/>
+   </logger>
+
+   <!-- Limit JBoss categories to INFO -->
+   <logger name="org.jboss">
+     <level value="WARN"/>
+   </logger>
+
+   <!-- Decrease the priority threshold for the org.jboss.varia category
+   <category name="org.jboss.varia">
+     <priority value="DEBUG"/>
+   </category>
+   -->
+
+   <!-- Show the evolution of the DataSource pool in the logs [inUse/Available/Max]
+   <category name="org.jboss.resource.connectionmanager.JBossManagedConnectionPool">
+     <priority value="TRACE" class="org.jboss.logging.XLevel"/>
+   </category>
+   -->
+
+   <!--
+      | An example of enabling the custom TRACE level priority that is used
+      | by the JBoss internals to diagnose low level details. This example
+      | turns on TRACE level msgs for the org.jboss.ejb.plugins package and its
+      | subpackages. This will produce A LOT of logging output.
+   <category name="org.jboss.system">
+     <priority value="TRACE" class="org.jboss.logging.XLevel"/>
+   </category>
+   <category name="org.jboss.ejb.plugins">
+     <priority value="TRACE" class="org.jboss.logging.XLevel"/>
+   </category>
+   -->
+
+   <!--
+       | Logs these events to SNMP:
+           - server starts/stops
+           - cluster evolution (node death/startup)
+           - When an EJB archive is deployed (and associated verified messages)
+           - When an EAR archive is deployed
+
+   <category name="org.jboss.system.server.Server">
+     <priority value="INFO" />
+     <appender-ref ref="TRAP_LOG"/>
+   </category>
+
+   <category name="org.jboss.ha.framework.interfaces.HAPartition.lifecycle">
+     <priority value="INFO" />
+     <appender-ref ref="TRAP_LOG"/>
+   </category>
+
+   <category name="org.jboss.deployment.MainDeployer">
+     <priority value="ERROR" />
+     <appender-ref ref="TRAP_LOG"/>
+   </category>
+
+   <category name="org.jboss.ejb.EJBDeployer">
+     <priority value="INFO" />
+     <appender-ref ref="TRAP_LOG"/>
+   </category>
+
+   <category name="org.jboss.deployment.EARDeployer">
+     <priority value="INFO" />
+     <appender-ref ref="TRAP_LOG"/>
+   </category>
+
+
+   -->
+
+
+   <!-- ======================= -->
+   <!-- Setup the Root category -->
+   <!-- ======================= -->
+
+   <root>
+      <appender-ref ref="CONSOLE"/>
+   </root>
+
+   <!-- Clustering logging -->
+   <!-- Uncomment the following to redirect the org.jgroups and
+      org.jboss.ha categories to a cluster.log file.
+
+   <appender name="CLUSTER" class="org.jboss.logging.appender.RollingFileAppender">
+     <errorHandler class="org.jboss.logging.util.OnlyOnceErrorHandler"/>
+     <param name="File" value="/log/cluster.log"/>
+     <param name="Append" value="false"/>
+     <param name="MaxFileSize" value="500KB"/>
+     <param name="MaxBackupIndex" value="1"/>
+
+     <layout class="org.apache.log4j.PatternLayout">
+       <param name="ConversionPattern" value="%d %-5p [%c] %m%n"/>
+     </layout>
+   </appender>
+   <category name="org.jgroups">
+     <priority value="DEBUG" />
+     <appender-ref ref="CLUSTER"/>
+   </category>
+   <category name="org.jboss.ha">
+     <priority value="DEBUG" />
+     <appender-ref ref="CLUSTER"/>
+   </category>
+-->
+
+</log4j:configuration>
