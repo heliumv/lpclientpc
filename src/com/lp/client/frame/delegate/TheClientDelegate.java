@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -39,7 +39,7 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 
 import com.lp.client.frame.ExceptionLP;
-import com.lp.client.pc.LPMain;
+import com.lp.client.util.ClientConfiguration;
 import com.lp.server.system.service.InstallerDto;
 import com.lp.server.system.service.TheClientDto;
 import com.lp.server.system.service.TheClientFac;
@@ -78,11 +78,11 @@ public class TheClientDelegate
   }
 
 
-  public void removeTheClient(TheClientDto theClientDto)
-      throws Exception {
-    theClientFac.removeTheClient(theClientDto);
-  }
-
+//  public void removeTheClient(TheClientDto theClientDto)
+//      throws Exception {
+//    theClientFac.removeTheClient(theClientDto);
+//  }
+//
 
   public void removeTheClientTVonTBis(Timestamp tVon, Timestamp tBis)
       throws Exception {
@@ -129,9 +129,7 @@ public class TheClientDelegate
 
   public boolean istNeuerClientVerfuegbar() throws ExceptionLP{
     try {
-      return theClientFac.istNeuerClientVerfuegbar(new Integer(Integer.parseInt(
-              LPMain.getInstance().getLPParameter("lp.version.client.build"))));
-
+      return theClientFac.istNeuerClientVerfuegbar(ClientConfiguration.getBuildNumber());
     }
     catch (Throwable ex) {
       handleThrowable(ex);

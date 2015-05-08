@@ -1,33 +1,33 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published 
- * by the Free Software Foundation, either version 3 of theLicense, or 
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of theLicense, or
  * (at your option) any later version.
- * 
- * According to sec. 7 of the GNU Affero General Public License, version 3, 
+ *
+ * According to sec. 7 of the GNU Affero General Public License, version 3,
  * the terms of the AGPL are supplemented with the following terms:
- * 
- * "HELIUM V" and "HELIUM 5" are registered trademarks of 
- * HELIUM V IT-Solutions GmbH. The licensing of the program under the 
+ *
+ * "HELIUM V" and "HELIUM 5" are registered trademarks of
+ * HELIUM V IT-Solutions GmbH. The licensing of the program under the
  * AGPL does not imply a trademark license. Therefore any rights, title and
  * interest in our trademarks remain entirely with us. If you want to propagate
  * modified versions of the Program under the name "HELIUM V" or "HELIUM 5",
- * you may only do so if you have a written permission by HELIUM V IT-Solutions 
+ * you may only do so if you have a written permission by HELIUM V IT-Solutions
  * GmbH (to acquire a permission please contact HELIUM V IT-Solutions
  * at trademark@heliumv.com).
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Affero General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Contact: developers@heliumv.com
  ******************************************************************************/
 /*
@@ -63,27 +63,21 @@ import java.util.Calendar;
 import java.util.Locale;
 
 import javax.swing.JComboBox;
-import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
-import javax.swing.MenuSelectionManager;
 import javax.swing.SpinnerNumberModel;
-import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import javax.swing.event.PopupMenuEvent;
-import javax.swing.event.PopupMenuListener;
 
 import com.lp.client.pc.LPMain;
 
 /**
  * JMonthChooser is a bean for choosing a month.
- * 
+ *
  * @author Kai Toedter
  * @version $LastChangedRevision: 159 $
  * @version $LastChangedDate: 2011-06-22 21:07:24 +0200 (Mi, 22 Jun 2011) $
@@ -123,7 +117,7 @@ public class JMonthChooser extends JPanel implements ItemListener,
 
 	/**
 	 * JMonthChooser constructor with month spinner parameter.
-	 * 
+	 *
 	 * @param hasSpinner
 	 *            true, if the month chooser should have a spinner component
 	 */
@@ -136,7 +130,7 @@ public class JMonthChooser extends JPanel implements ItemListener,
 
 		comboBox = new JComboBox();
 		comboBox.addItemListener(this);
-	
+
 		try {
 		      locale = LPMain.getTheClient().getLocUi();
 	    }
@@ -191,12 +185,12 @@ public class JMonthChooser extends JPanel implements ItemListener,
 
 		localInitialize = false;
 		comboBox.setSelectedIndex(month);
-		comboBox.setMaximumRowCount(comboBox.getModel().getSize());		
+		comboBox.setMaximumRowCount(comboBox.getModel().getSize());
 	}
 
 	/**
 	 * Is invoked if the state of the spinner changes.
-	 * 
+	 *
 	 * @param e
 	 *            the change event.
 	 */
@@ -240,7 +234,7 @@ public class JMonthChooser extends JPanel implements ItemListener,
 
 	/**
 	 * The ItemListener for the months.
-	 * 
+	 *
 	 * @param e
 	 *            the item event
 	 */
@@ -257,7 +251,7 @@ public class JMonthChooser extends JPanel implements ItemListener,
 	/**
 	 * Sets the month attribute of the JMonthChooser object. Fires a property
 	 * change "month".
-	 * 
+	 *
 	 * @param newMonth
 	 *            the new month value
 	 * @param select
@@ -286,10 +280,10 @@ public class JMonthChooser extends JPanel implements ItemListener,
 	 * Sets the month. This is a bound property. Valuse are valid between 0
 	 * (January) and 11 (December). A value < 0 will be treated as 0, a value >
 	 * 11 will be treated as 11.
-	 * 
+	 *
 	 * @param newMonth
 	 *            the new month value
-	 * 
+	 *
 	 * @see #getMonth
 	 */
 	public void setMonth(int newMonth) {
@@ -304,7 +298,7 @@ public class JMonthChooser extends JPanel implements ItemListener,
 
 	/**
 	 * Returns the month.
-	 * 
+	 *
 	 * @return the month value
 	 */
 	public int getMonth() {
@@ -313,7 +307,7 @@ public class JMonthChooser extends JPanel implements ItemListener,
 
 	/**
 	 * Convenience method set a day chooser.
-	 * 
+	 *
 	 * @param dayChooser
 	 *            the day chooser
 	 */
@@ -324,7 +318,7 @@ public class JMonthChooser extends JPanel implements ItemListener,
 	/**
 	 * Convenience method set a year chooser. If set, the spin for the month
 	 * buttons will spin the year as well
-	 * 
+	 *
 	 * @param yearChooser
 	 *            the new yearChooser value
 	 */
@@ -334,9 +328,9 @@ public class JMonthChooser extends JPanel implements ItemListener,
 
 	/**
 	 * Returns the locale.
-	 * 
+	 *
 	 * @return the locale value
-	 * 
+	 *
 	 * @see #setLocale
 	 */
 	public Locale getLocale() {
@@ -345,10 +339,10 @@ public class JMonthChooser extends JPanel implements ItemListener,
 
 	/**
 	 * Set the locale and initializes the new month names.
-	 * 
+	 *
 	 * @param l
 	 *            the new locale value
-	 * 
+	 *
 	 * @see #getLocale
 	 */
 	public void setLocale(Locale l) {
@@ -362,7 +356,7 @@ public class JMonthChooser extends JPanel implements ItemListener,
 
 	/**
 	 * Enable or disable the JMonthChooser.
-	 * 
+	 *
 	 * @param enabled
 	 *            the new enabled value
 	 */
@@ -378,7 +372,7 @@ public class JMonthChooser extends JPanel implements ItemListener,
 	/**
 	 * Returns the month chooser's comboBox text area (which allow the focus to
 	 * be set to it).
-	 * 
+	 *
 	 * @return the combo box
 	 */
 	public Component getComboBox() {
@@ -388,7 +382,7 @@ public class JMonthChooser extends JPanel implements ItemListener,
 	/**
 	 * Returns the month chooser's comboBox bar (which allow the focus to be set
 	 * to it).
-	 * 
+	 *
 	 * @return Component the spinner or null, if the month chooser has no
 	 *         spinner
 	 */
@@ -399,7 +393,7 @@ public class JMonthChooser extends JPanel implements ItemListener,
 
 	/**
 	 * Returns the type of spinner the month chooser is using.
-	 * 
+	 *
 	 * @return true, if the month chooser has a spinner
 	 */
 	public boolean hasSpinner() {
@@ -420,7 +414,7 @@ public class JMonthChooser extends JPanel implements ItemListener,
 
 	/**
 	 * Updates the UI.
-	 * 
+	 *
 	 * @see javax.swing.JPanel#updateUI()
 	 */
 	public void updateUI() {
@@ -436,7 +430,7 @@ public class JMonthChooser extends JPanel implements ItemListener,
 
 	/**
 	 * Creates a JFrame with a JMonthChooser inside and can be used for testing.
-	 * 
+	 *
 	 * @param s
 	 *            The command line arguments
 	 */

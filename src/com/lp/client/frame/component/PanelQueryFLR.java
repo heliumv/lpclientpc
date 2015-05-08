@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -42,9 +42,11 @@ import java.util.Iterator;
 
 import com.lp.client.frame.ExceptionLP;
 import com.lp.client.frame.LockStateValue;
+import com.lp.client.frame.component.frameposition.ClientPerspectiveManager;
 import com.lp.client.pc.LPButtonAction;
 import com.lp.client.util.fastlanereader.gui.QueryType;
 import com.lp.server.util.fastlanereader.service.query.FilterKriterium;
+import com.lp.server.util.fastlanereader.service.query.SortierKriterium;
 
 /**
  * 
@@ -61,8 +63,9 @@ import com.lp.server.util.fastlanereader.service.query.FilterKriterium;
  * </p>
  * 
  * <p>
+ * 
  * @author $Author: christian $
- * </p>
+ *         </p>
  * 
  * @version not attributable Date $Date: 2012/12/11 08:37:04 $
  */
@@ -80,15 +83,37 @@ public class PanelQueryFLR extends PanelQuery {
 				add2TitleI);
 		// Eine Aenderung der Auswahl loest kein ItemChangedEvent aus
 		fireItemChangedEventAfterChange = false;
+		loadPositionData();
 	}
 
 	public PanelQueryFLR(QueryType[] typesI, FilterKriterium[] filtersI,
 			int idUsecaseI, String[] aWhichButtonIUseI,
-			InternalFrame internalFrameI, String add2TitleI,FilterKriterium kritVersteckteFelderNichtAnzeigenI) throws Throwable {
+			InternalFrame internalFrameI, String add2TitleI,
+			FilterKriterium kritVersteckteFelderNichtAnzeigenI,
+			String labelText, SortierKriterium sortierkriterium,
+			String textSortierkriterium) throws Throwable {
 		super(typesI, filtersI, idUsecaseI, aWhichButtonIUseI, internalFrameI,
-				add2TitleI,false,kritVersteckteFelderNichtAnzeigenI);
+				add2TitleI, false, kritVersteckteFelderNichtAnzeigenI,
+				labelText, sortierkriterium, textSortierkriterium);
 		// Eine Aenderung der Auswahl loest kein ItemChangedEvent aus
 		fireItemChangedEventAfterChange = false;
+		loadPositionData();
+	}
+
+	public PanelQueryFLR(QueryType[] typesI, FilterKriterium[] filtersI,
+			int idUsecaseI, String[] aWhichButtonIUseI,
+			InternalFrame internalFrameI, String add2TitleI,
+			FilterKriterium kritVersteckteFelderNichtAnzeigenI, String labelText)
+			throws Throwable {
+		super(typesI, filtersI, idUsecaseI, aWhichButtonIUseI, internalFrameI,
+				add2TitleI, false, kritVersteckteFelderNichtAnzeigenI,
+				labelText, null, null);
+		// Eine Aenderung der Auswahl loest kein ItemChangedEvent aus
+		fireItemChangedEventAfterChange = false;
+		loadPositionData();
+	}
+	
+	protected void loadPositionData() {
 	}
 
 	/**
@@ -127,6 +152,13 @@ public class PanelQueryFLR extends PanelQuery {
 		this.dialog = dialog;
 	}
 
+	public void closeMe() {
+		getInternalFrame().removeItemChangedListener(this);
+		dialog.setVisible(false);
+		dialog.dispose() ;
+		dialog = null ;
+	}
+	
 	/**
 	 * cmd:
 	 * 
@@ -142,8 +174,7 @@ public class PanelQueryFLR extends PanelQuery {
 			boolean bNeedNoNewI) throws Throwable {
 
 		super.eventActionNew(eventObject, bLockMeI, bNeedNoNewI);
-		getInternalFrame().removeItemChangedListener(this);
-		dialog.dispose();
+		closeMe(); 
 	}
 
 	protected void eventActionUpdate(ActionEvent aE, boolean bNeedNoUpdateI)
@@ -154,11 +185,11 @@ public class PanelQueryFLR extends PanelQuery {
 	/**
 	 * Hier sind immer alle buttons enabled.
 	 * 
-	 * @throws Exception
 	 * @param iAspectI
 	 *            int
 	 * @param lockstateValueI
 	 *            LockStateValue
+	 * @throws Exception
 	 */
 	public void updateButtons(int iAspectI, LockStateValue lockstateValueI)
 			throws Exception {
@@ -175,14 +206,12 @@ public class PanelQueryFLR extends PanelQuery {
 	protected void eventActionLeeren(ActionEvent e) throws Throwable {
 		getInternalFrame()
 				.fireItemChanged(this, ItemChangedEvent.ACTION_LEEREN);
-		getInternalFrame().removeItemChangedListener(this);
-		dialog.dispose();
-		cleanup();
+		closeMe() ;
 	}
 
 	protected void eventActionEscape(ActionEvent e) throws Throwable {
-		dialog.dispose();
-		cleanup();
+		super.eventActionEscape(e);
+		closeMe() ;
 	}
 
 	/**
@@ -195,11 +224,15 @@ public class PanelQueryFLR extends PanelQuery {
 		if (e.getSource().getClass() == WrapperTable.class) {
 			if (e.getClickCount() == 2) {
 				// Doppelklick in die Tabelle -> Dialog schliessen
-				getInternalFrame().removeItemChangedListener(this);
-				dialog.dispose();
+				closeMe() ;
 				super.eventMouseClicked(e);
-				cleanup();
-				return;
+				return ;
+
+//				getInternalFrame().removeItemChangedListener(this);
+//				dialog.dispose();
+//				super.eventMouseClicked(e);
+//				cleanup();
+//				return;
 			}
 		}
 		super.eventMouseClicked(e);
@@ -212,23 +245,42 @@ public class PanelQueryFLR extends PanelQuery {
 	 *            KeyEvent
 	 * @throws Throwable
 	 */
+//	protected void eventKeyPressed(KeyEvent e) throws Throwable {
+//		boolean bFilterChangedOri = getBFilterHasChanged();
+//		// Event an die Superklasse weiterleiten
+//		super.eventKeyPressed(e);
+//		if (e.getKeyChar() == KeyEvent.VK_ENTER) {
+//			// wenn Enter und die Filter sich nicht geaendert haben, dann den
+//			// Dialog schliessen
+//			// und auch ein Datensatz gewaehlt wurde
+//			if (!bFilterChangedOri && this.getSelectedId() != null) {
+//				getInternalFrame().removeItemChangedListener(this);
+//				dialog.dispose();
+//				cleanup();
+//			}
+//		}
+//	}
+
 	protected void eventKeyPressed(KeyEvent e) throws Throwable {
-		boolean bFilterChangedOri = getBFilterHasChanged();
 		// Event an die Superklasse weiterleiten
 		super.eventKeyPressed(e);
 		if (e.getKeyChar() == KeyEvent.VK_ENTER) {
 			// wenn Enter und die Filter sich nicht geaendert haben, dann den
 			// Dialog schliessen
 			// und auch ein Datensatz gewaehlt wurde
+			boolean bFilterChangedOri = getBFilterHasChanged();
 			if (!bFilterChangedOri && this.getSelectedId() != null) {
-				getInternalFrame().removeItemChangedListener(this);
-				dialog.dispose();
-				cleanup();
+				closeMe() ;
 			}
 		}
 	}
-
+	
 	public Dialog getDialog() {
 		return dialog;
+	}
+	
+	@Override
+	protected void saveFramePosition() {
+		ClientPerspectiveManager.getInstance().saveQueryFLRPosition(this);
 	}
 }

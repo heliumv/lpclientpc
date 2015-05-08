@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -37,7 +37,12 @@ import java.awt.GridBagConstraints;
 import java.awt.Insets;
 import java.awt.Point;
 import java.awt.event.FocusListener;
+import java.sql.Date;
+import java.sql.Time;
 import java.util.GregorianCalendar;
+
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 import com.lp.client.frame.Defaults;
 import com.lp.client.frame.ExceptionLP;
@@ -63,7 +68,7 @@ import com.lp.util.EJBExceptionLP;
  * @author Martin Bluehweis
  * @version $Revision: 1.4 $
  */
-public class WrapperTimeField extends javax.swing.JPanel implements IControl, IDirektHilfe {
+public class WrapperTimeField extends javax.swing.JPanel implements IControl, IDirektHilfe, IHvValueHolder, ChangeListener {
 	/**
 	 * 
 	 */
@@ -79,9 +84,11 @@ public class WrapperTimeField extends javax.swing.JPanel implements IControl, ID
 	private int millisekunden = 0;
 	
 	private CornerInfoButton cib;
+	private HvValueHolder<Time> valueHolder ;
 
 	public WrapperTimeField() {
 		super();
+		valueHolder = new HvValueHolder<Time>(this, null) ;
 		jbInit();
 	}
 
@@ -127,8 +134,6 @@ public class WrapperTimeField extends javax.swing.JPanel implements IControl, ID
 
 	/**
 	 * Die Klasse initialisieren.
-	 * 
-	 * @throws Throwable
 	 */
 	private void jbInit() {
 		setLayout(new java.awt.GridBagLayout());
@@ -144,6 +149,8 @@ public class WrapperTimeField extends javax.swing.JPanel implements IControl, ID
 		wspMinuten = new WrapperSpinner(minutenModel);
 		wspSekunden = new WrapperSpinner(sekundenModel);
 		wspStunden = new WrapperSpinner(stundenModel);
+		addChangeListeners();
+
 		wspStunden.setName("asdf");
 
 		wspSekunden.setVisible(false);
@@ -160,6 +167,18 @@ public class WrapperTimeField extends javax.swing.JPanel implements IControl, ID
 		cib = new CornerInfoButton(this);
 	}
 
+	protected void addChangeListeners() {
+		wspMinuten.addChangeListener(this);
+		wspSekunden.addChangeListener(this);
+		wspStunden.addChangeListener(this);
+	}
+	
+	protected void removeChangeListeners() {
+		wspMinuten.removeChangeListener(this);
+		wspSekunden.removeChangeListener(this);
+		wspStunden.removeChangeListener(this);
+	}
+
 	/**
 	 * Definiert den Eigenschaftswert showSeconds (boolean).
 	 * 
@@ -171,18 +190,18 @@ public class WrapperTimeField extends javax.swing.JPanel implements IControl, ID
 		wspSekunden.setVisible(showSeconds);
 	}
 
-	private java.sql.Date fieldLpDateZuTimeField = new java.sql.Date(0);
+	private Date fieldLpDateZuTimeField = new Date(0);
 	private RolloverSpinnerNumberModel sekundenModel;
 	
 	private RolloverSpinnerNumberModel minutenModel;
 	private RolloverSpinnerNumberModel stundenModel;
 
 	/**
-	 * Ruft den Eigenschaftswert lpDateZuTimeField (java.sql.Date) ab.
+	 * Ruft den Eigenschaftswert lpDateZuTimeField (Date) ab.
 	 * 
 	 * @return Der Eigenschaftswert lpDateZuTimeField.
 	 */
-	public java.sql.Date getLpDateZuTimeField() {
+	public Date getLpDateZuTimeField() {
 		return fieldLpDateZuTimeField;
 	}
 
@@ -192,7 +211,7 @@ public class WrapperTimeField extends javax.swing.JPanel implements IControl, ID
 	 * @return time
 	 * @throws ExceptionLP
 	 */
-	public java.sql.Time getTime() throws ExceptionLP {
+	public Time getTime() throws ExceptionLP {
 		// Flag fuer geaenderte Daten zuruecksetzen, ohne Ereignis auszuloesen
 		// Zeit ermitteln
 		GregorianCalendar hgc = new GregorianCalendar();
@@ -212,7 +231,7 @@ public class WrapperTimeField extends javax.swing.JPanel implements IControl, ID
 		}
 		hgc.set(java.util.Calendar.MILLISECOND, millisekunden);
 		// erstellten Timestamp zurueckgeben
-		java.sql.Time time = new java.sql.Time(hgc.getTimeInMillis());
+		Time time = new Time(hgc.getTimeInMillis());
 		return time;
 	}
 
@@ -222,7 +241,7 @@ public class WrapperTimeField extends javax.swing.JPanel implements IControl, ID
 	 * @param time
 	 *            Time
 	 */
-	public void setTime(java.sql.Time time) {
+	public void setTime(Time time) {
 		if (time != null) {
 			java.util.Date zeit = (java.util.Date) time;
 			java.text.SimpleDateFormat formatierer = new java.text.SimpleDateFormat(
@@ -251,15 +270,20 @@ public class WrapperTimeField extends javax.swing.JPanel implements IControl, ID
 			} catch (NumberFormatException n) {
 				ms = 0;
 			}
+			removeChangeListeners();
 			wspMinuten.setInteger(new Integer(m));
 			wspSekunden.setInteger(new Integer(s));
 			wspStunden.setInteger(new Integer(h));
+			addChangeListeners();
 			millisekunden = ms;
 		} else {
+			removeChangeListeners();
 			wspMinuten.setInteger(null);
 			wspSekunden.setInteger(null);
 			wspStunden.setInteger(null);
+			addChangeListeners();
 		}
+		valueHolder.setValue(time);
 	}
 
 	public boolean isMandatoryField() {
@@ -287,7 +311,6 @@ public class WrapperTimeField extends javax.swing.JPanel implements IControl, ID
 	
 	@Override
 	public boolean hasContent() throws Throwable {
-		// TODO Auto-generated method stub
 		return true;
 	}
 
@@ -372,5 +395,34 @@ public class WrapperTimeField extends javax.swing.JPanel implements IControl, ID
 	@Override
 	public String getToken() {
 		return cib.getToolTipToken();
+	}
+
+	@Override
+	public Object getValueHolderValue() {
+		try {
+			return getTime();
+		} catch (ExceptionLP e) {
+			//Zeit ungueltig
+			e.printStackTrace();
+			return null;
+		}
+	}
+	
+	public void addValueChangedListener(IHvValueHolderListener l) {
+		valueHolder.addListener(l);
+	}
+	
+	public void removeValueChangedListener(IHvValueHolderListener l) {
+		valueHolder.removeListener(l);
+	}
+
+	@Override
+	public void stateChanged(ChangeEvent arg0) {
+		try {
+			valueHolder.setValue(getTime());
+		} catch (ExceptionLP e) {
+			e.printStackTrace();
+			valueHolder.setValue(null);
+		}
 	}
 }

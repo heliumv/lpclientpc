@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -76,6 +76,7 @@ JPanel panelUrlaubsanspruch = new JPanel();
   private WrapperTextArea wtaFehler = new WrapperTextArea();
   private TabbedPanePartner tpPartner=null;
   private WrapperCheckBox wcbErzeugeKunde = new WrapperCheckBox();
+  private WrapperCheckBox wcbErzeugeLieferant = new WrapperCheckBox();
 
 
   public DialogPartnerImport(PartnerImportDto[] daten, TabbedPanePartner tpPartner)
@@ -108,6 +109,7 @@ JPanel panelUrlaubsanspruch = new JPanel();
 
     wbuImportieren.setText("Importieren");
     wcbErzeugeKunde.setText("erzeuge Kunde");
+    wcbErzeugeLieferant.setText("erzeuge Lieferant");
     
     wtaFehler.setText(DelegateFactory.getInstance().getPartnerDelegate().pruefeCSVImport(daten));
     
@@ -127,6 +129,10 @@ JPanel panelUrlaubsanspruch = new JPanel();
     setSize(500, 500);
     
     wbuAbbrechen.addActionListener(this);
+    
+    wcbErzeugeKunde.addActionListener(this);
+    wcbErzeugeLieferant.addActionListener(this);
+    
     this.getContentPane().setLayout(gridBagLayout2);
 
     this.getContentPane().add(panelUrlaubsanspruch,
@@ -147,6 +153,9 @@ JPanel panelUrlaubsanspruch = new JPanel();
         panelUrlaubsanspruch.add(wcbErzeugeKunde, new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0
                 , GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(2, 2, 2, 2),
                 100, 0));       
+        panelUrlaubsanspruch.add(wcbErzeugeLieferant, new GridBagConstraints(1, 1, 1, 1, 0.0, 0.0
+                , GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(2, 2, 2, 2),
+                100, 0));       
         panelUrlaubsanspruch.add(wbuImportieren, new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0
                 , GridBagConstraints.CENTER, GridBagConstraints.NONE, new Insets(2, 2, 2, 2),
                 100, 0));
@@ -164,7 +173,7 @@ JPanel panelUrlaubsanspruch = new JPanel();
     if (e.getSource().equals(wbuImportieren)) {
     	try {
 			DelegateFactory.getInstance().getPartnerDelegate()
-					.importierePartner(daten,wcbErzeugeKunde.isSelected());
+					.importierePartner(daten,wcbErzeugeKunde.isSelected(), wcbErzeugeLieferant.isSelected());
 			
 			
 			this.setVisible(false);
@@ -175,6 +184,20 @@ JPanel panelUrlaubsanspruch = new JPanel();
       
     } else if (e.getSource().equals(wbuAbbrechen)) {
     	this.setVisible(false);
+    	
+    }else if (e.getSource().equals(wcbErzeugeKunde)) {
+    	
+    	if(wcbErzeugeKunde.isSelected()){
+    		wcbErzeugeLieferant.setSelected(false);
+    	}
+    	
+    	
+    }else if (e.getSource().equals(wcbErzeugeLieferant)) {
+    	
+    	if(wcbErzeugeLieferant.isSelected()){
+    		wcbErzeugeKunde.setSelected(false);
+    	}
+    	
     	
     }
   }

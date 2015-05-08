@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -47,7 +47,9 @@ import com.lp.server.finanz.service.FinanzFac;
 import com.lp.server.finanz.service.KontoartDto;
 import com.lp.server.finanz.service.LaenderartDto;
 import com.lp.server.finanz.service.UvaartDto;
+import com.lp.server.system.service.KostenstelleDto;
 import com.lp.server.system.service.LocaleFac;
+import com.lp.server.system.service.MandantDto;
 import com.lp.server.system.service.MandantFac;
 import com.lp.server.system.service.ModulberechtigungDto;
 import com.lp.server.util.fastlanereader.service.query.FilterKriterium;
@@ -93,21 +95,21 @@ public class InternalFrameFinanz extends InternalFrame {
 	private String aktuellesGeschaeftsjahr = null;
 	public String sRechtModulweit = null;
 
-	public static int IDX_TABBED_PANE_SACHKONTEN = -1;
-	public static int IDX_TABBED_PANE_BANKVERBINDUNG = -1;
-	public static int IDX_TABBED_PANE_WAEHRUNG = -1;
-	public static int IDX_TABBED_PANE_KASSENBUCH = -1;
-	public static int IDX_TABBED_PANE_DEBITORENKONTEN = -1;
-	public static int IDX_TABBED_PANE_KREDITORENKONTEN = -1;
-	public static int IDX_TABBED_PANE_BUCHUNGSJOURNAL = -1;
-	public static int IDX_TABBED_PANE_MAHNWESEN = -1;
-	public static int IDX_TABBED_PANE_ERGEBNISGRUPPEN = -1;
-	public static int IDX_TABBED_PANE_BILANZGRUPPEN = -1;
-	public static int IDX_TABBED_PANE_FINANZAMT = -1;
-	public static int IDX_TABBED_PANE_GRUNDDATEN = -1;
-	public static int IDX_TABBED_PANE_EXPORT = -1;
-	public static int IDX_TABBED_PANE_ZAHLUNGSVORSCHLAG = -1;
-	public static int IDX_TABBED_PANE_INTRASTAT = -1;
+	public int IDX_TABBED_PANE_SACHKONTEN = -1;
+	public int IDX_TABBED_PANE_BANKVERBINDUNG = -1;
+	public int IDX_TABBED_PANE_WAEHRUNG = -1;
+	public int IDX_TABBED_PANE_KASSENBUCH = -1;
+	public int IDX_TABBED_PANE_DEBITORENKONTEN = -1;
+	public int IDX_TABBED_PANE_KREDITORENKONTEN = -1;
+	public int IDX_TABBED_PANE_BUCHUNGSJOURNAL = -1;
+	public int IDX_TABBED_PANE_MAHNWESEN = -1;
+	public int IDX_TABBED_PANE_ERGEBNISGRUPPEN = -1;
+	public int IDX_TABBED_PANE_BILANZGRUPPEN = -1;
+	public int IDX_TABBED_PANE_FINANZAMT = -1;
+	public int IDX_TABBED_PANE_GRUNDDATEN = -1;
+	public int IDX_TABBED_PANE_EXPORT = -1;
+	public int IDX_TABBED_PANE_ZAHLUNGSVORSCHLAG = -1;
+	public int IDX_TABBED_PANE_INTRASTAT = -1;
 
 	private KontoartDto kontoartDto = null;
 	private UvaartDto uvaartDto = null;
@@ -122,7 +124,7 @@ public class InternalFrameFinanz extends InternalFrame {
 		super(title, belegartCNr, sRechtModulweitI);
 		sRechtModulweit = sRechtModulweitI;
 		geschaeftsjahrViewController = new GeschaeftsjahrViewController(this,
-				LPMain.getInstance().getTheClient());
+				LPMain.getTheClient());
 		jbInit();
 		initComponents();
 	}
@@ -545,6 +547,22 @@ public class InternalFrameFinanz extends InternalFrame {
 		return tabbedPaneBankverbindung;
 	}
 
+	public KostenstelleDto getDefaultKostenstelle() throws Throwable {
+		MandantDto mDto = DelegateFactory.getInstance().getMandantDelegate()
+				.mandantFindByPrimaryKey(LPMain.getTheClient().getMandant());
+
+		if (mDto.getKostenstelleIIdFibu() == null) {
+			return null;
+		} else {
+			return DelegateFactory
+					.getInstance()
+					.getSystemDelegate()
+					.kostenstelleFindByPrimaryKey(mDto.getKostenstelleIIdFibu());
+		}
+
+	}
+
+	
 	private TabbedPaneExport getTabbedPaneExport() throws Throwable {
 		if (tabbedPaneExport == null) {
 			// lazy loading

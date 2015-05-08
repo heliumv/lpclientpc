@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -51,6 +51,7 @@ import com.lp.client.frame.component.PanelSplit;
 import com.lp.client.frame.component.TabbedPane;
 import com.lp.client.frame.component.WrapperMenu;
 import com.lp.client.frame.component.WrapperMenuBar;
+import com.lp.client.frame.component.frameposition.LocalSettingsPathGenerator;
 import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.frame.dialog.DialogFactory;
 import com.lp.client.pc.LPMain;
@@ -304,7 +305,7 @@ public class TabbedPaneInventur extends TabbedPane {
 					getInternalFrame(), LPMain.getInstance()
 							.getTextRespectUISPr("artikel.inventurstand"), null);
 			panelSplitInventurstand = new PanelSplit(getInternalFrame(),
-					panelBottomInventurstand, panelQueryInventurstand, 330);
+					panelBottomInventurstand, panelQueryInventurstand, 240);
 			setComponentAt(IDX_PANEL_INVENTURSTAND, panelSplitInventurstand);
 
 		} else {
@@ -570,7 +571,7 @@ public class TabbedPaneInventur extends TabbedPane {
 								
 								
 								if(s.length()>0){
-									java.io.File ausgabedatei =new File("log", "error_csvimport_inventurliste.txt");
+									java.io.File ausgabedatei = new File(new LocalSettingsPathGenerator().getLogPath(), "error_csvimport_inventurliste.txt");
 									java.io.FileWriter fw = new java.io.FileWriter(ausgabedatei);
 									java.io.BufferedWriter bw = new java.io.BufferedWriter(fw);
 									bw.write(s);

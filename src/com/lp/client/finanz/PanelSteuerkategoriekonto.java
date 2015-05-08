@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -46,6 +46,7 @@ import javax.swing.SwingConstants;
 
 import net.miginfocom.swing.MigLayout;
 
+import com.lp.client.frame.ExceptionLP;
 import com.lp.client.frame.HelperClient;
 import com.lp.client.frame.LockStateValue;
 import com.lp.client.frame.component.DialogQuery;
@@ -69,6 +70,7 @@ import com.lp.server.finanz.service.SteuerkategoriekontoDto;
 import com.lp.server.util.fastlanereader.service.query.FilterKriterium;
 import com.lp.server.util.fastlanereader.service.query.FilterKriteriumDirekt;
 import com.lp.server.util.fastlanereader.service.query.QueryParameters;
+import com.lp.util.Helper;
 
 
 @SuppressWarnings("static-access")
@@ -145,8 +147,18 @@ public class PanelSteuerkategoriekonto  extends PanelBasis {
 		jbInit();
 		initComponents();
 	}
+	
+	protected SteuerkategorieDto getSteuerkategorieDto() throws ExceptionLP, Throwable {
 
-	void jbInit() throws Throwable {
+		if(panelSteuerkategorie != null && panelSteuerkategorie.getKeyWhenDetailPanel() != null){
+			
+			Integer steuerkategorieIId = (Integer)panelSteuerkategorie.getKeyWhenDetailPanel();
+			return DelegateFactory.getInstance().getFinanzServiceDelegate().steuerkategorieFindByPrimaryKey(steuerkategorieIId);
+		}
+		return null;
+	}
+	
+	private void jbInit() throws Throwable {
 		// das Aussenpanel hat immer das Gridbaglayout.
 		gridBagLayoutAll = new GridBagLayout();
 		setLayout(gridBagLayoutAll);
@@ -194,13 +206,17 @@ public class PanelSteuerkategoriekonto  extends PanelBasis {
 			wlaFormat[i] = new WrapperLabel();
 			wlaFormat[i].setHorizontalAlignment(SwingConstants.CENTER);
 		}
+		
+		SteuerkategorieDto stk = getSteuerkategorieDto();
+		boolean reverseCharge = stk == null ? false : Helper.short2boolean(stk.getBReversecharge());
 
 		wlaFormat[0].setText(LPMain.getInstance().getTextRespectUISPr("proj.projekt.label.kategorie"));
 		wlaFormat[1].setText(LPMain.getInstance().getTextRespectUISPr("fb.steuerkategoriekonto.label.ustvk"));
 		wlaFormat[2].setText(LPMain.getInstance().getTextRespectUISPr("fb.steuerkategoriekonto.label.skontovk"));
 		wlaFormat[3].setText(LPMain.getInstance().getTextRespectUISPr("fb.steuerkategoriekonto.label.vstek"));
 		wlaFormat[4].setText(LPMain.getInstance().getTextRespectUISPr("fb.steuerkategoriekonto.label.skontoek"));
-		wlaFormat[5].setText(LPMain.getInstance().getTextRespectUISPr("fb.steuerkategoriekonto.label.einfuhrust"));
+		wlaFormat[5].setText(LPMain.getInstance().getTextRespectUISPr(reverseCharge ? "fb.steuerkategoriekonto.label.gegenust" :
+			"fb.steuerkategoriekonto.label.einfuhrust"));
 		
 		
 		

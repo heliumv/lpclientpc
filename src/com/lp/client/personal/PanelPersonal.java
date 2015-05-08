@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -921,22 +921,16 @@ public class PanelPersonal extends PanelBasis {
 						.getPartnerDelegate()
 						.partnerFindByPrimaryKey((Integer) key);
 				wtfNachname.setText(partnerDto.getCName1nachnamefirmazeile1());
-				wtfNachname.setActivatable(false);
-				wtfNachname.setEditable(false);
+				
 				wtfVorname1.setText(partnerDto.getCName2vornamefirmazeile2());
-				wtfVorname1.setActivatable(false);
-				wtfVorname1.setEditable(false);
+				
 
 				wtfVorname2.setText(partnerDto.getCName3vorname2abteilung());
-				wtfVorname2.setActivatable(false);
-				wtfVorname2.setEditable(false);
+				
 
 				wtfTitel.setText(partnerDto.getCTitel());
 				wtfNtitel.setText(partnerDto.getCNtitel());
-				wtfTitel.setActivatable(false);
-				wtfTitel.setEditable(false);
-				wtfNtitel.setActivatable(false);
-				wtfNtitel.setEditable(false);
+				
 
 				if (partnerDto.getLandplzortDto() != null) {
 					wtfOrt.setText(partnerDto.getLandplzortDto()
@@ -1034,16 +1028,7 @@ public class PanelPersonal extends PanelBasis {
 				personalDto.setPartnerIId(null);
 				personalDto.setPartnerDto(null);
 
-				wtfNachname.setActivatable(true);
-				wtfNachname.setEditable(true);
-				wtfVorname1.setActivatable(true);
-				wtfVorname1.setEditable(true);
-				wtfVorname2.setActivatable(true);
-				wtfVorname2.setEditable(true);
-				wtfTitel.setActivatable(true);
-				wtfTitel.setEditable(true);
-				wtfNtitel.setActivatable(true);
-				wtfNtitel.setEditable(true);
+			
 			}
 		}
 

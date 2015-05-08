@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -33,8 +33,6 @@
 package com.lp.client.eingangsrechnung;
 
 import java.awt.Color;
-import java.awt.GridBagConstraints;
-import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
@@ -73,7 +71,7 @@ import com.lp.server.system.service.ParametermandantDto;
 import com.lp.server.system.service.WechselkursDto;
 import com.lp.util.Helper;
 
-@SuppressWarnings("static-access")
+//@SuppressWarnings("static-access")
 /*
  * <p>Panel zum Bearbeiten der Kopfdaten einer Zahlung</p> <p>Copyright Logistik
  * Pur Software GmbH (c) 2004-2008</p> <p>Erstellungsdatum <I>06. 04.
@@ -84,13 +82,9 @@ import com.lp.util.Helper;
  * @version $Revision: 1.29 $
  */
 public class PanelEingangsrechnungZahlung extends PanelZahlung {
-
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L;
 
-	private TabbedPaneEingangsrechnung tabbedPaneRechnungAll = null;
+//	private TabbedPaneEingangsrechnung tabbedPaneRechnungAll = null;
 
 	private EingangsrechnungzahlungDto zahlungDto = null;
 
@@ -105,13 +99,14 @@ public class PanelEingangsrechnungZahlung extends PanelZahlung {
 			String add2TitleI, TabbedPaneEingangsrechnung tabbedPaneRechnungAll)
 			throws Throwable {
 		super(internalFrame, tabbedPaneRechnungAll, add2TitleI);
-		this.tabbedPaneRechnungAll = tabbedPaneRechnungAll;
+//		this.tabbedPaneRechnungAll = tabbedPaneRechnungAll;
 		jbInit();
 		initComponents();
 	}
 
 	private TabbedPaneEingangsrechnung getTabbedPane() {
-		return tabbedPaneRechnungAll;
+		return (TabbedPaneEingangsrechnung) tabbedPane ;
+//		return tabbedPaneRechnungAll;
 	}
 
 	/**
@@ -124,7 +119,7 @@ public class PanelEingangsrechnungZahlung extends PanelZahlung {
 				.getInstance()
 				.getParameterDelegate()
 				.getMandantparameter(
-						LPMain.getInstance().getTheClient().getMandant(),
+						LPMain.getTheClient().getMandant(),
 						ParameterFac.KATEGORIE_EINGANGSRECHNUNG,
 						ParameterFac.PARAMETER_EINGANGSRECHNUNG_ZAHLUNG_MIT_KURSEINGABE);
 		bMitKurseingabe = para.getCWert().equals("1");
@@ -137,6 +132,13 @@ public class PanelEingangsrechnungZahlung extends PanelZahlung {
 			wcbKursUebersteuert.addActionListener(this);
 			jPanelWorkingOn.add(wcbKursUebersteuert, "cell 6 8, growx");
 		}
+	}
+	
+	@Override
+	protected void setVisibilityOfComponents() {
+		super.setVisibilityOfComponents();
+		//TODO: skonto auf Gutschrift in ER noch nicht unterstuetzt
+		wcbErledigtGutschrift.setVisible(false);
 	}
 
 	/**
@@ -216,6 +218,7 @@ public class PanelEingangsrechnungZahlung extends PanelZahlung {
 				dto2ComponentsVorauszahlung();
 			}
 			// restliche felder
+			initializeGutschriftButton(zahlungsartCNr);
 			wcoZahlungsart.setKeyOfSelectedItem(zahlungDto.getZahlungsartCNr());
 			wdfDatum.setDate(zahlungDto.getTZahldatum());
 
@@ -299,18 +302,17 @@ public class PanelEingangsrechnungZahlung extends PanelZahlung {
 				EingangsrechnungDto erDto = al.get(i);
 				s += erDto.getCNr()
 						+ " "
-						+ LPMain.getInstance().getTextRespectUISPr(
-								"lp.bruttowert")
+						+ LPMain.getTextRespectUISPr("lp.bruttowert")
 						+ " "
-						+ Helper.formatZahl(erDto.getNBetragfw(), 2, LPMain
-								.getInstance().getTheClient().getLocUi()) + " "
+						+ Helper.formatZahl(erDto.getNBetragfw(), 2, 
+								LPMain.getTheClient().getLocUi()) + " "
 						+ erDto.getWaehrungCNr() + "\n";
 			}
 
 			DialogFactory
 					.showModalDialog(
-							LPMain.getInstance().getTextRespectUISPr("lp.info"),
-							LPMain.getInstance().getTextRespectUISPr(
+							LPMain.getTextRespectUISPr("lp.info"),
+							LPMain.getTextRespectUISPr(
 									"er.offenegutschriften.vorhanden")
 									+ s);
 
@@ -339,9 +341,8 @@ public class PanelEingangsrechnungZahlung extends PanelZahlung {
 					if (wcoZahlungsart.getSelectedItem().equals(
 							RechnungFac.ZAHLUNGSART_GEGENVERRECHNUNG)) {
 						DialogFactory.showModalDialog(
-								LPMain.getInstance().getTextRespectUISPr(
-										"lp.error"),
-								LPMain.getInstance().getTextRespectUISPr(
+								LPMain.getTextRespectUISPr("lp.error"),
+								LPMain.getTextRespectUISPr(
 										"er.zahlung.error.gegenverrechnung"));
 						return;
 					}
@@ -349,10 +350,9 @@ public class PanelEingangsrechnungZahlung extends PanelZahlung {
 					if (getTabbedPane().getEingangsrechnungDto().getStatusCNr()
 							.equals(EingangsrechnungFac.STATUS_ERLEDIGT)) {
 						boolean answer = (DialogFactory.showMeldung(
-								LPMain.getInstance().getTextRespectUISPr(
+								LPMain.getTextRespectUISPr(
 										"er.erledigtzahlungloeschen"),
-								LPMain.getInstance().getTextRespectUISPr(
-										"lp.frage"),
+								LPMain.getTextRespectUISPr("lp.frage"),
 								javax.swing.JOptionPane.YES_NO_OPTION) == javax.swing.JOptionPane.YES_OPTION);
 						if (!answer) {
 							return;
@@ -397,8 +397,8 @@ public class PanelEingangsrechnungZahlung extends PanelZahlung {
 			if (wcoZahlungsart.getSelectedItem().equals(
 					RechnungFac.ZAHLUNGSART_GEGENVERRECHNUNG)) {
 				DialogFactory.showModalDialog(
-						LPMain.getInstance().getTextRespectUISPr("lp.error"),
-						LPMain.getInstance().getTextRespectUISPr(
+						LPMain.getTextRespectUISPr("lp.error"),
+						LPMain.getTextRespectUISPr(
 								"er.zahlung.error.gegenverrechnung"));
 				return;
 			}
@@ -409,10 +409,9 @@ public class PanelEingangsrechnungZahlung extends PanelZahlung {
 				bSpeichern = DialogFactory
 						.showModalJaNeinDialog(
 								getInternalFrame(),
-								LPMain.getInstance()
-										.getTextRespectUISPr(
+								LPMain.getTextRespectUISPr(
 												"rech.warnung.zahlbetraguebersteigtoffenenbetrag"),
-								LPMain.getInstance().getTextRespectUISPr(
+								LPMain.getTextRespectUISPr(
 										"lp.frage"));
 			}
 			if (bErledigt
@@ -421,10 +420,9 @@ public class PanelEingangsrechnungZahlung extends PanelZahlung {
 				bSpeichern = DialogFactory
 						.showModalJaNeinDialog(
 								getInternalFrame(),
-								LPMain.getInstance()
-										.getTextRespectUISPr(
+								LPMain.getTextRespectUISPr(
 												"rech.warnung.zahlbetragwenigeralsoffenerbetrag"),
-								LPMain.getInstance().getTextRespectUISPr(
+								LPMain.getTextRespectUISPr(
 										"lp.frage"));
 			}
 			if (bSpeichern) {
@@ -480,9 +478,8 @@ public class PanelEingangsrechnungZahlung extends PanelZahlung {
 					if (bdBereitsBezahlt.add(erGutschriftDto.getNBetragfw())
 							.signum() > 0) {
 						DialogFactory.showModalDialog(
-								LPMain.getInstance().getTextRespectUISPr(
-										"lp.error"),
-								LPMain.getInstance().getTextRespectUISPr(
+								LPMain.getTextRespectUISPr("lp.error"),
+								LPMain.getTextRespectUISPr(
 										"rech.error.geutschriftzuniedrig"));
 						return;
 					}
@@ -569,7 +566,7 @@ public class PanelEingangsrechnungZahlung extends PanelZahlung {
 					.getInstance()
 					.getMandantDelegate()
 					.mandantFindByPrimaryKey(
-							LPMain.getInstance().getTheClient().getMandant())
+							LPMain.getTheClient().getMandant())
 					.getWaehrungCNr();
 
 			zahlungDto.setNBetrag(DelegateFactory
@@ -706,8 +703,7 @@ public class PanelEingangsrechnungZahlung extends PanelZahlung {
 		String mandantWaehrung = DelegateFactory
 				.getInstance()
 				.getMandantDelegate()
-				.mandantFindByPrimaryKey(
-						LPMain.getInstance().getTheClient().getMandant())
+				.mandantFindByPrimaryKey(LPMain.getTheClient().getMandant())
 				.getWaehrungCNr();
 		if (rechnungDto.getWaehrungCNr().equals(mandantWaehrung)) {
 			return new BigDecimal(1);
@@ -930,5 +926,31 @@ public class PanelEingangsrechnungZahlung extends PanelZahlung {
 	@Override
 	protected boolean isGutschriftErlaubt() {
 		return !getEingangsrechnungDto().getEingangsrechnungartCNr().equals(EingangsrechnungFac.EINGANGSRECHNUNGART_ANZAHLUNG);
+	}
+
+	@Override
+	protected boolean darfManuellErledigen() throws Throwable {
+		if(!EingangsrechnungFac.EINGANGSRECHNUNGART_ANZAHLUNG.equals(getEingangsrechnungDto().getEingangsrechnungartCNr()))
+			return true;
+		EingangsrechnungDto[] rechArray = DelegateFactory.getInstance().getEingangsrechnungDelegate()
+			.findByBestellungIId(getEingangsrechnungDto().getBestellungIId());
+		for (EingangsrechnungDto rech : rechArray) {
+			if (EingangsrechnungFac.EINGANGSRECHNUNGART_SCHLUSSZAHLUNG
+					.equals(rech.getEingangsrechnungartCNr())
+					&& !EingangsrechnungFac.STATUS_STORNIERT.equals(rech
+							.getStatusCNr())) {
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	protected void initializeGutschriftButton(String zahlungartCnr) {
+		if(RechnungFac.ZAHLUNGSART_GUTSCHRIFT.equalsIgnoreCase(zahlungartCnr) && 
+				erGutschriftDto.getEingangsrechnungartCNr().equalsIgnoreCase(EingangsrechnungFac.EINGANGSRECHNUNGART_EINGANGSRECHNUNG)) {
+			wbuGutschrift.setText(LPMain.getTextRespectUISPr("rech.rechnung"));	
+		} else {
+			super.initializeGutschriftButton();
+		}
 	}
 }

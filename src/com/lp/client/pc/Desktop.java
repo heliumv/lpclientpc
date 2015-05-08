@@ -1,33 +1,33 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
- * 
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
+ *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published 
- * by the Free Software Foundation, either version 3 of theLicense, or 
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of theLicense, or
  * (at your option) any later version.
- * 
- * According to sec. 7 of the GNU Affero General Public License, version 3, 
+ *
+ * According to sec. 7 of the GNU Affero General Public License, version 3,
  * the terms of the AGPL are supplemented with the following terms:
- * 
- * "HELIUM V" and "HELIUM 5" are registered trademarks of 
- * HELIUM V IT-Solutions GmbH. The licensing of the program under the 
+ *
+ * "HELIUM V" and "HELIUM 5" are registered trademarks of
+ * HELIUM V IT-Solutions GmbH. The licensing of the program under the
  * AGPL does not imply a trademark license. Therefore any rights, title and
  * interest in our trademarks remain entirely with us. If you want to propagate
  * modified versions of the Program under the name "HELIUM V" or "HELIUM 5",
- * you may only do so if you have a written permission by HELIUM V IT-Solutions 
+ * you may only do so if you have a written permission by HELIUM V IT-Solutions
  * GmbH (to acquire a permission please contact HELIUM V IT-Solutions
  * at trademark@heliumv.com).
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Affero General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Contact: developers@heliumv.com
  ******************************************************************************/
 package com.lp.client.pc;
@@ -44,7 +44,6 @@ import java.awt.GraphicsConfiguration;
 import java.awt.Image;
 import java.awt.Insets;
 import java.awt.MediaTracker;
-import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.Toolkit;
@@ -68,6 +67,7 @@ import java.net.UnknownHostException;
 import java.sql.Timestamp;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -77,8 +77,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map.Entry;
 
 import javax.help.SwingHelpUtilities;
+import javax.imageio.ImageIO;
 import javax.print.PrintService;
 import javax.print.PrintServiceLookup;
 import javax.print.attribute.HashPrintRequestAttributeSet;
@@ -87,13 +89,16 @@ import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.PrintServiceAttributeSet;
 import javax.print.attribute.standard.MediaPrintableArea;
 import javax.print.attribute.standard.PrinterName;
+import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JDesktopPane;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JInternalFrame;
+import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
@@ -101,9 +106,13 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JRadioButtonMenuItem;
+import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
+import javax.swing.JTabbedPane;
+import javax.swing.JTextArea;
 import javax.swing.JToolBar;
 import javax.swing.KeyStroke;
+import javax.swing.LookAndFeel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIDefaults;
 import javax.swing.UIManager;
@@ -112,7 +121,9 @@ import javax.swing.WindowConstants;
 import javax.swing.event.InternalFrameEvent;
 import javax.swing.event.InternalFrameListener;
 import javax.swing.plaf.FontUIResource;
+import javax.swing.plaf.metal.MetalLookAndFeel;
 
+import net.miginfocom.swing.MigLayout;
 import net.sf.jasperreports.engine.JRExporterParameter;
 import net.sf.jasperreports.engine.export.JRPrintServiceExporter;
 import net.sf.jasperreports.engine.export.JRPrintServiceExporterParameter;
@@ -134,6 +145,7 @@ import com.lp.client.frame.CommandCreateIF;
 import com.lp.client.frame.CommandSetFocus;
 import com.lp.client.frame.Defaults;
 import com.lp.client.frame.DialogError;
+import com.lp.client.frame.DirekthilfeCache;
 import com.lp.client.frame.ExceptionLP;
 import com.lp.client.frame.HelperClient;
 import com.lp.client.frame.ICommand;
@@ -141,7 +153,9 @@ import com.lp.client.frame.component.InternalFrame;
 import com.lp.client.frame.component.PanelBasis;
 import com.lp.client.frame.component.PanelDialogFontStyle;
 import com.lp.client.frame.component.ParameterCache;
+import com.lp.client.frame.component.TabbedPane;
 import com.lp.client.frame.component.ToolbarButton;
+import com.lp.client.frame.component.cib.CibIconWrapper;
 import com.lp.client.frame.component.frameposition.ClientPerspectiveManager;
 import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.frame.dialog.DialogFactory;
@@ -150,6 +164,7 @@ import com.lp.client.instandhaltung.InternalFrameInstandhaltung;
 import com.lp.client.jms.LPQueueListener;
 import com.lp.client.kueche.InternalFrameKueche;
 import com.lp.client.lieferschein.InternalFrameLieferschein;
+import com.lp.client.media.InternalFrameMedia;
 import com.lp.client.partner.InternalFrameKunde;
 import com.lp.client.partner.InternalFrameLieferant;
 import com.lp.client.partner.InternalFramePartner;
@@ -159,6 +174,8 @@ import com.lp.client.rechnung.InternalFrameRechnung;
 import com.lp.client.reklamation.InternalFrameReklamation;
 import com.lp.client.stueckliste.InternalFrameStueckliste;
 import com.lp.client.system.InternalFrameSystem;
+import com.lp.client.util.ChangesShownController;
+import com.lp.client.util.ClientConfiguration;
 import com.lp.client.util.logger.LpLogger;
 import com.lp.client.zeiterfassung.InternalFrameZeiterfassung;
 import com.lp.client.zutritt.InternalFrameZutritt;
@@ -194,20 +211,22 @@ import com.lp.util.Helper;
 
 /*
  * frame<BR>
- * 
+ *
  * Diese Klasse haelt den Desktop.<BR> Alle LP-Module (JInternalFrames) werden
  * von hier aus verwaltet.
- * 
+ *
  * <p>Erstellungsdatum 07.09.04</p>
- * 
+ *
  * @version 2.0
- * 
+ *
  * @author Josef Ornetsmueller
  */
 
 public class Desktop extends JFrame implements ActionListener,
 		VetoableChangeListener, ItemListener, ComponentListener, IDesktop,
 		ICommand, InternalFrameListener {
+
+//	TheClientDto theClientDto = null;
 
 	public static int einfuegenAusZwischenablage = 0;
 	private static final long serialVersionUID = 1L;
@@ -220,10 +239,6 @@ public class Desktop extends JFrame implements ActionListener,
 	public static final String MODULNAME_LOGOUT = "module_logout";
 	public static final String MODULNAME_BEENDEN = "module_beenden";
 	public static final String MODULNAME_LOS_SCHNELLANLAGE = "module_los_schnellanlage";
-
-	public static final String FILENAME_SHOWN_CHANGES = "log"
-			+ System.getProperty("file.separator") + "changes.shown";
-	public static final String URL_CHANGELOG = "http://demo.heliumv.at/public/HeliumV/AenderungsProtokoll/";
 
 	public static final int MAX_CHARACTERS_UNTIL_WORDWRAP = 80;
 
@@ -261,6 +276,7 @@ public class Desktop extends JFrame implements ActionListener,
 	private JMenuItem menuItemAnsichtLoad = null;
 	private JMenuItem menuItemAnsichtReset = null;
 	private JMenuItem menuItemSchriftart = null;
+	private JMenuItem menuItemDirekthilfe = null;
 	private JMenuItem menuItemHilfeAbout = null;
 	private JMenuItem menuItemHilfeOnline = null;
 	private JMenuItem menuItemHilfeScreenshotsenden = null;
@@ -286,15 +302,17 @@ public class Desktop extends JFrame implements ActionListener,
 
 	// TODO: Sinnvollerweise gehoert der DesktopController dem Desktop
 	// uebergeben
-	private IDesktopController dc = new DesktopController();
+//	private IDesktopController dc = new DesktopController();
+	private IDesktopController dc ;
 	private static boolean fontChanged = false;
+
 
 	public Desktop(boolean pAgilPro) throws Throwable {
 
 		if (!pAgilPro) {
 			return;
 		}
-		setDefaultColors();
+		setDefaultPropertiesAndColors();
 
 		GraphicsConfiguration gc = getGraphicsConfiguration();
 		Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(gc);
@@ -343,12 +361,17 @@ public class Desktop extends JFrame implements ActionListener,
 
 	/**
 	 * AGILPRO CHANGES END
-	 * 
+	 *
 	 * @throws Throwable
 	 */
 	public Desktop() throws Throwable {
+		this(new DesktopController()) ;
+	}
 
-		setDefaultColors();
+	public Desktop(IDesktopController desktopController) throws Throwable {
+		dc = desktopController;
+		
+		setDefaultPropertiesAndColors();
 
 		// Setze Icon
 		ImageIcon imageIcon = new ImageIcon(getClass().getResource(
@@ -391,13 +414,13 @@ public class Desktop extends JFrame implements ActionListener,
 		toolbar = new JToolBar();
 		// Menues einrichten
 		createMenuBar();
-		((LPModul) hmOflPModule.get(MODULNAME_LOGIN))
+		hmOflPModule.get(MODULNAME_LOGIN)
+			.setStatus(LPModul.STATUS_ENABLED);
+		hmOflPModule.get(MODULNAME_BEENDEN)
 				.setStatus(LPModul.STATUS_ENABLED);
-		((LPModul) hmOflPModule.get(MODULNAME_BEENDEN))
-				.setStatus(LPModul.STATUS_ENABLED);
-		((LPModul) hmOflPModule.get(MODULNAME_LOGOUT))
+		hmOflPModule.get(MODULNAME_LOGOUT)
 				.setStatus(LPModul.STATUS_DISABLED);
-		((LPModul) hmOflPModule.get(MODULNAME_MANDANT))
+		hmOflPModule.get(MODULNAME_MANDANT)
 				.setStatus(LPModul.STATUS_DISABLED);
 
 		// Arbeitsfenster einrichten
@@ -419,10 +442,8 @@ public class Desktop extends JFrame implements ActionListener,
 		Double dAufloesungy = java.awt.Toolkit.getDefaultToolkit()
 				.getScreenSize().getHeight();
 		if ((dAufloesungx < 1024.0) || dAufloesungy < 768.0) {
-			showModalDialog(
-					"",
-					LPMain.getTextRespectUISPr(
-							"lp.error.falscheAufloesung"),
+			showModalDialog("",
+					LPMain.getTextRespectUISPr("lp.error.falscheAufloesung"),
 					JOptionPane.ERROR_MESSAGE);
 			System.exit(0);
 
@@ -437,11 +458,8 @@ public class Desktop extends JFrame implements ActionListener,
 							ParameterFac.ARBEITSPLATZPARAMETER_BACKGROUND_ENABLED);
 		} catch (Throwable t) {
 			t.printStackTrace();
-			showModalDialog(
-					"",
-					LPMain.getTextRespectUISPr(
-							"lp.error.no_server")
-							+ " ("
+			showModalDialog("",
+					LPMain.getTextRespectUISPr("lp.error.no_server") + " ("
 							+ System.getProperty("java.naming.provider.url")
 							+ ")", JOptionPane.ERROR_MESSAGE);
 			System.exit(0);
@@ -479,7 +497,7 @@ public class Desktop extends JFrame implements ActionListener,
 
 		setVisible(true);
 		initComponents();
-		initJms();
+		initJms();		
 	}
 
 	private void addStatusbar() throws Throwable {
@@ -490,7 +508,7 @@ public class Desktop extends JFrame implements ActionListener,
 	/**
 	 * Initialierungen fuer die Komponenten. Muss zu einem Zeitpunkt aufgerufen
 	 * werden, wenn die Komponenten nicht mehr null sind.
-	 * 
+	 *
 	 * @throws Throwable
 	 */
 	private final void initComponents() throws Throwable {
@@ -504,7 +522,7 @@ public class Desktop extends JFrame implements ActionListener,
 
 	/**
 	 * Create Menuebars.
-	 * 
+	 *
 	 * @throws Throwable
 	 */
 	private void createMenuBar() throws Throwable {
@@ -519,15 +537,14 @@ public class Desktop extends JFrame implements ActionListener,
 
 	/**
 	 * createMenueExtra
-	 * 
+	 *
 	 * @param menuBar
 	 *            JMenuBar
 	 * @throws Throwable
 	 */
 	private void createMenueExtra(JMenuBar menuBar) throws Throwable {
-
-		JMenu menue = new JMenu(LPMain.getTextRespectUISPr(
-				"rechnung.menu.extras"));
+		JMenu menue = new JMenu(
+				LPMain.getTextRespectUISPr("rechnung.menu.extras"));
 		if (Defaults.getInstance().isComponentNamingEnabled()) {
 			menue.setName(HelperClient.COMP_NAME_MENU_EXTRAS);
 		}
@@ -555,21 +572,43 @@ public class Desktop extends JFrame implements ActionListener,
 			createALPModulmenueentry(menue, LocaleFac.BELEGART_SYSTEM);
 		}
 
+		// JMenu menuEmail = null ;
+		// if
+		// (darfAnwenderAufZusatzfunktionZugreifen(MandantFac.ZUSATZFUNKTION_EMAIL_CLIENT))
+		// {
+		// menuEmail = new JMenu(
+		// LPMain.getTextRespectUISPr("lp.menu.email"));
+		// if (Defaults.getInstance().isComponentNamingEnabled()) {
+		// menuEmail.setName(HelperClient.COMP_NAME_MENU_EMAIL);
+		// }
+		// menuBar.add(menuEmail);
+		// }
+
+		if (darfAnwenderAufZusatzfunktionZugreifen(MandantFac.ZUSATZFUNKTION_EMAIL_CLIENT)) {
+			if (darfAnwenderAufModulZugreifen(LocaleFac.BELEGART_EMAIL)
+					&& (DelegateFactory.getInstance().getTheJudgeDelegate()
+							.hatRecht(RechteFac.RECHT_MEDIA_EMAIL_R) || DelegateFactory
+							.getInstance().getTheJudgeDelegate()
+							.hatRecht(RechteFac.RECHT_MEDIA_EMAIL_CUD))) {
+				createALPModulmenueentry(menue, LocaleFac.BELEGART_EMAIL);
+			}
+		}
+
 		if (menue.getItemCount() == 0) {
 			menuBar.remove(menue);
 		}
-
 	}
 
 	/**
 	 * Zeige einen modalen Warndialog mit msg als Inhalt und Titel titel.
-	 * 
+	 *
 	 * @param sTitleI
 	 *            String
 	 * @param sMsgI
 	 *            String
 	 * @param iModeI
 	 *            int
+	 * @throws IOException
 	 */
 	public void showModalDialog(String sTitleI, String sMsgI, int iModeI) {
 		JOptionPane pane = InternalFrame
@@ -580,6 +619,13 @@ public class Desktop extends JFrame implements ActionListener,
 		pane.setMessage(s);
 		pane.setMessageType(iModeI);
 		JDialog dialog = pane.createDialog(this, sTitleI);
+		try {
+			dialog.setIconImage(ImageIO.read(getClass().getResource(
+					"/com/lp/client/res/heliumv.png")));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		dialog.setVisible(true);
 	}
 
@@ -612,6 +658,10 @@ public class Desktop extends JFrame implements ActionListener,
 	public boolean darfAnwenderAufZusatzfunktionZugreifen(
 			String whichZusatzfunktion) {
 		return dc.darfAnwenderAufZusatzfunktionZugreifen(whichZusatzfunktion);
+	}
+
+	public boolean darfDirekthilfeTexteEditieren() {
+		return dc.darfDirekthilfeTexteEditieren();
 	}
 
 	private void createModulmenueentries(JMenuBar menuBar) throws Throwable {
@@ -850,17 +900,15 @@ public class Desktop extends JFrame implements ActionListener,
 			throws Throwable {
 		if (which.equals(LocaleFac.BELEGART_AUFTRAG)) {
 			// Auftrag
-			createLPModul(
-					menu,
-					LocaleFac.BELEGART_AUFTRAG,
+			createLPModul(menu, LocaleFac.BELEGART_AUFTRAG,
 					"/com/lp/client/res/auftrag24x24.png",
 					LPMain.getTextRespectUISPr("auft.auftrag"),
-					LPMain.getTextRespectUISPr(
-							"auft.modulname.tooltip"));
+					LPMain.getTextRespectUISPr("auft.modulname.tooltip"));
 		} else if (which.equals(LocaleFac.BELEGART_ARTIKEL)) {
 			// Artikel
 			createLPModul(menu, LocaleFac.BELEGART_ARTIKEL,
-					"/com/lp/client/res/nut_and_bolt24x24.png", LPMain.getTextRespectUISPr("lp.artikel"),
+					"/com/lp/client/res/nut_and_bolt24x24.png",
+					LPMain.getTextRespectUISPr("lp.artikel"),
 					LPMain.getTextRespectUISPr("tooltip.artikel"));
 		} else if (which.equals(LocaleFac.BELEGART_STUECKLISTE)) {
 			// Artikel
@@ -871,174 +919,131 @@ public class Desktop extends JFrame implements ActionListener,
 		} else if (which.equals(LocaleFac.BELEGART_PERSONAL)) {
 			// Personal
 			createLPModul(menu, LocaleFac.BELEGART_PERSONAL,
-					"/com/lp/client/res/worker24x24.png", LPMain.getTextRespectUISPr("menueentry.personal"),
+					"/com/lp/client/res/worker24x24.png",
+					LPMain.getTextRespectUISPr("menueentry.personal"),
 					LPMain.getTextRespectUISPr("tooltip.personal"));
 		} else if (which.equals(LocaleFac.BELEGART_BENUTZER)) {
 			// Personal
-			createLPModul(
-					menu,
-					LocaleFac.BELEGART_BENUTZER,
+			createLPModul(menu, LocaleFac.BELEGART_BENUTZER,
 					"/com/lp/client/res/user1_monitor24x24.png",
-					LPMain.getTextRespectUISPr(
-							"benutzer.modulname"), LPMain.getTextRespectUISPr("benutzer.modulname"));
+					LPMain.getTextRespectUISPr("benutzer.modulname"),
+					LPMain.getTextRespectUISPr("benutzer.modulname"));
 		} else if (which.equals(LocaleFac.BELEGART_INSERAT)) {
 			// Inserat
-			createLPModul(
-					menu,
-					LocaleFac.BELEGART_INSERAT,
+			createLPModul(menu, LocaleFac.BELEGART_INSERAT,
 					"/com/lp/client/res/news24x24.png",
-					LPMain.getTextRespectUISPr(
-							"iv.inserat.modulname"),
-					LPMain.getTextRespectUISPr(
-							"iv.inserat.modulname"));
+					LPMain.getTextRespectUISPr("iv.inserat.modulname"),
+					LPMain.getTextRespectUISPr("iv.inserat.modulname"));
 		} else if (which.equals(LocaleFac.BELEGART_ZEITERFASSUNG)) {
 			// Personal
-			createLPModul(
-					menu,
-					LocaleFac.BELEGART_ZEITERFASSUNG,
+			createLPModul(menu, LocaleFac.BELEGART_ZEITERFASSUNG,
 					"/com/lp/client/res/clock24x24.png",
-					LPMain.getTextRespectUISPr(
-							"zeiterfassung.modulname"),
-					LPMain.getTextRespectUISPr(
-							"zeiterfassung.modulname"));
+					LPMain.getTextRespectUISPr("zeiterfassung.modulname"),
+					LPMain.getTextRespectUISPr("zeiterfassung.modulname"));
 		} else if (which.equals(LocaleFac.BELEGART_PARTNER)) {
 			// Partner
 			createLPModul(menu, LocaleFac.BELEGART_PARTNER,
-					"/com/lp/client/res/businessmen24x24.png", LPMain.getTextRespectUISPr("part.partner"),
+					"/com/lp/client/res/businessmen24x24.png",
+					LPMain.getTextRespectUISPr("part.partner"),
 					LPMain.getTextRespectUISPr("tooltip.partner"));
 		} else if (which.equals(LocaleFac.BELEGART_LIEFERSCHEIN)) {
 			// Lieferschein
-			createLPModul(
-					menu,
-					LocaleFac.BELEGART_LIEFERSCHEIN,
+			createLPModul(menu, LocaleFac.BELEGART_LIEFERSCHEIN,
 					"/com/lp/client/res/truck_red24x24.png",
 					LPMain.getTextRespectUISPr("ls.modulname"),
-					LPMain.getTextRespectUISPr(
-							"ls.modulname.tooltip"));
+					LPMain.getTextRespectUISPr("ls.modulname.tooltip"));
 		} else if (which.equals(LocaleFac.BELEGART_RECHNUNG)) {
 			// Rechnung
-			createLPModul(
-					menu,
-					LocaleFac.BELEGART_RECHNUNG,
+			createLPModul(menu, LocaleFac.BELEGART_RECHNUNG,
 					"/com/lp/client/res/calculator24x24.png",
-					LPMain.getTextRespectUISPr(
-							"menueentry.rechnung"), LPMain.getTextRespectUISPr("tooltip.rechnung"));
+					LPMain.getTextRespectUISPr("menueentry.rechnung"),
+					LPMain.getTextRespectUISPr("tooltip.rechnung"));
 		} else if (which.equals(LocaleFac.BELEGART_FINANZBUCHHALTUNG)) {
 			// Finanzbuchhaltung
 			createLPModul(menu, LocaleFac.BELEGART_FINANZBUCHHALTUNG,
-					"/com/lp/client/res/books24x24.png", LPMain.getTextRespectUISPr("menueentry.finanz"), LPMain.getTextRespectUISPr("tooltip.finanz"));
+					"/com/lp/client/res/books24x24.png",
+					LPMain.getTextRespectUISPr("menueentry.finanz"),
+					LPMain.getTextRespectUISPr("tooltip.finanz"));
 		} else if (which.equals(MODULNAME_LOGIN)) {
 			// Login
-			createLPModul(
-					menu,
-					MODULNAME_LOGIN,
+			createLPModul(menu, MODULNAME_LOGIN,
 					"/com/lp/client/res/key1_add24x24.png",
 					LPMain.getTextRespectUISPr("menueentry.login"),
-					LPMain.getTextRespectUISPr(
-							"lp.tooltip.anmeldung"));
+					LPMain.getTextRespectUISPr("lp.tooltip.anmeldung"));
 		} else if (which.equals(MODULNAME_LOGOUT)) {
 			// Logout
-			createLPModul(
-					menu,
-					MODULNAME_LOGOUT,
+			createLPModul(menu, MODULNAME_LOGOUT,
 					"/com/lp/client/res/key1_delete24x24.png",
-					LPMain.getTextRespectUISPr(
-							"menueentry.logout"), LPMain.getTextRespectUISPr("lp.tooltip.abmeldung"));
+					LPMain.getTextRespectUISPr("menueentry.logout"),
+					LPMain.getTextRespectUISPr("lp.tooltip.abmeldung"));
 		} else if (which.equals(MODULNAME_BEENDEN)) {
 			// Beenden
-			String pattern = LPMain.getTextRespectUISPr(
-					"lp.beenden.lp");
+			String pattern = LPMain.getTextRespectUISPr("lp.beenden.lp");
 			String sMsg = MessageFormat.format(pattern,
 					new Object[] { LPMain.getSVersionHVAllTogether() });
 			createLPModul(menu, MODULNAME_BEENDEN,
-					"/com/lp/client/res/door224x24.png", LPMain.getTextRespectUISPr("lp.beenden"), sMsg);
+					"/com/lp/client/res/door224x24.png",
+					LPMain.getTextRespectUISPr("lp.beenden"), sMsg);
 		} else if (which.equals(LocaleFac.BELEGART_SYSTEM)) {
 			// System
-			createLPModul(
-					menu,
-					LocaleFac.BELEGART_SYSTEM,
+			createLPModul(menu, LocaleFac.BELEGART_SYSTEM,
 					"/com/lp/client/res/toolbox24x24.png",
-					LPMain.getTextRespectUISPr(
-							"lp.system.modulname"),
-					LPMain.getTextRespectUISPr(
-							"lp.system.tooltip"));
+					LPMain.getTextRespectUISPr("lp.system.modulname"),
+					LPMain.getTextRespectUISPr("lp.system.tooltip"));
 		} else if (which.equals(LocaleFac.BELEGART_KUNDE)) {
 			// Kunde
-			createLPModul(
-					menu,
-					LocaleFac.BELEGART_KUNDE,
+			createLPModul(menu, LocaleFac.BELEGART_KUNDE,
 					"/com/lp/client/res/handshake24x24.png",
-					LPMain.getTextRespectUISPr(
-							"lp.kunde.modulname"), LPMain.getTextRespectUISPr("lp.kunde.tooltip"));
+					LPMain.getTextRespectUISPr("lp.kunde.modulname"),
+					LPMain.getTextRespectUISPr("lp.kunde.tooltip"));
 		} else if (which.equals(LocaleFac.BELEGART_LIEFERANT)) {
 			// Lieferant
-			createLPModul(
-					menu,
-					LocaleFac.BELEGART_LIEFERANT,
+			createLPModul(menu, LocaleFac.BELEGART_LIEFERANT,
 					"/com/lp/client/res/address_book224x24.png",
-					LPMain.getTextRespectUISPr(
-							"lp.lieferant.modulname"), LPMain.getTextRespectUISPr("lp.lieferant.tooltip"));
+					LPMain.getTextRespectUISPr("lp.lieferant.modulname"),
+					LPMain.getTextRespectUISPr("lp.lieferant.tooltip"));
 		} else if (which.equals(LocaleFac.BELEGART_ANFRAGE)) {
 			// Anfrage
-			createLPModul(
-					menu,
-					LocaleFac.BELEGART_ANFRAGE,
+			createLPModul(menu, LocaleFac.BELEGART_ANFRAGE,
 					"/com/lp/client/res/note_find24x24.png",
 					LPMain.getTextRespectUISPr("anf.anfrage"),
-					LPMain.getTextRespectUISPr(
-							"anf.modulname.tooltip"));
+					LPMain.getTextRespectUISPr("anf.modulname.tooltip"));
 		} else if (which.equals(LocaleFac.BELEGART_BESTELLUNG)) {
 			// Bestellung
-			createLPModul(
-					menu,
-					LocaleFac.BELEGART_BESTELLUNG,
+			createLPModul(menu, LocaleFac.BELEGART_BESTELLUNG,
 					"/com/lp/client/res/shoppingcart_full24x24.png",
 					LPMain.getTextRespectUISPr("lp.bestellung"),
-					LPMain.getTextRespectUISPr(
-							"bes.bestellung.tooltip"));
+					LPMain.getTextRespectUISPr("bes.bestellung.tooltip"));
 		} else if (which.equals(LocaleFac.BELEGART_EINGANGSRECHNUNG)) {
 			// Bestellung
-			createLPModul(
-					menu,
-					LocaleFac.BELEGART_EINGANGSRECHNUNG,
+			createLPModul(menu, LocaleFac.BELEGART_EINGANGSRECHNUNG,
 					"/com/lp/client/res/hand_money24x24.png",
 					LPMain.getTextRespectUISPr("er.modulname"),
-					LPMain.getTextRespectUISPr(
-							"er.modulname.tooltip"));
+					LPMain.getTextRespectUISPr("er.modulname.tooltip"));
 		} else if (which.equals(MODULNAME_MANDANT)) {
 			// Mandant wechsel
-			createLPModul(
-					menu,
-					MODULNAME_MANDANT,
+			createLPModul(menu, MODULNAME_MANDANT,
 					"/com/lp/client/res/hat_gray24x24.png",
-					LPMain.getTextRespectUISPr(
-							"lp.mandantwechsel"), LPMain.getTextRespectUISPr("lp.mandantwechsel"));
+					LPMain.getTextRespectUISPr("lp.mandantwechsel"),
+					LPMain.getTextRespectUISPr("lp.mandantwechsel"));
 		} else if (which.equals(LocaleFac.BELEGART_ANGEBOT)) {
 			// Angebot
-			createLPModul(
-					menu,
-					LocaleFac.BELEGART_ANGEBOT,
+			createLPModul(menu, LocaleFac.BELEGART_ANGEBOT,
 					"/com/lp/client/res/presentation_chart24x24.png",
 					LPMain.getTextRespectUISPr("angb.angebot"),
-					LPMain.getTextRespectUISPr(
-							"angb.modulname.tooltip"));
+					LPMain.getTextRespectUISPr("angb.modulname.tooltip"));
 		} else if (which.equals(LocaleFac.BELEGART_AGSTUECKLISTE)) {
 			// Angebot
-			createLPModul(
-					menu,
-					LocaleFac.BELEGART_AGSTUECKLISTE,
+			createLPModul(menu, LocaleFac.BELEGART_AGSTUECKLISTE,
 					"/com/lp/client/res/note_add24x24.png",
-					LPMain.getTextRespectUISPr(
-							"lp.angebotsstueckliste"), LPMain.getTextRespectUISPr("lp.angebotsstueckliste"));
+					LPMain.getTextRespectUISPr("lp.angebotsstueckliste"),
+					LPMain.getTextRespectUISPr("lp.angebotsstueckliste"));
 		} else if (which.equals(LocaleFac.BELEGART_LOS)) {
 			// Fertigung
-			createLPModul(
-					menu,
-					LocaleFac.BELEGART_LOS,
+			createLPModul(menu, LocaleFac.BELEGART_LOS,
 					"/com/lp/client/res/factory24x24.png",
 					LPMain.getTextRespectUISPr("fert.modulname"),
-					LPMain.getTextRespectUISPr(
-							"fert.modulname.tooltip"));
+					LPMain.getTextRespectUISPr("fert.modulname.tooltip"));
 
 			if (darfAnwenderAufModulZugreifen(LocaleFac.BELEGART_LOS)
 					&& (DelegateFactory.getInstance().getTheJudgeDelegate()
@@ -1047,10 +1052,8 @@ public class Desktop extends JFrame implements ActionListener,
 						menu,
 						MODULNAME_LOS_SCHNELLANLAGE,
 						"/com/lp/client/res/flash.png",
-						LPMain.getTextRespectUISPr(
-								"fert.los.schnellanlage.menu"),
-						LPMain.getTextRespectUISPr(
-								"fert.los.schnellanlage.menu"));
+						LPMain.getTextRespectUISPr("fert.los.schnellanlage.menu"),
+						LPMain.getTextRespectUISPr("fert.los.schnellanlage.menu"));
 			}
 
 		} else if (which.equals(LocaleFac.BELEGART_KUECHE)) {
@@ -1061,40 +1064,34 @@ public class Desktop extends JFrame implements ActionListener,
 					LPMain.getTextRespectUISPr("kue.modulname"));
 		} else if (which.equals(LocaleFac.BELEGART_INSTANDHALTUNG)) {
 			// Instandhaltung
-			createLPModul(
-					menu,
-					LocaleFac.BELEGART_INSTANDHALTUNG,
+			createLPModul(menu, LocaleFac.BELEGART_INSTANDHALTUNG,
 					"/com/lp/client/res/houses.png",
-					LPMain.getTextRespectUISPr(
-							"is.instandhaltung"),
-					LPMain.getTextRespectUISPr(
-							"is.instandhaltung"));
+					LPMain.getTextRespectUISPr("is.instandhaltung"),
+					LPMain.getTextRespectUISPr("is.instandhaltung"));
 		} else if (which.equals(LocaleFac.BELEGART_PROJEKT)) {
 			// Projekt
-			createLPModul(
-					menu,
-					LocaleFac.BELEGART_PROJEKT,
+			createLPModul(menu, LocaleFac.BELEGART_PROJEKT,
 					"/com/lp/client/res/briefcase2_document24x24.png",
-					LPMain.getTextRespectUISPr(
-							"lp.projekt.modulname"), LPMain.getTextRespectUISPr("lp.projekt.tooltip"));
+					LPMain.getTextRespectUISPr("lp.projekt.modulname"),
+					LPMain.getTextRespectUISPr("lp.projekt.tooltip"));
 		} else if (which.equals(LocaleFac.BELEGART_ZUTRITT)) {
 			// Zutritt
-			createLPModul(
-					menu,
-					LocaleFac.BELEGART_ZUTRITT,
+			createLPModul(menu, LocaleFac.BELEGART_ZUTRITT,
 					"/com/lp/client/res/id_card.png",
-					LPMain.getTextRespectUISPr(
-							"pers.zutritt.modulname"),
-					LPMain.getTextRespectUISPr(
-							"pers.zutritt.modulname"));
+					LPMain.getTextRespectUISPr("pers.zutritt.modulname"),
+					LPMain.getTextRespectUISPr("pers.zutritt.modulname"));
 		} else if (which.equals(LocaleFac.BELEGART_REKLAMATION)) {
 			// Zutritt
-			createLPModul(
-					menu,
-					LocaleFac.BELEGART_REKLAMATION,
+			createLPModul(menu, LocaleFac.BELEGART_REKLAMATION,
 					"/com/lp/client/res/exchange24x24.png",
 					LPMain.getTextRespectUISPr("rekla.modulname"),
 					LPMain.getTextRespectUISPr("rekla.modulname"));
+		} else if (which.equals(LocaleFac.BELEGART_EMAIL)) {
+			// Partner
+			createLPModul(menu, LocaleFac.BELEGART_EMAIL,
+					"/com/lp/client/res/mail_earth24x24.png",
+					LPMain.getTextRespectUISPr("media.inbox.auswahl"),
+					LPMain.getTextRespectUISPr("tooltip.email"));
 		}
 	}
 
@@ -1102,15 +1099,15 @@ public class Desktop extends JFrame implements ActionListener,
 			throws UnsupportedLookAndFeelException, IllegalAccessException,
 			InstantiationException, ClassNotFoundException {
 
-		JMenu ansichtMenu = new JMenu(LPMain.getTextRespectUISPr(
-				"lp.ansicht"));
+		JMenu ansichtMenu = new JMenu(LPMain.getTextRespectUISPr("lp.ansicht"));
 		if (Defaults.getInstance().isComponentNamingEnabled()) {
 			ansichtMenu.setName(HelperClient.COMP_NAME_MENU_ANSICHT);
 		}
 		menuBar.add(ansichtMenu);
 
 		// Ansicht / Funktionsleiste
-		menuItemAnsichtToolbar = new JCheckBoxMenuItem(LPMain.getTextRespectUISPr("lp.symbolleiste"));
+		menuItemAnsichtToolbar = new JCheckBoxMenuItem(
+				LPMain.getTextRespectUISPr("lp.symbolleiste"));
 		menuItemAnsichtToolbar.setSelected(true);
 		menuItemAnsichtToolbar.addActionListener(this);
 		ansichtMenu.add(menuItemAnsichtToolbar);
@@ -1124,40 +1121,54 @@ public class Desktop extends JFrame implements ActionListener,
 		// ansichtMenu.addSeparator();
 
 		// Ansicht / Naechstes
-		menuItemAnsichtNext = new JMenuItem(LPMain.getTextRespectUISPr("lp.naechstes"));
+		menuItemAnsichtNext = new JMenuItem(
+				LPMain.getTextRespectUISPr("lp.naechstes"));
 		menuItemAnsichtNext.addActionListener(this);
 		ansichtMenu.add(menuItemAnsichtNext);
 
 		// Ansicht / Ueberlappend
-		menuItemAnsichtCascade = new JMenuItem(LPMain.getTextRespectUISPr("lp.ueberlappend"));
+		menuItemAnsichtCascade = new JMenuItem(
+				LPMain.getTextRespectUISPr("lp.ueberlappend"));
 		menuItemAnsichtCascade.addActionListener(this);
 		ansichtMenu.add(menuItemAnsichtCascade);
 
 		// Ansicht / Nebeneinander
-		menuItemAnsichtTile = new JMenuItem(LPMain.getTextRespectUISPr("lp.nebeneinander"));
+		menuItemAnsichtTile = new JMenuItem(
+				LPMain.getTextRespectUISPr("lp.nebeneinander"));
 		menuItemAnsichtTile.addActionListener(this);
 		ansichtMenu.add(menuItemAnsichtTile);
 		ansichtMenu.addSeparator();
 
 		// Ansicht / speichern
-		menuItemAnsichtSave = new JMenuItem(LPMain.getTextRespectUISPr("lp.layout.speichern"));
+		menuItemAnsichtSave = new JMenuItem(
+				LPMain.getTextRespectUISPr("lp.layout.speichern"));
 		menuItemAnsichtSave.addActionListener(this);
 		ansichtMenu.add(menuItemAnsichtSave);
 
 		// Ansicht / ladem
-		menuItemAnsichtLoad = new JMenuItem(LPMain.getTextRespectUISPr("lp.layout.load"));
+		menuItemAnsichtLoad = new JMenuItem(
+				LPMain.getTextRespectUISPr("lp.layout.load"));
 		menuItemAnsichtLoad.addActionListener(this);
 		ansichtMenu.add(menuItemAnsichtLoad);
 
 		// Ansicht / loeschen
-		menuItemAnsichtReset = new JMenuItem(LPMain.getTextRespectUISPr("lp.layout.reset"));
+		menuItemAnsichtReset = new JMenuItem(
+				LPMain.getTextRespectUISPr("lp.layout.reset"));
 		menuItemAnsichtReset.addActionListener(this);
 		ansichtMenu.add(menuItemAnsichtReset);
 		ansichtMenu.addSeparator();
 		// Schrifteinstellungen / loeschen
-		menuItemSchriftart = new JMenuItem(LPMain.getTextRespectUISPr("lp.layout.schrift.art"));
+		menuItemSchriftart = new JMenuItem(
+				LPMain.getTextRespectUISPr("lp.layout.schrift.art"));
+		menuItemDirekthilfe = new JCheckBoxMenuItem(
+				LPMain.getTextRespectUISPr("lp.label.direkthilfe"));
 		menuItemSchriftart.addActionListener(this);
+		menuItemDirekthilfe.addActionListener(this);
+		menuItemDirekthilfe.setSelected(Defaults.getInstance().isDirekthilfeVisible());
+		menuItemDirekthilfe.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F3, 0));
+		menuItemDirekthilfe.setEnabled(Defaults.getInstance().isDirekthilfeEnabled());
 		ansichtMenu.add(menuItemSchriftart);
+		ansichtMenu.add(menuItemDirekthilfe);
 		ansichtMenu.addSeparator();
 
 		// Skin
@@ -1169,7 +1180,8 @@ public class Desktop extends JFrame implements ActionListener,
 		// SwingUtilities.updateComponentTreeUI(this);
 
 		// Kunststoff
-		menuItemLFKunststoff = new JRadioButtonMenuItem(LPMain.getTextRespectUISPr("lp.look.kunststoff"));
+		menuItemLFKunststoff = new JRadioButtonMenuItem(
+				LPMain.getTextRespectUISPr("lp.look.kunststoff"));
 		menuItemLFKunststoff.addItemListener(this);
 		ansichtMenu.add(menuItemLFKunststoff);
 
@@ -1181,19 +1193,21 @@ public class Desktop extends JFrame implements ActionListener,
 		SwingUtilities.updateComponentTreeUI(this);
 
 		// System
-		menuItemLFSystem = new JRadioButtonMenuItem(LPMain.getTextRespectUISPr("lp.look.system"));
+		menuItemLFSystem = new JRadioButtonMenuItem(
+				LPMain.getTextRespectUISPr("lp.look.system"));
 		menuItemLFSystem.addItemListener(this);
 		ansichtMenu.add(menuItemLFSystem);
 
 		// Java
-		menuItemAnsichtLFJava = new JRadioButtonMenuItem(LPMain.getTextRespectUISPr("lp.look.java"));
+		menuItemAnsichtLFJava = new JRadioButtonMenuItem(
+				LPMain.getTextRespectUISPr("lp.look.java"));
 		menuItemAnsichtLFJava.addItemListener(this);
 		ansichtMenu.add(menuItemAnsichtLFJava);
 		/*
 		 * // Motif motifItem = new JRadioButtonMenuItem(LPMain.getInstance().
 		 * getTextRespectUISPr( "lp.look.motif"));
 		 * motifItem.addItemListener(this); ansichtMenu.add(motifItem);
-		 * 
+		 *
 		 * // Windows winItem = new JRadioButtonMenuItem(LPMain.getInstance().
 		 * getTextRespectUISPr("lp.look.windows"));
 		 * winItem.addItemListener(this); ansichtMenu.add(winItem);
@@ -1226,26 +1240,28 @@ public class Desktop extends JFrame implements ActionListener,
 	}
 
 	private void createMenueHelp(JMenuBar menuBar) {
-		JMenu hilfeMenu = new JMenu(LPMain.getTextRespectUISPr(
-				"lp.hilfe"));
+		JMenu hilfeMenu = new JMenu(LPMain.getTextRespectUISPr("lp.hilfe"));
 		if (Defaults.getInstance().isComponentNamingEnabled()) {
 			hilfeMenu.setName(HelperClient.COMP_NAME_MENU_HILFE);
 		}
 		menuBar.add(hilfeMenu);
 
-		menuItemHilfeOnline = new JMenuItem(LPMain.getTextRespectUISPr("lp.info.online"));
+		menuItemHilfeOnline = new JMenuItem(
+				LPMain.getTextRespectUISPr("lp.info.online"));
 		menuItemHilfeOnline.setAccelerator(KeyStroke.getKeyStroke(
 				KeyEvent.VK_F1, 0));
 		menuItemHilfeOnline.addActionListener(this);
 		hilfeMenu.add(menuItemHilfeOnline);
 
-		menuItemHilfeAnwenderspezifisch = new JMenuItem(LPMain.getTextRespectUISPr("lp.anwenderspezifischehilfe"));
+		menuItemHilfeAnwenderspezifisch = new JMenuItem(
+				LPMain.getTextRespectUISPr("lp.anwenderspezifischehilfe"));
 		menuItemHilfeAnwenderspezifisch.addActionListener(this);
 		hilfeMenu.add(menuItemHilfeAnwenderspezifisch);
 
 		hilfeMenu.addSeparator();
 
-		menuItemHilfeScreenshotDrucken = new JMenuItem(LPMain.getTextRespectUISPr("lp.info.screenshotdrucken"));
+		menuItemHilfeScreenshotDrucken = new JMenuItem(
+				LPMain.getTextRespectUISPr("lp.info.screenshotdrucken"));
 		menuItemHilfeScreenshotDrucken.addActionListener(this);
 		menuItemHilfeScreenshotDrucken.setAccelerator(KeyStroke.getKeyStroke(
 				KeyEvent.VK_F12, 0));
@@ -1259,7 +1275,8 @@ public class Desktop extends JFrame implements ActionListener,
 			}
 		}
 
-		menuItemHilfeScreenshotsenden = new JMenuItem(LPMain.getTextRespectUISPr("lp.info.screenshotversenden"));
+		menuItemHilfeScreenshotsenden = new JMenuItem(
+				LPMain.getTextRespectUISPr("lp.info.screenshotversenden"));
 		menuItemHilfeScreenshotsenden.addActionListener(this);
 
 		if (darfAnwenderAufZusatzfunktionZugreifen(MandantFac.ZUSATZFUNKTION_EMAILVERSAND)) {
@@ -1268,14 +1285,15 @@ public class Desktop extends JFrame implements ActionListener,
 			hilfeMenu.addSeparator();
 		}
 
-		menuItemHilfeAbout = new JMenuItem(LPMain.getTextRespectUISPr("lp.info"));
+		menuItemHilfeAbout = new JMenuItem(
+				LPMain.getTextRespectUISPr("lp.info"));
 		menuItemHilfeAbout.addActionListener(this);
 		hilfeMenu.add(menuItemHilfeAbout);
 	}
 
 	/**
 	 * createLPModul
-	 * 
+	 *
 	 * @param modulMenu
 	 *            JMenu
 	 * @param lPModulename
@@ -1354,11 +1372,10 @@ public class Desktop extends JFrame implements ActionListener,
 
 	/**
 	 * createLPModul
-	 * 
+	 *
 	 * @param which
 	 *            JMenu
 	 * @return JInternalFrame
-	 * @throws Throwable
 	 */
 	public JInternalFrame createALPModul(String which) {
 
@@ -1369,51 +1386,61 @@ public class Desktop extends JFrame implements ActionListener,
 				// Auftrag
 				if (DelegateFactory.getInstance().getTheJudgeDelegate()
 						.hatRecht(RechteFac.RECHT_AUFT_AUFTRAG_CUD)) {
-					jif = new InternalFrameAuftrag(LPMain.getTextRespectUISPr("auft.modulname.kurz"), which,
-							RechteFac.RECHT_MODULWEIT_UPDATE);
+					jif = new InternalFrameAuftrag(
+							LPMain.getTextRespectUISPr("auft.modulname.kurz"),
+							which, RechteFac.RECHT_MODULWEIT_UPDATE);
 				} else {
-					jif = new InternalFrameAuftrag(LPMain.getTextRespectUISPr("auft.modulname.kurz"), which,
-							RechteFac.RECHT_MODULWEIT_READ);
+					jif = new InternalFrameAuftrag(
+							LPMain.getTextRespectUISPr("auft.modulname.kurz"),
+							which, RechteFac.RECHT_MODULWEIT_READ);
 				}
 			} else if (which.equals(LocaleFac.BELEGART_ARTIKEL)) {
 				// Artikel
 				if (DelegateFactory.getInstance().getTheJudgeDelegate()
 						.hatRecht(RechteFac.RECHT_WW_ARTIKEL_CUD)) {
-					jif = new InternalFrameArtikel(LPMain.getTextRespectUISPr("artikel.modulname.kurz"),
+					jif = new InternalFrameArtikel(
+							LPMain.getTextRespectUISPr("artikel.modulname.kurz"),
 							which, RechteFac.RECHT_MODULWEIT_UPDATE);
 				} else {
-					jif = new InternalFrameArtikel(LPMain.getTextRespectUISPr("artikel.modulname.kurz"),
+					jif = new InternalFrameArtikel(
+							LPMain.getTextRespectUISPr("artikel.modulname.kurz"),
 							which, RechteFac.RECHT_MODULWEIT_READ);
 				}
 			} else if (which.equals(LocaleFac.BELEGART_STUECKLISTE)) {
 				// Stueckliste
 				if (DelegateFactory.getInstance().getTheJudgeDelegate()
 						.hatRecht(RechteFac.RECHT_STK_STUECKLISTE_CUD)) {
-					jif = new InternalFrameStueckliste(LPMain.getTextRespectUISPr("stkl.modulname.kurz"), which,
-							RechteFac.RECHT_MODULWEIT_UPDATE);
+					jif = new InternalFrameStueckliste(
+							LPMain.getTextRespectUISPr("stkl.modulname.kurz"),
+							which, RechteFac.RECHT_MODULWEIT_UPDATE);
 				} else {
-					jif = new InternalFrameStueckliste(LPMain.getTextRespectUISPr("stkl.modulname.kurz"), which,
-							RechteFac.RECHT_MODULWEIT_READ);
+					jif = new InternalFrameStueckliste(
+							LPMain.getTextRespectUISPr("stkl.modulname.kurz"),
+							which, RechteFac.RECHT_MODULWEIT_READ);
 				}
 			} else if (which.equals(LocaleFac.BELEGART_PERSONAL)) {
 				// Personal
 				if (DelegateFactory.getInstance().getTheJudgeDelegate()
 						.hatRecht(RechteFac.RECHT_PERS_PERSONAL_CUD)) {
-					jif = new InternalFramePersonal(LPMain.getTextRespectUISPr("personal.modulname.kurz"),
+					jif = new InternalFramePersonal(
+							LPMain.getTextRespectUISPr("personal.modulname.kurz"),
 							which, RechteFac.RECHT_MODULWEIT_UPDATE);
 				} else {
-					jif = new InternalFramePersonal(LPMain.getTextRespectUISPr("personal.modulname.kurz"),
+					jif = new InternalFramePersonal(
+							LPMain.getTextRespectUISPr("personal.modulname.kurz"),
 							which, RechteFac.RECHT_MODULWEIT_READ);
 				}
 			} else if (which.equals(LocaleFac.BELEGART_REKLAMATION)) {
 				// Personal
 				if (DelegateFactory.getInstance().getTheJudgeDelegate()
 						.hatRecht(RechteFac.RECHT_REKLA_REKLAMATION_CUD)) {
-					jif = new InternalFrameReklamation(LPMain.getTextRespectUISPr("rekla.modulname"), which,
-							RechteFac.RECHT_MODULWEIT_UPDATE);
+					jif = new InternalFrameReklamation(
+							LPMain.getTextRespectUISPr("rekla.modulname"),
+							which, RechteFac.RECHT_MODULWEIT_UPDATE);
 				} else {
-					jif = new InternalFrameReklamation(LPMain.getTextRespectUISPr("rekla.modulname"), which,
-							RechteFac.RECHT_MODULWEIT_READ);
+					jif = new InternalFrameReklamation(
+							LPMain.getTextRespectUISPr("rekla.modulname"),
+							which, RechteFac.RECHT_MODULWEIT_READ);
 				}
 			}
 
@@ -1422,23 +1449,23 @@ public class Desktop extends JFrame implements ActionListener,
 				if (DelegateFactory.getInstance().getTheJudgeDelegate()
 						.hatRecht(RechteFac.RECHT_PERS_ZUTRITT_CUD)) {
 					jif = new InternalFrameZutritt(
-							LPMain.getTextRespectUISPr(
-									"pers.zutritt.modulname.kurz"), which,
-							RechteFac.RECHT_MODULWEIT_UPDATE);
+							LPMain.getTextRespectUISPr("pers.zutritt.modulname.kurz"),
+							which, RechteFac.RECHT_MODULWEIT_UPDATE);
 				} else {
 					jif = new InternalFrameZutritt(
-							LPMain.getTextRespectUISPr(
-									"pers.zutritt.modulname.kurz"), which,
-							RechteFac.RECHT_MODULWEIT_READ);
+							LPMain.getTextRespectUISPr("pers.zutritt.modulname.kurz"),
+							which, RechteFac.RECHT_MODULWEIT_READ);
 				}
 			} else if (which.equals(LocaleFac.BELEGART_BENUTZER)) {
 				// Zeiterfassung
 				if (DelegateFactory.getInstance().getTheJudgeDelegate()
 						.hatRecht(RechteFac.RECHT_PERS_BENUTZER_CUD)) {
-					jif = new InternalFrameBenutzer(LPMain.getTextRespectUISPr("benutzer.modulname.kurz"),
+					jif = new InternalFrameBenutzer(
+							LPMain.getTextRespectUISPr("benutzer.modulname.kurz"),
 							which, RechteFac.RECHT_MODULWEIT_UPDATE);
 				} else {
-					jif = new InternalFrameBenutzer(LPMain.getTextRespectUISPr("benutzer.modulname.kurz"),
+					jif = new InternalFrameBenutzer(
+							LPMain.getTextRespectUISPr("benutzer.modulname.kurz"),
 							which, RechteFac.RECHT_MODULWEIT_READ);
 				}
 			} else if (which.equals(LocaleFac.BELEGART_ZEITERFASSUNG)) {
@@ -1446,67 +1473,75 @@ public class Desktop extends JFrame implements ActionListener,
 				if (DelegateFactory.getInstance().getTheJudgeDelegate()
 						.hatRecht(RechteFac.RECHT_PERS_ZEITEREFASSUNG_CUD)) {
 					jif = new InternalFrameZeiterfassung(
-							LPMain.getTextRespectUISPr(
-									"zeiterfassung.modulname.kurz"), which,
-							RechteFac.RECHT_MODULWEIT_UPDATE);
+							LPMain.getTextRespectUISPr("zeiterfassung.modulname.kurz"),
+							which, RechteFac.RECHT_MODULWEIT_UPDATE);
 				} else {
 					jif = new InternalFrameZeiterfassung(
-							LPMain.getTextRespectUISPr(
-									"zeiterfassung.modulname.kurz"), which,
-							RechteFac.RECHT_MODULWEIT_READ);
+							LPMain.getTextRespectUISPr("zeiterfassung.modulname.kurz"),
+							which, RechteFac.RECHT_MODULWEIT_READ);
 				}
 			} else if (which.equals(LocaleFac.BELEGART_PARTNER)) {
 				// Partner
 				if (DelegateFactory.getInstance().getTheJudgeDelegate()
 						.hatRecht(RechteFac.RECHT_PART_PARTNER_CUD)) {
-					jif = new InternalFramePartner(LPMain.getTextRespectUISPr("part.modulname.kurz"), which,
-							RechteFac.RECHT_MODULWEIT_UPDATE);
+					jif = new InternalFramePartner(
+							LPMain.getTextRespectUISPr("part.modulname.kurz"),
+							which, RechteFac.RECHT_MODULWEIT_UPDATE);
 				} else {
-					jif = new InternalFramePartner(LPMain.getTextRespectUISPr("part.modulname.kurz"), which,
-							RechteFac.RECHT_MODULWEIT_READ);
+					jif = new InternalFramePartner(
+							LPMain.getTextRespectUISPr("part.modulname.kurz"),
+							which, RechteFac.RECHT_MODULWEIT_READ);
 				}
 			} else if (which.equals(LocaleFac.BELEGART_LIEFERSCHEIN)) {
 				// Lieferschein
 				if (DelegateFactory.getInstance().getTheJudgeDelegate()
 						.hatRecht(RechteFac.RECHT_LS_LIEFERSCHEIN_CUD)) {
-					jif = new InternalFrameLieferschein(LPMain.getTextRespectUISPr("ls.modulname.kurz"), which,
-							RechteFac.RECHT_MODULWEIT_UPDATE);
+					jif = new InternalFrameLieferschein(
+							LPMain.getTextRespectUISPr("ls.modulname.kurz"),
+							which, RechteFac.RECHT_MODULWEIT_UPDATE);
 				} else {
-					jif = new InternalFrameLieferschein(LPMain.getTextRespectUISPr("ls.modulname.kurz"), which,
-							RechteFac.RECHT_MODULWEIT_READ);
+					jif = new InternalFrameLieferschein(
+							LPMain.getTextRespectUISPr("ls.modulname.kurz"),
+							which, RechteFac.RECHT_MODULWEIT_READ);
 				}
 			} else if (which.equals(LocaleFac.BELEGART_RECHNUNG)) {
 				// Rechnung
 				if (DelegateFactory.getInstance().getTheJudgeDelegate()
 						.hatRecht(RechteFac.RECHT_RECH_RECHNUNG_CUD)) {
-					jif = new InternalFrameRechnung(LPMain.getTextRespectUISPr("rechnung.modulname.kurz"),
+					jif = new InternalFrameRechnung(
+							LPMain.getTextRespectUISPr("rechnung.modulname.kurz"),
 							which, RechteFac.RECHT_MODULWEIT_UPDATE);
 				} else {
-					jif = new InternalFrameRechnung(LPMain.getTextRespectUISPr("rechnung.modulname.kurz"),
+					jif = new InternalFrameRechnung(
+							LPMain.getTextRespectUISPr("rechnung.modulname.kurz"),
 							which, RechteFac.RECHT_MODULWEIT_READ);
 				}
 			} else if (which.equals(LocaleFac.BELEGART_FINANZBUCHHALTUNG)) {
 				// Finanzbuchhaltung
 				if (DelegateFactory.getInstance().getTheJudgeDelegate()
 						.hatRecht(RechteFac.RECHT_FB_FINANZ_CUD)) {
-					jif = new InternalFrameFinanz(LPMain.getTextRespectUISPr("finanz.modulname.kurz"),
+					jif = new InternalFrameFinanz(
+							LPMain.getTextRespectUISPr("finanz.modulname.kurz"),
 							which, RechteFac.RECHT_MODULWEIT_UPDATE);
 				} else {
-					jif = new InternalFrameFinanz(LPMain.getTextRespectUISPr("finanz.modulname.kurz"),
+					jif = new InternalFrameFinanz(
+							LPMain.getTextRespectUISPr("finanz.modulname.kurz"),
 							which, RechteFac.RECHT_MODULWEIT_READ);
 				}
 			} else if (which.equals(LocaleFac.BELEGART_SYSTEM)) {
 				// System
 				if (DelegateFactory.getInstance().getTheJudgeDelegate()
 						.hatRecht(RechteFac.RECHT_LP_SYSTEM_CUD)) {
-					jif = new InternalFrameSystem(LPMain.getTextRespectUISPr("lp.system.modulname.kurz"), // titlp
+					jif = new InternalFrameSystem(
+							LPMain.getTextRespectUISPr("lp.system.modulname.kurz"), // titlp
 							// :
 							// 0
 							// Modulname
 							// setzen
 							which, RechteFac.RECHT_MODULWEIT_UPDATE);
 				} else {
-					jif = new InternalFrameSystem(LPMain.getTextRespectUISPr("lp.system.modulname.kurz"), // titlp
+					jif = new InternalFrameSystem(
+							LPMain.getTextRespectUISPr("lp.system.modulname.kurz"), // titlp
 							// :
 							// 0
 							// Modulname
@@ -1517,10 +1552,12 @@ public class Desktop extends JFrame implements ActionListener,
 				// Kunde
 				if (DelegateFactory.getInstance().getTheJudgeDelegate()
 						.hatRecht(RechteFac.RECHT_PART_KUNDE_CUD)) {
-					jif = new InternalFrameKunde(LPMain.getTextRespectUISPr("part.kund.modulname.kurz"),
+					jif = new InternalFrameKunde(
+							LPMain.getTextRespectUISPr("part.kund.modulname.kurz"),
 							which, RechteFac.RECHT_MODULWEIT_UPDATE);
 				} else {
-					jif = new InternalFrameKunde(LPMain.getTextRespectUISPr("part.kund.modulname.kurz"),
+					jif = new InternalFrameKunde(
+							LPMain.getTextRespectUISPr("part.kund.modulname.kurz"),
 							which, RechteFac.RECHT_MODULWEIT_READ);
 				}
 			} else if (which.equals(LocaleFac.BELEGART_LIEFERANT)) {
@@ -1528,123 +1565,146 @@ public class Desktop extends JFrame implements ActionListener,
 				if (DelegateFactory.getInstance().getTheJudgeDelegate()
 						.hatRecht(RechteFac.RECHT_PART_LIEFERANT_CUD)) {
 					jif = new InternalFrameLieferant(
-							LPMain.getTextRespectUISPr(
-									"lp.lieferant.modulname.kurz"), which,
-							RechteFac.RECHT_MODULWEIT_UPDATE);
+							LPMain.getTextRespectUISPr("lp.lieferant.modulname.kurz"),
+							which, RechteFac.RECHT_MODULWEIT_UPDATE);
 				} else {
 					jif = new InternalFrameLieferant(
-							LPMain.getTextRespectUISPr(
-									"lp.lieferant.modulname.kurz"), which,
-							RechteFac.RECHT_MODULWEIT_READ);
+							LPMain.getTextRespectUISPr("lp.lieferant.modulname.kurz"),
+							which, RechteFac.RECHT_MODULWEIT_READ);
 				}
 			} else if (which.equals(LocaleFac.BELEGART_ANFRAGE)) {
 				// Anfrage
 				if (DelegateFactory.getInstance().getTheJudgeDelegate()
 						.hatRecht(RechteFac.RECHT_ANF_ANFRAGE_CUD)) {
-					jif = new InternalFrameAnfrage(LPMain.getTextRespectUISPr("anf.modulname.kurz"), which,
-							RechteFac.RECHT_MODULWEIT_UPDATE);
+					jif = new InternalFrameAnfrage(
+							LPMain.getTextRespectUISPr("anf.modulname.kurz"),
+							which, RechteFac.RECHT_MODULWEIT_UPDATE);
 				} else {
-					jif = new InternalFrameAnfrage(LPMain.getTextRespectUISPr("anf.modulname.kurz"), which,
-							RechteFac.RECHT_MODULWEIT_READ);
+					jif = new InternalFrameAnfrage(
+							LPMain.getTextRespectUISPr("anf.modulname.kurz"),
+							which, RechteFac.RECHT_MODULWEIT_READ);
 				}
 			} else if (which.equals(LocaleFac.BELEGART_BESTELLUNG)) {
 				// Bestellung
 				if (DelegateFactory.getInstance().getTheJudgeDelegate()
 						.hatRecht(RechteFac.RECHT_BES_BESTELLUNG_CUD)) {
-					jif = new InternalFrameBestellung(LPMain.getTextRespectUISPr(
-									"bes.modulname.bestellung.kurz"), which,
-							RechteFac.RECHT_MODULWEIT_UPDATE);
+					jif = new InternalFrameBestellung(
+							LPMain.getTextRespectUISPr("bes.modulname.bestellung.kurz"),
+							which, RechteFac.RECHT_MODULWEIT_UPDATE);
 				} else {
-					jif = new InternalFrameBestellung(LPMain.getTextRespectUISPr(
-									"bes.modulname.bestellung.kurz"), which,
-							RechteFac.RECHT_MODULWEIT_READ);
+					jif = new InternalFrameBestellung(
+							LPMain.getTextRespectUISPr("bes.modulname.bestellung.kurz"),
+							which, RechteFac.RECHT_MODULWEIT_READ);
 				}
 			} else if (which.equals(LocaleFac.BELEGART_EINGANGSRECHNUNG)) {
 				// Bestellung
 				if (DelegateFactory.getInstance().getTheJudgeDelegate()
 						.hatRecht(RechteFac.RECHT_ER_EINGANGSRECHNUNG_CUD)) {
-					jif = new InternalFrameEingangsrechnung(LPMain.getTextRespectUISPr(
-									"er.modulname.kurz"), which,
-							RechteFac.RECHT_MODULWEIT_UPDATE);
+					jif = new InternalFrameEingangsrechnung(
+							LPMain.getTextRespectUISPr("er.modulname.kurz"),
+							which, RechteFac.RECHT_MODULWEIT_UPDATE);
 				} else {
-					jif = new InternalFrameEingangsrechnung(LPMain.getTextRespectUISPr(
-									"er.modulname.kurz"), which,
-							RechteFac.RECHT_MODULWEIT_READ);
+					jif = new InternalFrameEingangsrechnung(
+							LPMain.getTextRespectUISPr("er.modulname.kurz"),
+							which, RechteFac.RECHT_MODULWEIT_READ);
 				}
 			} else if (which.equals(LocaleFac.BELEGART_ANGEBOT)) {
 				// Bestellung
 				if (DelegateFactory.getInstance().getTheJudgeDelegate()
 						.hatRecht(RechteFac.RECHT_ANGB_ANGEBOT_CUD)) {
-					jif = new InternalFrameAngebot(LPMain.getTextRespectUISPr("angb.modulname.kurz"), which,
-							RechteFac.RECHT_MODULWEIT_UPDATE);
+					jif = new InternalFrameAngebot(
+							LPMain.getTextRespectUISPr("angb.modulname.kurz"),
+							which, RechteFac.RECHT_MODULWEIT_UPDATE);
 				} else {
-					jif = new InternalFrameAngebot(LPMain.getTextRespectUISPr("angb.modulname.kurz"), which,
-							RechteFac.RECHT_MODULWEIT_READ);
+					jif = new InternalFrameAngebot(
+							LPMain.getTextRespectUISPr("angb.modulname.kurz"),
+							which, RechteFac.RECHT_MODULWEIT_READ);
 				}
 			} else if (which.equals(LocaleFac.BELEGART_AGSTUECKLISTE)) {
 				// Bestellung
 				if (DelegateFactory.getInstance().getTheJudgeDelegate()
 						.hatRecht(RechteFac.RECHT_AS_ANGEBOTSTKL_CUD)) {
-					jif = new InternalFrameAngebotstkl(LPMain.getTextRespectUISPr("as.modulname.kurz"), which,
-							RechteFac.RECHT_MODULWEIT_UPDATE);
+					jif = new InternalFrameAngebotstkl(
+							LPMain.getTextRespectUISPr("as.modulname.kurz"),
+							which, RechteFac.RECHT_MODULWEIT_UPDATE);
 				} else {
-					jif = new InternalFrameAngebotstkl(LPMain.getTextRespectUISPr("as.modulname.kurz"), which,
-							RechteFac.RECHT_MODULWEIT_READ);
+					jif = new InternalFrameAngebotstkl(
+							LPMain.getTextRespectUISPr("as.modulname.kurz"),
+							which, RechteFac.RECHT_MODULWEIT_READ);
 				}
 			} else if (which.equals(LocaleFac.BELEGART_LOS)) {
 				// Bestellung
 				if (DelegateFactory.getInstance().getTheJudgeDelegate()
 						.hatRecht(RechteFac.RECHT_FERT_LOS_CUD)) {
-					jif = new InternalFrameFertigung(LPMain.getTextRespectUISPr("fert.modulname.kurz"), which,
-							RechteFac.RECHT_MODULWEIT_UPDATE);
+					jif = new InternalFrameFertigung(
+							LPMain.getTextRespectUISPr("fert.modulname.kurz"),
+							which, RechteFac.RECHT_MODULWEIT_UPDATE);
 				} else {
-					jif = new InternalFrameFertigung(LPMain.getTextRespectUISPr("fert.modulname.kurz"), which,
-							RechteFac.RECHT_MODULWEIT_READ);
+					jif = new InternalFrameFertigung(
+							LPMain.getTextRespectUISPr("fert.modulname.kurz"),
+							which, RechteFac.RECHT_MODULWEIT_READ);
 				}
 			} else if (which.equals(LocaleFac.BELEGART_KUECHE)) {
 				// Kueche
 				if (DelegateFactory.getInstance().getTheJudgeDelegate()
 						.hatRecht(RechteFac.RECHT_KUE_KUECHE_CUD)) {
-					jif = new InternalFrameKueche(LPMain.getTextRespectUISPr("kue.modulname.kurz"), which,
-							RechteFac.RECHT_MODULWEIT_UPDATE);
+					jif = new InternalFrameKueche(
+							LPMain.getTextRespectUISPr("kue.modulname.kurz"),
+							which, RechteFac.RECHT_MODULWEIT_UPDATE);
 				} else {
-					jif = new InternalFrameKueche(LPMain.getTextRespectUISPr("kue.modulname.kurz"), which,
-							RechteFac.RECHT_KUE_KUECHE_R);
+					jif = new InternalFrameKueche(
+							LPMain.getTextRespectUISPr("kue.modulname.kurz"),
+							which, RechteFac.RECHT_KUE_KUECHE_R);
 				}
 			} else if (which.equals(LocaleFac.BELEGART_INSTANDHALTUNG)) {
 				// Kueche
 				if (DelegateFactory.getInstance().getTheJudgeDelegate()
 						.hatRecht(RechteFac.RECHT_IS_INSTANDHALTUNG_CUD)) {
-					jif = new InternalFrameInstandhaltung(LPMain.getTextRespectUISPr(
-									"is.instandhaltung.modulname.kurz"), which,
-							RechteFac.RECHT_MODULWEIT_UPDATE);
+					jif = new InternalFrameInstandhaltung(
+							LPMain.getTextRespectUISPr("is.instandhaltung.modulname.kurz"),
+							which, RechteFac.RECHT_MODULWEIT_UPDATE);
 				} else {
-					jif = new InternalFrameInstandhaltung(LPMain.getTextRespectUISPr(
-									"is.instandhaltung.modulname.kurz"), which,
-							RechteFac.RECHT_MODULWEIT_READ);
+					jif = new InternalFrameInstandhaltung(
+							LPMain.getTextRespectUISPr("is.instandhaltung.modulname.kurz"),
+							which, RechteFac.RECHT_MODULWEIT_READ);
 				}
 			} else if (which.equals(LocaleFac.BELEGART_INSERAT)) {
 				// Inserat
 				if (DelegateFactory.getInstance().getTheJudgeDelegate()
 						.hatRecht(RechteFac.RECHT_IV_INSERAT_CUD)) {
-					jif = new InternalFrameInserat(LPMain.getTextRespectUISPr("iv.inserat.modulname.kurz"),
+					jif = new InternalFrameInserat(
+							LPMain.getTextRespectUISPr("iv.inserat.modulname.kurz"),
 							which, RechteFac.RECHT_MODULWEIT_UPDATE);
 				} else {
-					jif = new InternalFrameInserat(LPMain.getTextRespectUISPr("iv.inserat.modulname.kurz"),
+					jif = new InternalFrameInserat(
+							LPMain.getTextRespectUISPr("iv.inserat.modulname.kurz"),
 							which, RechteFac.RECHT_MODULWEIT_READ);
 				}
 			} else if (which.equals(LocaleFac.BELEGART_PROJEKT)) {
 				// Projekt
 				if (DelegateFactory.getInstance().getTheJudgeDelegate()
 						.hatRecht(RechteFac.RECHT_PROJ_PROJEKT_CUD)) {
-					jif = new InternalFrameProjekt(LPMain.getTextRespectUISPr("lp.projekt.modulname.kurz"),
+					jif = new InternalFrameProjekt(
+							LPMain.getTextRespectUISPr("lp.projekt.modulname.kurz"),
 							which, RechteFac.RECHT_MODULWEIT_UPDATE);
 				} else {
-					jif = new InternalFrameProjekt(LPMain.getTextRespectUISPr("lp.projekt.modulname.kurz"),
+					jif = new InternalFrameProjekt(
+							LPMain.getTextRespectUISPr("lp.projekt.modulname.kurz"),
+							which, RechteFac.RECHT_MODULWEIT_READ);
+				}
+			} else if (which.equals(LocaleFac.BELEGART_EMAIL)) {
+				// Personal
+				if (DelegateFactory.getInstance().getTheJudgeDelegate()
+						.hatRecht(RechteFac.RECHT_MEDIA_EMAIL_CUD)) {
+					jif = new InternalFrameMedia(
+							LPMain.getTextRespectUISPr("media.inbox.modulname"),
+							which, RechteFac.RECHT_MODULWEIT_UPDATE);
+				} else {
+					jif = new InternalFrameMedia(
+							LPMain.getTextRespectUISPr("media.inbox.modulname"),
 							which, RechteFac.RECHT_MODULWEIT_READ);
 				}
 			}
-
 		} catch (Throwable ex) {
 			new DialogError(this, ex, DialogError.TYPE_ERROR);
 			myLogger.error("", ex);
@@ -1653,8 +1713,7 @@ public class Desktop extends JFrame implements ActionListener,
 	}
 
 	public void exitClientNowErrorDlg(Throwable t) {
-		myLogger.error(
-				LPMain.getTextRespectUISPr("lp.error.fatal"), t);
+		myLogger.error(LPMain.getTextRespectUISPr("lp.error.fatal"), t);
 		if (t != null) {
 			new DialogError(this, t, DialogError.TYPE_ERROR);
 		}
@@ -1662,8 +1721,7 @@ public class Desktop extends JFrame implements ActionListener,
 	}
 
 	public void exitClientDlg() {
-		String pattern = LPMain.getTextRespectUISPr(
-				"lp.beenden.lp");
+		String pattern = LPMain.getTextRespectUISPr("lp.beenden.lp");
 		String sMsg = MessageFormat.format(pattern,
 				new Object[] { LPMain.getSVersionHV() });
 
@@ -1734,7 +1792,7 @@ public class Desktop extends JFrame implements ActionListener,
 
 	/**
 	 * kaskadiere Windows
-	 * 
+	 *
 	 * @throws PropertyVetoException
 	 */
 	private void cascadeWindows() throws PropertyVetoException {
@@ -1768,7 +1826,7 @@ public class Desktop extends JFrame implements ActionListener,
 
 	/**
 	 * Alle Windows nebeneinander anzeigen.
-	 * 
+	 *
 	 * @throws Throwable
 	 */
 	private void tileWindows() throws Throwable {
@@ -1815,7 +1873,7 @@ public class Desktop extends JFrame implements ActionListener,
 
 	/**
 	 * Naechste nicht iconisiertes Window anzeigen
-	 * 
+	 *
 	 * @throws Throwable
 	 */
 	private void selectNextWindow() throws Throwable {
@@ -1879,7 +1937,7 @@ public class Desktop extends JFrame implements ActionListener,
 
 	/**
 	 * evtvet: Vetoereignisse behandeln.
-	 * 
+	 *
 	 * @param event
 	 *            PropertyChangeEvent
 	 * @throws PropertyVetoException
@@ -1905,16 +1963,52 @@ public class Desktop extends JFrame implements ActionListener,
 				try {
 					pve = jInternalFrameModul.vetoableChangeLP();
 				} catch (Throwable ex) {
-					lPModul.setStatus(LPModul.STATUS_ENABLED);
-					lPModul.setLPModule(null);
 					myLogger.error(ex.getMessage(), ex);
+
+//					lPModul.setStatus(LPModul.STATUS_ENABLED);
+//					lPModul.setLPModule(null);
+
+//					jInternalFrameModul.dispose();
+//					jInternalFrameModul.handleException(ex, false) ;
+
+					new DialogError(this, ex, DialogError.TYPE_INFORMATION);
+
+					throw new PropertyVetoException("", null);
 				}
 
 				if (pve == null) {
 					lPModul.setStatus(LPModul.STATUS_ENABLED);
-					lPModul.setLPModule(null);
+					lPModul.setOpenModules(null);
+					allePanelsFinalizen(jInternalFrameModul);
+					jInternalFrameModul.dispose();
 				} else {
 					throw new PropertyVetoException("", null);
+				}
+			}
+		}
+	}
+
+	private void allePanelsFinalizen(InternalFrame internalFrame) {
+
+		JTabbedPane tabbedPaneRoot = internalFrame.getTabbedPaneRoot();
+
+		if (internalFrame.getTabbedPaneRoot().getComponentCount() > 0) {
+			for (int i = 0; i < tabbedPaneRoot.getComponents().length; i++) {
+				if (tabbedPaneRoot.getComponents()[i] instanceof TabbedPane) {
+
+					TabbedPane tabbedpane = (TabbedPane) tabbedPaneRoot
+							.getComponents()[i];
+					for (int u = 0; u < tabbedpane.getComponents().length; u++) {
+						if (tabbedpane.getComponents()[u] instanceof PanelBasis) {
+							PanelBasis pb = (PanelBasis) tabbedpane
+									.getComponents()[u];
+							try {
+								pb.finalize();
+							} catch (Throwable e) {
+								e.printStackTrace();
+							}
+						}
+					}
 				}
 			}
 		}
@@ -2006,6 +2100,8 @@ public class Desktop extends JFrame implements ActionListener,
 					toolbar.remove(i);
 				} else if (ac.equals(MODULNAME_LOS_SCHNELLANLAGE)) {
 					toolbar.remove(i);
+				} else if (ac.equals(LocaleFac.BELEGART_EMAIL)) {
+					toolbar.remove(i);
 				}
 
 			} else if (toolbar.getComponentAtIndex(i) instanceof JSeparator) {
@@ -2015,6 +2111,7 @@ public class Desktop extends JFrame implements ActionListener,
 		setTitle(LPMain.getSVersionHVAllTogether());
 	}
 
+
 	// private void setToolbarButtonVisible(boolean state, String modulname) {
 	// LPModul modul = (LPModul) hmOflPModule.get(modulname);
 	// if(modul != null) modul.getToolbarButton().setVisible(state);
@@ -2022,7 +2119,7 @@ public class Desktop extends JFrame implements ActionListener,
 
 	/**
 	 * Actionlistener.
-	 * 
+	 *
 	 * @param evt
 	 *            ActionEvent
 	 */
@@ -2031,8 +2128,10 @@ public class Desktop extends JFrame implements ActionListener,
 		myLogger.info("action start: "
 				+ Helper.cutString(evt.toString(), Defaults.LOG_LENGTH));
 		// Cursor auf Warten
-		setCursor(java.awt.Cursor
-				.getPredefinedCursor(java.awt.Cursor.WAIT_CURSOR));
+		if (Defaults.getInstance().isUseWaitCursor()) {
+			setCursor(java.awt.Cursor
+					.getPredefinedCursor(java.awt.Cursor.WAIT_CURSOR));
+		}
 		// wenn Backgroundimage vorhanden, dann in den Hinertgrund schieben
 		if (jpaBackground != null) {
 			desktopPane.moveToBack(jpaBackground);
@@ -2082,6 +2181,10 @@ public class Desktop extends JFrame implements ActionListener,
 						closeAllFrames();
 						new PanelDialogFontStyle(this);
 					}
+				} else if (source == menuItemDirekthilfe) {
+					ClientPerspectiveManager.getInstance().setDirekthilfeEnabled(menuItemDirekthilfe.isSelected());
+					Defaults.getInstance().setDirekthilfeVisible(menuItemDirekthilfe.isSelected());
+					SwingUtilities.updateComponentTreeUI(this);
 				} else if (source == menuItemAnsichtExit) {
 					exitClientNowErrorDlg(null);
 				} else if (source == menuItemHilfeAbout) {
@@ -2128,10 +2231,10 @@ public class Desktop extends JFrame implements ActionListener,
 						} else if (action.equals(MODULNAME_LOS_SCHNELLANLAGE)) {
 							// PJ17775
 
-							boolean b = DialogFactory.showModalJaNeinDialog(
-									null,
-									LPMain.getTextRespectUISPr(
-											"fert.los.schnellanlage.frage"));
+							boolean b = DialogFactory
+									.showModalJaNeinDialog(
+											null,
+											LPMain.getTextRespectUISPr("fert.los.schnellanlage.frage"));
 
 							if (b == true) {
 								LosDto losDto = new LosDto();
@@ -2258,32 +2361,8 @@ public class Desktop extends JFrame implements ActionListener,
 							// MB 15.05.06 wegen mehrfachem dr
 							if (dialogLogin == null || !dialogLogin.isVisible()) {
 
-								File shownFile = new File(
-										FILENAME_SHOWN_CHANGES);
-								if (!shownFile.exists()) {
-									JOptionPane showNewsPane = InternalFrame
-											.getNarrowOptionPane(Desktop.MAX_CHARACTERS_UNTIL_WORDWRAP);
-									showNewsPane
-											.setMessage("Es wurde ein Clientupdate durchgef\u00FChrt.\nM\u00F6chten Sie die aktuelle \u00C4nderungsliste einsehen?");
-									showNewsPane
-											.setMessageType(JOptionPane.QUESTION_MESSAGE);
-									showNewsPane
-											.setOptionType(JOptionPane.YES_NO_OPTION);
-									JDialog showNewsDialog = showNewsPane
-											.createDialog(this, "");
-									showNewsDialog.setVisible(true);
-									if (showNewsPane.getValue() != null
-											&& ((Integer) showNewsPane
-													.getValue()).intValue() == JOptionPane.YES_OPTION) {
-										// anzeigen und File anlegen damit nicht
-										// mehr gezeigt wird
-										browseURI(URL_CHANGELOG);
-										shownFile.createNewFile();
-									} else {
-										// Nichts hier. User wird beim naechsten
-										// Start nochmal gefragt
-									}
-								}
+								new ChangesShownController()
+										.dialogChangeLogIfNeeded(this);
 
 								// Login
 								doLogon(false);
@@ -2311,7 +2390,8 @@ public class Desktop extends JFrame implements ActionListener,
 												DelegateFactory
 														.getInstance()
 														.getLogonDelegate()
-														.logout(LPMain.getTheClient());
+														.logout(LPMain
+																.getTheClient());
 												System.exit(0);
 
 											} else {
@@ -2368,7 +2448,9 @@ public class Desktop extends JFrame implements ActionListener,
 																ProcessBuilder pb = new ProcessBuilder(
 																		"java",
 																		"-jar",
-																		f.getAbsolutePath(),"-default.install.path="+System.getProperty("user.dir"));
+																		f.getAbsolutePath(),
+																		"-default.install.path="
+																				+ System.getProperty("user.dir"));
 
 																String javahome = System
 																		.getProperty("java.home");
@@ -2377,11 +2459,12 @@ public class Desktop extends JFrame implements ActionListener,
 																		javahome
 																				+ "/bin"));
 																pb.start();
-																
+
 																DelegateFactory
 																		.getInstance()
 																		.getLogonDelegate()
-																		.logout(LPMain.getTheClient());
+																		.logout(LPMain
+																				.getTheClient());
 																System.exit(0);
 															} catch (Throwable ex1) {
 																ex1.printStackTrace();
@@ -2415,7 +2498,8 @@ public class Desktop extends JFrame implements ActionListener,
 													DelegateFactory
 															.getInstance()
 															.getLogonDelegate()
-															.logout(LPMain.getTheClient());
+															.logout(LPMain
+																	.getTheClient());
 													System.exit(0);
 												}
 
@@ -2430,6 +2514,11 @@ public class Desktop extends JFrame implements ActionListener,
 												.getInstance()
 												.getMandantDelegate()
 												.zusatzfunktionberechtigungFindByMandantCNr());
+										dc.setDarfDirekthilfeTexteEditieren(DelegateFactory
+												.getInstance()
+												.getTheJudgeDelegate()
+												.hatRecht(
+														RechteFac.RECHT_LP_DARF_DIREKTHILFETEXTE_BEARBEITEN));
 
 										JMenuBar menuBar = super.getJMenuBar();
 										// Modul
@@ -2451,7 +2540,7 @@ public class Desktop extends JFrame implements ActionListener,
 												.setStatus(LPModul.STATUS_DISABLED);
 										ClientPerspectiveManager.getInstance()
 												.reinit();
-										reloadFont(true);
+										loadUserSpecificSettings();
 										SwingUtilities
 												.updateComponentTreeUI(this);
 										if (Defaults.getInstance()
@@ -2484,45 +2573,75 @@ public class Desktop extends JFrame implements ActionListener,
 							}
 						} else if (action.equals(MODULNAME_MANDANT)) {
 							// Mandantwechsel
+
+//							if (FehlmengenAufloesen.getAufgeloesteFehlmengen().size() > 0) {
+//							boolean bOption = DialogFactory
+//									.showModalJaNeinDialog(
+//											null,
+//												LPMain.getTextRespectUISPr("lp.frage.fehlmengenaufloesendrucken"),
+//												LPMain.getTextRespectUISPr("fert.los.schnellanlage.frage"));
+//
+//							if (bOption) {
+//
+////								getLPModul(null).showReportKriterien(
+////								new ReportAufgeloestefehlmengen(null, FehlmengenAufloesen.getAufgeloesteFehlmengen()));
+//
+//								Desktop.ge
+//								new ReportAufgeloestefehlmengen(null, FehlmengenAufloesen.getAufgeloesteFehlmengen()));
+//
+//							}
+//
+//
+//							}
+
 							if (doLogout() == JOptionPane.YES_OPTION) {
-								removeItems();
-								doLogon(true);
-								if (!isBAbbruch()) {
-									dc.setModulBerechtigung(DelegateFactory
-											.getInstance()
-											.getMandantDelegate()
-											.modulberechtigungFindByMandantCNr());
-									dc.setZusatzFunktionen(DelegateFactory
-											.getInstance()
-											.getMandantDelegate()
-											.zusatzfunktionberechtigungFindByMandantCNr());
-									JMenuBar menuBar = super.getJMenuBar();
-									// Modul
-									toolbar.addSeparator();
-									createModulmenueentries(menuBar);
-									toolbar.addSeparator();
+							removeItems();
+							doLogon(true);
+							if (!isBAbbruch()) {
+								dc.setModulBerechtigung(DelegateFactory
+										.getInstance()
+										.getMandantDelegate()
+										.modulberechtigungFindByMandantCNr());
+								dc.setZusatzFunktionen(DelegateFactory
+										.getInstance()
+										.getMandantDelegate()
+										.zusatzfunktionberechtigungFindByMandantCNr());
+								dc.setDarfDirekthilfeTexteEditieren(DelegateFactory
+										.getInstance()
+										.getTheJudgeDelegate()
+										.hatRecht(
+												RechteFac.RECHT_LP_DARF_DIREKTHILFETEXTE_BEARBEITEN));
 
-									// Extras
-									createMenueExtra(menuBar);
-									toolbar.addSeparator();
+								DirekthilfeCache.reload();
+								JMenuBar menuBar = super.getJMenuBar();
+								// Modul
+								toolbar.addSeparator();
+								createModulmenueentries(menuBar);
+								toolbar.addSeparator();
 
-									// Ansicht
-									createMenueAnsicht(menuBar);
-									toolbar.addSeparator();
+								// Extras
+								createMenueExtra(menuBar);
+								toolbar.addSeparator();
 
-									// Hilfe
-									createMenueHelp(menuBar);
-									enableAllModule(true);
-									((LPModul) hmOflPModule
-											.get(MODULNAME_LOGIN))
-											.setStatus(LPModul.STATUS_DISABLED);
-									ParameterCache.resetAll();
-									ClientPerspectiveManager.getInstance()
-											.reinit();
-									ClientPerspectiveManager.getInstance()
-											.load(this);
-								}
+								// Ansicht
+								createMenueAnsicht(menuBar);
+								toolbar.addSeparator();
+
+								// Hilfe
+								createMenueHelp(menuBar);
+								enableAllModule(true);
+								((LPModul) hmOflPModule
+										.get(MODULNAME_LOGIN))
+										.setStatus(LPModul.STATUS_DISABLED);
+								ParameterCache.resetAll();
+								ClientPerspectiveManager.getInstance()
+										.reinit();
+								ClientPerspectiveManager.getInstance()
+										.load(this);
 							}
+
+						}
+
 						} else if (action.equals(MODULNAME_BEENDEN)) {
 							// Beenden
 							exitClientDlg();
@@ -2536,8 +2655,7 @@ public class Desktop extends JFrame implements ActionListener,
 										.startsWith("Could not obtain")) {
 							showModalDialog(
 									"",
-									LPMain.getTextRespectUISPr(
-											"lp.error.no_server")
+									LPMain.getTextRespectUISPr("lp.error.no_server")
 											+ " ("
 											+ System.getProperty("java.naming.provider.url")
 											+ ")", JOptionPane.ERROR_MESSAGE);
@@ -2572,13 +2690,14 @@ public class Desktop extends JFrame implements ActionListener,
 		}
 
 		HelperClient.setComponentNamesMenuBar(super.getJMenuBar());
+
 	}
 
 	/**
 	 * Versucht einen Link im Standardbrowser zu &ouml;ffnen, sollte das nicht
 	 * klappen, kommt ein Dialog mit der Aufforderung den Link zu kopieren und
 	 * in einen Browser einzuf&uuml;gen.
-	 * 
+	 *
 	 * @param uri
 	 * @return true wenn der Browser ge&ouml;ffnet werden konnte, sonst false
 	 */
@@ -2617,8 +2736,7 @@ public class Desktop extends JFrame implements ActionListener,
 					&& java.awt.Desktop.getDesktop().isSupported(
 							java.awt.Desktop.Action.BROWSE)) {
 				try {
-					java.awt.Desktop.getDesktop()
-							.browse(new URI(URL_CHANGELOG));
+					java.awt.Desktop.getDesktop().browse(new URI(uri));
 					browseWorked = true;
 				} catch (IOException e) {
 					errorToken = "lp.browse.nichtunterstuetzt";
@@ -2650,7 +2768,8 @@ public class Desktop extends JFrame implements ActionListener,
 		if (jif == null) {
 			jif = createALPModul(action);
 			if (jif != null) {
-				((LPModul) hmOflPModule.get(action)).setLPModule(jif);
+//				((LPModul) hmOflPModule.get(action)).setLPModule(jif);
+				((LPModul) hmOflPModule.get(action)).getOpenModules(jif);
 				placeInternalFrameOnFrame(jif);
 				((InternalFrame) jif).setFirstFocusableComponent();
 			}
@@ -2670,19 +2789,24 @@ public class Desktop extends JFrame implements ActionListener,
 
 	/**
 	 * showAboutDialog
-	 * 
+	 *
 	 * @throws Throwable
 	 */
 	public void showAboutDialog() throws Throwable {
 
 		DialogAbout about = new DialogAbout(this, "Info", true);
-		about.setResizable(false);
-		Point p = this.getLocation();
-		double dX = p.getX();
-		double dY = p.getY();
-		p.setLocation(dX + 150, dY + 100);
 
-		about.setLocation(p);
+		about.setResizable(true);
+
+//		Point p = this.getLocation();
+//		double dX = p.getX();
+//		double dY = p.getY();
+//		p.setLocation(dX + 150, dY + 100);
+//		about.setLocation(p);
+
+		// zentriert Fenster relativ zum Hauptfenster
+		about.setLocationRelativeTo(desktopPane);
+
 		about.setVisible(true);
 
 	}
@@ -2716,16 +2840,16 @@ public class Desktop extends JFrame implements ActionListener,
 						ex1.getMessage());
 			}
 		} else {
-			DialogFactory.showModalDialog(
-					LPMain.getTextRespectUISPr("lp.info"),
-					LPMain.getTextRespectUISPr(
-							"lp.keineanwenderspezifischehilfe.definiert"));
+			DialogFactory
+					.showModalDialog(
+							LPMain.getTextRespectUISPr("lp.info"),
+							LPMain.getTextRespectUISPr("lp.keineanwenderspezifischehilfe.definiert"));
 		}
 	}
 
 	/**
 	 * Online Hilfe anzeigen
-	 * 
+	 *
 	 * @throws Throwable
 	 */
 	public void showOnlineHelp() throws Throwable {
@@ -2746,7 +2870,7 @@ public class Desktop extends JFrame implements ActionListener,
 	}
 
 	/**
-	 * 
+	 *
 	 * @return int JOptionPane.YES_OPTION oder JOptionPane.NO_OPTION
 	 * @throws Exception
 	 */
@@ -2755,33 +2879,105 @@ public class Desktop extends JFrame implements ActionListener,
 		boolean bCloseAll = true;
 		int ret = JOptionPane.YES_OPTION;
 
-		if (areLPModuleOpen()) {
+		dc.behandleOffeneAenderungen(getStatusOffeneLPModule()); 
 
-			Object[] options = {
-					LPMain.getTextRespectUISPr("lp.ja"),
-					LPMain.getTextRespectUISPr("lp.nein") };
-			/**
-			 * @todo in der mitte des HeliumV-Frames plazieren
-			 */
-			ret = (JOptionPane.showOptionDialog(
-					null,
-					LPMain.getTextRespectUISPr(
-							"lp.warning.open.lpmodule.abmelden"),
-					LPMain.getTextRespectUISPr(
-							"lp.warning.open.titel"),
-					JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE,
-					null, options, options[0]));
-			bCloseAll = (ret == JOptionPane.YES_OPTION);
+		if (areLPModuleOpen()) {
+			List<ModulStatus> listOffeneModule = getStatusOffeneLPModule();
+			Collections.sort(listOffeneModule, new Comparator<ModulStatus>() {
+				@Override
+				public int compare(ModulStatus o1, ModulStatus o2) {
+					return o1.getModulName().compareTo(o2.getModulName());
+				}
+			}) ;
+
+			StringBuilder sbOffen = new StringBuilder();
+			StringBuilder sbLocked = new StringBuilder() ;
+			StringBuilder sbMessage = new StringBuilder();
+
+			int i = 0;
+			int j = 0;
+			for (ModulStatus modulStatus : listOffeneModule) {
+				appendString(sbOffen, modulStatus.getLpModule().getModuleName()) ;
+				i++;
+				if(modulStatus.isLocked()) {
+					appendString(sbLocked, modulStatus.getLpModule().getModuleName());
+					j++;
+				}
+			}
+
+			String offeneModule = sbOffen.toString();
+			String lockedModule = sbLocked.toString() ;
+
+			JPanel panel = new JPanel();
+			panel.setLayout(new MigLayout(
+					"width 420, height 200, gap 10 10 10 10"
+					));
+
+			appendString(sbMessage, Texts.msgClientLogoutOpenModules(i));
+			appendString(sbMessage, Texts.msgClientLogoutLockedModules(j));
+			appendString(sbMessage, LPMain.getTextRespectUISPr("lp.warning.open.lpmodule.abmelden"));
+
+
+			String message = sbMessage.toString();
+
+			JTextArea msgTextArea = new JTextArea(message);
+		    msgTextArea.setBackground(null);
+		    msgTextArea.setLineWrap(true);
+		    msgTextArea.setWrapStyleWord(true);
+		    JScrollPane msgScrollPane = new JScrollPane(msgTextArea);
+		    msgScrollPane.setBorder(BorderFactory.createEmptyBorder(0,0,0,0));
+
+			JTextArea offeneModuleTextArea = new JTextArea(offeneModule);
+		    offeneModuleTextArea.setBackground(null);
+		    offeneModuleTextArea.setLineWrap(true);
+		    offeneModuleTextArea.setWrapStyleWord(true);
+		    JScrollPane offeneModuleScrollPane = new JScrollPane(offeneModuleTextArea);
+		    offeneModuleScrollPane.setBorder(BorderFactory.createEmptyBorder(0,0,0,0));
+
+			JTextArea lockTextArea = new JTextArea(lockedModule);
+		    lockTextArea.setBackground(null);
+		    lockTextArea.setLineWrap(true);
+		    lockTextArea.setWrapStyleWord(true);
+		    JScrollPane lockScrollPane = new JScrollPane(lockTextArea);
+		    lockScrollPane.setBorder(BorderFactory.createEmptyBorder(0,0,0,0));
+
+		    JLabel lblOffeneModule = new JLabel("<html><b>" + LPMain.getTextRespectUISPr("lp.warning.open.titel.offen") + "</b></html>");
+		    JLabel lblLock = new JLabel("<html><b>" + LPMain.getTextRespectUISPr("lp.warning.open.titel.gesperrt") + "</b></html>");
+
+			panel.add(msgScrollPane, "span, h 65px:65px:80px, growx, wrap");
+			panel.add(lblOffeneModule, "spanx 2, top");
+			panel.add(lblLock, "spanx 2, top, wrap");
+			panel.add(offeneModuleScrollPane, "span 2 2, w 100%, top" );
+			panel.add(lockScrollPane, "span2 2, w 100%, top, wrap");
+
+		    JOptionPane op = new JOptionPane(
+		    		panel,
+		    		JOptionPane.WARNING_MESSAGE,
+		    		JOptionPane.YES_NO_OPTION
+    		);
+
+		    JDialog dialog = op.createDialog(null, LPMain.getTextRespectUISPr("lp.warning.open.titel"));
+
+		    dialog.pack();
+
+		    platziereDialogInDerMitteDesFensters(dialog);
+
+		    dialog.setVisible(true);
+
+		    ret = op.getValue() == null ? -1 : (int) (Integer) op.getValue() ;
+		    if (ret != JOptionPane.YES_OPTION) return ret ;
 		}
 
 		if (bCloseAll) {
 			try {
-				enableAllModule(false);
+				disableAllModule();
+				DelegateFactory.getInstance().getTheJudgeDelegate().removeMyLocks(LPMain.getTheClient());
+				DelegateFactory.getInstance().getLogonDelegate()
+					.logout(LPMain.getTheClient());
 			} catch (Throwable ex) {
 				throw new Exception(ex);
 			}
-			DelegateFactory.getInstance().getLogonDelegate()
-					.logout(LPMain.getTheClient());
+			dc.setDarfDirekthilfeTexteEditieren(false);
 
 			((LPModul) hmOflPModule.get(MODULNAME_LOGIN))
 					.setStatus(LPModul.STATUS_ENABLED);
@@ -2789,15 +2985,15 @@ public class Desktop extends JFrame implements ActionListener,
 					.setStatus(LPModul.STATUS_ENABLED);
 		}
 
-		// ClientPerspectiveManager.getInstance().save();
+//		ClientPerspectiveManager.getInstance().save();
 
 		return ret;
 	}
 
 	/**
 	 * gibt die ge&ouml;ffneten module sortiert nach frame z-order zur&uuml;ck
-	 * 
-	 * @return
+	 *
+	 * @return die ge&ouml;ffneten module sortiert nach frame z-order
 	 */
 	public List<String> getOffeneLPModule() {
 		List<String> offeneModule = new ArrayList<String>();
@@ -2827,21 +3023,88 @@ public class Desktop extends JFrame implements ActionListener,
 		return offeneModule;
 	}
 
-	private boolean areLPModuleOpen() throws Exception {
+	private void appendString(StringBuilder builder, String value) {
+		if(value.length() > 0) {
+			builder.append(value + System.getProperty("line.separator"));
+		}
+	}
+
+	public class ModulStatus {
+		private LPModul lpModul;
+		private String modulName ;
+		private boolean locked ;
+
+		public ModulStatus(LPModul lpModul, String modulName, boolean locked) {
+			this.setLpModul(lpModul);
+			this.setModulName(modulName) ;
+			this.setLocked(locked) ;
+		}
+
+
+		public LPModul getLpModule() {
+			return lpModul;
+		}
+
+		private void setLpModul(LPModul lpModul) {
+			this.lpModul = lpModul;
+		}
+
+		public String getModulName() {
+			return modulName;
+		}
+
+		public void setModulName(String modulName) {
+			this.modulName = modulName;
+		}
+
+		public boolean isLocked() {
+			return locked;
+		}
+
+		public void setLocked(boolean locked) {
+			this.locked = locked;
+		}
+	}
+
+	public List<ModulStatus> getStatusOffeneLPModule() {
+		List<ModulStatus> offeneModule = new ArrayList<ModulStatus>();
 		Collection<LPModul> c = hmOflPModule.values();
-		int offeneModule = 0;
-		for (Iterator<LPModul> iter = c.iterator(); iter.hasNext();) {
-			LPModul item = (LPModul) iter.next();
-			if (item.getLPModule() != null) {
-				++offeneModule;
+		for (LPModul lpModul : c) {
+			if(lpModul.hasInternalFrame()) {
+				InternalFrame internalFrame = (InternalFrame) lpModul.getLPModule() ;
+				offeneModule.add(new ModulStatus(lpModul, internalFrame.getBelegartCNr(), internalFrame.isLocked())) ;
 			}
 		}
-		return offeneModule > 0;
+
+		return offeneModule ;
+	}
+
+	private boolean areLPModuleOpen() throws Exception {
+		boolean modulesOpen = false;
+		for(Entry<String, LPModul> entry : hmOflPModule.entrySet()) {
+			LPModul item = entry.getValue();
+			if (item.hasInternalFrame()){
+				modulesOpen = true;
+				break;
+			}
+		}
+		return modulesOpen;
+
+//		Collection<LPModul> c = hmOflPModule.values();
+//		int offeneModule = 0;
+//		for (Iterator<LPModul> iter = c.iterator(); iter.hasNext();) {
+//			LPModul item = (LPModul) iter.next();
+//			if (item.getLPModule() != null) {
+//				++offeneModule;
+//			}
+//		}
+//		return offeneModule > 0;
 	}
 
 	public void doLogon(boolean bShowMandantI) throws Throwable {
 
 		TheClientDto theClientDto = null;
+
 		boolean abbruch = false;
 		bAbbruch = false;
 
@@ -2904,10 +3167,8 @@ public class Desktop extends JFrame implements ActionListener,
 
 			} else {
 				// quicklogin: 2 probieren
-				String benutzer = LPMain.getInstance().getLPParameter(
-						"benutzer");
-				String kennwort = LPMain.getInstance().getLPParameter(
-						"kennwort");
+				String benutzer = ClientConfiguration.getQuickLoginUserName() ;
+				String kennwort = ClientConfiguration.getQuickLoginPassword() ;
 
 				theClientDto = DelegateFactory
 						.getInstance()
@@ -3002,8 +3263,7 @@ public class Desktop extends JFrame implements ActionListener,
 										.updateBenutzer(benutzerDto);
 								showModalDialog(
 										LPMain.getTextRespectUISPr("lp.info"),
-										LPMain.getTextRespectUISPr(
-														"pers.benutzer.kennwortgeaendert"),
+										LPMain.getTextRespectUISPr("pers.benutzer.kennwortgeaendert"),
 										JOptionPane.WARNING_MESSAGE);
 								LPMain.getInstance().setKennwortRaw(
 										neuesKennwort);
@@ -3012,8 +3272,7 @@ public class Desktop extends JFrame implements ActionListener,
 
 								showModalDialog(
 										LPMain.getTextRespectUISPr("lp.error"),
-										LPMain.getTextRespectUISPr(
-														"pers.benutzer.darfkennwortnichtaendern"),
+										LPMain.getTextRespectUISPr("pers.benutzer.darfkennwortnichtaendern"),
 										JOptionPane.WARNING_MESSAGE);
 
 							}
@@ -3026,37 +3285,46 @@ public class Desktop extends JFrame implements ActionListener,
 					catch (ExceptionLP efc) {
 						int code = efc.getICode();
 						if (code == EJBExceptionLP.FEHLER_BEI_FINDBYPRIMARYKEY) {
-							dialogLogin.showInfo(LPMain.getTextRespectUISPr(
-											"lp.error.benutzername"));
+							dialogLogin
+									.showInfo(LPMain
+											.getTextRespectUISPr("lp.error.benutzername"));
 						} else if (code == EJBExceptionLP.FEHLER_UNGUELTIGE_INSTALLATION) {
-							dialogLogin.showInfo(LPMain.getTextRespectUISPr(
-											"lp.error.ungueltigeinstallation"));
+							dialogLogin
+									.showInfo(LPMain
+											.getTextRespectUISPr("lp.error.ungueltigeinstallation"));
 						} else if (code == EJBExceptionLP.FEHLER_MAXIMALE_BENUTZERANZAHL_UEBERSCHRITTEN) {
-							dialogLogin.showInfo(LPMain.getTextRespectUISPr(
-											"lp.error.maximalebenutzer"));
+							dialogLogin
+									.showInfo(LPMain
+											.getTextRespectUISPr("lp.error.maximalebenutzer"));
 						} else if (code == EJBExceptionLP.FEHLER_LIZENZ_ABGELAUFEN) {
-							dialogLogin.showInfo(LPMain.getTextRespectUISPr(
-											"lp.error.lizenzabgelaufen"));
+							dialogLogin
+									.showInfo(LPMain
+											.getTextRespectUISPr("lp.error.lizenzabgelaufen"));
 						} else if (code == EJBExceptionLP.FEHLER_IM_KENNWORT) {
 							// clientres: 2 eine textresource holen.
-							dialogLogin.showInfo(LPMain.getTextRespectUISPr(
-											"lp.error.kennwortname"));
+							dialogLogin
+									.showInfo(LPMain
+											.getTextRespectUISPr("lp.error.kennwortname"));
 						} else if (code == EJBExceptionLP.FEHLER_FALSCHES_KENNWORT) {
-							dialogLogin.showInfo(LPMain.getTextRespectUISPr(
-											"lp.error.kennwortname"));
+							dialogLogin
+									.showInfo(LPMain
+											.getTextRespectUISPr("lp.error.kennwortname"));
 						} else if (code == EJBExceptionLP.FEHLER_BENUTZER_IST_GESPERRT) {
-							dialogLogin.showInfo(LPMain.getTextRespectUISPr(
-											"lp.error.benutzer.gesperrt"));
+							dialogLogin
+									.showInfo(LPMain
+											.getTextRespectUISPr("lp.error.benutzer.gesperrt"));
 						} else if (code == EJBExceptionLP.FEHLER_BENUTZER_IST_NICHT_MEHR_GUELTIG) {
-							dialogLogin.showInfo(LPMain.getTextRespectUISPr(
-											"lp.error.benutzer.abgelaufen"));
+							dialogLogin
+									.showInfo(LPMain
+											.getTextRespectUISPr("lp.error.benutzer.abgelaufen"));
 						} else if (code == EJBExceptionLP.FEHLER_BENUTZER_DARF_SICH_BEI_DIESEM_MANDANTEN_NICHT_ANMELDEN) {
-							dialogLogin.showInfo(LPMain.getTextRespectUISPr(
-											"lp.error.benutzer.anmeldung"));
+							dialogLogin
+									.showInfo(LPMain
+											.getTextRespectUISPr("lp.error.benutzer.anmeldung"));
 						} else if (code == EJBExceptionLP.FEHLER_BENUTZER_KEIN_EINTRAG_IN_BENUTZERMANDANT) {
 							dialogLogin
-									.showInfo(LPMain.getTextRespectUISPr(
-													"lp.error.benutzer.keinbenutzermandant"));
+									.showInfo(LPMain
+											.getTextRespectUISPr("lp.error.benutzer.keinbenutzermandant"));
 						} else if (code == EJBExceptionLP.FEHLER_BUILDNUMMER_CLIENT_SERVER) {
 							// EJBExceptionLP exc = efc;
 							Object pattern[] = {
@@ -3066,8 +3334,8 @@ public class Desktop extends JFrame implements ActionListener,
 											LogonFac.IDX_BUILDNUMMERCLIENTVON),
 									efc.getAlInfoForTheClient().get(
 											LogonFac.IDX_BUILDNUMMERCLIENTBIS) };
-							MessageFormat mf = new MessageFormat(LPMain.getTextRespectUISPr(
-											"lp.version.client.fehler"));
+							MessageFormat mf = new MessageFormat(
+									LPMain.getTextRespectUISPr("lp.version.client.fehler"));
 							dialogLogin.showInfo(mf.format(pattern));
 						} else if (code == EJBExceptionLP.FEHLER_BUILDNUMMER_SERVER_DB) {
 							// EJBExceptionLP exc = (EJBExceptionLP)
@@ -3080,13 +3348,14 @@ public class Desktop extends JFrame implements ActionListener,
 											LogonFac.IDX_BUILDNUMMERSERVERVON),
 									efc.getAlInfoForTheClient().get(
 											LogonFac.IDX_BUILDNUMMERSERVERBIS) };
-							MessageFormat mf = new MessageFormat(LPMain.getTextRespectUISPr(
-											"lp.version.server.fehler"));
+							MessageFormat mf = new MessageFormat(
+									LPMain.getTextRespectUISPr("lp.version.server.fehler"));
 							dialogLogin.showInfo(mf.format(pattern));
 
 						} else if (code == EJBExceptionLP.FEHLER_BUILD_CLIENT) {
-							dialogLogin.showInfo(LPMain.getTextRespectUISPr(
-											"lp.version.client.fehler2"));
+							dialogLogin
+									.showInfo(LPMain
+											.getTextRespectUISPr("lp.version.client.fehler2"));
 						} else if (code == EJBExceptionLP.FEHLER_BENUTZER_DARF_SICH_IN_DIESER_SPRACHE_NICHT_ANMELDEN) {
 							ArrayList<?> al = efc.getAlInfoForTheClient();
 							String zusatz = "";
@@ -3097,9 +3366,10 @@ public class Desktop extends JFrame implements ActionListener,
 										+ loc.getDisplayCountry() + ")";
 							}
 
-							dialogLogin.showInfo(LPMain.getTextRespectUISPr(
-											"lp.error.benutzer.sprache")
-									+ " " + zusatz);
+							dialogLogin
+									.showInfo(LPMain
+											.getTextRespectUISPr("lp.error.benutzer.sprache")
+											+ " " + zusatz);
 						} else if (code == EJBExceptionLP.FEHLER_SPRACHE_NICHT_AKTIV) {
 							ArrayList<?> al = efc.getAlInfoForTheClient();
 							String zusatz = "";
@@ -3110,8 +3380,8 @@ public class Desktop extends JFrame implements ActionListener,
 							}
 
 							dialogLogin
-									.showInfo(LPMain.getTextRespectUISPr(
-													"lp.error.benutzer.sprache.nichtaktiv")
+									.showInfo(LPMain
+											.getTextRespectUISPr("lp.error.benutzer.sprache.nichtaktiv")
 											+ " " + zusatz);
 
 						} else {
@@ -3154,9 +3424,8 @@ public class Desktop extends JFrame implements ActionListener,
 			// Defaults neu initialisieren.
 			Defaults.getInstance().initialize();
 			// Hoehe der Client-Controls
-			String sSizeX = LPMain.getInstance().getLPParameter(
-					"ui.controls.height");
-			Defaults.getInstance().setControlHeight(Integer.parseInt(sSizeX));
+			Integer iSizeX = ClientConfiguration.getUiControlHeight() ;
+			Defaults.getInstance().setControlHeight(iSizeX);
 			// <LEER> - Uebersetzung
 			Defaults.getInstance().setSComboboxEmptyEntry(
 					LPMain.getTextRespectUISPr("wrappercombobox.emptyentry"));
@@ -3190,21 +3459,14 @@ public class Desktop extends JFrame implements ActionListener,
 			MandantDto mandantDto = DelegateFactory
 					.getInstance()
 					.getMandantDelegate()
-					.mandantFindByPrimaryKey(
-							LPMain.getTheClient().getMandant());
+					.mandantFindByPrimaryKey(LPMain.getTheClient().getMandant());
 
-			setTitle(LPMain.getTheClient().getMandant().trim()
-					+ " "
-					+ mandantDto.getCKbez().trim()
-					+ " | "
-					+ LPMain.getTheClient().getBenutzername()
-							.trim()
-					+ " - "
-					+ LPMain.getTextRespectUISPr("lp.uisprache")
-					+ ": "
-					+ LPMain.getTheClient().getLocUiAsString()
-							.trim() + " | " + "server: " + server + " - "
-					+ getTitle());
+			setTitle(LPMain.getTheClient().getMandant().trim() + " "
+					+ mandantDto.getCKbez().trim() + " | "
+					+ LPMain.getTheClient().getBenutzername().trim() + " - "
+					+ LPMain.getTextRespectUISPr("lp.uisprache") + ": "
+					+ LPMain.getTheClient().getLocUiAsString().trim() + " | "
+					+ "server: " + server + " - " + getTitle());
 
 			initDefaults();
 
@@ -3216,26 +3478,20 @@ public class Desktop extends JFrame implements ActionListener,
 					.getToolbarButton()
 					.getJbuStart()
 					.setToolTipText(
-							LPMain.getTextRespectUISPr(
-									"lp.tooltip.anmeldung"));
+							LPMain.getTextRespectUISPr("lp.tooltip.anmeldung"));
 			((LPModul) hmOflPModule.get(MODULNAME_LOGOUT))
 					.getToolbarButton()
 					.getJbuStart()
 					.setToolTipText(
-							LPMain.getTextRespectUISPr(
-									"lp.tooltip.abmeldung"));
-			((LPModul) hmOflPModule.get(MODULNAME_BEENDEN))
-					.getToolbarButton()
+							LPMain.getTextRespectUISPr("lp.tooltip.abmeldung"));
+			((LPModul) hmOflPModule.get(MODULNAME_BEENDEN)).getToolbarButton()
 					.getJbuStart()
-					.setToolTipText(
-							LPMain.getTextRespectUISPr(
-									"lp.beenden"));
+					.setToolTipText(LPMain.getTextRespectUISPr("lp.beenden"));
 			((LPModul) hmOflPModule.get(MODULNAME_MANDANT))
 					.getToolbarButton()
 					.getJbuStart()
 					.setToolTipText(
-							LPMain.getTextRespectUISPr(
-									"lp.mandantwechsel"));
+							LPMain.getTextRespectUISPr("lp.mandantwechsel"));
 
 			check();
 
@@ -3258,33 +3514,40 @@ public class Desktop extends JFrame implements ActionListener,
 	}
 
 	private void check() throws Throwable {
-		
+
 		StringBuffer sb = new StringBuffer();
-		TimeZoneValidationInfo validationInfo = new SystemInfoController().getValidationInfo();
-		
-		if(!validationInfo.isTimezoneAccepted()) {
-			sb.append(LPMain.getMessageTextRespectUISPr("lp.warning.zeitzoneweichtab",
-					validationInfo.getClientTimezone(), validationInfo.getServerTimezone()));
+		TimeZoneValidationInfo validationInfo = new SystemInfoController()
+				.getValidationInfo();
+
+		if (!validationInfo.isTimezoneAccepted()) {
+			sb.append(LPMain.getMessageTextRespectUISPr(
+					"lp.warning.zeitzoneweichtab",
+					validationInfo.getClientTimezone(),
+					validationInfo.getServerTimezone()));
 			sb.append(Helper.CR_LF);
-		} else if(!validationInfo.isDaySavingTimeAccepted()) {
-			if(validationInfo.isServerHasDST())
-				sb.append(LPMain.getTextRespectUISPr("lp.warning.serverhatsommerzeit"));
+		} else if (!validationInfo.isDaySavingTimeAccepted()) {
+			if (validationInfo.isServerHasDST())
+				sb.append(LPMain
+						.getTextRespectUISPr("lp.warning.serverhatsommerzeit"));
 			else
-				sb.append(LPMain.getTextRespectUISPr("lp.warning.serverhatnormalzeit"));
+				sb.append(LPMain
+						.getTextRespectUISPr("lp.warning.serverhatnormalzeit"));
 			sb.append(Helper.CR_LF);
-		} else if(!validationInfo.isTimeDeviationAccepted()) {
+		} else if (!validationInfo.isTimeDeviationAccepted()) {
 			sb.append(LPMain.getTextRespectUISPr("lp.warnung.uhrzeit"));
 			sb.append(Helper.CR_LF);
 			sb.append("Serverzeit:");
-			sb.append(Helper.formatDatumZeit(new Date(validationInfo.getServerTime()), getLocale()));
+			sb.append(Helper.formatDatumZeit(
+					new Date(validationInfo.getServerTime()), getLocale()));
 			sb.append(Helper.CR_LF);
 			sb.append("Clientzeit:");
-			sb.append(Helper.formatDatumZeit(new Date(System.currentTimeMillis()), getLocale()));
+			sb.append(Helper.formatDatumZeit(
+					new Date(System.currentTimeMillis()), getLocale()));
 		}
-		
-		if(sb.length() > 0)
+
+		if (sb.length() > 0)
 			myLogger.debug(sb.toString());
-		
+
 		// SK auskommentiert nach absprache mit AD damit Tests wieder gehen
 		// Integer benutzerFrei =
 		// DelegateFactory.getInstance().getLogonDelegate().
@@ -3301,9 +3564,9 @@ public class Desktop extends JFrame implements ActionListener,
 		// *** server jvm
 
 		if (LPMain.getTheClient().getIStatus() != null) {
-			if ((LPMain.getTheClient().getIStatus() != null && LPMain.getTheClient().getIStatus().intValue() == EJBExceptionLP.WARNUNG_SERVER_JVM)) {
-				String sM = LPMain.getTextRespectUISPr(
-						"lp.jvm.version.server");
+			if ((LPMain.getTheClient().getIStatus() != null && LPMain
+					.getTheClient().getIStatus().intValue() == EJBExceptionLP.WARNUNG_SERVER_JVM)) {
+				String sM = LPMain.getTextRespectUISPr("lp.jvm.version.server");
 				sb.append(Helper.CR_LF + Helper.CR_LF);
 				sb.append(sM);
 			} else {
@@ -3315,6 +3578,8 @@ public class Desktop extends JFrame implements ActionListener,
 		// *** expires; expirehv: auswerten
 		boolean bExit = false;
 		String sM = "";
+		Timestamp now = new Timestamp(System.currentTimeMillis());
+
 		try {
 			AnwenderDto anwenderDtoNF = DelegateFactory
 					.getInstance()
@@ -3323,36 +3588,39 @@ public class Desktop extends JFrame implements ActionListener,
 							new Integer(
 									SystemFac.PK_HAUPTMANDANT_IN_LP_ANWENDER));
 
-			if (anwenderDtoNF.getTAblauf() != null) {
-				LPMain.setVersionHVExpires(anwenderDtoNF.getTAblauf());
-				Date dt10 = Helper.addiereTageZuDatum(
-						anwenderDtoNF.getTAblauf(), -10);
-				if (new java.sql.Timestamp(System.currentTimeMillis())
-						.after(dt10)) {
-					sM = dialogExpires(sM, "lp.expires");
+			Timestamp tSubscription = anwenderDtoNF.getTSubscription();
+			Timestamp tAblauf = anwenderDtoNF.getTAblauf();
+
+			if (tSubscription != null && tAblauf == null) {
+				LPMain.setVersionHVExpires(tSubscription);
+
+				if (now.after(tSubscription)) {
+					sM = dialogExpires(sM, "lp.expires.now");
+				}
+
+				else if (now.after(Helper.addiereTageZuDatum(tSubscription, -14))) {
+					sM = dialogExpires(sM, "lp.expires.ro");
 				}
 			}
-			/*
-			 * String sExpired = anwenderDtoNF.getCVersionDB().substring(
-			 * SystemFac.MAX_LAENGE_HV_DB_VERSION,
-			 * anwenderDtoNF.getCVersionDB().length()); int id =
-			 * sExpired.charAt(0); int im = sExpired.charAt(1); int iy =
-			 * sExpired.charAt(2) + 2000; GregorianCalendar dExpires = new
-			 * GregorianCalendar(iy, im, id);
-			 * LPMain.setVersionHVExpires(dExpires.getTime());
-			 * 
-			 * GregorianCalendar dNow = new GregorianCalendar();
-			 * 
-			 * GregorianCalendar dExpiresBefore10days = new GregorianCalendar(
-			 * dExpires.get(GregorianCalendar.YEAR), dExpires
-			 * .get(GregorianCalendar.MONTH), dExpires
-			 * .get(GregorianCalendar.DATE) - 10);
-			 * 
-			 * bExit = false; sM = ""; if (dNow.after(dExpires)) { sM =
-			 * dialogExpires(sM, "lp.expires.now"); bExit = true; } else if
-			 * (dNow.after(dExpiresBefore10days)) { sM = dialogExpires(sM,
-			 * "lp.expires"); }
-			 */
+
+			else if (tSubscription != null && tAblauf != null && tAblauf.after(tSubscription)) {
+				if (now.after(tSubscription)) {
+					sM = dialogExpiresAblaufAndSubscription(LPMain.getMessageTextRespectUISPr("lp.expires.now.02", tSubscription, tAblauf));
+
+				}
+
+				else if (now.after(Helper.addiereTageZuDatum(tSubscription, -14))) {
+					sM = dialogExpiresAblaufAndSubscription(LPMain.getMessageTextRespectUISPr("lp.expires.ro.02", tSubscription, tAblauf));
+				}
+			}
+
+			else if ((tAblauf != null && tSubscription == null) || (tAblauf != null && tSubscription != null && tSubscription.after(tAblauf)))  {
+				LPMain.setVersionHVExpires(tAblauf);
+				 if (now.after(Helper.addiereTageZuDatum(tAblauf, -14))) {
+						sM = dialogExpires(sM, "lp.expires");
+				 }
+			}
+
 		} catch (Throwable ex) {
 			sM = dialogExpires(sM, "lp.isexpired");
 		}
@@ -3361,8 +3629,9 @@ public class Desktop extends JFrame implements ActionListener,
 		// *** jetzt alles gesammelte ausgeben.
 		if (!sb.toString().isEmpty()) {
 			sb.append(Helper.CR_LF);
-			sb.append("(" + System.getProperty("java.naming.provider.url") + ")");
-			showModalDialog("", sb.toString(), JOptionPane.WARNING_MESSAGE);
+			sb.append("(" + System.getProperty("java.naming.provider.url")
+					+ ")");
+			showModalDialog("Lizenz", sb.toString(), JOptionPane.WARNING_MESSAGE);
 			if (bExit) {
 				LPMain.getInstance().exitClientNowErrorDlg(null);
 			}
@@ -3371,15 +3640,24 @@ public class Desktop extends JFrame implements ActionListener,
 
 	private String dialogExpires(String sM, String sMsg) {
 		Object[] arguments = { LPMain.getVersionHVExpires() };
-		String result = MessageFormat.format(LPMain.getTextRespectUISPr(sMsg), arguments);
+		String result = MessageFormat.format(LPMain.getTextRespectUISPr(sMsg),
+				arguments);
 
 		sM += result + Helper.CR_LF + Helper.CR_LF;
-		sM += LPMain.getTextRespectUISPr("lp.logistikpur")
-				+ Helper.CR_LF;
+		return dialogExpiresMin(sM);
+	}
+
+	private String dialogExpiresAblaufAndSubscription(String sM) {
+		sM += Helper.CR_LF + Helper.CR_LF;
+		return dialogExpiresMin(sM);
+	}
+
+	private String dialogExpiresMin(String sM) {
+		Integer year = Calendar.getInstance().get(Calendar.YEAR);
+		sM += LPMain.getMessageTextRespectUISPr("lp.logistikpur", year.toString()) + Helper.CR_LF;
 		sM += LPMain.getTextRespectUISPr("lp.logistikpuradresse")
 				+ Helper.CR_LF;
-		sM += LPMain.getTextRespectUISPr("lp.logistikpuremail")
-				+ Helper.CR_LF;
+		sM += LPMain.getTextRespectUISPr("lp.logistikpuremail") + Helper.CR_LF;
 		sM += LPMain.getTextRespectUISPr("lp.logistikpurkontakt")
 				+ Helper.CR_LF;
 		return sM;
@@ -3421,13 +3699,15 @@ public class Desktop extends JFrame implements ActionListener,
 
 	/**
 	 * Listener fuer alle Chexboxen und Radiobuttons.
-	 * 
+	 *
 	 * @param e
 	 *            ItemEvent
 	 */
 	public void itemStateChanged(java.awt.event.ItemEvent e) {
-		this.setCursor(java.awt.Cursor
-				.getPredefinedCursor(java.awt.Cursor.WAIT_CURSOR));
+		if (Defaults.getInstance().isUseWaitCursor()) {
+			this.setCursor(java.awt.Cursor
+					.getPredefinedCursor(java.awt.Cursor.WAIT_CURSOR));
+		}
 		JRadioButtonMenuItem rb = (JRadioButtonMenuItem) e.getSource();
 		try {
 			/** @todo JO en version? PJ 5418 */
@@ -3455,12 +3735,11 @@ public class Desktop extends JFrame implements ActionListener,
 				UIManager
 						.setLookAndFeel("com.l2fprod.gui.plaf.skin.SkinLookAndFeel");
 			}
-
+			loadUserSpecificSettings();
 			SwingUtilities.updateComponentTreeUI(this);
 		} catch (UnsupportedLookAndFeelException exc) {
 			rb.setEnabled(false);
-			System.err.println(LPMain.getTextRespectUISPr(
-					"lp.error.look")
+			System.err.println(LPMain.getTextRespectUISPr("lp.error.look")
 					+ rb.getText());
 			try {
 				// UI_CUR = "Metal";
@@ -3476,13 +3755,16 @@ public class Desktop extends JFrame implements ActionListener,
 			rb.setEnabled(false);
 			LPMain.getInstance().exitClientNowErrorDlg(exc);
 		}
-		this.setCursor(java.awt.Cursor
-				.getPredefinedCursor(java.awt.Cursor.DEFAULT_CURSOR));
+
+		if (Defaults.getInstance().isUseWaitCursor()) {
+			this.setCursor(java.awt.Cursor
+					.getPredefinedCursor(java.awt.Cursor.DEFAULT_CURSOR));
+		}
 	}
 
 	/**
 	 * Entferne jInternalFrameMe sauber aus der Struktur.
-	 * 
+	 *
 	 * @param jInternalFrameMe
 	 *            InternalFrame
 	 * @param t
@@ -3496,7 +3778,6 @@ public class Desktop extends JFrame implements ActionListener,
 			if (t != null) {
 				myLogger.error(t.getMessage(), t);
 
-				
 				new DialogError(this, t, DialogError.TYPE_ERROR);
 				// JOptionPane.showMessageDialog(this, msgTemp, "",
 				// JOptionPane.INFORMATION_MESSAGE);
@@ -3526,16 +3807,49 @@ public class Desktop extends JFrame implements ActionListener,
 		try {
 			jif.vetoableChangeLP();
 		} catch (Throwable ex) {
-			exitClientNowErrorDlg(ex);
+//			exitClientNowErrorDlg(ex);
+
+//			new DialogError(this, ex, DialogError.TYPE_WARNING);
+			if(ex != null) {
+				throw new RuntimeException(ex) ;
+			}
+
 		}
+		closeModuleAndFrame(lPModul, jif);
+//		try {
+//			jif.setClosed(true);
+//		} catch (PropertyVetoException e) {
+//			ClientPerspectiveManager.getInstance().internalFrameClosing(
+//					new InternalFrameEvent(jif, 0));
+//			jif.dispose();
+//		}
+////		lPModul.setLPModule(null);
+//		lPModul.setOpenModules(null);
+	}
+
+
+	private void closeModuleAndFrame(LPModul modul, InternalFrame frame) {
 		try {
-			jif.setClosed(true);
+			frame.setClosed(true);
 		} catch (PropertyVetoException e) {
 			ClientPerspectiveManager.getInstance().internalFrameClosing(
-					new InternalFrameEvent(jif, 0));
-			jif.dispose();
+					new InternalFrameEvent(frame, 0));
+			frame.dispose();
 		}
-		lPModul.setLPModule(null);
+		modul.setOpenModules(null);
+	}
+
+	/**
+	 * Das Modul ohne weitere Benachrichtigung schliessen
+	 *
+	 * @param modul das zu beendende Modul
+	 */
+	private void closeFrame(LPModul modul) {
+		modul.setStatus(LPModul.STATUS_ENABLED);
+		InternalFrame frame = (InternalFrame) modul.getLPModule();
+		frame.dispose();
+		modul.setOpenModules(null);
+//		closeModuleAndFrame(modul, frame);
 	}
 
 	public void closeAllFrames() {
@@ -3583,6 +3897,15 @@ public class Desktop extends JFrame implements ActionListener,
 			} else {
 				item.setStatus(LPModul.STATUS_DISABLED);
 			}
+		}
+	}
+
+	private void disableAllModule() throws Throwable {
+		for (LPModul modul : hmOflPModule.values()) {
+			if(!modul.hasInternalFrame()) continue ;
+
+			closeFrame(modul) ;
+//			modul.setStatus(LPModul.STATUS_DISABLED);
 		}
 	}
 
@@ -3691,8 +4014,7 @@ public class Desktop extends JFrame implements ActionListener,
 		Defaults.getInstance().setSizeFactor(
 				font.getSize2D() / HelperClient.getDefaultFont().getSize2D());
 
-		Integer height = new Integer(LPMain.getInstance().getLPParameter(
-				"ui.controls.height"));
+		Integer height = ClientConfiguration.getUiControlHeight() ;
 		Defaults.getInstance().setControlHeight(
 				Defaults.getInstance().bySizeFactor(height));
 
@@ -3709,10 +4031,42 @@ public class Desktop extends JFrame implements ActionListener,
 				}
 			}
 		}
-
+		Defaults.getInstance().setColorVision(
+				ClientPerspectiveManager.getInstance().readColorVision());
 	}
 
-	protected void setDefaultColors() {
+	protected void loadUserSpecificSettings() {
+
+		boolean direkthilfe =  true;
+		if(menuItemDirekthilfe != null) {
+			// auf mac haut es einfach nicht hin, die Icons kommen aus AquaNativeResources.getRadioButtonSizerImage()
+			//was man nicht ueberschreiben kann
+			direkthilfe = !UIManager.getLookAndFeel().getName().contains("Mac OS");
+			menuItemDirekthilfe.setEnabled(direkthilfe);
+			menuItemDirekthilfe.setSelected(direkthilfe);
+		}
+
+		reloadFont(true);
+		Defaults.getInstance().setDirekthilfeVisible(ClientPerspectiveManager.getInstance().isDirekthilfeVisible() && direkthilfe);
+
+		LookAndFeel laf = UIManager.getLookAndFeel();
+		if(!laf.getName().contains("Windows")) {
+			// windows verwendet seine eigenen Icons
+			// fuer RadioButtons und CheckBoxes
+			laf = new MetalLookAndFeel();
+		}
+
+
+		Icon icon = laf.getDefaults().getIcon("CheckBox.icon");
+		if(!(icon instanceof CibIconWrapper))
+			UIManager.put("CheckBox.icon", new CibIconWrapper(icon));
+
+		icon = laf.getDefaults().getIcon("RadioButton.icon");
+		if(!(icon instanceof CibIconWrapper))
+			UIManager.put("RadioButton.icon", new CibIconWrapper(icon));
+	}
+
+	protected void setDefaultPropertiesAndColors() {
 		// UIManager.put("TextField.font", font);
 		// UIManager.put("FormattedTextField.font", font);
 		// UIManager.put("Table.font", font);
@@ -3740,15 +4094,12 @@ public class Desktop extends JFrame implements ActionListener,
 		// f.getStyle(), 24)) ;
 		// }
 
-		reloadFont(true);
+		loadUserSpecificSettings();
 
 		// DefaultFarbe fuer Textfeld-Hintergrund
 		try {
-			String sInactiveForegroundColor = LPMain.getInstance()
-					.getLPParameter("color.TextField.inactiveForeground");
-			int iInactiveForegroundColor = Integer
-					.parseInt(sInactiveForegroundColor);
-			Color inactiveForegroundColor = new Color(iInactiveForegroundColor);
+			Color inactiveForegroundColor = 
+					ClientConfiguration.getInactiveForegroundColor() ;
 			UIManager.put("TextField.inactiveForeground",
 					inactiveForegroundColor);
 		} catch (Throwable e) {
@@ -3758,6 +4109,11 @@ public class Desktop extends JFrame implements ActionListener,
 
 		UIManager
 				.put("TextField.inactiveBackground", java.awt.SystemColor.info);
+	}
+
+	public Dimension getDesktopPaneSize() {
+		validate();
+		return desktopPane.getSize();
 	}
 
 	private Dimension getInternalFrameSize() {
@@ -3772,7 +4128,7 @@ public class Desktop extends JFrame implements ActionListener,
 	class BackgroundPanel extends JPanel {
 
 		/**
-	 * 
+	 *
 	 */
 		private static final long serialVersionUID = 1L;
 		private Image bgImage;
@@ -3880,35 +4236,62 @@ public class Desktop extends JFrame implements ActionListener,
 
 		if (actionCommand.equals(MY_OWN_NEW_ZEIT_START)) {
 
-			ParametermandantDto parameter = (ParametermandantDto) DelegateFactory
+			ParametermandantDto parameterPV = (ParametermandantDto) DelegateFactory
 					.getInstance()
 					.getParameterDelegate()
 					.getParametermandant(
-							ParameterFac.PARAMETER_DEFAULT_ARBEITSZEITARTIKEL,
-							ParameterFac.KATEGORIE_ALLGEMEIN,
+							ParameterFac.PARAMETER_ARBEITSZEITARTIKEL_AUS_PERSONALVERFUEGBARKEIT,
+							ParameterFac.KATEGORIE_PERSONAL,
 							LPMain.getTheClient().getMandant());
 
-			Integer artikelIId = null;
-			if (parameter.getCWert() != null
-					&& !parameter.getCWertAsObject().equals("")) {
-				try {
+			boolean bArbeitszeitartikelauspersonalverfuegbarkeit = (Boolean) parameterPV
+					.getCWertAsObject();
+
+			if (bArbeitszeitartikelauspersonalverfuegbarkeit == true) {
+				Integer artikelIId = DelegateFactory
+						.getInstance()
+						.getPersonalDelegate()
+						.getArtikelIIdHoechsterWertPersonalverfuegbarkeit(
+								LPMain.getTheClient().getIDPersonal());
+				if (artikelIId != null) {
 					ArtikelDto artikelDto = DelegateFactory.getInstance()
 							.getArtikelDelegate()
-							.artikelFindByCNr(parameter.getCWert());
-					artikelIId = artikelDto.getIId();
-				} catch (Throwable ex) {
+							.artikelFindByPrimaryKey(artikelIId);
+
+					zDto.setArtikelIId(artikelDto.getIId());
+				}
+			}
+
+			if (zDto.getArtikelIId() == null) {
+
+				ParametermandantDto parameter = (ParametermandantDto) DelegateFactory
+						.getInstance()
+						.getParameterDelegate()
+						.getParametermandant(
+								ParameterFac.PARAMETER_DEFAULT_ARBEITSZEITARTIKEL,
+								ParameterFac.KATEGORIE_ALLGEMEIN,
+								LPMain.getTheClient().getMandant());
+				if (parameter.getCWert() != null
+						&& !parameter.getCWertAsObject().equals("")) {
+					try {
+						ArtikelDto artikelDto = DelegateFactory.getInstance()
+								.getArtikelDelegate()
+								.artikelFindByCNr(parameter.getCWert());
+						zDto.setArtikelIId(artikelDto.getIId());
+					} catch (Throwable ex) {
+						throw new ExceptionLP(
+								EJBExceptionLP.FEHLER_DEFAULT_ARBEITSZEITARTIKEL_NICHT_DEFINIERT,
+								new Exception(
+										"FEHLER_DEFAULT_ARBEITSZEITARTIKEL_NICHT_DEFINIERT"));
+					}
+				} else {
 					throw new ExceptionLP(
 							EJBExceptionLP.FEHLER_DEFAULT_ARBEITSZEITARTIKEL_NICHT_DEFINIERT,
 							new Exception(
 									"FEHLER_DEFAULT_ARBEITSZEITARTIKEL_NICHT_DEFINIERT"));
 				}
-			} else {
-				throw new ExceptionLP(
-						EJBExceptionLP.FEHLER_DEFAULT_ARBEITSZEITARTIKEL_NICHT_DEFINIERT,
-						new Exception(
-								"FEHLER_DEFAULT_ARBEITSZEITARTIKEL_NICHT_DEFINIERT"));
 			}
-			zDto.setArtikelIId(artikelIId);
+
 			zDto.setCBelegartnr(belegartCNr);
 			zDto.setIBelegartid(belegartIId);
 
@@ -3972,7 +4355,7 @@ public class Desktop extends JFrame implements ActionListener,
 	}
 
 	/**
-	 * 
+	 *
 	 * @return int
 	 */
 	public int getSelectedIndex() {
@@ -3981,7 +4364,7 @@ public class Desktop extends JFrame implements ActionListener,
 
 	/**
 	 * cmd: 0
-	 * 
+	 *
 	 * @param commandI
 	 *            Command
 	 * @throws Throwable
@@ -4048,7 +4431,7 @@ public class Desktop extends JFrame implements ActionListener,
 
 	/**
 	 * iconifyWindows
-	 * 
+	 *
 	 * @throws PropertyVetoException
 	 */
 	private void iconifyWindows() throws PropertyVetoException {
@@ -4070,8 +4453,27 @@ public class Desktop extends JFrame implements ActionListener,
 	}
 
 	public void platziereDialogInDerMitteDesFensters(JDialog jDialog) {
+		jDialog.setLocationRelativeTo(this);
+//		java.awt.Dimension frameSize = this.getSize();
+//		java.awt.Dimension dialogSize = jDialog.getSize();
+//		java.awt.Point frameLocation = this.getLocation();
+//		// Position des Dialogs genau in der Mitte des Frames
+//		int iX = (int) frameLocation.getX()
+//				+ ((frameSize.width - dialogSize.width) / 2);
+//		int iY = (int) frameLocation.getY()
+//				+ ((frameSize.height - dialogSize.height) / 2);
+//		if (iX < 0) {
+//			iX = 0;
+//		}
+//		if (iY < 0) {
+//			iY = 0;
+//		}
+//		jDialog.setLocation(iX, iY);
+	}
+
+	public void platziereFrameInDerMitteDesFensters(JFrame jFrame) {
 		java.awt.Dimension frameSize = this.getSize();
-		java.awt.Dimension dialogSize = jDialog.getSize();
+		java.awt.Dimension dialogSize = jFrame.getSize();
 		java.awt.Point frameLocation = this.getLocation();
 		// Position des Dialogs genau in der Mitte des Frames
 		int iX = (int) frameLocation.getX()
@@ -4084,7 +4486,7 @@ public class Desktop extends JFrame implements ActionListener,
 		if (iY < 0) {
 			iY = 0;
 		}
-		jDialog.setLocation(iX, iY);
+		jFrame.setLocation(iX, iY);
 	}
 
 	public void platziereDialogRechtsObenImFenster(JDialog jDialog) {
@@ -4150,7 +4552,7 @@ public class Desktop extends JFrame implements ActionListener,
 		try {
 			themen = DelegateFactory.getInstance().getBenutzerDelegate()
 					.getThemenDesAngemeldetenBenutzers();
-			if (themen != null) {
+//			if (themen != null) {
 				for (int i = 0; i < themen.length; i++) {
 					if (themen[i].trim().equals(LPTopicQsBean.TOPIC_NAME_QS))
 						LPMain.getInstance().initTopicQs(this);
@@ -4162,7 +4564,7 @@ public class Desktop extends JFrame implements ActionListener,
 						LPMain.getInstance().initTopicManage(this);
 					if (themen[i].trim().equals(LPTopicGfBean.TOPIC_NAME_GF))
 						LPMain.getInstance().initTopicGf(this);
-				}
+//				}
 			}
 		} catch (Exception e) {
 			e.printStackTrace();

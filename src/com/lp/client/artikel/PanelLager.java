@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -179,7 +179,7 @@ public class PanelLager extends PanelBasis {
 	}
 
 	protected void eventItemchanged(EventObject eI) throws Throwable {
-		eI = (ItemChangedEvent) eI;
+//		eI = (ItemChangedEvent) eI;
 	}
 
 	private void jbInit() throws Throwable {

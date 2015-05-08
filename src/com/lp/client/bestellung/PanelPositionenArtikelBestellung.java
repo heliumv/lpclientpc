@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -126,7 +126,7 @@ public class PanelPositionenArtikelBestellung extends
 
 	private void jbInitPanel() throws Throwable {
 		wlaGewichtbestellmenge = new WrapperLabel(
-				LPMain.getTextRespectUISPr("bes.gewicht"));
+				LPMain.getTextRespectUISPr("bes.alternative.bestellmengeneinheit"));
 		// wlaGewichtbestellmenge.addMouseListener(new
 		// MouseAdapterChangeMenge(this));
 		wnfGewichtbestellmenge = new WrapperNumberField();
@@ -229,8 +229,7 @@ public class PanelPositionenArtikelBestellung extends
 					.getPanelBestellungPositionenBottomD3();
 
 			String sWahrungBS = getInternalFrameBestellung()
-					.getTabbedPaneBestellung().getBesDto()
-					.getWaehrungCNr();
+					.getTabbedPaneBestellung().getBesDto().getWaehrungCNr();
 
 			ArtikellieferantDto artliefDto = null;
 			try {
@@ -257,41 +256,69 @@ public class PanelPositionenArtikelBestellung extends
 			} else {
 				setArtikellieferantDto(null);
 			}
-			if (wnfMenge.getBigDecimal() != null
-					&& getArtikelDto().getNUmrechnungsfaktor() != null
-					&& getArtikelDto().getNUmrechnungsfaktor().doubleValue() != 0) {
-				if (Helper.short2boolean(getArtikelDto()
-						.getbBestellmengeneinheitInvers())) {
+
+			BigDecimal umrechnungsfaktor = getArtikelDto()
+					.getNUmrechnungsfaktor();
+			boolean bInvers = Helper.short2boolean(getArtikelDto()
+					.getbBestellmengeneinheitInvers());
+
+			if (umrechnungsfaktor == null) {
+
+				if (getArtikellieferantDto() != null
+						&& getArtikellieferantDto().getNVerpackungseinheit() != null
+						&& getArtikellieferantDto().getEinheitCNrVpe() != null) {
+					umrechnungsfaktor = getArtikellieferantDto()
+							.getNVerpackungseinheit();
+					bInvers = true;
+				}
+
+			}
+
+			if (wnfMenge.getBigDecimal() != null && umrechnungsfaktor != null
+					&& umrechnungsfaktor.doubleValue() != 0) {
+				if (bInvers) {
 					wnfGewichtbestellmenge.setBigDecimal(wnfMenge
-							.getBigDecimal().divide(
-									getArtikelDto().getNUmrechnungsfaktor(), 2,
+							.getBigDecimal().divide(umrechnungsfaktor, 2,
 									BigDecimal.ROUND_HALF_UP));
 					BigDecimal nPreisPerEinheit = (wnfNettopreis
-							.getBigDecimal().multiply(getArtikelDto()
-							.getNUmrechnungsfaktor()));
+							.getBigDecimal().multiply(umrechnungsfaktor));
 					wnfGewichtPreis.setBigDecimal(nPreisPerEinheit);
 				} else {
 					wnfGewichtbestellmenge.setBigDecimal(wnfMenge
-							.getBigDecimal().multiply(
-									getArtikelDto().getNUmrechnungsfaktor()));
+							.getBigDecimal().multiply(umrechnungsfaktor));
 					BigDecimal nPreisPerEinheit = (wnfEinzelpreis
-							.getBigDecimal().divide(getArtikelDto()
-							.getNUmrechnungsfaktor(), Defaults.getInstance()
-							.getIUINachkommastellenPreiseEK(),
+							.getBigDecimal().divide(umrechnungsfaktor, Defaults
+							.getInstance().getIUINachkommastellenPreiseEK(),
 							BigDecimal.ROUND_HALF_EVEN));
 					wnfGewichtPreis.setBigDecimal(nPreisPerEinheit);
 				}
 
 			} else {
-				wnfGewichtbestellmenge.setBigDecimal(getArtikelDto()
-						.getNUmrechnungsfaktor());
+				wnfGewichtbestellmenge.setBigDecimal(umrechnungsfaktor);
 			}
 			artikelDto2components(true);
 
 			panelBestellungPos.artLiefData2Components(getArtikelDto(),
 					artliefDto);
 
-			// panelBestellungPos.actionPerformedPreisChanged();
+			// SP2771
+			if (artliefDto == null) {
+				ArtikellieferantDto alDto = DelegateFactory
+						.getInstance()
+						.getArtikelDelegate()
+						.artikellieferantFindByArtikellIIdLieferantIIdTPreisgueltigabKleiner(
+								getArtikelDto().getIId(),
+								getIIdLieferant(),
+								getInternalFrameBestellung()
+										.getTabbedPaneBestellung().getBesDto()
+										.getDBelegdatum());
+				if (alDto != null) {
+					panelBestellungPos
+							.artLiefData2ComponentsWennKeinEinzelpreisDefiniert(
+									getArtikelDto(), alDto);
+				}
+
+			}
 		}
 	}
 
@@ -301,8 +328,7 @@ public class PanelPositionenArtikelBestellung extends
 			MessageFormat mf = new MessageFormat(
 					LPMain.getTextRespectUISPr("bes.wahrung.exit"));
 			String sWaehrungBS = getInternalFrameBestellung()
-					.getTabbedPaneBestellung().getBesDto()
-					.getWaehrungCNr();
+					.getTabbedPaneBestellung().getBesDto().getWaehrungCNr();
 			String sWaehrungMandant = null;
 			try {
 				sWaehrungMandant = LPMain.getTheClient()
@@ -342,30 +368,50 @@ public class PanelPositionenArtikelBestellung extends
 
 		berechnePreisdaten(bArtikelNeuAusgewaehlt);
 
-		if (getArtikelDto().getEinheitCNrBestellung() != null) {
-			if (Helper.short2boolean(getArtikelDto()
-					.getbBestellmengeneinheitInvers())) {
+		BigDecimal umrechnungsfaktor = getArtikelDto().getNUmrechnungsfaktor();
+		boolean bInvers = Helper.short2boolean(getArtikelDto()
+				.getbBestellmengeneinheitInvers());
 
-				if (getArtikelDto().getNUmrechnungsfaktor().doubleValue() != 0) {
+		if (umrechnungsfaktor == null) {
+
+			if (getArtikellieferantDto() != null
+					&& getArtikellieferantDto().getNVerpackungseinheit() != null
+					&& getArtikellieferantDto().getEinheitCNrVpe() != null) {
+				umrechnungsfaktor = getArtikellieferantDto()
+						.getNVerpackungseinheit();
+				bInvers = true;
+			}
+
+		}
+
+		if (umrechnungsfaktor != null) {
+			if (bInvers) {
+
+				if (umrechnungsfaktor.doubleValue() != 0) {
 					wnfGewichtbestellmenge.setBigDecimal(wnfMenge
-							.getBigDecimal().divide(
-									getArtikelDto().getNUmrechnungsfaktor(), 4,
+							.getBigDecimal().divide(umrechnungsfaktor, 4,
 									BigDecimal.ROUND_HALF_EVEN));
 				} else {
 					wnfGewichtbestellmenge.setBigDecimal(new BigDecimal(0));
 				}
 			} else {
 				wnfGewichtbestellmenge.setBigDecimal(wnfMenge.getBigDecimal()
-						.multiply(getArtikelDto().getNUmrechnungsfaktor()));
+						.multiply(umrechnungsfaktor));
 			}
-			wlaGewichtmengeEinheit.setText(getArtikelDto()
-					.getEinheitCNrBestellung().trim());
+
+			if (getArtikelDto().getEinheitCNrBestellung() != null) {
+				wlaGewichtmengeEinheit.setText(getArtikelDto()
+						.getEinheitCNrBestellung().trim());
+			} else if (getArtikellieferantDto() != null) {
+				wlaGewichtmengeEinheit.setText(getArtikellieferantDto()
+						.getEinheitCNrVpe().trim());
+			}
+
 			if (getInternalFrame().bRechtDarfPreiseSehenEinkauf) {
 				wlaGewichtmengeEinheit.setText(wlaGewichtmengeEinheit.getText()
-						+ "  ?");
+						+ "  \u00E0");
 			}
-			wlaGewichtWaehrung.setText(tPBes.getBesDto()
-					.getWaehrungCNr());
+			wlaGewichtWaehrung.setText(tPBes.getBesDto().getWaehrungCNr());
 		}
 	}
 
@@ -380,24 +426,36 @@ public class PanelPositionenArtikelBestellung extends
 	 */
 	protected void wnfEinzelpreis_focusLost(FocusEvent e) throws Throwable {
 		super.wnfEinzelpreis_focusLost(e);
-		if (wnfEinzelpreis.getBigDecimal() != null
-				&& getArtikelDto().getNUmrechnungsfaktor() != null) {
-			if (getArtikelDto().getNUmrechnungsfaktor().compareTo(
-					new BigDecimal(0)) != 0) {
 
-				if (Helper.short2boolean(getArtikelDto()
-						.getbBestellmengeneinheitInvers())) {
+		BigDecimal umrechnungsfaktor = getArtikelDto().getNUmrechnungsfaktor();
+		boolean bInvers = Helper.short2boolean(getArtikelDto()
+				.getbBestellmengeneinheitInvers());
+
+		if (umrechnungsfaktor == null) {
+
+			if (getArtikellieferantDto() != null
+					&& getArtikellieferantDto().getNVerpackungseinheit() != null
+					&& getArtikellieferantDto().getEinheitCNrVpe() != null) {
+				umrechnungsfaktor = getArtikellieferantDto()
+						.getNVerpackungseinheit();
+				bInvers = true;
+			}
+
+		}
+
+		if (wnfEinzelpreis.getBigDecimal() != null && umrechnungsfaktor != null) {
+			if (umrechnungsfaktor.compareTo(new BigDecimal(0)) != 0) {
+
+				if (bInvers) {
 
 					BigDecimal nPreisPerEinheit = wnfEinzelpreis
-							.getBigDecimal().multiply(
-									getArtikelDto().getNUmrechnungsfaktor());
+							.getBigDecimal().multiply(umrechnungsfaktor);
 
 					wnfGewichtPreis.setBigDecimal(nPreisPerEinheit);
 				} else {
 					BigDecimal nPreisPerEinheit = (wnfEinzelpreis
-							.getBigDecimal().divide(getArtikelDto()
-							.getNUmrechnungsfaktor(), Defaults.getInstance()
-							.getIUINachkommastellenPreiseEK(),
+							.getBigDecimal().divide(umrechnungsfaktor, Defaults
+							.getInstance().getIUINachkommastellenPreiseEK(),
 							BigDecimal.ROUND_HALF_EVEN));
 
 					wnfGewichtPreis.setBigDecimal(nPreisPerEinheit);
@@ -405,7 +463,11 @@ public class PanelPositionenArtikelBestellung extends
 			}
 			if (getArtikelDto().getEinheitCNrBestellung() != null) {
 				wlaGewichtmengeEinheit.setText(getArtikelDto()
-						.getEinheitCNrBestellung().trim() + "  ?");
+						.getEinheitCNrBestellung().trim() + "  \u00E0");
+			} else if (getArtikellieferantDto() != null
+					&& getArtikellieferantDto().getEinheitCNrVpe() != null) {
+				wlaGewichtmengeEinheit.setText(getArtikellieferantDto()
+						.getEinheitCNrVpe().trim() + "  \u00E0");
 			}
 
 		}
@@ -512,40 +574,67 @@ public class PanelPositionenArtikelBestellung extends
 	public void setArtikelDto(ArtikelDto artikelDto) throws Throwable {
 		super.setArtikelDto(artikelDto);
 		boolean bGewichtVisible = false;
-		if (artikelDto != null && artikelDto.getNUmrechnungsfaktor() != null) {
+
+		BigDecimal umrechnungsfaktor = getArtikelDto().getNUmrechnungsfaktor();
+		boolean bInvers = Helper.short2boolean(getArtikelDto()
+				.getbBestellmengeneinheitInvers());
+
+		if (umrechnungsfaktor == null) {
+
+			if (getArtikellieferantDto() != null
+					&& getArtikellieferantDto().getNVerpackungseinheit() != null
+					&& getArtikellieferantDto().getEinheitCNrVpe() != null) {
+				umrechnungsfaktor = getArtikellieferantDto()
+						.getNVerpackungseinheit();
+				bInvers = true;
+			}
+
+		}
+
+		if (artikelDto != null && umrechnungsfaktor != null) {
 			bGewichtVisible = true;
 			if (wnfMenge.getBigDecimal() != null) {
 
-				if (Helper.short2boolean(getArtikelDto()
-						.getbBestellmengeneinheitInvers())) {
+				if (bInvers) {
 
 					wnfGewichtbestellmenge.setBigDecimal(wnfMenge
 							.getBigDecimal().divide(
-									getArtikelDto().getNUmrechnungsfaktor(),
+									umrechnungsfaktor,
 									Defaults.getInstance()
 											.getIUINachkommastellenPreiseEK(),
 									BigDecimal.ROUND_HALF_EVEN));
 					BigDecimal nPreisPerEinheit = (wnfNettopreis
-							.getBigDecimal().multiply(getArtikelDto()
-							.getNUmrechnungsfaktor()));
+							.getBigDecimal().multiply(umrechnungsfaktor));
 					wnfGewichtPreis.setBigDecimal(nPreisPerEinheit);
 				} else {
 					wnfGewichtbestellmenge.setBigDecimal(wnfMenge
-							.getBigDecimal().multiply(
-									getArtikelDto().getNUmrechnungsfaktor()));
+							.getBigDecimal().multiply(umrechnungsfaktor));
 					BigDecimal nPreisPerEinheit = (wnfNettopreis
-							.getBigDecimal().divide(getArtikelDto()
-							.getNUmrechnungsfaktor(), Defaults.getInstance()
-							.getIUINachkommastellenPreiseEK(),
+							.getBigDecimal().divide(umrechnungsfaktor, Defaults
+							.getInstance().getIUINachkommastellenPreiseEK(),
 							BigDecimal.ROUND_HALF_EVEN));
 					wnfGewichtPreis.setBigDecimal(nPreisPerEinheit);
 				}
 			} else {
-				wnfGewichtbestellmenge.setBigDecimal(getArtikelDto()
-						.getNUmrechnungsfaktor());
+				wnfGewichtbestellmenge.setBigDecimal(umrechnungsfaktor);
 
 				wnfGewichtPreis.setBigDecimal(null);
 			}
+			
+			
+			if (getArtikelDto().getEinheitCNrBestellung() != null) {
+				wlaGewichtmengeEinheit.setText(getArtikelDto()
+						.getEinheitCNrBestellung().trim());
+			} else if (getArtikellieferantDto() != null) {
+				wlaGewichtmengeEinheit.setText(getArtikellieferantDto()
+						.getEinheitCNrVpe().trim());
+			}
+			if (getInternalFrame().bRechtDarfPreiseSehenEinkauf) {
+				wlaGewichtmengeEinheit.setText(wlaGewichtmengeEinheit.getText()
+						+ "  \u00E0");
+			}
+			wlaGewichtWaehrung.setText(tPBes.getBesDto().getWaehrungCNr());
+			
 		} else {
 			wnfGewichtbestellmenge.setBigDecimal(null);
 			wnfGewichtPreis.setBigDecimal(null);
@@ -583,20 +672,38 @@ class FocusAdapterGewichtPreisArtikel implements FocusListener {
 		try {
 
 			if (adaptee.wnfGewichtPreis.getBigDecimal() != null) {
-				if (adaptee.getArtikelDto().getNUmrechnungsfaktor() != null) {
+
+				BigDecimal umrechnungsfaktor = adaptee.getArtikelDto()
+						.getNUmrechnungsfaktor();
+				boolean bInvers = Helper.short2boolean(adaptee.getArtikelDto()
+						.getbBestellmengeneinheitInvers());
+
+				if (umrechnungsfaktor == null) {
+
+					if (adaptee.getArtikellieferantDto() != null
+							&& adaptee.getArtikellieferantDto()
+									.getNVerpackungseinheit() != null
+							&& adaptee.getArtikellieferantDto()
+									.getEinheitCNrVpe() != null) {
+						umrechnungsfaktor = adaptee.getArtikellieferantDto()
+								.getNVerpackungseinheit();
+						bInvers = true;
+					}
+
+				}
+
+				if (umrechnungsfaktor != null) {
 					BigDecimal umrechnung = new BigDecimal(0);
 					BigDecimal preis = adaptee.wnfGewichtPreis.getBigDecimal();
-					BigDecimal faktor = adaptee.getArtikelDto()
-							.getNUmrechnungsfaktor();
-					if (preis != null || faktor != null) {
-						if (Helper.short2boolean(adaptee.getArtikelDto()
-								.getbBestellmengeneinheitInvers())) {
-							umrechnung = preis.divide(faktor, Defaults
-									.getInstance()
-									.getIUINachkommastellenPreiseEK(),
+
+					if (preis != null || umrechnungsfaktor != null) {
+						if (bInvers) {
+							umrechnung = preis.divide(umrechnungsfaktor,
+									Defaults.getInstance()
+											.getIUINachkommastellenPreiseEK(),
 									BigDecimal.ROUND_HALF_EVEN);
 						} else {
-							umrechnung = preis.multiply(faktor);
+							umrechnung = preis.multiply(umrechnungsfaktor);
 						}
 
 						adaptee.wnfEinzelpreis.setBigDecimal(umrechnung);
@@ -631,20 +738,38 @@ class FocusAdapterGewichtArtikel implements FocusListener {
 		try {
 
 			if (adaptee.wnfGewichtbestellmenge.getBigDecimal() != null) {
-				if (adaptee.getArtikelDto().getNUmrechnungsfaktor() != null) {
+
+				BigDecimal umrechnungsfaktor = adaptee.getArtikelDto()
+						.getNUmrechnungsfaktor();
+				boolean bInvers = Helper.short2boolean(adaptee.getArtikelDto()
+						.getbBestellmengeneinheitInvers());
+
+				if (umrechnungsfaktor == null) {
+
+					if (adaptee.getArtikellieferantDto() != null
+							&& adaptee.getArtikellieferantDto()
+									.getNVerpackungseinheit() != null
+							&& adaptee.getArtikellieferantDto()
+									.getEinheitCNrVpe() != null) {
+						umrechnungsfaktor = adaptee.getArtikellieferantDto()
+								.getNVerpackungseinheit();
+						bInvers = true;
+					}
+
+				}
+
+				if (umrechnungsfaktor != null) {
 					BigDecimal umrechnung = new BigDecimal(0);
 					BigDecimal gewicht = adaptee.wnfGewichtbestellmenge
 							.getBigDecimal();
-					BigDecimal faktor = adaptee.getArtikelDto()
-							.getNUmrechnungsfaktor();
-					if (gewicht != null || faktor != null) {
 
-						if (Helper.short2boolean(adaptee.getArtikelDto()
-								.getbBestellmengeneinheitInvers())) {
+					if (gewicht != null || umrechnungsfaktor != null) {
 
-							umrechnung = gewicht.multiply(faktor);
+						if (bInvers) {
+
+							umrechnung = gewicht.multiply(umrechnungsfaktor);
 						} else {
-							umrechnung = gewicht.divide(faktor, 4,
+							umrechnung = gewicht.divide(umrechnungsfaktor, 4,
 									BigDecimal.ROUND_HALF_EVEN);
 						}
 						adaptee.wnfMenge.setBigDecimal(umrechnung);

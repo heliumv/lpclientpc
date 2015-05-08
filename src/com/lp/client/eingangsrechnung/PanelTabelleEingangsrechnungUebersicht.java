@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -63,6 +63,7 @@ private WrapperLabel wlaKritAuswertung = null;
   private WrapperLabel wlaEmpty = null;
   private WrapperLabel wlaOffene = null;
   private WrapperLabel wlaUmsatz = null;
+  private WrapperLabel wlaAnzahlung = null;
 
   /**
    * PanelTabelle.
@@ -106,32 +107,39 @@ private WrapperLabel wlaKritAuswertung = null;
     wlaUmsatz = new WrapperLabel(LPMain.getInstance().getTextRespectUISPr(
         "lp.umsatzuebersicht"));
     wlaUmsatz.setHorizontalAlignment(SwingConstants.CENTER);
+    wlaAnzahlung = new WrapperLabel("--- nicht abgerechnete Anzahlungen ---");
+    wlaAnzahlung.setHorizontalAlignment(SwingConstants.CENTER);
 
-    getPanelOptionaleZweiteZeile().add(wlaEmpty,
-                                       new GridBagConstraints(0, 0, 1, 1, 0.0,
-        0.0
-        , GridBagConstraints.WEST,
-        GridBagConstraints.BOTH,
-        new Insets(2, 2, 2, 2), 0, 0));
-    getPanelOptionaleZweiteZeile().add(wlaOffene,
-                                       new GridBagConstraints(1, 0, 1, 1, 0.1,
-        0.0
-        , GridBagConstraints.WEST,
-        GridBagConstraints.BOTH,
-        new Insets(2, 2, 2, 2), 0, 0));
-    getPanelOptionaleZweiteZeile().add(wlaUmsatz,
-                                       new GridBagConstraints(2, 0, 1, 1, 0.1,
-        0.0
-        , GridBagConstraints.WEST,
-        GridBagConstraints.BOTH,
-        new Insets(2, 2, 2, 2), 0, 0));
+		getPanelOptionaleZweiteZeile().add(
+				wlaEmpty,
+				new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
+						GridBagConstraints.WEST, GridBagConstraints.BOTH,
+						new Insets(2, 2, 2, 2), 0, 0));
+		getPanelOptionaleZweiteZeile().add(
+				wlaOffene,
+				new GridBagConstraints(1, 0, 1, 1, 0.1, 0.0,
+						GridBagConstraints.WEST, GridBagConstraints.BOTH,
+						new Insets(2, 2, 2, 2), 0, 0));
+		getPanelOptionaleZweiteZeile().add(
+				wlaUmsatz,
+				new GridBagConstraints(2, 0, 1, 1, 0.1, 0.0,
+						GridBagConstraints.WEST, GridBagConstraints.BOTH,
+						new Insets(2, 2, 2, 2), 0, 0));
+		getPanelOptionaleZweiteZeile().add(
+				wlaAnzahlung,
+				new GridBagConstraints(3, 0, 1, 1, 0.1, 0.0,
+						GridBagConstraints.WEST, GridBagConstraints.BOTH,
+						new Insets(2, 2, 2, 2), 0, 0));
 
     // die erste Spalte ist immer der ZeilenHeader
     TableColumn tcZeilenHeader = table.getColumnModel().getColumn(1);
     tcZeilenHeader.setCellRenderer(new ZeilenHeaderRenderer());
     tcZeilenHeader.setPreferredWidth(SPALTENBREITE_ZEILENHEADER);
-    
+
     TableColumn tcEmpty = getTable().getColumnModel().getColumn(4); // @todo not hardcoded  PJ 5119
+    tcEmpty.setCellRenderer(new LeeresFeldRenderer());
+    tcEmpty.setPreferredWidth(SPALTENBREITE_LEERESPALTE);
+    tcEmpty = getTable().getColumnModel().getColumn(7); // @todo not hardcoded  PJ 5119
     tcEmpty.setCellRenderer(new LeeresFeldRenderer());
     tcEmpty.setPreferredWidth(SPALTENBREITE_LEERESPALTE);
 

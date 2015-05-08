@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -54,6 +54,8 @@ import com.lp.client.system.SystemFilterFactory;
 import com.lp.server.benutzer.service.RechteFac;
 import com.lp.server.bestellung.service.BSMahnlaufDto;
 import com.lp.server.bestellung.service.BSMahnwesenFac;
+import com.lp.server.partner.service.LieferantDto;
+import com.lp.server.partner.service.PartnerDto;
 import com.lp.server.partner.service.PartnerFac;
 import com.lp.server.util.fastlanereader.service.query.FilterKriterium;
 import com.lp.server.util.fastlanereader.service.query.QueryParameters;
@@ -366,12 +368,25 @@ public class TabbedPaneBESMahnwesen extends TabbedPane {
 						.getBestellungDelegate()
 						.printBSSammelMahnung(mahnlaufIId, false);
 				for (int i = 0; i < prints.length; i++) {
-					/**
-					 * @todo den lieferant holen Pj 5179
-					 */
+
+					Integer lieferantIId = (Integer) prints[i]
+							.getAdditionalInformation("lieferantIId");
+
+					Integer anspIId = null;
+					PartnerDto pDto = null;
+					if (lieferantIId != null) {
+						LieferantDto lDto = DelegateFactory.getInstance()
+								.getLieferantDelegate()
+								.lieferantFindByPrimaryKey(lieferantIId);
+						pDto = lDto.getPartnerDto();
+						anspIId = (Integer) prints[i]
+								.getAdditionalInformation("ansprechpartnerIId");
+					}
+
 					getInternalFrame().showReportKriterien(
 							new ReportBSSammelmahnung(getInternalFrame(),
-									prints[i], null, "Sammelmahnung"));
+									prints[i], lieferantIId, "Sammelmahnung"),
+							pDto, anspIId);
 				}
 			}
 		}
@@ -621,7 +636,7 @@ public class TabbedPaneBESMahnwesen extends TabbedPane {
 		return new WrapperMenuBar(this);
 	}
 
-	public Object getInseratDto() {
+	public Object getDto() {
 		return bsmahnlaufDto;
 	}
 }

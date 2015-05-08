@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -37,29 +37,30 @@ import javax.naming.InitialContext;
 
 import com.lp.client.frame.ExceptionLP;
 import com.lp.client.pc.LPMain;
-import com.lp.client.util.logger.LpLogger;
 import com.lp.server.system.ejb.ParameteranwenderPK;
 import com.lp.server.system.ejb.ParametermandantPK;
+import com.lp.server.system.ejb.ParametermandantgueltigabPK;
 import com.lp.server.system.service.ArbeitsplatzDto;
 import com.lp.server.system.service.ArbeitsplatzparameterDto;
-import com.lp.server.system.service.MandantFac;
 import com.lp.server.system.service.ParameterDto;
 import com.lp.server.system.service.ParameterFac;
 import com.lp.server.system.service.ParameteranwenderDto;
 import com.lp.server.system.service.ParametermandantDto;
+import com.lp.server.system.service.ParametermandantgueltigabDto;
 import com.lp.util.Helper;
 
 @SuppressWarnings("static-access")
 public class ParameterDelegate extends Delegate {
 	private Context context;
 	private ParameterFac parameterFac;
-//	private MandantFac mandantFac;
-//	private LpLogger myLogger = null;
+
+	// private MandantFac mandantFac;
+	// private LpLogger myLogger = null;
 
 	public ParameterDelegate() throws Exception {
 		context = new InitialContext();
-//		mandantFac = (MandantFac) context
-//				.lookup("lpserver/MandantFacBean/remote");
+		// mandantFac = (MandantFac) context
+		// .lookup("lpserver/MandantFacBean/remote");
 		parameterFac = (ParameterFac) context
 				.lookup("lpserver/ParameterFacBean/remote");
 	}
@@ -309,6 +310,17 @@ public class ParameterDelegate extends Delegate {
 		}
 	}
 
+	public void removeParametermandantgueltigab(
+			ParametermandantgueltigabDto parametermandantgueltigabDtoI)
+			throws ExceptionLP {
+		try {
+			parameterFac
+					.removeParametermandantgueltigab(parametermandantgueltigabDtoI);
+		} catch (Throwable t) {
+			handleThrowable(t);
+		}
+	}
+
 	public void removeArbeitsplatz(ArbeitsplatzDto arbeitsplatzDto)
 			throws ExceptionLP {
 		try {
@@ -355,6 +367,24 @@ public class ParameterDelegate extends Delegate {
 		return parametermandantDto;
 	}
 
+	public ParametermandantgueltigabDto parametermandantgueltigabFindByPrimaryKey(
+			ParametermandantgueltigabPK pkParametermandantgueltigabI)
+			throws ExceptionLP {
+		ParametermandantgueltigabDto parametermandantgueltigabDto = null;
+
+		try {
+			pkParametermandantgueltigabI.setMandantCNr(LPMain.getInstance()
+					.getTheClient().getMandant());
+
+			parametermandantgueltigabDto = parameterFac
+					.parametermandantgueltigabFindByPrimaryKey(pkParametermandantgueltigabI);
+		} catch (Throwable t) {
+			handleThrowable(t);
+		}
+
+		return parametermandantgueltigabDto;
+	}
+
 	public Object getParametermandant(String mandantparameter_c_nr,
 			String cKategorieI, String mandant_c_nr) throws ExceptionLP {
 		Object parameter = null;
@@ -384,11 +414,28 @@ public class ParameterDelegate extends Delegate {
 		return parametermandantDto;
 	}
 
-	public ParametermandantDto getMandantparameterReturnsNull(String cKategorieI, String mandantparameter_c_nr)
+	public ParametermandantDto getMandantparameter(String mandant_c_nr,
+			String cKategorieI, String mandantparameter_c_nr,
+			java.sql.Timestamp tZeitpunkt) throws ExceptionLP {
+		ParametermandantDto parametermandantDto = null;
+
+		try {
+			parametermandantDto = parameterFac.getMandantparameter(
+					mandant_c_nr, cKategorieI, mandantparameter_c_nr,
+					tZeitpunkt);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+
+		return parametermandantDto;
+	}
+
+	public ParametermandantDto getMandantparameterReturnsNull(
+			String cKategorieI, String mandantparameter_c_nr)
 			throws ExceptionLP {
 		try {
-			return parameterFac.getMandantparameter(
-					LPMain.getTheClient().getMandant(), cKategorieI, mandantparameter_c_nr);
+			return parameterFac.getMandantparameter(LPMain.getTheClient()
+					.getMandant(), cKategorieI, mandantparameter_c_nr);
 		} catch (Throwable ex) {
 			return null;
 		}
@@ -402,4 +449,17 @@ public class ParameterDelegate extends Delegate {
 			handleThrowable(ex);
 		}
 	}
+
+	public void updateParametermandantgueltigab(
+			ParametermandantgueltigabDto parametermandantgueltigabDto)
+			throws ExceptionLP {
+		try {
+			parameterFac.updateParametermandantgueltigab(
+					parametermandantgueltigabDto, LPMain.getInstance()
+							.getTheClient());
+		} catch (Throwable t) {
+			handleThrowable(t);
+		}
+	}
+
 }

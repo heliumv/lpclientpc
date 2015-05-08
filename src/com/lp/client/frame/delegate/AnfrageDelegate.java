@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -40,10 +40,14 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 
 import com.lp.client.frame.ExceptionLP;
+import com.lp.client.frame.component.InternalFrame;
 import com.lp.client.pc.LPMain;
 import com.lp.server.anfrage.service.AnfrageDto;
 import com.lp.server.anfrage.service.AnfrageFac;
+import com.lp.server.bestellung.service.BestellungDto;
 import com.lp.server.bestellung.service.BestellvorschlagUeberleitungKriterienDto;
+import com.lp.server.system.service.BelegPruefungDto;
+import com.lp.server.system.service.LocaleFac;
 
 /**
  * <p>
@@ -137,37 +141,57 @@ public class AnfrageDelegate extends Delegate {
 	 * @throws ExceptionLP
 	 *             Ausnahme
 	 */
-	public void manuellErledigen(Integer iIdAnfrageI) throws ExceptionLP {
+	public void manuellErledigen(Integer iIdAnfrageI,
+			Integer erledigungsgrundIId) throws ExceptionLP {
 		try {
-			anfrageFac.manuellErledigen(iIdAnfrageI, LPMain.getTheClient());
+			anfrageFac.manuellErledigen(iIdAnfrageI, erledigungsgrundIId,
+					LPMain.getTheClient());
 		} catch (Throwable t) {
 			handleThrowable(t);
 		}
 	}
-	
-	public void aktiviereBelegControlled(Integer iid, Timestamp t) throws ExceptionLP {
+
+	public void aktiviereBelegControlled(Integer iid, Timestamp t)
+			throws ExceptionLP {
 		try {
 			anfrageFac.aktiviereBelegControlled(iid, t, LPMain.getTheClient());
 		} catch (Throwable t1) {
 			handleThrowable(t1);
 		}
 	}
-	
+
 	public Timestamp berechneBelegControlled(Integer iid) throws ExceptionLP {
 		try {
-			return anfrageFac.berechneBelegControlled(iid, LPMain.getTheClient());
+			BelegPruefungDto pruefungDto = anfrageFac.berechneBelegControlled(
+					iid, LPMain.getTheClient());
+			dialogBelegpruefung(pruefungDto);
+			return pruefungDto.getBerechnungsZeitpunkt();
 		} catch (Throwable t1) {
 			handleThrowable(t1);
 		}
 		return null;
 	}
 
-	public ArrayList<Integer> getAngelegteAnfragenNachUmwandlungDerLiefergruppenanfragen(Integer liefergruppeIId)
+	public Timestamp berechneAktiviereBelegControlled(Integer iid)
 			throws ExceptionLP {
 		try {
+			BelegPruefungDto pruefungDto = anfrageFac
+					.berechneAktiviereBelegControlled(iid,
+							LPMain.getTheClient());
+			dialogBelegpruefung(pruefungDto);
+			return pruefungDto.getBerechnungsZeitpunkt();
+		} catch (Throwable t1) {
+			handleThrowable(t1);
+		}
+		return null;
+	}
+
+	public ArrayList<Integer> getAngelegteAnfragenNachUmwandlungDerLiefergruppenanfragen(
+			Integer liefergruppeIId) throws ExceptionLP {
+		try {
 			return anfrageFac
-					.getAngelegteAnfragenNachUmwandlungDerLiefergruppenanfragen(liefergruppeIId, LPMain
-							.getTheClient());
+					.getAngelegteAnfragenNachUmwandlungDerLiefergruppenanfragen(
+							liefergruppeIId, LPMain.getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 			return null;
@@ -184,11 +208,12 @@ public class AnfrageDelegate extends Delegate {
 	 * @throws ExceptionLP
 	 *             Ausnahme
 	 */
-	public void updateAnfrage(AnfrageDto anfrageDtoI, String waehrungOriCNrI)
+	public void updateAnfrage(AnfrageDto anfrageDtoI,
+			boolean bAufAngelegtZuruecksetzen, String waehrungOriCNrI)
 			throws ExceptionLP {
 		try {
 			anfrageFac.updateAnfrage(anfrageDtoI, waehrungOriCNrI,
-					LPMain.getTheClient());
+					bAufAngelegtZuruecksetzen, LPMain.getTheClient());
 		} catch (Throwable t) {
 			handleThrowable(t);
 		}
@@ -246,10 +271,20 @@ public class AnfrageDelegate extends Delegate {
 	 * @throws ExceptionLP
 	 *             Ausnahme
 	 */
-	public void updateAnfrageKonditionen(Integer iIdAnfrageI)
+	public void updateAnfrageKonditionen(AnfrageDto anfrageDto)
 			throws ExceptionLP {
 		try {
-			anfrageFac.updateAnfrageKonditionen(iIdAnfrageI,
+			anfrageFac.updateAnfrageKonditionen(anfrageDto,
+					LPMain.getTheClient());
+		} catch (Throwable t) {
+			handleThrowable(t);
+		}
+	}
+
+	public void updateAnfrageLieferKonditionen(Integer iIdAnfrageI)
+			throws ExceptionLP {
+		try {
+			anfrageFac.updateAnfrageLieferKonditionen(iIdAnfrageI,
 					LPMain.getTheClient());
 		} catch (Throwable t) {
 			handleThrowable(t);
@@ -282,19 +317,45 @@ public class AnfrageDelegate extends Delegate {
 	 * @throws ExceptionLP
 	 *             Ausnahme
 	 */
-	public ArrayList<Integer> erzeugeAnfragenAusLiefergruppenanfrage(Integer iIdAnfrageI)
-			throws ExceptionLP {
+	public ArrayList<Integer> erzeugeAnfragenAusLiefergruppenanfrage(
+			Integer iIdAnfrageI) throws ExceptionLP {
 		ArrayList<Integer> iIdLetzteErzeugteAnfrage = null;
 
 		try {
 			iIdLetzteErzeugteAnfrage = anfrageFac
-					.erzeugeAnfragenAusLiefergruppenanfrage(iIdAnfrageI,null,
+					.erzeugeAnfragenAusLiefergruppenanfrage(iIdAnfrageI, null,
 							LPMain.getTheClient());
 		} catch (Throwable t) {
 			handleThrowable(t);
 		}
 
 		return iIdLetzteErzeugteAnfrage;
+	}
+
+	public Integer erzeugeAnfrageAusAnfrage(Integer iIdAnfrageI,InternalFrame internalFrame)
+			throws ExceptionLP {
+		try {
+			Integer anfrageIId= anfrageFac.erzeugeAnfrageAusAnfrage(iIdAnfrageI,
+					LPMain.getTheClient());
+			
+			if (anfrageIId != null) {
+				AnfrageDto afDto = anfrageFindByPrimaryKey(anfrageIId);
+				if(afDto.getLieferantIIdAnfrageadresse()!=null){
+					DelegateFactory
+					.getInstance()
+					.getLieferantDelegate()
+					.pruefeLieferant(
+							afDto.getLieferantIIdAnfrageadresse(),
+							LocaleFac.BELEGART_ANFRAGE, internalFrame);
+				}
+				
+			}
+			return anfrageIId;
+			
+		} catch (Throwable t) {
+			handleThrowable(t);
+			return null;
+		}
 	}
 
 	public AnfrageDto[] anfrageFindByAnfrageIIdLiefergruppenanfrage(

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -46,9 +46,7 @@ import com.lp.server.finanz.service.MahnstufeDto;
 import com.lp.server.finanz.service.MahnungDto;
 import com.lp.server.finanz.service.MahnwesenFac;
 import com.lp.server.rechnung.service.RechnungDto;
-import com.lp.server.system.service.TheClientDto;
 
-@SuppressWarnings("static-access")
 /**
  * <p><I>BusinesDelegate fuer das Mahnwesen</I> </p>
  * <p>Copyright Logistik Pur Software GmbH (c) 2004-2008</p>
@@ -72,8 +70,7 @@ public class MahnwesenDelegate extends Delegate {
 
 	public MahnlaufDto createMahnlaufMitMahnvorschlag() throws ExceptionLP {
 		try {
-			return mahnwesenFac.createMahnlaufMitMahnvorschlag(LPMain
-					.getInstance().getTheClient());
+			return mahnwesenFac.createMahnlaufMitMahnvorschlag(LPMain.getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 			return null;
@@ -82,8 +79,7 @@ public class MahnwesenDelegate extends Delegate {
 
 	public void removeMahnlauf(MahnlaufDto mahnlaufDto) throws ExceptionLP {
 		try {
-			mahnwesenFac.removeMahnlauf(mahnlaufDto, LPMain.getInstance()
-					.getTheClient());
+			mahnwesenFac.removeMahnlauf(mahnlaufDto, LPMain.getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 		}
@@ -91,8 +87,7 @@ public class MahnwesenDelegate extends Delegate {
 
 	public void updateMahnlauf(MahnlaufDto mahnlaufDto) throws ExceptionLP {
 		try {
-			mahnwesenFac.updateMahnlauf(mahnlaufDto, LPMain.getInstance()
-					.getTheClient());
+			mahnwesenFac.updateMahnlauf(mahnlaufDto, LPMain.getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 		}
@@ -110,8 +105,7 @@ public class MahnwesenDelegate extends Delegate {
 	public Integer createMahnstufe(MahnstufeDto mahnstufeDto)
 			throws ExceptionLP {
 		try {
-			mahnwesenFac.createMahnstufe(mahnstufeDto, LPMain.getInstance()
-					.getTheClient());
+			mahnwesenFac.createMahnstufe(mahnstufeDto, LPMain.getTheClient());
 			return mahnstufeDto.getIId();
 		} catch (Throwable ex) {
 			handleThrowable(ex);
@@ -121,8 +115,7 @@ public class MahnwesenDelegate extends Delegate {
 
 	public void removeMahnstufe(MahnstufeDto mahnstufeDto) throws ExceptionLP {
 		try {
-			mahnwesenFac.removeMahnstufe(mahnstufeDto, LPMain.getInstance()
-					.getTheClient());
+			mahnwesenFac.removeMahnstufe(mahnstufeDto, LPMain.getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 		}
@@ -130,8 +123,7 @@ public class MahnwesenDelegate extends Delegate {
 
 	public void updateMahnstufe(MahnstufeDto mahnstufeDto) throws ExceptionLP {
 		try {
-			mahnwesenFac.updateMahnstufe(mahnstufeDto, LPMain.getInstance()
-					.getTheClient());
+			mahnwesenFac.updateMahnstufe(mahnstufeDto, LPMain.getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 		}
@@ -141,7 +133,7 @@ public class MahnwesenDelegate extends Delegate {
 			throws ExceptionLP {
 		try {
 			return mahnwesenFac.mahnstufeFindByPrimaryKey(new MahnstufePK(iId,
-					LPMain.getInstance().getTheClient().getMandant()));
+					LPMain.getTheClient().getMandant()));
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 			return null;
@@ -150,8 +142,7 @@ public class MahnwesenDelegate extends Delegate {
 
 	public MahnstufeDto[] mahnstufeFindAll() throws ExceptionLP {
 		try {
-			return mahnwesenFac.mahnstufeFindByMandantCNr(LPMain.getInstance()
-					.getTheClient().getMandant());
+			return mahnwesenFac.mahnstufeFindByMandantCNr(LPMain.getTheClient().getMandant());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 			return null;
@@ -160,8 +151,7 @@ public class MahnwesenDelegate extends Delegate {
 
 	public LinkedHashMap<?, ?> getAllMahnstufe() throws ExceptionLP {
 		try {
-			return mahnwesenFac.getAllMahnstufe(LPMain.getInstance()
-					.getTheClient().getMandant());
+			return mahnwesenFac.getAllMahnstufe(LPMain.getTheClient().getMandant());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 			return null;
@@ -170,8 +160,7 @@ public class MahnwesenDelegate extends Delegate {
 
 	public void removeMahnung(MahnungDto mahnungDto) throws ExceptionLP {
 		try {
-			mahnwesenFac.removeMahnung(mahnungDto, LPMain.getInstance()
-					.getTheClient());
+			mahnwesenFac.removeMahnung(mahnungDto, LPMain.getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 		}
@@ -181,10 +170,10 @@ public class MahnwesenDelegate extends Delegate {
 		try {
 			if (mahnungDto.getIId() != null) {
 				return mahnwesenFac.updateMahnung(mahnungDto, LPMain
-						.getInstance().getTheClient());
+						.getTheClient());
 			} else {
 				return mahnwesenFac.createMahnung(mahnungDto, LPMain
-						.getInstance().getTheClient());
+						.getTheClient());
 			}
 		} catch (Throwable ex) {
 			handleThrowable(ex);
@@ -203,8 +192,7 @@ public class MahnwesenDelegate extends Delegate {
 
 	public void mahneMahnung(Integer mahnungIId) throws ExceptionLP {
 		try {
-			mahnwesenFac.mahneMahnung(mahnungIId, LPMain.getInstance()
-					.getTheClient());
+			mahnwesenFac.mahneMahnung(mahnungIId, LPMain.getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 		}
@@ -213,7 +201,7 @@ public class MahnwesenDelegate extends Delegate {
 	public void mahneMahnungRueckgaengig(Integer mahnungIId) throws ExceptionLP {
 		try {
 			mahnwesenFac.mahneMahnungRueckgaengig(mahnungIId, LPMain
-					.getInstance().getTheClient());
+					.getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 		}
@@ -222,8 +210,7 @@ public class MahnwesenDelegate extends Delegate {
 	public void mahneMahnlaufRueckgaengig(Integer mahnlaufIId)
 			throws ExceptionLP {
 		try {
-			mahnwesenFac.mahneMahnlaufRueckgaengig(mahnlaufIId, LPMain
-					.getInstance().getTheClient());
+			mahnwesenFac.mahneMahnlaufRueckgaengig(mahnlaufIId, LPMain.getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 		}
@@ -231,8 +218,7 @@ public class MahnwesenDelegate extends Delegate {
 
 	public void mahneMahnlauf(Integer mahnlaufIId) throws ExceptionLP {
 		try {
-			mahnwesenFac.mahneMahnlauf(mahnlaufIId, LPMain.getInstance()
-					.getTheClient());
+			mahnwesenFac.mahneMahnlauf(mahnlaufIId, LPMain.getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 		}
@@ -242,7 +228,7 @@ public class MahnwesenDelegate extends Delegate {
 			throws ExceptionLP {
 		try {
 			return mahnwesenFac.berechneMahnstufeFuerRechnung(rechnungDto,
-					LPMain.getInstance().getTheClient());
+					LPMain.getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 			return null;
@@ -254,8 +240,7 @@ public class MahnwesenDelegate extends Delegate {
 			throws ExceptionLP {
 		try {
 			return mahnwesenFac.berechneFaelligkeitsdatumFuerMahnstufe(dDatum,
-					zahlungszielIId, mahnstufeIId, LPMain.getInstance()
-							.getTheClient());
+					zahlungszielIId, mahnstufeIId, LPMain.getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 			return null;
@@ -264,12 +249,11 @@ public class MahnwesenDelegate extends Delegate {
 
 	public Boolean bGibtEsEinenOffenenMahnlauf() throws ExceptionLP {
 		try {
-			return mahnwesenFac.bGibtEsEinenOffenenMahnlauf(LPMain
-					.getInstance().getTheClient().getMandant(), LPMain
-					.getInstance().getTheClient());
+			return mahnwesenFac.bGibtEsEinenOffenenMahnlauf(LPMain.getTheClient().getMandant(), 
+					LPMain.getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
-			return null;
+			return Boolean.FALSE ;
 		}
 	}
 
@@ -277,7 +261,7 @@ public class MahnwesenDelegate extends Delegate {
 			Integer kundeIId) throws ExceptionLP {
 		try {
 			return mahnwesenFac.getSummeEinesKundenImMahnlauf(mahnlaufIId,
-					kundeIId, LPMain.getInstance().getTheClient());
+					kundeIId, LPMain.getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 			return null;
@@ -288,7 +272,7 @@ public class MahnwesenDelegate extends Delegate {
 			throws ExceptionLP {
 		try {
 			return mahnwesenFac.getAktuelleMahnstufeEinerRechnung(rechnungIId,
-					LPMain.getInstance().getTheClient());
+					LPMain.getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 			return null;
@@ -299,7 +283,7 @@ public class MahnwesenDelegate extends Delegate {
 			throws ExceptionLP {
 		try {
 			return mahnwesenFac.getAktuellesMahndatumEinerRechnung(rechnungIId,
-					LPMain.getInstance().getTheClient());
+					LPMain.getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 			return null;

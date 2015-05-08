@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -209,7 +209,7 @@ public class TabbedPaneInserat extends TabbedPane {
 		return inseratKopfdaten;
 	}
 
-	public InseratDto getInseratDto() {
+	public InseratDto getDto() {
 		return inseratDto;
 	}
 
@@ -390,21 +390,21 @@ public class TabbedPaneInserat extends TabbedPane {
 			break;
 		case IDX_PANEL_INSERATRECHNUNG:
 
-			createInseratrechnung(getInseratDto().getIId());
+			createInseratrechnung(getDto().getIId());
 			panelSplitInseratrechnung.eventYouAreSelected(false);
 			panelQueryInseratrechnung.updateButtons();
 
 			break;
 		case IDX_PANEL_INSERATARTIKEL:
 
-			createInseratartikel(getInseratDto().getIId());
+			createInseratartikel(getDto().getIId());
 			panelSplitInseratartikel.eventYouAreSelected(false);
 			panelQueryInseratartikel.updateButtons();
 
 			break;
 		case IDX_PANEL_INSERATER:
 
-			createInserater(getInseratDto().getIId());
+			createInserater(getDto().getIId());
 			panelQueryInserater.eventYouAreSelected(false);
 
 			setSelectedComponent(panelQueryInserater);
@@ -438,10 +438,8 @@ public class TabbedPaneInserat extends TabbedPane {
 		}
 
 		BigDecimal bdSumme = Helper.rundeGeldbetrag(DelegateFactory
-				.getInstance()
-				.getInseratDelegate()
-				.getZuEingangsrechnungenZugeordnetenWert(
-						getInseratDto().getIId()));
+				.getInstance().getInseratDelegate()
+				.getZuEingangsrechnungenZugeordnetenWert(getDto().getIId()));
 
 		// Preise berechnen
 		InseratartikelDto[] inseratartikelDtos = DelegateFactory.getInstance()
@@ -538,11 +536,9 @@ public class TabbedPaneInserat extends TabbedPane {
 	public boolean darfInseratGeaendertWerden() {
 
 		boolean bEsDarfGeaendertWerden = true;
-		if (getInseratDto().getStatusCNr().equals(LocaleFac.STATUS_VERRECHNET)
-				|| getInseratDto().getStatusCNr().equals(
-						LocaleFac.STATUS_TEILBEZAHLT)
-				|| getInseratDto().getStatusCNr().equals(
-						LocaleFac.STATUS_BEZAHLT)) {
+		if (getDto().getStatusCNr().equals(LocaleFac.STATUS_VERRECHNET)
+				|| getDto().getStatusCNr().equals(LocaleFac.STATUS_TEILBEZAHLT)
+				|| getDto().getStatusCNr().equals(LocaleFac.STATUS_BEZAHLT)) {
 			DialogFactory
 					.showModalDialog(
 							LPMain.getInstance()
@@ -578,18 +574,18 @@ public class TabbedPaneInserat extends TabbedPane {
 			String sAspectInfo = ((ISourceEvent) e.getSource()).getAspect();
 
 			if (sAspectInfo.equals(MY_OWN_NEW_TOGGLE_ERSCHIENEN)) {
-				if (getInseratDto() != null && getInseratDto().getIId() != null) {
+				if (getDto() != null && getDto().getIId() != null) {
 
-					if (getInseratDto().getStatusCNr().equals(
+					if (getDto().getStatusCNr().equals(
 							LocaleFac.STATUS_BESTELLT)
-							|| getInseratDto().getStatusCNr().equals(
+							|| getDto().getStatusCNr().equals(
 									LocaleFac.STATUS_ERSCHIENEN)) {
 
 						DelegateFactory.getInstance().getInseratDelegate()
-								.toggleErschienen(getInseratDto().getIId());
+								.toggleErschienen(getDto().getIId());
 						inseratAuswahl.eventYouAreSelected(false);
-						inseratAuswahl.setSelectedId(getInseratDto().getIId());
-						initializeDtos(getInseratDto().getIId());
+						inseratAuswahl.setSelectedId(getDto().getIId());
+						initializeDtos(getDto().getIId());
 					} else {
 						DialogFactory
 								.showModalDialog(
@@ -601,26 +597,23 @@ public class TabbedPaneInserat extends TabbedPane {
 				}
 
 			} else if (sAspectInfo.equals(MY_OWN_NEW_STOPPEN)) {
-				if (getInseratDto() != null && getInseratDto().getIId() != null) {
-					if (getInseratDto().getStatusCNr().equals(
+				if (getDto() != null && getDto().getIId() != null) {
+					if (getDto().getStatusCNr().equals(
 							LocaleFac.STATUS_VERRECHENBAR)
-							|| getInseratDto().getStatusCNr().equals(
+							|| getDto().getStatusCNr().equals(
 									LocaleFac.STATUS_GESTOPPT)) {
 
-						String begruendung = getInseratDto().getCGestoppt();
-						if (getInseratDto().getStatusCNr().equals(
+						String begruendung = getDto().getCGestoppt();
+						if (getDto().getStatusCNr().equals(
 								LocaleFac.STATUS_VERRECHENBAR)) {
 							begruendung = (String) JOptionPane.showInputDialog(
 									getInternalFrame(), "Begr???ndung");
 						}
 
-						DelegateFactory
-								.getInstance()
-								.getInseratDelegate()
-								.toggleGestoppt(getInseratDto().getIId(),
-										begruendung);
+						DelegateFactory.getInstance().getInseratDelegate()
+								.toggleGestoppt(getDto().getIId(), begruendung);
 						inseratAuswahl.eventYouAreSelected(false);
-						inseratAuswahl.setSelectedId(getInseratDto().getIId());
+						inseratAuswahl.setSelectedId(getDto().getIId());
 					} else {
 
 						DialogFactory
@@ -630,18 +623,18 @@ public class TabbedPaneInserat extends TabbedPane {
 
 						return;
 					}
-					initializeDtos(getInseratDto().getIId());
+					initializeDtos(getDto().getIId());
 				}
 
 			} else if (sAspectInfo.equals(MY_OWN_NEW_VERRECHENBAR_MARKIEREN)) {
-				if (getInseratDto() != null && getInseratDto().getIId() != null) {
-					if (getInseratDto().getStatusCNr().equals(
+				if (getDto() != null && getDto().getIId() != null) {
+					if (getDto().getStatusCNr().equals(
 							LocaleFac.STATUS_ERSCHIENEN)
-							|| getInseratDto().getStatusCNr().equals(
+							|| getDto().getStatusCNr().equals(
 									LocaleFac.STATUS_VERRECHENBAR)) {
 
 						DelegateFactory.getInstance().getInseratDelegate()
-								.toggleVerrechenbar(getInseratDto().getIId());
+								.toggleVerrechenbar(getDto().getIId());
 
 						inseratAuswahl.eventYouAreSelected(false);
 					} else {
@@ -854,6 +847,7 @@ public class TabbedPaneInserat extends TabbedPane {
 			setInseratDto(inseratDto);
 			setTitleAuftrag("");
 			inseratKopfdaten.dto2Components();
+			inseratKopfdaten.setzeArtikelvorhandenLabelSichtbar(inseratIId);
 
 			// SP1820
 			if (inseratDto.getInseratrechnungDto() != null
@@ -863,11 +857,15 @@ public class TabbedPaneInserat extends TabbedPane {
 						.getKundeDelegate()
 						.pruefeKunde(
 								inseratDto.getInseratrechnungDto()
-										.getKundeIId());
+										.getKundeIId(), null,
+								getInternalFrame());
 			}
 			if (inseratDto.getLieferantIId() != null) {
-				DelegateFactory.getInstance().getLieferantDelegate()
-						.pruefeLieferant(inseratDto.getLieferantIId());
+				DelegateFactory
+						.getInstance()
+						.getLieferantDelegate()
+						.pruefeLieferant(inseratDto.getLieferantIId(), null,
+								getInternalFrame());
 			}
 
 		}
@@ -991,7 +989,7 @@ public class TabbedPaneInserat extends TabbedPane {
 			DelegateFactory
 					.getInstance()
 					.getInseratDelegate()
-					.inseratVertreterAendern(getInseratDto().getIId(),
+					.inseratVertreterAendern(getDto().getIId(),
 							personalId_Vertreter);
 			inseratAuswahl.eventYouAreSelected(false);
 		} else if (e.getSource() == panelQueryFLRLieferant) {
@@ -1024,7 +1022,7 @@ public class TabbedPaneInserat extends TabbedPane {
 					QueryParameters.UC_ID_INSERATE_OHNE_ER, aWhichButtonIUse,
 					getInternalFrame(),
 					LPMain.getTextRespectUISPr("iv.inserat.inserateohneer"),
-					null);
+					null, null);
 			panelQueryFLRInserateOhneER.setMultipleRowSelectionEnabled(true);
 			new DialogQuery(panelQueryFLRInserateOhneER);
 
@@ -1286,7 +1284,7 @@ public class TabbedPaneInserat extends TabbedPane {
 		} else if (e.getActionCommand().equals(
 				MENUE_BEARBEITEN_RECHNUNGEN_AUSLOSEN)) {
 
-			if (getInseratDto() != null) {
+			if (getDto() != null) {
 				JPanel panel = new JPanel();
 				panel.setLayout(new GridLayout(3, 1));
 
@@ -1301,8 +1299,7 @@ public class TabbedPaneInserat extends TabbedPane {
 						.getInstance()
 						.getKundeDelegate()
 						.kundeFindByPrimaryKey(
-								getInseratDto().getInseratrechnungDto()
-										.getKundeIId());
+								getDto().getInseratrechnungDto().getKundeIId());
 
 				JRadioButton rbKunde = new JRadioButton(
 						LPMain.getTextRespectUISPr("iv.rechnungen.ausloesen.kunde")
@@ -1311,7 +1308,7 @@ public class TabbedPaneInserat extends TabbedPane {
 
 				JRadioButton rbInserat = new JRadioButton(
 						LPMain.getTextRespectUISPr("iv.rechnungen.ausloesen.inserat")
-								+ " " + getInseratDto().getCNr());
+								+ " " + getDto().getCNr());
 				bg.add(rbInserat);
 
 				panel.add(rbAlle);
@@ -1333,18 +1330,17 @@ public class TabbedPaneInserat extends TabbedPane {
 						iAnzahlAngelegt = DelegateFactory
 								.getInstance()
 								.getInseratDelegate()
-								.rechnungenAusloesen(null,
-										getInseratDto().getIId(), neuDatum);
+								.rechnungenAusloesen(null, getDto().getIId(),
+										neuDatum);
 					} else if (rbKunde.isSelected()) {
-						if (getInseratDto().getInseratrechnungDto() != null
-								&& getInseratDto().getInseratrechnungDto()
+						if (getDto().getInseratrechnungDto() != null
+								&& getDto().getInseratrechnungDto()
 										.getKundeIId() != null) {
 							iAnzahlAngelegt = DelegateFactory
 									.getInstance()
 									.getInseratDelegate()
 									.rechnungenAusloesen(
-											getInseratDto()
-													.getInseratrechnungDto()
+											getDto().getInseratrechnungDto()
 													.getKundeIId(), null,
 											neuDatum);
 						}
@@ -1406,15 +1402,14 @@ public class TabbedPaneInserat extends TabbedPane {
 		} else if (e.getActionCommand().equals(
 				MENUE_BEARBEITEN_MANUELL_ERLEDIGEN)) {
 
-			if (getInseratDto().getTManuellerledigt() == null) {
+			if (getDto().getTManuellerledigt() == null) {
 
-				if (getInseratDto().getStatusCNr().equals(
-						LocaleFac.STATUS_ERSCHIENEN)
-						|| getInseratDto().getStatusCNr().equals(
+				if (getDto().getStatusCNr().equals(LocaleFac.STATUS_ERSCHIENEN)
+						|| getDto().getStatusCNr().equals(
 								LocaleFac.STATUS_VERRECHENBAR)
-						|| getInseratDto().getStatusCNr().equals(
+						|| getDto().getStatusCNr().equals(
 								LocaleFac.STATUS_GESTOPPT)
-						|| getInseratDto().getStatusCNr().equals(
+						|| getDto().getStatusCNr().equals(
 								LocaleFac.STATUS_VERRECHNET)) {
 
 					boolean b = DialogFactory
@@ -1422,10 +1417,8 @@ public class TabbedPaneInserat extends TabbedPane {
 									getInternalFrameInserat(),
 									LPMain.getTextRespectUISPr("iv.frage.wirklich.manuellerledigen"));
 					if (b == true) {
-						DelegateFactory
-								.getInstance()
-								.getInseratDelegate()
-								.toggleManuellerledigt(getInseratDto().getIId());
+						DelegateFactory.getInstance().getInseratDelegate()
+								.toggleManuellerledigt(getDto().getIId());
 					}
 				} else {
 					DialogFactory.showModalDialog(LPMain
@@ -1439,7 +1432,7 @@ public class TabbedPaneInserat extends TabbedPane {
 								LPMain.getTextRespectUISPr("iv.frage.wirklich.manuellerledigen.aufheben"));
 				if (b == true) {
 					DelegateFactory.getInstance().getInseratDelegate()
-							.toggleManuellerledigt(getInseratDto().getIId());
+							.toggleManuellerledigt(getDto().getIId());
 				}
 			}
 
@@ -1473,12 +1466,12 @@ public class TabbedPaneInserat extends TabbedPane {
 					new ReportOffeneInserate(getInternalFrameInserat(),
 							add2Title));
 		} else if (e.getActionCommand().equals(MENUE_INSERAT_DRUCKEN)) {
-			if (getInseratDto() != null) {
+			if (getDto() != null) {
 				String add2Title = LPMain.getInstance().getTextRespectUISPr(
 						"iv.inserat.modulname");
 				getInternalFrame().showReportKriterien(
-						new ReportInserat(getInternalFrameInserat(),
-								getInseratDto().getIId(), add2Title));
+						new ReportInserat(getInternalFrameInserat(), getDto()
+								.getIId(), add2Title));
 			}
 		} else if (e.getActionCommand().equals(MENUE_ACTION_NEU_DATUM)) {
 			getInternalFrame().showPanelDialog(
@@ -1488,7 +1481,7 @@ public class TabbedPaneInserat extends TabbedPane {
 		} else if (e.getActionCommand().equals(MENUE_ACTION_VERTRETER_AENDERN)) {
 			panelQueryFLRPersonal = PersonalFilterFactory.getInstance()
 					.createPanelFLRPersonal(getInternalFrame(), true, false,
-							getInseratDto().getPersonalIIdVertreter());
+							getDto().getPersonalIIdVertreter());
 			new DialogQuery(panelQueryFLRPersonal);
 		}
 

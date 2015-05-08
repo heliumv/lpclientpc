@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -73,7 +73,7 @@ public class LpDecoratedTextPane extends LpTextPane {
 	private LpRuler ruler;
 	private Insets margin;
 	private boolean bShowPageBreak;
-	private Double cachedZoom;
+	private Double cachedZoom = 1.0;
 
 	private Vector<Position> vecStartOverflow = new Vector<Position>();
 	private Vector<Position> vecEndOverflow = new Vector<Position>();
@@ -140,6 +140,7 @@ public class LpDecoratedTextPane extends LpTextPane {
 
 	/**
 	 * Setzt die Breite der Seite (72 dpi!)
+	 * @param iPageWidth 
 	 */
 	public void setPageWidth(int iPageWidth) {
 		setPageWidth(iPageWidth, UNIT_PIXEL, JASPER_DPI);
@@ -161,6 +162,8 @@ public class LpDecoratedTextPane extends LpTextPane {
 
 	/**
 	 * Setzt die Gr&ouml;&szlig;e der Seite (72 dpi!)
+	 * @param dim 
+	 * @param unit 
 	 */
 	public void setPageFormat(Dimension dim, int unit) {
 		setPageWidth(dim.width, unit, JASPER_DPI);
@@ -182,6 +185,7 @@ public class LpDecoratedTextPane extends LpTextPane {
 
 	/**
 	 * Setzt die Gr&ouml;&szlig;e der Seite in Pixel (72 dpi!)
+	 * @param dim 
 	 */
 	public void setPageFormat(Dimension dim) {
 		setPageFormat(dim, UNIT_PIXEL);
@@ -201,9 +205,8 @@ public class LpDecoratedTextPane extends LpTextPane {
 	}
 
 	/**
-	 * Gibt die dargestellte, zoomabh&auml;ngige Aufl&ouml;sung des Textbereiches
-	 * (= Seitengr&ouml;&szlig;e - R&auml;nder) in Pixel zur&uuml;ck.
-	 * @return
+	 * @return die dargestellte, zoomabh&auml;ngige Aufl&ouml;sung des Textbereiches
+	 * (= Seitengr&ouml;&szlig;e - R&auml;nder) in Pixel
 	 */
 	public Dimension getPageFormatNoBordersWithZoom() {
 		return multiplyDimension(pageFormatPixel, getZoomFactor());
@@ -211,9 +214,8 @@ public class LpDecoratedTextPane extends LpTextPane {
 
 
 	/**
-	 * Gibt die dargestellte, zoomabh&auml;ngige Aufl&ouml;sung der Seite inklusive R&auml;nder
-	 * in Pixel zur&uuml;ck.
-	 * @return
+	 * @return die dargestellte, zoomabh&auml;ngige Aufl&ouml;sung der Seite inklusive R&auml;nder
+	 * in Pixel
 	 */
 	public Dimension getPageFormatWithZoom() {
 		return multiplyDimension(addPageBorders(pageFormatPixel), getZoomFactor());
@@ -223,7 +225,7 @@ public class LpDecoratedTextPane extends LpTextPane {
 	 * Gibt die wirkliche, zoomunabh&auml;ngige Aufl&ouml;sung der Seite zur&uuml;ck
 	 * (72 dpi!)
 	 * @param unit
-	 * @return
+	 * @return die wirkliche, zoomunabh&auml;ngige Aufl&ouml;sung der Seite
 	 */
 	public Dimension getPageFormat(int unit) {
 		switch (unit) {
@@ -258,7 +260,7 @@ public class LpDecoratedTextPane extends LpTextPane {
 	/**
 	 * Gibt die wirkliche, zoomunabh&auml;ngige Aufl&ouml;sung der Seite in Pixel zur&uuml;ck
 	 * (72 dpi!)
-	 * @return
+	 * @return die wirkliche, zoomunabh&auml;ngige Aufl&ouml;sung der Seite in Pixel
 	 */
 	public Dimension getPageFormat() {
 		return getPageFormat(UNIT_PIXEL);

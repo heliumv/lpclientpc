@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -83,7 +83,9 @@ public class PanelZeitmodell extends PanelBasis {
 	private WrapperTextField wtfBezeichnung = new WrapperTextField();
 	private WrapperCheckBox wcbTeilzeitmodell = new WrapperCheckBox();
 	private WrapperCheckBox wcbDynamisch = new WrapperCheckBox();
+	private WrapperCheckBox wcbFeiertagssollAddieren = new WrapperCheckBox();
 	private WrapperCheckBox wcbVersteckt = new WrapperCheckBox();
+	private WrapperCheckBox wcbFixePausenTrotzKommtGeht = new WrapperCheckBox();
 	private WrapperLabel wrapperLabel1 = new WrapperLabel();
 	private WrapperLabel wlaWochensumme = new WrapperLabel();
 	private WrapperLabel wlaUrlaubstageProWoche = new WrapperLabel();
@@ -94,6 +96,9 @@ public class PanelZeitmodell extends PanelBasis {
 
 	private WrapperLabel wlaMinutenabzug = new WrapperLabel();
 	private WrapperNumberField wnfMinutenabzug = new WrapperNumberField();
+
+	private WrapperLabel wlaMaximalesWochenist = new WrapperLabel();
+	private WrapperNumberField wnfMaximalesWochenist = new WrapperNumberField();
 
 	private WrapperLabel wlaWochensummeMoBisSo = new WrapperLabel();
 	private WrapperNumberField wnfWochensummeMoBisSo = new WrapperNumberField();
@@ -150,8 +155,13 @@ public class PanelZeitmodell extends PanelBasis {
 		wcbTeilzeitmodell.setShort(zeitmodellDto.getBTeilzeit());
 		wcbVersteckt.setShort(zeitmodellDto.getBVersteckt());
 		wnfSollstundenFix.setBigDecimal(zeitmodellDto.getNSollstundenfix());
-
+		wnfMaximalesWochenist.setBigDecimal(zeitmodellDto
+				.getNMaximalesWochenist());
 		wcbDynamisch.setShort(zeitmodellDto.getBDynamisch());
+		wcbFeiertagssollAddieren.setShort(zeitmodellDto
+				.getBFeiertagssollAddieren());
+		wcbFixePausenTrotzKommtGeht.setShort(zeitmodellDto
+				.getBFixepauseTrotzkommtgeht());
 
 		wnfUrlaubstageProWoche.setDouble(zeitmodellDto
 				.getFUrlaubstageprowoche());
@@ -211,12 +221,16 @@ public class PanelZeitmodell extends PanelBasis {
 				"pers.zeitmodell.teilzeitmodell"));
 		wcbDynamisch.setText(LPMain.getInstance().getTextRespectUISPr(
 				"pers.zeitmodell.dynamischepause"));
+		wcbFeiertagssollAddieren.setText(LPMain.getInstance()
+				.getTextRespectUISPr("pers.zeitmodell.feiertagssolladdieren"));
 
 		wcbVersteckt.setText(LPMain.getInstance().getTextRespectUISPr(
 				"lp.versteckt"));
 
 		wlaWochensumme.setText(LPMain.getInstance().getTextRespectUISPr(
 				"pers.zeitmodell.wochensumme"));
+		wlaMaximalesWochenist.setText(LPMain.getInstance().getTextRespectUISPr(
+				"pers.zeitmodell.maximaleswochenist"));
 		wrapperLabel1.setText("");
 		wlaWochensummeSoFtg.setText(LPMain.getInstance().getTextRespectUISPr(
 				"pers.zeitmodell.wochensummesoftg"));
@@ -242,25 +256,34 @@ public class PanelZeitmodell extends PanelBasis {
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(0, 0, 0, 0), 0, 0));
 
-		jpaWorkingOn.add(wlaBezeichnung, new GridBagConstraints(0, 1, 1, 1,
-				0.0, 0.0, GridBagConstraints.CENTER,
+		iZeile = 0;
+
+		jpaWorkingOn.add(wlaKennung, new GridBagConstraints(0, iZeile, 1, 1,
+				0.2, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wlaKennung, new GridBagConstraints(0, 0, 1, 1, 0.2,
-				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
-				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wtfKennung, new GridBagConstraints(1, 0, 1, 1, 0.2,
-				0.0, GridBagConstraints.WEST, GridBagConstraints.NONE,
+		jpaWorkingOn.add(wtfKennung, new GridBagConstraints(1, iZeile, 1, 1,
+				0.2, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(2, 2, 2, 2), 200, 0));
-		jpaWorkingOn.add(wtfBezeichnung, new GridBagConstraints(1, 1, 3, 1,
-				0.0, 0.0, GridBagConstraints.CENTER,
+
+		iZeile++;
+		jpaWorkingOn.add(wlaBezeichnung, new GridBagConstraints(0, iZeile, 1,
+				1, 0.0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
 
-		jpaWorkingOn.add(wcbTeilzeitmodell, new GridBagConstraints(1, 2, 2, 1,
-				0.0, 0.0, GridBagConstraints.CENTER,
+		jpaWorkingOn.add(wtfBezeichnung, new GridBagConstraints(1, iZeile, 3,
+				1, 0.0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wcbDynamisch, new GridBagConstraints(2, 2, 2, 1, 0.0,
-				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
-				new Insets(2, 2, 2, 2), 200, 0));
+
+		iZeile++;
+
+		jpaWorkingOn.add(wcbTeilzeitmodell, new GridBagConstraints(1, iZeile,
+				2, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wcbDynamisch, new GridBagConstraints(2, iZeile, 2, 1,
+				0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 200, 0));
+
+		iZeile++;
 
 		if (DelegateFactory
 				.getInstance()
@@ -269,59 +292,96 @@ public class PanelZeitmodell extends PanelBasis {
 						com.lp.server.benutzer.service.RechteFac.RECHT_LP_DARF_VERSTECKTE_SEHEN)) {
 
 			jpaWorkingOn.add(wcbVersteckt,
-					new GridBagConstraints(1, 3, 2, 1, 0.0, 0.0,
+					new GridBagConstraints(1, iZeile, 2, 1, 0.0, 0.0,
 							GridBagConstraints.CENTER,
 							GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2,
 									2), 0, 0));
 		}
 
-		jpaWorkingOn.add(wrapperLabel1, new GridBagConstraints(0, 6, 1, 1, 0.0,
-				0.0, GridBagConstraints.CENTER, GridBagConstraints.NONE,
+		iZeile++;
+
+		wcbFixePausenTrotzKommtGeht
+				.setText(LPMain.getInstance().getTextRespectUISPr(
+						"pers.zeitmodell.fixepausetrotzkommtgeht"));
+		jpaWorkingOn.add(wcbFixePausenTrotzKommtGeht, new GridBagConstraints(1,
+				iZeile, 2, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+
+		iZeile++;
+
+		jpaWorkingOn.add(wrapperLabel1, new GridBagConstraints(0, iZeile, 1, 1,
+				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.NONE,
 				new Insets(0, 0, 0, 0), 0, 0));
-		jpaWorkingOn.add(wlaWochensumme, new GridBagConstraints(0, 7, 1, 1,
-				0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wlaWochensummeSoFtg, new GridBagConstraints(0, 8, 1,
+
+		iZeile++;
+		jpaWorkingOn.add(wlaWochensumme, new GridBagConstraints(0, iZeile, 1,
 				1, 0.0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wlaWochensummeMoBisSo, new GridBagConstraints(0, 9, 1,
-				1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wlaUrlaubstageProWoche, new GridBagConstraints(0, 10,
+		jpaWorkingOn.add(wnfWochensumme, new GridBagConstraints(1, iZeile, 1,
+				1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE,
+				new Insets(2, 2, 2, 2), 0, 0));
+
+		iZeile++;
+		jpaWorkingOn.add(wlaWochensummeSoFtg, new GridBagConstraints(0, iZeile,
 				1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wlaMinutenabzug, new GridBagConstraints(0, 11, 1, 1,
-				0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-
-		jpaWorkingOn.add(wnfWochensumme, new GridBagConstraints(1, 7, 1, 1,
-				0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE,
-				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wnfWochensummeSoFtg, new GridBagConstraints(1, 8, 1,
-				1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE,
-				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wnfWochensummeMoBisSo, new GridBagConstraints(1, 9, 1,
-				1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE,
-				new Insets(2, 2, 2, 2), 0, 0));
-
-		jpaWorkingOn.add(wnfUrlaubstageProWoche, new GridBagConstraints(1, 10,
+		jpaWorkingOn.add(wnfWochensummeSoFtg, new GridBagConstraints(1, iZeile,
 				1, 1, 0.0, 0.0, GridBagConstraints.WEST,
 				GridBagConstraints.NONE, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wnfMinutenabzug, new GridBagConstraints(1, 11, 1, 1,
-				0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE,
+		iZeile++;
+
+		jpaWorkingOn.add(wlaWochensummeMoBisSo, new GridBagConstraints(0,
+				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wnfWochensummeMoBisSo, new GridBagConstraints(1,
+				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.WEST,
+				GridBagConstraints.NONE, new Insets(2, 2, 2, 2), 0, 0));
+
+		iZeile++;
+		jpaWorkingOn.add(wlaMaximalesWochenist, new GridBagConstraints(0,
+				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wnfMaximalesWochenist, new GridBagConstraints(1,
+				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.WEST,
+				GridBagConstraints.NONE, new Insets(2, 2, 2, 2), 0, 0));
+
+		iZeile++;
+
+		jpaWorkingOn.add(wlaUrlaubstageProWoche, new GridBagConstraints(0,
+				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wnfUrlaubstageProWoche, new GridBagConstraints(1,
+				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.WEST,
+				GridBagConstraints.NONE, new Insets(2, 2, 2, 2), 0, 0));
+		iZeile++;
+
+		jpaWorkingOn.add(wlaMinutenabzug, new GridBagConstraints(0, iZeile, 1,
+				1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wnfMinutenabzug, new GridBagConstraints(1, iZeile, 1,
+				1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(2, 2, 2, 2), 0, 0));
+
+		iZeile++;
 
 		wlaSollstundenFixHinweis.setHorizontalAlignment(SwingConstants.LEFT);
 		jpaWorkingOn.add(wlaSollstundenFixHinweis, new GridBagConstraints(0,
-				12, 3, 1, 0.0, 0.0, GridBagConstraints.WEST,
+				iZeile, 3, 1, 0.0, 0.0, GridBagConstraints.WEST,
 				GridBagConstraints.HORIZONTAL, new Insets(30, 2, 2, 2), 0, 0));
 
-		jpaWorkingOn.add(wlaSollstundenFix, new GridBagConstraints(0, 13, 1, 1,
-				0.0, 0.0, GridBagConstraints.CENTER,
+		iZeile++;
+
+		jpaWorkingOn.add(wlaSollstundenFix, new GridBagConstraints(0, iZeile,
+				1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wnfSollstundenFix, new GridBagConstraints(1, 13, 1, 1,
-				0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE,
-				new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wnfSollstundenFix, new GridBagConstraints(1, iZeile,
+				1, 1, 0.0, 0.0, GridBagConstraints.WEST,
+				GridBagConstraints.NONE, new Insets(2, 2, 2, 2), 0, 0));
+
+		jpaWorkingOn.add(wcbFeiertagssollAddieren, new GridBagConstraints(2,
+				iZeile, 2, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		iZeile++;
 
 		this.add(getPanelStatusbar(), new GridBagConstraints(0, 3, 1, 1, 1.0,
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
@@ -359,10 +419,16 @@ public class PanelZeitmodell extends PanelBasis {
 		zeitmodellDto.setCNr(wtfKennung.getText());
 		zeitmodellDto.setBTeilzeit(wcbTeilzeitmodell.getShort());
 		zeitmodellDto.setBDynamisch(wcbDynamisch.getShort());
+		zeitmodellDto.setBFeiertagssollAddieren(wcbFeiertagssollAddieren
+				.getShort());
+		zeitmodellDto.setBFixepauseTrotzkommtgeht(wcbFixePausenTrotzKommtGeht
+				.getShort());
 		zeitmodellDto.setFUrlaubstageprowoche(wnfUrlaubstageProWoche
 				.getDouble());
 		zeitmodellDto.setNSollstundenfix(wnfSollstundenFix.getBigDecimal());
 		zeitmodellDto.setIMinutenabzug(wnfMinutenabzug.getInteger());
+		zeitmodellDto.setNMaximalesWochenist(wnfMaximalesWochenist
+				.getBigDecimal());
 		if (zeitmodellDto.getIId() != null
 				&& zeitmodellDto.getBVersteckt() != null
 				&& !Helper.short2boolean(zeitmodellDto.getBVersteckt())) {

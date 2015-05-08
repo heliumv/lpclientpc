@@ -8,44 +8,57 @@
 <!-- AD	11.02.13	git anpassung -->
 <project name="logp" basedir="." default="pack">
 
-	<property environment="env"/>
-	<property file="build.properties.local"/>
-	<property file="build.properties"/>
-	
-	<import file="${file.build.commons}"/>
-	
-  <!-- Lib-Pfad als Referenz -->
-  <path id="id.lib.path">
-    <fileset dir="${dir.lib}">
-      <include name="**/*.jar"/>
-    </fileset>
-  </path>
+	<property environment="env" />
+	<property file="build.properties.local" />
+	<property file="build.properties" />
 
-<target name="clean"
-  description="Alle Build-Verzeichnisse (classes) loeschen.">
-  <delete dir="${dir.classes}"/>
-  <delete dir="${dir.logs}"/>
-  <delete dir="${dir.doc}"/>
-  <delete dir="${dir.deploy}"/>
-	<delete dir="${dir.temp}"/>
-</target>
+	<import file="${file.build.commons}" />
+
+	<!-- Lib-Pfad als Referenz -->
+	<path id="id.lib.path">
+		<fileset dir="${dir.lib}">
+			<include name="**/*.jar" />
+		</fileset>
+		<fileset dir="${env.JAVA_HOME}/jre/lib/">
+			<include name="**/jfxrt.jar" />
+		</fileset>
+	</path>
+
+	<target name="clean" description="Alle Build-Verzeichnisse (classes) loeschen.">
+		<delete dir="${dir.classes}" />
+		<delete dir="${dir.logs}" />
+		<delete dir="${dir.doc}" />
+		<delete dir="${dir.deploy}" />
+		<delete dir="${dir.temp}" />
+	</target>
 
 
-<target name="init"  description="Ausgabe-Verzeichnisse erstellen">
-  <mkdir dir="${dir.log}"/>
-	<echo file="${file.changes.shown}" message=" " />
- 	<mkdir dir="${dir.classes}"/> 
- 	<mkdir dir="${dir.doc}"/>
- 	<mkdir dir="${dir.deploy}"/>
-	<mkdir dir="${dir.temp}"/>
-</target>
+	<!--
+	  **************************************************************
+	  ** private section build file 
+	  **************************************************************	  
+	  -->
+	<target name="private.get.buildnumber">
+		<property file="${file.lp.properties}" />
+		<property name="buildnumber" value="${lp.version.client.build}" />
+		<echo message="lpclientpc build - read buildnumber: ${buildnumber}" />
+	</target>
 
-<target  name="compile" depends="init"
-  description="compile the client.">
-  <echo message="compile the client."/>
+	<target name="init" depends="private.get.buildnumber" description="Ausgabe-Verzeichnisse erstellen">
+		<mkdir dir="${dir.log}" />
+		<mkdir dir="${dir.hv.default}" />
+		<echo file="${file.changes.shown}" message="${buildnumber}" />
+		<mkdir dir="${dir.classes}" />
+		<mkdir dir="${dir.doc}" />
+		<mkdir dir="${dir.deploy}" />
+		<mkdir dir="${dir.temp}" />
+	</target>
 
-  <!-- Ausgeben aller Libs zur Kontrolle -->
- <!-- AD
+	<target name="compile" depends="init" description="compile the client.">
+		<echo message="compile the client." />
+
+		<!-- Ausgeben aller Libs zur Kontrolle -->
+		<!-- AD
     <pathconvert property="manifest.classpath"
       dirsep="/"
       pathsep="    "
@@ -55,24 +68,15 @@
 
     <echo message="Server: manifest.classpath: ${manifest.classpath}"/>
  AD -->
-	<echo>JAVA_HOME: ${env.JAVA_HOME}</echo>
+		<echo>JAVA_HOME: ${env.JAVA_HOME}</echo>
 
-  <javac
-    destdir="${dir.classes}"
-    includes="**/*.java"
-    debug="true"
-    executable="${env.JAVA_HOME}/bin/javac"
-    deprecation="false"
-    compiler="modern"
-    failonerror="true"
-    memorymaximumsize="256M"
-    fork="true">
+		<javac includeantruntime="false" destdir="${dir.classes}" includes="**/*.java" debug="true" executable="${env.JAVA_HOME}/bin/javac" deprecation="false" compiler="modern" failonerror="true" memorymaximumsize="256M" fork="true">
 
-    <src path="${dir.src}"/>
-    <classpath refid="id.lib.path"/>
-    <classpath location="${dir.server.classes}"/>
-  </javac>
-</target>
+			<src path="${dir.src}" />
+			<classpath refid="id.lib.path" />
+			<classpath location="${dir.server.classes}" />
+		</javac>
+	</target>
 
 	<!-- ********************************************-->
 	<!-- git commit und push von lp.properties -->
@@ -90,67 +94,68 @@
 		</exec>
 		<exec executable="git">
 			<arg value="push" />
+			<arg value="-u" />
+			<arg value="origin" />
+			<arg value="master" />
 		</exec>
 	</target>
 
 
-<!-- ********************************************-->	
-<!-- schreibt die versionsnummer ins lp.properties -->	
-<!-- ********************************************-->	
-<target name="set.updatenumber" depends="declare.anttools">
-	<fail unless="updatenumber" message="updatenumber ist nicht gesetzt."/>
-	
-	<updatenumbersplit updatenumber="${updatenumber}" 
-				versionproperty="version" 
-				releaseproperty="release"/>
-				
-	<!-- write version -->
-	<replaceregexp file="${file.lp.properties}" byline="true">
-		<regexp pattern="(^lp\.version\.client\.modul[ ]*=[ ]*).*"/>
-		<substitution expression="\1${version}"/>
-	</replaceregexp>
-	
-	<!-- write release -->
-	<replaceregexp file="${file.lp.properties}" byline="true">
-		<regexp pattern="(^lp\.version\.client\.bugfix[ ]*=[ ]*).*"/>
-		<substitution expression="\1${release}"/>
-	</replaceregexp>
-	
-	<echo message="wrote client version (version: ${version}, release: ${release}) to file: ${file.lp.properties}"/>
+	<!-- ********************************************-->
+	<!-- schreibt die versionsnummer ins lp.properties -->
+	<!-- ********************************************-->
+	<target name="set.updatenumber" depends="declare.anttools">
+		<fail unless="updatenumber" message="updatenumber ist nicht gesetzt." />
 
-	<antcall target="pushToGit">
-		<param name="message" value="set client version (version: ${version}, release: ${release})"/>
-	</antcall>
+		<updatenumbersplit updatenumber="${updatenumber}" versionproperty="version" releaseproperty="release" />
 
- </target>
+		<!-- write version -->
+		<replaceregexp file="${file.lp.properties}" byline="true">
+			<regexp pattern="(^lp\.version\.client\.modul[ ]*=[ ]*).*" />
+			<substitution expression="\1${version}" />
+		</replaceregexp>
 
- 
-<!-- ********************************************-->	
-<!-- schreibt die buildnummer ins lp.properties -->	
-<!-- ********************************************-->	
-<target name="set.buildnumber" >
-	<fail unless="buildnumber" message="buildnumber ist nicht gesetzt."/>
-				
-	<replaceregexp file="${file.lp.properties}" byline="true">
-		<regexp pattern="(^lp\.version\.client\.build[ ]*=[ ]*).*"/>
-		<substitution expression="\1${buildnumber}"/>
-	</replaceregexp>
-	
-	<echo message="wrote client build number (${buildnumber} to file: ${file.lp.properties}" />
+		<!-- write release -->
+		<replaceregexp file="${file.lp.properties}" byline="true">
+			<regexp pattern="(^lp\.version\.client\.bugfix[ ]*=[ ]*).*" />
+			<substitution expression="\1${release}" />
+		</replaceregexp>
 
-	<antcall target="pushToGit">
-		<param name="message" value="set client buildnumber to ${buildnumber}"/>
-	</antcall>
+		<echo message="wrote client version (version: ${version}, release: ${release}) to file: ${file.lp.properties}" />
 
-</target>
- 
-<property name="file.server.build.file" value="${dir.server.dir}/build.xml"/>
+		<antcall target="pushToGit">
+			<param name="message" value="set client version (version: ${version}, release: ${release})" />
+		</antcall>
 
-  <!-- jar-file erzeugen -->
-  <target name="pack" depends="compile, rescopy" unless="is.setup" >
-    <basename property="name.dir.lib" file="${dir.lib}"/>
+	</target>
 
-<!-- AD
+
+	<!-- ********************************************-->
+	<!-- schreibt die buildnummer ins lp.properties -->
+	<!-- ********************************************-->
+	<target name="set.buildnumber">
+		<fail unless="buildnumber" message="buildnumber ist nicht gesetzt." />
+
+		<replaceregexp file="${file.lp.properties}" byline="true">
+			<regexp pattern="(^lp\.version\.client\.build[ ]*=[ ]*).*" />
+			<substitution expression="\1${buildnumber}" />
+		</replaceregexp>
+
+		<echo message="wrote client build number (${buildnumber} to file: ${file.lp.properties}" />
+
+		<antcall target="pushToGit">
+			<param name="message" value="set client buildnumber to ${buildnumber}" />
+		</antcall>
+
+	</target>
+
+	<property name="file.server.build.file" value="${dir.server.dir}/build.xml" />
+
+	<!-- jar-file erzeugen -->
+	<target name="pack" depends="compile, rescopy" unless="is.setup">
+		<basename property="name.dir.lib" file="${dir.lib}" />
+
+		<!-- AD
     <pathconvert property="manifest.classpath"
       dirsep="/"
       pathsep=" "
@@ -158,261 +163,249 @@
       <map from="${basedir}" to="."/>
     </pathconvert>
 AD -->
-  	
-  	<pathconvert property="manifest.classpath" pathsep=" " >
-  		<mapper>
-  			<chainedmapper>
-  				<flattenmapper />
-  				<globmapper from="*" to="lib/*" />
-  			</chainedmapper>
-  		</mapper>
-  		<path>
-  			<fileset dir="${basedir}">
-  				<include name="**/*.jar" />
-  			</fileset>
-  		</path>
-  	</pathconvert>
-<!-- AD --> 		
-  	
-    <echo message="AD manifest.classpath: ${manifest.classpath}"/>
-    <jar destfile="${dir.deploy}/${file.application.basename}.jar">
-      <fileset dir="${dir.classes}"/>
-      <fileset dir="${dir.server.classes}">
-        <include name="**/lp/util/**"/>
-        <include name="**/lp/server/util/**"/>
-        <include name="**/service/**"/>
-      	<include name="**/ejb/*PK.*"/>
-        <include name="**/fastlanereader/generated/service/**"/>
-        <!-- ###ToDo: hier sollte vielleicht nicht alles rein! klaeren! -->
-      </fileset>
 
-      <manifest>
-        <attribute name="Built-By" value="${user.name}"/>
-        <attribute name="Main-Class" value="${class.main.class}"/>
-        <attribute name="Class-Path" value="${manifest.classpath}"/>
-      	<attribute name="Permissions" value="all-permissions"/>
-      	<attribute name="Application-Name" value="HELIUM V Webstart Client"/>
-      </manifest>
-    </jar>
+		<pathconvert property="manifest.classpath" pathsep=" ">
+			<mapper>
+				<chainedmapper>
+					<flattenmapper />
+					<globmapper from="*" to="lib/*" />
+				</chainedmapper>
+			</mapper>
+			<path>
+				<fileset dir="${basedir}">
+					<include name="**/*.jar" />
+				</fileset>
+			</path>
+		</pathconvert>
+		<!-- AD -->
 
-    <!-- libs kopieren, damit das jar mit dem angegebenen classpath -->
-    <!-- auch aufrufbar bleibt. -->
- <!-- AD
+		<echo message="AD manifest.classpath: ${manifest.classpath}" />
+		<jar destfile="${dir.deploy}/${file.application.basename}.jar">
+			<fileset dir="${dir.classes}" />
+			<fileset dir="${dir.server.classes}">
+				<include name="**/lp/util/**" />
+				<include name="**/lp/server/util/**" />
+				<include name="**/service/**" />
+				<include name="**/ejb/*PK.*" />
+				<include name="**/fastlanereader/generated/service/**" />
+				<!-- ###ToDo: hier sollte vielleicht nicht alles rein! klaeren! -->
+			</fileset>
+
+			<manifest>
+				<attribute name="Built-By" value="${user.name}" />
+				<attribute name="Main-Class" value="${class.main.class}" />
+				<attribute name="Class-Path" value="${manifest.classpath}" />
+				<attribute name="Permissions" value="all-permissions" />
+				<attribute name="Application-Name" value="HELIUM V Webstart Client" />
+			</manifest>
+		</jar>
+
+		<!-- libs kopieren, damit das jar mit dem angegebenen classpath -->
+		<!-- auch aufrufbar bleibt. -->
+		<!-- AD
   	<copy todir="${dir.deploy}">
       <fileset dir=".">
         <include name="${dir.lib}/**"/>
       </fileset>
     </copy>
 -->
-  	<copy todir="${dir.deploy}/lib">
-      	<flattenmapper />
-  		<fileset dir=".">
-	        <include name="${dir.lib}/**"/>
-  			<exclude name="${dir.lib}/linux/**"/>
-  			<exclude name="${dir.lib}/mac/**"/>
-  			<exclude name="${dir.lib}/windows/**"/>
-      	</fileset>
-    </copy>
-  	<copy todir="${dir.deploy}">
-  		<fileset dir=".">
-  			<include name="${dir.lib}/linux/**"/>
-  			<include name="${dir.lib}/mac/**"/>
-  			<include name="${dir.lib}/windows/**"/>
-      	</fileset>
-    </copy>
-  	
-<!-- AD -->
+		<copy todir="${dir.deploy}/lib">
+			<flattenmapper />
+			<fileset dir=".">
+				<include name="${dir.lib}/**" />
+				<exclude name="${dir.lib}/linux/**" />
+				<exclude name="${dir.lib}/mac/**" />
+				<exclude name="${dir.lib}/windows/**" />
+			</fileset>
+		</copy>
+		<copy todir="${dir.deploy}">
+			<fileset dir=".">
+				<include name="${dir.lib}/linux/**" />
+				<include name="${dir.lib}/mac/**" />
+				<include name="${dir.lib}/windows/**" />
+			</fileset>
+		</copy>
 
-  </target>
-  	
-	
-<target name="start" description="starts the current client">
-	<java jar="${dir.deploy}/${file.application.basename}.jar" fork="true">
-		<jvmarg line="${jvm.args.client.start}"/>
-	</java>
-</target>
+		<!-- AD -->
+
+	</target>
 
 
-<!-- Alles "Liefern", was fuer einen erfolgreichen Client Start gebraucht -->
-<!-- wird. -->
-<!-- ===================================================================== -->
-<target name="deploy" depends="pack" description="deploy client - runtime (and installer)">
-	<fail unless="deploydir" message="deploydir not set. cannot proceed."/>
+	<target name="start" description="starts the current client">
+		<java jar="${dir.deploy}/${file.application.basename}.jar" fork="true">
+			<jvmarg line="${jvm.args.client.start}" />
+		</java>
+	</target>
 
-	<available property="is.available.dir.deploy" file="${dir.deploy}" type="dir"/>
-	<fail unless="is.available.dir.deploy">
+
+	<!-- Alles "Liefern", was fuer einen erfolgreichen Client Start gebraucht -->
+	<!-- wird. -->
+	<!-- ===================================================================== -->
+	<target name="deploy" depends="pack" description="deploy client - runtime (and installer)">
+		<fail unless="deploydir" message="deploydir not set. cannot proceed." />
+
+		<available property="is.available.dir.deploy" file="${dir.deploy}" type="dir" />
+		<fail unless="is.available.dir.deploy">
 		Der Client konnte nicht deployt werden, da das Verzeichnis
 		${dir.deploy} nicht vorhanden ist.
 	</fail>
-	
-	<var name="dir.deploy.client" value="${deploydir}/client"/>
-	<mkdir dir="${dir.deploy.client}"/>
-	
-	<!-- delete old deliver-dir -->
-	<delete dir="${dir.deploy.client}"/>
-	<mkdir dir="${dir.deploy.client}"/>
-	
-	<echo message="deploying client - runtime"/>
-	<copy todir="${dir.deploy.client}">
-		<fileset dir=".">
-			<include name="${dir.deploy}/**/*"/>
-			<include name="build.xml"/>
-			<include name="build.properties"/>
-		</fileset>
-	</copy>
-</target>
+
+		<var name="dir.deploy.client" value="${deploydir}/client" />
+		<mkdir dir="${dir.deploy.client}" />
+
+		<!-- delete old deliver-dir -->
+		<delete dir="${dir.deploy.client}" />
+		<mkdir dir="${dir.deploy.client}" />
+
+		<echo message="deploying client - runtime" />
+		<copy todir="${dir.deploy.client}">
+			<fileset dir=".">
+				<include name="${dir.deploy}/**/*" />
+				<include name="build.xml" />
+				<include name="build.properties" />
+			</fileset>
+		</copy>
+	</target>
 
 
-<target name="rescopy"
-  description="kopiere xml nach ${dir.classes}.">
-  <copy verbose="false" todir="${dir.classes}">
-    <fileset dir="${dir.res}">
-      <include name="**/res/**"/>
-            <!-- CK wegen Stiftzeiterfassung -->
-      <include name="**/_zestifte.properties"/>
-      <include name="**/log4j.xml"/>
-      <include name="**/*.xml"/>
-    </fileset>
-  </copy>
-  <copy file="${dir.src}/themepack.zip" todir="${dir.classes}"/>
-</target>
+	<target name="rescopy" description="kopiere xml nach ${dir.classes}.">
+		<copy verbose="false" todir="${dir.classes}">
+			<fileset dir="${dir.res}">
+				<include name="**/res/**" />
+				<!-- CK wegen Stiftzeiterfassung -->
+				<include name="**/_zestifte.properties" />
+				<include name="**/log4j.xml" />
+				<include name="**/*.xml" />
+			</fileset>
+		</copy>
+		<copy file="${dir.src}/themepack.zip" todir="${dir.classes}" />
+	</target>
 
 
 
 	<!-- compiles the junit-tests -->
-<target name="compile.tests">
-	<echo>JAVA_HOME: ${env.JAVA_HOME}</echo>
+	<target name="compile.tests">
+		<echo>JAVA_HOME: ${env.JAVA_HOME}</echo>
 
-	<javac
-    destdir="${dir.classes}"
-    includes="**/*.java"
-	executable="${env.JAVA_HOME}/bin/javac"
-    debug="true"
-    deprecation="true"
-    compiler="modern"
-    failonerror="true"
-    memorymaximumsize="256M"
-    fork="true">
+		<javac includeantruntime="false" destdir="${dir.classes}" includes="**/*.java" executable="${env.JAVA_HOME}/bin/javac" debug="true" deprecation="true" compiler="modern" failonerror="true" memorymaximumsize="256M" fork="true">
 
-    <src path="${dir.test}"/>
-    <classpath refid="id.lib.path"/>
-    <classpath location="${dir.server.classes}"/>
-  </javac>
-</target>
+			<src path="${dir.test}" />
+			<classpath refid="id.lib.path" />
+			<classpath location="${dir.server.classes}" />
+		</javac>
+	</target>
 
-<!-- compiles the junit-tests -->
-<target name="copy.resources.tests">
-	<copy todir="${dir.classes}">
-		<fileset dir="${dir.test}">
-			<include name="**/*.properties"/>
-		</fileset>
-	</copy>
-</target>
-
-<!-- runs all available junit-tests -->
-<target name="test.all" depends="compile.tests, copy.resources.tests">
-	<junit printsummary="yes"  fork="true"  dir="."   failureproperty="failed.junit.client"
-		showoutput="true"  maxmemory="128m"  tempdir="${dir.temp}">
-
-		<formatter type="xml"/>
-
-		<classpath>
-			<pathelement location="${dir.classes}"/>
-			<pathelement location="${dir.classes.server}"/>
-			<path refid="id.lib.path"/>
-		</classpath>
-
-		<batchtest todir="${dir.logs}">
+	<!-- compiles the junit-tests -->
+	<target name="copy.resources.tests">
+		<copy todir="${dir.classes}">
 			<fileset dir="${dir.test}">
-				<include name="**/TestCase*.java"/>
+				<include name="**/*.properties" />
 			</fileset>
-		</batchtest>
-	</junit>
-</target>
+		</copy>
+	</target>
 
-  <!-- ========================= Installer targets ======================== -->
-  <!-- zusaetzliche properties fuer alle installer targets -->
-  <property name="dir.project.dir" value="${file.application.basename}"/>
-  <property name="file.installer.name.jar" value="${file.application.basename}-installer.jar"/>
-  <property name="file.installer.name.zip" value="${file.application.basename}-installer.zip"/>
-  <property name="file.installer.build.file" value="${dir.installer.dir}/build.xml"/>
+	<!-- runs all available junit-tests -->
+	<target name="test.all" depends="compile.tests, copy.resources.tests">
+		<junit printsummary="yes" fork="true" dir="." failureproperty="failed.junit.client" showoutput="true" maxmemory="128m" tempdir="${dir.temp}">
 
-  <!-- Installer erzeugen (keine dependencies)-->
-  <target name="installer"  description="packt das installer-jar und zip">
-	  <available property="is.available.installer"
-      file="${file.installer.build.file}"
-      type="file"/>
+			<formatter type="xml" />
 
-    <fail unless="is.available.installer">
+			<classpath>
+				<pathelement location="${dir.classes}" />
+				<pathelement location="${dir.classes.server}" />
+				<path refid="id.lib.path" />
+			</classpath>
+
+			<batchtest todir="${dir.logs}">
+				<fileset dir="${dir.test}">
+					<include name="**/TestCase*.java" />
+				</fileset>
+			</batchtest>
+		</junit>
+	</target>
+
+	<!-- ========================= Installer targets ======================== -->
+	<!-- zusaetzliche properties fuer alle installer targets -->
+	<property name="dir.project.dir" value="${file.application.basename}" />
+	<property name="file.installer.name.jar" value="${file.application.basename}-installer.jar" />
+	<property name="file.installer.name.zip" value="${file.application.basename}-installer.zip" />
+	<property name="file.installer.build.file" value="${dir.installer.dir}/build.xml" />
+
+	<!-- Installer erzeugen (keine dependencies)-->
+	<target name="installer" description="packt das installer-jar und zip">
+		<available property="is.available.installer" file="${file.installer.build.file}" type="file" />
+
+		<fail unless="is.available.installer">
       Um dieses Target auszuführen wird das Installer-Modul benoetigt.
       Dies ist allerdings unauffindbar. Womöglich wurde es nicht ausgecheckt.
       (konnte ${file.installer.build.file} nicht finden)
       try: cvs co installer.
     </fail>
 
-    <ant antfile="${file.installer.build.file}"
-      target="installer"
-      dir="${dir.installer.dir}"
-      inheritall="false">
-      <property name="dir.project.basedir" value="${basedir}"/>
-      <property name="dir.project.dir" value="${dir.project.dir}"/>
-      <property name="dir.project.deploy" value="${dir.deploy}"/>
-      <property name="file.application.basename" value="${file.application.basename}"/>
-      <property name="file.installer.name.jar" value="${file.installer.name.jar}"/>
-      <property name="file.installer.name.zip" value="${file.installer.name.zip}"/>
-      <property name="jvm.args" value="${jvm.args.client.installer}"/>
-    </ant>
+		<ant antfile="${file.installer.build.file}" target="installer" dir="${dir.installer.dir}" inheritall="false">
+			<property name="dir.project.basedir" value="${basedir}" />
+			<property name="dir.project.dir" value="${dir.project.dir}" />
+			<property name="dir.project.deploy" value="${dir.deploy}" />
+			<property name="file.application.basename" value="${file.application.basename}" />
+			<property name="file.installer.name.jar" value="${file.installer.name.jar}" />
+			<property name="file.installer.name.zip" value="${file.installer.name.zip}" />
+			<property name="jvm.args" value="${jvm.args.client.installer}" />
+		</ant>
 	</target>
-	
-  <!-- Installer testen -->
-  <!-- ===================================================================== -->
-  <target name="test.installer" depends="installer">
-    <ant antfile="${file.installer.build.file}" target="test" dir="${dir.installer.dir}" inheritall="false">
-      <property name="dir.project.dir" value="${dir.project.dir}"/>
-      <property name="file.installer.name.jar" value="${file.installer.name.jar}"/>
-      <property name="file.application.basename" value="${file.application.basename}"/>
-      <property name="jvm.args" value=""/>
-    </ant>
-  </target>
+
+	<!-- Installer testen -->
+	<!-- ===================================================================== -->
+	<target name="test.installer" depends="installer">
+		<ant antfile="${file.installer.build.file}" target="test" dir="${dir.installer.dir}" inheritall="false">
+			<property name="dir.project.dir" value="${dir.project.dir}" />
+			<property name="file.installer.name.jar" value="${file.installer.name.jar}" />
+			<property name="file.application.basename" value="${file.application.basename}" />
+			<property name="jvm.args" value="" />
+		</ant>
+	</target>
 
 
-  <!-- Installer liefern -->
-  <!-- ===================================================================== -->
-  <target name="deploy.installer" depends="installer">
-    <fail unless="deploydir" message="deploydir not set. cannot proceed."/>
-		<var name="dir.deploy.client" value="${deploydir}/client"/>
-		
+	<!-- Installer liefern -->
+	<!-- ===================================================================== -->
+	<target name="deploy.installer" depends="installer">
+		<fail unless="deploydir" message="deploydir not set. cannot proceed." />
+		<var name="dir.deploy.client" value="${deploydir}/client" />
+
 		<ant antfile="${file.installer.build.file}" target="deliver" dir="${dir.installer.dir}" inheritall="false">
-      <property name="dir.project.dir" value="${dir.project.dir}"/>
-      <property name="file.installer.name.jar" value="${file.installer.name.jar}"/>
-      <property name="file.installer.name.zip" value="${file.installer.name.zip}"/>
-      <property name="file.application.basename" value="${file.application.basename}"/>
-      <property name="dir.deliver.build" value="${dir.deploy.client}"/>
-    </ant>
-  </target>
-	
+			<property name="dir.project.dir" value="${dir.project.dir}" />
+			<property name="file.installer.name.jar" value="${file.installer.name.jar}" />
+			<property name="file.installer.name.zip" value="${file.installer.name.zip}" />
+			<property name="file.application.basename" value="${file.application.basename}" />
+			<property name="dir.deliver.build" value="${dir.deploy.client}" />
+		</ant>
+	</target>
+
 	<!-- Installer zusammenraeumen -->
 	<!-- ===================================================================== -->
-  <target name="clean.installer">
-    <ant antfile="${file.installer.build.file}" target="clean" dir="${dir.installer.dir}" inheritall="false">
-      <property name="dir.project.dir" value="${dir.project.dir}"/>
-      <property name="file.installer.name.jar" value="${file.installer.name.jar}"/>
-      <property name="file.installer.name.zip" value="${file.installer.name.zip}"/>
-      <property name="file.application.basename" value="${file.application.basename}"/>
-      <property name="dir.deliver.build" value="${dir.deliver.build}"/>
-    </ant>
-  </target>
+	<target name="clean.installer">
+		<ant antfile="${file.installer.build.file}" target="clean" dir="${dir.installer.dir}" inheritall="false">
+			<property name="dir.project.dir" value="${dir.project.dir}" />
+			<property name="file.installer.name.jar" value="${file.installer.name.jar}" />
+			<property name="file.installer.name.zip" value="${file.installer.name.zip}" />
+			<property name="file.application.basename" value="${file.application.basename}" />
+			<property name="dir.deliver.build" value="${dir.deliver.build}" />
+		</ant>
+	</target>
 
-	
+
 	<!-- kopiert libs für zeiterfassungsstifte nach JAVA_HOME. -->
 	<!-- dirty? (KF) -->
 	<target name="copy.libs.zeiterfassung">
-    <echo></echo><echo>Jar und DLL fuer Zeiterfassungsstift F630:
+		<echo>
+		</echo>
+		<echo>Jar und DLL fuer Zeiterfassungsstift F630:
     Die Datei RXTXComm.jar (zu finden im Client-Lib Verzeichnis) muss nach ${dir.java_home}\jre\lib\ext
     Die Datei rxtxSerial.dll (zu finden Client-Tools Verzeichnis) muss nach JAVA_HOME\jre\bin kopiert werden.</echo>
 
-    <copy file="${dir.lib}/RXTXcomm.jar" tofile="${dir.java_home}/jre/lib/ext/RXTXcomm.jar"/>
-    <copy file="${dir.client}/tools/rxtxSerial.dll" tofile="${dir.java_home}/jre/bin/rxtxSerial.dll"/>
-  </target>
-  
+<!-- 
+		<copy file="${dir.lib}/RXTXcomm.jar" tofile="${dir.java_home}/jre/lib/ext/RXTXcomm.jar" />
+		<copy file="${dir.client}/tools/rxtxSerial.dll" tofile="${dir.java_home}/jre/bin/rxtxSerial.dll" />
+ -->
+	</target>
+
 </project>

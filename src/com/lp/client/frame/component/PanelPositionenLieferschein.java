@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -46,8 +46,14 @@ import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.frame.dialog.DialogFactory;
 import com.lp.client.lieferschein.LieferscheinFilterFactory;
 import com.lp.client.pc.LPMain;
+import com.lp.server.anfrage.service.AnfrageFac;
+import com.lp.server.anfrage.service.AnfrageServiceFac;
 import com.lp.server.lieferschein.service.LieferscheinDto;
+import com.lp.server.lieferschein.service.LieferscheinFac;
 import com.lp.server.partner.service.KundeDto;
+import com.lp.server.partner.service.KundeFac;
+import com.lp.server.partner.service.PartnerFac;
+import com.lp.server.system.service.SystemFac;
 import com.lp.server.util.fastlanereader.service.query.FilterKriterium;
 import com.lp.util.Helper;
 
@@ -70,7 +76,8 @@ public class PanelPositionenLieferschein extends PanelBasis {
 	private KundeDto kundeDto = null;
 	private static final String ACTION_SPECIAL_LIEFERSCHEIN = "action_special_positionen_lieferschein";
 	private PanelQueryFLR panelQueryFLRLieferschein = null;
-	private WrapperGotoButton wbuLieferschein = new WrapperGotoButton(WrapperGotoButton.GOTO_LIEFERSCHEIN_AUSWAHL);
+	private WrapperGotoButton wbuLieferschein = new WrapperGotoButton(
+			WrapperGotoButton.GOTO_LIEFERSCHEIN_AUSWAHL);
 	private WrapperTextField wtfLieferscheinNummer = new WrapperTextField();
 	private WrapperTextField wtfLieferscheinBezeichnung = new WrapperTextField();
 	private JPanel jpaWorkingOn = new JPanel(new GridBagLayout());
@@ -154,19 +161,42 @@ public class PanelPositionenLieferschein extends PanelBasis {
 	 */
 	private void dialogQueryLieferschein(ActionEvent e) throws Throwable {
 		FilterKriterium[] fk = LieferscheinFilterFactory.getInstance()
-				.createFKGelieferteLieferscheineEinesKunden(kundeDto.getIId());
+				.createFKGelieferteLieferscheine();
 		if (kundeDto.getPartnerDto().getLandplzortDto() != null) {
-			fk = LieferscheinFilterFactory.getInstance()
-					.createFKGelieferteLieferscheineEinesKundenInland(
-							kundeDto.getIId(),
-							kundeDto.getPartnerDto().getLandplzortDto()
-									.getIlandID());
+
+			FilterKriterium[] filters = new FilterKriterium[3];
+			filters[0] = LieferscheinFilterFactory.getInstance()
+					.createFKGelieferteLieferscheine()[0];
+			filters[1] = LieferscheinFilterFactory.getInstance()
+					.createFKGelieferteLieferscheine()[1];
+			filters[2] = new FilterKriterium("flrkunderechnungsadresse" + "."
+					+ KundeFac.FLR_PARTNER + "."
+					+ PartnerFac.FLR_PARTNER_FLRLANDPLZORT + "."
+					+ SystemFac.FLR_LP_FLRLAND + "." + SystemFac.FLR_LP_LANDID,
+					true, kundeDto.getPartnerDto().getLandplzortDto()
+							.getIlandID().toString(),
+					FilterKriterium.OPERATOR_EQUAL, false);
+
+			fk = filters;
 		}
 		String sTitle = LPMain
 				.getTextRespectUISPr("ls.print.listenichtverrechnet");
 		panelQueryFLRLieferschein = LieferscheinFilterFactory
 				.getInstance()
-				.createPanelQueryFLRLieferschein(getInternalFrame(), fk, sTitle);
+				.createPanelQueryFLRLieferschein(
+						getInternalFrame(),
+						fk,
+						sTitle,
+						new FilterKriterium(
+								LieferscheinFac.FLR_LIEFERSCHEIN_KUNDE_I_ID_RECHNUNGSADRESSE,
+								true, kundeDto.getIId().toString(),
+								FilterKriterium.OPERATOR_EQUAL, false));
+
+		panelQueryFLRLieferschein
+				.getWcbVersteckteFelderAnzeigen()
+				.setText(
+						LPMain.getTextRespectUISPr("re.positionen.lsauswahl.allerechnungsadressen"));
+
 		new DialogQuery(panelQueryFLRLieferschein);
 	}
 
@@ -207,8 +237,8 @@ public class PanelPositionenLieferschein extends PanelBasis {
 									LPMain.getTextRespectUISPr("lp.frage"));
 					if (b == false) {
 						lieferscheinDto = null;
-					} 
-				} 
+					}
+				}
 
 				dto2ComponentsLieferschein();
 			}

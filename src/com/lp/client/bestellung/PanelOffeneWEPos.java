@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -46,23 +46,17 @@ import java.util.EventObject;
 import java.util.Iterator;
 import java.util.TreeMap;
 
-import javax.persistence.Query;
 import javax.swing.BorderFactory;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
-import javax.swing.SwingConstants;
 import javax.swing.border.Border;
 
 import com.lp.client.frame.ExceptionLP;
 import com.lp.client.frame.HelperClient;
-import com.lp.client.frame.LockStateValue;
-import com.lp.client.frame.component.DialogSnrauswahl;
-import com.lp.client.frame.component.FehlmengenAufloesen;
 import com.lp.client.frame.component.InternalFrame;
 import com.lp.client.frame.component.ItemChangedEvent;
 import com.lp.client.frame.component.PanelBasis;
 import com.lp.client.frame.component.PanelQuery;
-import com.lp.client.frame.component.WrapperButton;
 import com.lp.client.frame.component.WrapperCHNRField;
 import com.lp.client.frame.component.WrapperComboBox;
 import com.lp.client.frame.component.WrapperDateField;
@@ -74,26 +68,19 @@ import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.frame.dialog.DialogFactory;
 import com.lp.client.pc.LPButtonAction;
 import com.lp.client.pc.LPMain;
-import com.lp.server.artikel.ejb.Verleih;
 import com.lp.server.artikel.service.ArtikelDto;
-import com.lp.server.artikel.service.ArtikelfehlmengeDto;
 import com.lp.server.artikel.service.LagerDto;
 import com.lp.server.artikel.service.SeriennrChargennrMitMengeDto;
-import com.lp.server.benutzer.service.RechteFac;
 import com.lp.server.bestellung.service.BestellpositionDto;
 import com.lp.server.bestellung.service.BestellpositionFac;
 import com.lp.server.bestellung.service.BestellungDto;
 import com.lp.server.bestellung.service.WareneingangDto;
 import com.lp.server.bestellung.service.WareneingangspositionDto;
-import com.lp.server.fertigung.service.LosistmaterialDto;
-import com.lp.server.fertigung.service.LossollmaterialDto;
-import com.lp.server.stueckliste.service.StuecklisteDto;
 import com.lp.server.system.service.LocaleFac;
 import com.lp.server.system.service.ParameterFac;
 import com.lp.server.system.service.ParametermandantDto;
 import com.lp.server.system.service.WechselkursDto;
 import com.lp.server.util.fastlanereader.service.query.QueryParameters;
-import com.lp.util.EJBExceptionLP;
 import com.lp.util.Helper;
 
 @SuppressWarnings("static-access")
@@ -202,9 +189,8 @@ public class PanelOffeneWEPos extends PanelBasis {
 							.artikelFindByPrimaryKey(besposDto.getArtikelIId());
 
 					wtfArtikel.setText(artikelDto.formatArtikelbezeichnung());
-					
+
 					wtfChargennr.setChagennummer(null);
-					
 
 					if (besposDto.getNOffeneMenge() != null) {
 						wnfZubuchungsmenge.setBigDecimal(besposDto
@@ -440,7 +426,6 @@ public class PanelOffeneWEPos extends PanelBasis {
 	protected void eventActionRefresh(ActionEvent e, boolean bNeedNoRefreshI)
 			throws Throwable {
 		super.eventActionRefresh(e, bNeedNoRefreshI);
-		int i = 0;
 	}
 
 	public void eventActionNew(EventObject eventObject, boolean bLockMeI,
@@ -569,22 +554,24 @@ public class PanelOffeneWEPos extends PanelBasis {
 					LagerDto lagerDto = DelegateFactory.getInstance()
 							.getLagerDelegate().getHauptlagerDesMandanten();
 					weDto.setLagerIId(lagerDto.getIId());
+					weDto.setTWareneingangsdatum(Helper
+							.cutTimestamp(new Timestamp(System
+									.currentTimeMillis())));
+
 					ParametermandantDto pm = DelegateFactory
 							.getInstance()
 							.getParameterDelegate()
 							.getMandantparameter(
 									LPMain.getTheClient().getMandant(),
 									ParameterFac.KATEGORIE_ALLGEMEIN,
-									ParameterFac.PARAMETER_GEMEINKOSTENFAKTOR);
+									ParameterFac.PARAMETER_GEMEINKOSTENFAKTOR,
+									weDto.getTWareneingangsdatum());
 
 					Double gkdouble = new Double(pm.getCWert());
 					weDto.setCLieferscheinnr(wtfLieferscheinbeschreibung
 							.getText());
 					weDto.setTLieferscheindatum(wdfLieferscheinDatum
 							.getTimestamp());
-					weDto.setTWareneingangsdatum(Helper
-							.cutTimestamp(new Timestamp(System
-									.currentTimeMillis())));
 
 					String sMandantWaehrung = LPMain.getTheClient()
 							.getSMandantenwaehrung();
@@ -594,8 +581,7 @@ public class PanelOffeneWEPos extends PanelBasis {
 							.bestellungFindByPrimaryKey(
 									besposDto.getBestellungIId());
 
-					if (besDto.getWaehrungCNr().equals(
-							sMandantWaehrung)) {
+					if (besDto.getWaehrungCNr().equals(sMandantWaehrung)) {
 						// gleich wie Mandantenwaehrung -> Kurs = 1.
 						weDto.setNWechselkurs(new BigDecimal(1));
 					} else {
@@ -603,8 +589,7 @@ public class PanelOffeneWEPos extends PanelBasis {
 						WechselkursDto wechselkursDto = DelegateFactory
 								.getInstance()
 								.getLocaleDelegate()
-								.getKursZuDatum(
-										sMandantWaehrung,
+								.getKursZuDatum(sMandantWaehrung,
 										besDto.getWaehrungCNr(),
 										new Date(System.currentTimeMillis()));
 						weDto.setNWechselkurs(wechselkursDto.getNKurs());
@@ -694,5 +679,4 @@ public class PanelOffeneWEPos extends PanelBasis {
 
 		}
 	}
-
 }

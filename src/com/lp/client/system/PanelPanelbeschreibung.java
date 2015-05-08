@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -57,6 +57,7 @@ import com.lp.client.frame.component.WrapperNumberField;
 import com.lp.client.frame.component.WrapperSelectField;
 import com.lp.client.frame.component.WrapperTextField;
 import com.lp.client.frame.delegate.DelegateFactory;
+import com.lp.client.frame.dialog.DialogFactory;
 import com.lp.client.pc.LPMain;
 import com.lp.server.system.service.PanelFac;
 import com.lp.server.system.service.PanelbeschreibungDto;
@@ -84,6 +85,9 @@ public class PanelPanelbeschreibung extends PanelBasis {
 
 	WrapperLabel wlaText = new WrapperLabel();
 	WrapperTextField wtfText = new WrapperTextField();
+
+	WrapperLabel wlaDefault = new WrapperLabel();
+	WrapperTextField wtfDefault = new WrapperTextField();
 
 	WrapperLabel wlaFill = new WrapperLabel();
 	WrapperComboBox wcoFill = new WrapperComboBox();
@@ -166,6 +170,8 @@ public class PanelPanelbeschreibung extends PanelBasis {
 		typ.put(PanelFac.TYP_WRAPPERLABEL, PanelFac.TYP_WRAPPERLABEL.trim());
 		typ.put(PanelFac.TYP_WRAPPERTEXTFIELD,
 				PanelFac.TYP_WRAPPERTEXTFIELD.trim());
+		typ.put(PanelFac.TYP_WRAPPERTEXTAREA,
+				PanelFac.TYP_WRAPPERTEXTAREA.trim());
 		typ.put(PanelFac.TYP_WRAPPERPRINTBUTTON,
 				PanelFac.TYP_WRAPPERPRINTBUTTON.trim());
 		typ.put(PanelFac.TYP_WRAPPEREXECBUTTON,
@@ -247,20 +253,21 @@ public class PanelPanelbeschreibung extends PanelBasis {
 
 		panelbeschreibungDto.setArtgruIId(null);
 		panelbeschreibungDto.setPartnerklasseIId(null);
-		
+
 		if (internalFramePersonal.getPanelDto().getCNr()
-				.equals(PanelFac.PANEL_ARTIKELEIGENSCHAFTEN)) {
+				.equals(PanelFac.PANEL_ARTIKELEIGENSCHAFTEN)
+				|| internalFramePersonal.getPanelDto().getCNr()
+						.equals(PanelFac.PANEL_CHARGENEIGENSCHAFTEN)) {
 
 			panelbeschreibungDto.setArtgruIId((Integer) wsfArtgru.getOKey());
-		
+
 		}
 		if (internalFramePersonal.getPanelDto().getCNr()
 				.equals(PanelFac.PANEL_KUNDENEIGENSCHAFTEN)) {
 			panelbeschreibungDto.setPartnerklasseIId((Integer) wsfPartnerklasse
 					.getOKey());
-			
+
 		}
-	
 
 		panelbeschreibungDto.setIInsetsbottom(wnfInsetsBottom.getInteger());
 		panelbeschreibungDto.setIInsetsleft(wnfInsetsLeft.getInteger());
@@ -269,6 +276,8 @@ public class PanelPanelbeschreibung extends PanelBasis {
 
 		panelbeschreibungDto.setIGridheigth(wnfGridheight.getInteger());
 		panelbeschreibungDto.setIGridwidth(wnfGridwidth.getInteger());
+
+		panelbeschreibungDto.setCDefault(wtfDefault.getText());
 
 		panelbeschreibungDto.setMandantCNr(LPMain.getInstance().getTheClient()
 				.getMandant());
@@ -291,6 +300,7 @@ public class PanelPanelbeschreibung extends PanelBasis {
 		wnfGridx.setInteger(panelbeschreibungDto.getIGridx());
 		wnfGridy.setInteger(panelbeschreibungDto.getIGridy());
 
+		wtfDefault.setText(panelbeschreibungDto.getCDefault());
 		wsfArtgru.setKey(panelbeschreibungDto.getArtgruIId());
 		wsfPartnerklasse.setKey(panelbeschreibungDto.getPartnerklasseIId());
 		wnfInsetsBottom.setInteger(panelbeschreibungDto.getIInsetsbottom());
@@ -316,6 +326,48 @@ public class PanelPanelbeschreibung extends PanelBasis {
 		try {
 			if (allMandatoryFieldsSetDlg()) {
 				components2Dto();
+
+				if (wcoTyp.getKeyOfSelectedItem().equals(
+						PanelFac.TYP_WRAPPERCHECKBOX)) {
+
+					if (wtfDefault.getText() != null) {
+
+						if (wtfDefault.getText().equals("0")
+								|| wtfDefault.getText().equals("1")) {
+
+						} else {
+							// Meldung
+
+							DialogFactory
+									.showModalDialog(
+											LPMain.getInstance()
+													.getTextRespectUISPr(
+															"lp.info"),
+											LPMain.getInstance()
+													.getTextRespectUISPr(
+															"lp.panel.defaultwert.bei.checkbox.error"));
+
+							return;
+						}
+
+					}
+
+				}
+
+				if (wcoTyp.getKeyOfSelectedItem().equals(
+						PanelFac.TYP_WRAPPERPRINTBUTTON)) {
+					if (!wtfName.getText().endsWith(".jasper")) {
+						DialogFactory.showModalDialog(
+								LPMain.getInstance().getTextRespectUISPr(
+										"lp.info"),
+								LPMain.getInstance().getTextRespectUISPr(
+										"lp.panel.error.printbutton"));
+
+						return;
+					}
+
+				}
+
 				letzterTyp = panelbeschreibungDto.getCTyp();
 				if (panelbeschreibungDto.getIId() == null) {
 					components2Dto();
@@ -375,6 +427,10 @@ public class PanelPanelbeschreibung extends PanelBasis {
 		wlaIpady.setText(LPMain.getInstance().getTextRespectUISPr(
 				"lp.mindestgroessey"));
 		wlaText.setText(LPMain.getInstance().getTextRespectUISPr("lp.feldtext"));
+
+		wlaDefault.setText(LPMain.getInstance().getTextRespectUISPr(
+				"lp.panel.defaultwert"));
+
 		wlaDruckname.setText(LPMain.getInstance().getTextRespectUISPr(
 				"lp.druckname"));
 		wlaTyp.setText(LPMain.getInstance().getTextRespectUISPr("lp.feldtyp"));
@@ -449,11 +505,11 @@ public class PanelPanelbeschreibung extends PanelBasis {
 		this.add(getPanelStatusbar(), new GridBagConstraints(0, 2, 1, 1, 1.0,
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(0, 0, 0, 0), 0, 0));
-		jPanelWorkingOn.add(wlaName, new GridBagConstraints(0, 0, 1, 1, 0.25,
+		jPanelWorkingOn.add(wlaName, new GridBagConstraints(0, 0, 1, 1, 0.30,
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 2, 2, 2), 0, 0));
 
-		jPanelWorkingOn.add(wtfName, new GridBagConstraints(1, 0, 1, 1, 0.25,
+		jPanelWorkingOn.add(wtfName, new GridBagConstraints(1, 0, 1, 1, 0.15,
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 2, 2, 2), 0, 0));
 
@@ -602,7 +658,15 @@ public class PanelPanelbeschreibung extends PanelBasis {
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 2, 2, 2), 0, 0));
 
-		jPanelWorkingOn.add(wtfText, new GridBagConstraints(1, 10, 4, 1, 0,
+		jPanelWorkingOn.add(wtfText, new GridBagConstraints(1, 10, 2, 1, 0,
+				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+				new Insets(2, 2, 2, 2), 0, 0));
+
+		jPanelWorkingOn.add(wlaDefault, new GridBagConstraints(3, 10, 1, 1, 0,
+				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+				new Insets(2, 2, 2, 2), 0, 0));
+
+		jPanelWorkingOn.add(wtfDefault, new GridBagConstraints(4, 10, 1, 1, 0,
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 2, 2, 2), 0, 0));
 
@@ -620,15 +684,15 @@ public class PanelPanelbeschreibung extends PanelBasis {
 	public void eventYouAreSelected(boolean bNeedNoYouAreSelectedI)
 			throws Throwable {
 
-		
-		
 		jPanelWorkingOn.remove(wsfArtgru.getWrapperButton());
 		jPanelWorkingOn.remove(wsfArtgru.getWrapperTextField());
 		jPanelWorkingOn.remove(wsfPartnerklasse.getWrapperButton());
 		jPanelWorkingOn.remove(wsfPartnerklasse.getWrapperTextField());
 
 		if (internalFramePersonal.getPanelDto().getCNr()
-				.equals(PanelFac.PANEL_ARTIKELEIGENSCHAFTEN)) {
+				.equals(PanelFac.PANEL_ARTIKELEIGENSCHAFTEN)
+				|| internalFramePersonal.getPanelDto().getCNr()
+						.equals(PanelFac.PANEL_CHARGENEIGENSCHAFTEN)) {
 
 			jPanelWorkingOn.add(wsfArtgru.getWrapperButton(),
 					new GridBagConstraints(3, 0, 1, 1, 0.2, 0.0,
@@ -657,8 +721,6 @@ public class PanelPanelbeschreibung extends PanelBasis {
 		}
 		super.eventYouAreSelected(false);
 		Object key = getKeyWhenDetailPanel();
-
-		
 
 		if (key == null
 				|| (key != null && key.equals(LPMain.getLockMeForNew()))) {
@@ -702,6 +764,8 @@ public class PanelPanelbeschreibung extends PanelBasis {
 	public void wcoTyp_actionPerformed(ActionEvent e) {
 		if (wcoTyp.getKeyOfSelectedItem().equals(PanelFac.TYP_WRAPPERTEXTFIELD)
 				|| wcoTyp.getKeyOfSelectedItem().equals(
+						PanelFac.TYP_WRAPPERTEXTAREA)
+				|| wcoTyp.getKeyOfSelectedItem().equals(
 						PanelFac.TYP_WRAPPERCOMBOBOX)
 				|| wcoTyp.getKeyOfSelectedItem().equals(
 						PanelFac.TYP_WRAPPERCHECKBOX)
@@ -710,10 +774,16 @@ public class PanelPanelbeschreibung extends PanelBasis {
 			wlaDruckname.setVisible(true);
 			wtfDruckname.setVisible(true);
 
+			wlaDefault.setVisible(true);
+			wtfDefault.setVisible(true);
+
 		} else {
 
 			wlaDruckname.setVisible(false);
 			wtfDruckname.setVisible(false);
+			wlaDefault.setVisible(false);
+			wtfDefault.setVisible(false);
+			wtfDefault.setText(null);
 
 		}
 		if (wcoTyp.getKeyOfSelectedItem().equals(PanelFac.TYP_WRAPPERLABEL)
@@ -743,6 +813,8 @@ public class PanelPanelbeschreibung extends PanelBasis {
 
 		} else if (wcoTyp.getKeyOfSelectedItem().equals(
 				PanelFac.TYP_WRAPPERTEXTFIELD)
+				|| wcoTyp.getKeyOfSelectedItem().equals(
+						PanelFac.TYP_WRAPPERTEXTAREA)
 				|| wcoTyp.getKeyOfSelectedItem().equals(
 						PanelFac.TYP_WRAPPEREDITOR)) {
 			wcbMandatory.setVisible(true);

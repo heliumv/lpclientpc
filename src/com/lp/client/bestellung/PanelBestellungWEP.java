@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -39,16 +39,20 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
+import java.awt.event.InputEvent;
 import java.math.BigDecimal;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.EventObject;
 import java.util.Iterator;
 
 import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
 
 import com.lp.client.frame.Defaults;
@@ -59,6 +63,7 @@ import com.lp.client.frame.component.ISourceEvent;
 import com.lp.client.frame.component.InternalFrame;
 import com.lp.client.frame.component.ItemChangedEvent;
 import com.lp.client.frame.component.PanelBasis;
+import com.lp.client.frame.component.WrapperButton;
 import com.lp.client.frame.component.WrapperCHNRField;
 import com.lp.client.frame.component.WrapperCheckBox;
 import com.lp.client.frame.component.WrapperEditorField;
@@ -130,6 +135,9 @@ public class PanelBestellungWEP extends PanelBasis {
 	private WrapperLabel wlaGelieferterPreis = new WrapperLabel();
 	protected WrapperNumberField wnfGelieferterPreis = new WrapperNumberField();
 
+	private WrapperLabel wlaGelieferterWert = new WrapperLabel();
+	protected WrapperNumberField wnfGelieferterWert = new WrapperNumberField();
+
 	private WrapperLabel wlaEinstandspreis = new WrapperLabel();
 	private WrapperNumberField wnfEinstandspreis = new WrapperNumberField();
 
@@ -144,6 +152,7 @@ public class PanelBestellungWEP extends PanelBasis {
 	private WrapperLabel wlaBSWaehrungBS1 = null;
 	private WrapperLabel wlaBSWaehrungBS2 = null;
 	private WrapperLabel wlaBSWaehrungBS3 = null;
+	private WrapperLabel wlaBSWaehrungBS4 = null;
 	private WrapperLabel wlaNettoeinzelpreisWaehrung = null;
 	private WrapperLabel wlaWEPOSEinheit = null;
 	private WrapperLabel wlaZuschlag = null;
@@ -162,10 +171,11 @@ public class PanelBestellungWEP extends PanelBasis {
 	private WrapperTextField wtfLFBez = new WrapperTextField();
 	private WrapperTextField wtfLFArtnr = new WrapperTextField();
 
+	private WrapperButton wbuHandartikelAnlegen = new WrapperButton();
+
 	private WrapperKeyValueField wkvKunde = new WrapperKeyValueField(Defaults
 			.getInstance().bySizeFactor(40));
-	private WrapperKeyValueField wkvLieferscheinnr = new WrapperKeyValueField(
-			Defaults.getInstance().bySizeFactor(80));
+	private WrapperLabel wlaWareneingang = new WrapperLabel("");
 
 	private WrapperLabel wlaFixkosten = null;
 	private WrapperNumberField wnfFixkosten = null;
@@ -177,6 +187,8 @@ public class PanelBestellungWEP extends PanelBasis {
 
 	static final private String ACTION_SPECIAL_POSITIONMANUELLERLEDIGEN = "action_special_positionmanuellerledigen";
 	static final private String ACTION_SPECIAL_ETIKETTDRUCKEN = "action_special_etikettdrucken";
+
+	static final private String ACTION_SPECIAL_HANDARTIKEL_ERZEUGEN = "action_special_handartikel_erzeugen";
 
 	private static final String ACTION_SPECIAL_EINZELPREIS_RUECKPFLEGEN = PanelBasis.ACTION_MY_OWN_NEW
 			+ "ACTION_SPECIAL_EINZELPREIS_RUECKPFLEGEN";
@@ -204,10 +216,13 @@ public class PanelBestellungWEP extends PanelBasis {
 			wlaGewichtWaehrung.setVisible(false);
 			wlaGelieferterPreis.setVisible(false);
 			wnfGelieferterPreis.setVisible(false);
+			wlaGelieferterWert.setVisible(false);
+			wnfGelieferterWert.setVisible(false);
 			wlaBSWaehrungBS1.setVisible(false);
 			wlaFixkosten.setVisible(false);
 			wnfFixkosten.setVisible(false);
 			wlaBSWaehrungBS2.setVisible(false);
+			wlaBSWaehrungBS4.setVisible(false);
 			wlaEinstandspreis.setVisible(false);
 			wnfEinstandspreis.setVisible(false);
 			wlaBSWaehrungBS3.setVisible(false);
@@ -239,7 +254,21 @@ public class PanelBestellungWEP extends PanelBasis {
 
 	public void eventActionNew(EventObject eventObject, boolean bLockMeI,
 			boolean bNeedNoNewI) throws Throwable {
+
+		if (tpBestellung.getWareneingangDto().getEingangsrechnungIId() != null) {
+
+			DialogFactory.showModalDialog(
+					LPMain.getTextRespectUISPr("lp.hint"),
+					LPMain.getTextRespectUISPr("bes.wep.er.vorhanden"));
+			return;
+		}
+
+		if (!tpBestellung.istAktualisierenBestellungErlaubt()) {
+			return;
+		}
+
 		super.eventActionNew(eventObject, true, false);
+
 		setArtikelDto(null);
 		tpBestellung
 				.setWareneingangspositionenDto(new WareneingangspositionDto());
@@ -274,6 +303,15 @@ public class PanelBestellungWEP extends PanelBasis {
 	protected void eventActionUpdate(ActionEvent e, boolean bNeedNoUpdateI)
 			throws Throwable {
 		boolean bUpdate = true;
+
+		if (tpBestellung.getWareneingangDto().getEingangsrechnungIId() != null) {
+
+			DialogFactory.showModalDialog(
+					LPMain.getTextRespectUISPr("lp.hint"),
+					LPMain.getTextRespectUISPr("bes.wep.er.vorhanden"));
+			return;
+		}
+
 		// Artikelhinweise anzeigen
 		// SK: von EventActionSave hierhin verschoben
 		String[] hinweise = DelegateFactory
@@ -345,6 +383,12 @@ public class PanelBestellungWEP extends PanelBasis {
 			// Den Preis aus der Bestellposition vorschlagen.
 			wnfGelieferterPreis.setBigDecimal(getBestellpositionDto()
 					.getNNettogesamtpreis());
+			if (getBestellpositionDto().getNNettogesamtpreis() != null
+					&& getBestellpositionDto().getNMenge() != null) {
+				wnfGelieferterWert.setBigDecimal(getBestellpositionDto()
+						.getNNettogesamtpreis().multiply(
+								getBestellpositionDto().getNMenge()));
+			}
 			wcbPreiseErfasst.setSelected(false);
 
 		}
@@ -358,6 +402,7 @@ public class PanelBestellungWEP extends PanelBasis {
 		}
 		wefKommentar.setActivatable(false);
 		wifArtikelauswahl.getWbuArtikel().setEnabled(false);
+		wbuHandartikelAnlegen.setEnabled(false);
 	}
 
 	protected void eventActionDelete(ActionEvent e,
@@ -535,13 +580,18 @@ public class PanelBestellungWEP extends PanelBasis {
 
 	protected void dto2Components() throws Throwable {
 		// Lieferantenbezeichnung, falls vorhanden.
+		
+		
 		artikellieferantDto = DelegateFactory
 				.getInstance()
 				.getArtikelDelegate()
-				.artikellieferantFindByArtikellIIdLieferantIIdOhneExc(
+				.getArtikelEinkaufspreis(
 						getArtikelDto().getIId(),
 						getInternalFrameBestellung().getTabbedPaneBestellung()
-								.getBesDto().getLieferantIIdBestelladresse());
+						.getBesDto().getLieferantIIdBestelladresse(),BigDecimal.ONE,getInternalFrameBestellung().getTabbedPaneBestellung()
+						.getBesDto().getWaehrungCNr(),getInternalFrameBestellung().getTabbedPaneBestellung()
+						.getBesDto().getDBelegdatum());
+
 		if (artikellieferantDto != null) {
 			wtfLFArtnr.setText(artikellieferantDto.getCArtikelnrlieferant());
 			wtfLFBez.setText(artikellieferantDto.getCBezbeilieferant());
@@ -638,6 +688,7 @@ public class PanelBestellungWEP extends PanelBasis {
 		wlaBSWaehrungBS1.setText(tpBestellung.getBesDto().getWaehrungCNr());
 		wlaBSWaehrungBS2.setText(tpBestellung.getBesDto().getWaehrungCNr());
 		wlaBSWaehrungBS3.setText(tpBestellung.getBesDto().getWaehrungCNr());
+		wlaBSWaehrungBS4.setText(tpBestellung.getBesDto().getWaehrungCNr());
 
 		String sJeEinheit = "";
 		if (getArtikelDto().getEinheitCNrBestellung() != null) {
@@ -728,8 +779,6 @@ public class PanelBestellungWEP extends PanelBasis {
 			wtfArtikelZBez2.setText(null);
 		}
 
-		wkvLieferscheinnr.setValue(tpBestellung.getWareneingangDto()
-				.getCLieferscheinnr());
 		setStatusbarSpalte5(LPMain
 				.getTextRespectUISPr("bes.wareneingang.wertsumme")
 				+ ": "
@@ -872,6 +921,22 @@ public class PanelBestellungWEP extends PanelBasis {
 								new Integer[] { artikelDto.getIId() }, false);
 					}
 
+					ParametermandantDto parameterWEP = (ParametermandantDto) DelegateFactory
+							.getInstance()
+							.getParameterDelegate()
+							.getParametermandant(
+									ParameterFac.PARAMETER_WEP_PREIS_ZURUECKSCHREIBEN,
+									ParameterFac.KATEGORIE_BESTELLUNG,
+									LPMain.getTheClient().getMandant());
+					int iPreisRueckpflegen = ((Integer) parameterWEP
+							.getCWertAsObject());
+					if (iPreisRueckpflegen == 1
+							&& getBestellpositionDto() != null
+							&& getBestellpositionDto().getIId() != null) {
+						preisInArtikellieferantRueckpflegen(true,
+								getBestellpositionDto().getIId(), false);
+					}
+
 					super.eventActionSave(e, false);
 
 					eventYouAreSelected(false);
@@ -992,70 +1057,93 @@ public class PanelBestellungWEP extends PanelBasis {
 				getInternalFrame().showReportKriterien(reportEtikett, false);
 				reportEtikett.updateButtons();
 			} else if (e.getActionCommand().equals(
-					ACTION_SPECIAL_EINZELPREIS_RUECKPFLEGEN)
-					|| e.getActionCommand().equals(
-							ACTION_SPECIAL_STAFFELPREIS_RUECKPFLEGEN)) {
+					ACTION_SPECIAL_EINZELPREIS_RUECKPFLEGEN)) {
 
-				if (wnfGelieferterPreis.getBigDecimal() != null) {
-					BestellpositionDto besPosDto = DelegateFactory
-							.getInstance().getBestellungDelegate()
-							.bestellpositionFindByPrimaryKey(besposIId);
+				preisInArtikellieferantRueckpflegen(true, besposIId, true);
+			} else if (e.getActionCommand().equals(
+					ACTION_SPECIAL_STAFFELPREIS_RUECKPFLEGEN)) {
 
-					besPosDto.setNNettogesamtpreis(wnfGelieferterPreis
-							.getBigDecimal());
+				preisInArtikellieferantRueckpflegen(false, besposIId, true);
+			} else if (e.getActionCommand().equals(
+					ACTION_SPECIAL_HANDARTIKEL_ERZEUGEN)) {
 
-					// Rabatt berechnen
+				// Handartikel anlegen
 
-					// Rabatt berechnen
-					BigDecimal rabattsatz = null;
-					if (wnfGelieferterPreis.getBigDecimal().doubleValue() != 0) {
+				DialogHandartikelAnlegen d = new DialogHandartikelAnlegen(this);
+				LPMain.getInstance().getDesktop()
+						.platziereDialogInDerMitteDesFensters(d);
+				d.setVisible(true);
 
-						if (besPosDto.getNNettoeinzelpreis() == null
-								|| besPosDto.getNNettoeinzelpreis()
-										.doubleValue() == 0) {
-							rabattsatz = new BigDecimal(0);
-						} else {
-							rabattsatz = new BigDecimal(1)
-									.subtract(wnfGelieferterPreis
-											.getBigDecimal()
-											.divide(besPosDto
-													.getNNettoeinzelpreis(), 4,
-													BigDecimal.ROUND_HALF_EVEN));
-							rabattsatz = rabattsatz
-									.multiply(new BigDecimal(100));
-						}
-
-					} else {
-						rabattsatz = new BigDecimal(100);
-					}
-
-					besPosDto.setDRabattsatz(rabattsatz.doubleValue());
-
-					besPosDto.setNFixkosten(wnfFixkosten.getBigDecimal());
-
-					if (e.getActionCommand().equals(
-							ACTION_SPECIAL_EINZELPREIS_RUECKPFLEGEN)) {
-
-						DelegateFactory
-								.getInstance()
-								.getBestellungDelegate()
-								.preispflege(
-										besPosDto,
-										BestellpositionFac.PREISPFLEGEARTIKELLIEFERANT_EINZELPREIS_RUECKPFLEGEN,
-										null);
-					} else {
-
-						DelegateFactory
-								.getInstance()
-								.getBestellungDelegate()
-								.preispflege(
-										besPosDto,
-										BestellpositionFac.PREISPFLEGEARTIKELLIEFERANT_STAFFELPREIS_RUECKPFLEGEN,
-										null);
-					}
-
+				Integer artikelIIdHandeingabe = d.artikelIId;
+				if (artikelIIdHandeingabe != null) {
+					befuelleArtikel(artikelIIdHandeingabe);
 				}
+
 			}
+		}
+	}
+
+	private void preisInArtikellieferantRueckpflegen(boolean bEinzelpreis,
+			Integer besposIId, boolean bNullPreiseZurueckpflegen)
+			throws ExceptionLP, Throwable {
+		if (wnfGelieferterPreis.getBigDecimal() != null) {
+			BestellpositionDto besPosDto = DelegateFactory.getInstance()
+					.getBestellungDelegate()
+					.bestellpositionFindByPrimaryKey(besposIId);
+
+			besPosDto.setNNettogesamtpreis(wnfGelieferterPreis.getBigDecimal());
+			
+			//SP3382
+			if(besPosDto.getNNettoeinzelpreis()!=null && besPosDto.getNNettoeinzelpreis().doubleValue() == 0){
+				besPosDto.setNNettoeinzelpreis(wnfGelieferterPreis.getBigDecimal());
+			}
+			
+
+			// Rabatt berechnen
+
+			// Rabatt berechnen
+			BigDecimal rabattsatz = null;
+			if (wnfGelieferterPreis.getBigDecimal().doubleValue() != 0) {
+
+				if (besPosDto.getNNettoeinzelpreis() == null
+						|| besPosDto.getNNettoeinzelpreis().doubleValue() == 0) {
+					rabattsatz = new BigDecimal(0);
+				} else {
+					rabattsatz = new BigDecimal(1).subtract(wnfGelieferterPreis
+							.getBigDecimal().divide(
+									besPosDto.getNNettoeinzelpreis(), 4,
+									BigDecimal.ROUND_HALF_EVEN));
+					rabattsatz = rabattsatz.multiply(new BigDecimal(100));
+				}
+
+			} else {
+				rabattsatz = new BigDecimal(100);
+			}
+
+			besPosDto.setDRabattsatz(rabattsatz.doubleValue());
+
+			besPosDto.setNFixkosten(wnfFixkosten.getBigDecimal());
+
+			if (bEinzelpreis) {
+
+				DelegateFactory
+						.getInstance()
+						.getBestellungDelegate()
+						.preispflege(
+								besPosDto,
+								BestellpositionFac.PREISPFLEGEARTIKELLIEFERANT_EINZELPREIS_RUECKPFLEGEN,
+								null, bNullPreiseZurueckpflegen);
+			} else {
+
+				DelegateFactory
+						.getInstance()
+						.getBestellungDelegate()
+						.preispflege(
+								besPosDto,
+								BestellpositionFac.PREISPFLEGEARTIKELLIEFERANT_STAFFELPREIS_RUECKPFLEGEN,
+								null, bNullPreiseZurueckpflegen);
+			}
+
 		}
 	}
 
@@ -1106,50 +1194,52 @@ public class PanelBestellungWEP extends PanelBasis {
 		ItemChangedEvent e = (ItemChangedEvent) eI;
 		if (e.getID() == ItemChangedEvent.GOTO_DETAIL_PANEL) {
 			if (e.getSource() == wifArtikelauswahl.getPanelQueryFLRArtikel()) {
-
 				Object key = ((ISourceEvent) e.getSource()).getIdSelected();
-				artikelDto = DelegateFactory.getInstance().getArtikelDelegate()
-						.artikelFindByPrimaryKey((Integer) key);
-				setArtikelDto(artikelDto);
-
-				if (Helper.short2boolean(artikelDto.getBSeriennrtragend())
-						|| Helper.short2boolean(artikelDto
-								.getBChargennrtragend())) {
-					tpBestellung.getWareneingangspositionenDto()
-							.setSeriennrChargennrMitMenge(
-									wtfSeriennr.getSeriennummern());
-				} else {
-					tpBestellung.getWareneingangspositionenDto()
-							.setSeriennrChargennrMitMenge(null);
-
-				}
-				wtfArtikel.setText(getArtikelDto().getCNr());
-				if (getArtikelDto().getArtikelsprDto() != null) {
-					wtfArtikelZBez.setText(getArtikelDto().getArtikelsprDto()
-							.getCZbez());
-					wtfArtikelZBez2.setText(getArtikelDto().getArtikelsprDto()
-							.getCZbez2());
-					wtfBezeichnung.setText(getArtikelDto().getArtikelsprDto()
-							.getCBez());
-
-				} else {
-					wtfArtikelZBez.setText(null);
-					wtfArtikelZBez2.setText(null);
-					wtfBezeichnung.setText(null);
-				}
-
-				aktualisiereFelderSnrChnr(true);
-				setzeSichtbarkeitSnrChnr();
-
-				if (Helper.short2boolean(artikelDto.getBSeriennrtragend())
-						|| Helper.short2boolean(artikelDto
-								.getBChargennrtragend())) {
-					wtfSeriennr.getButtonSnrAuswahl().setEnabled(true);
-				} else {
-					wnfGelieferteMenge.setEditable(true);
-				}
+				befuelleArtikel(key);
 
 			}
+		}
+	}
+
+	private void befuelleArtikel(Object key) throws ExceptionLP, Throwable {
+
+		artikelDto = DelegateFactory.getInstance().getArtikelDelegate()
+				.artikelFindByPrimaryKey((Integer) key);
+		setArtikelDto(artikelDto);
+
+		if (Helper.short2boolean(artikelDto.getBSeriennrtragend())
+				|| Helper.short2boolean(artikelDto.getBChargennrtragend())) {
+			tpBestellung.getWareneingangspositionenDto()
+					.setSeriennrChargennrMitMenge(
+							wtfSeriennr.getSeriennummern());
+		} else {
+			tpBestellung.getWareneingangspositionenDto()
+					.setSeriennrChargennrMitMenge(null);
+
+		}
+		wtfArtikel.setText(getArtikelDto().getCNr());
+		if (getArtikelDto().getArtikelsprDto() != null) {
+			wtfArtikelZBez.setText(getArtikelDto().getArtikelsprDto()
+					.getCZbez());
+			wtfArtikelZBez2.setText(getArtikelDto().getArtikelsprDto()
+					.getCZbez2());
+			wtfBezeichnung
+					.setText(getArtikelDto().getArtikelsprDto().getCBez());
+
+		} else {
+			wtfArtikelZBez.setText(null);
+			wtfArtikelZBez2.setText(null);
+			wtfBezeichnung.setText(null);
+		}
+
+		aktualisiereFelderSnrChnr(true);
+		setzeSichtbarkeitSnrChnr();
+
+		if (Helper.short2boolean(artikelDto.getBSeriennrtragend())
+				|| Helper.short2boolean(artikelDto.getBChargennrtragend())) {
+			wtfSeriennr.getButtonSnrAuswahl().setEnabled(true);
+		} else {
+			wnfGelieferteMenge.setEditable(true);
 		}
 	}
 
@@ -1160,14 +1250,18 @@ public class PanelBestellungWEP extends PanelBasis {
 				ACTION_DELETE, ACTION_DISCARD };
 		enableToolsPanelButtons(aWhichButtonIUse);
 
-		this.createAndSaveAndShowButton("/com/lp/client/res/check2.png",
+		this.createAndSaveAndShowButton(
+				"/com/lp/client/res/box_preferences.png",
 				LPMain.getTextRespectUISPr("bes.tooltip.manuellerledigen"),
 				ACTION_SPECIAL_POSITIONMANUELLERLEDIGEN,
 				RechteFac.RECHT_BES_BESTELLUNG_CUD);
 
-		this.createAndSaveAndShowButton("/com/lp/client/res/printer216x16.png",
-				LPMain.getTextRespectUISPr("artikel.report.etikett"),
+		this.createAndSaveAndShowButton(
+				"/com/lp/client/res/printer216x16.png",
+				LPMain.getTextRespectUISPr("artikel.report.etikett.shortcut"),
 				ACTION_SPECIAL_ETIKETTDRUCKEN,
+				KeyStroke.getKeyStroke('P', InputEvent.CTRL_DOWN_MASK
+						| InputEvent.SHIFT_DOWN_MASK),
 				RechteFac.RECHT_BES_BESTELLUNG_CUD);
 
 		setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -1181,8 +1275,6 @@ public class PanelBestellungWEP extends PanelBasis {
 				new Insets(0, 0, 0, 0), 0, 0));
 
 		wkvKunde.setKey(LPMain.getInstance().getTextRespectUISPr("label.kunde"));
-		wkvLieferscheinnr.setKey(LPMain.getInstance().getTextRespectUISPr(
-				"bes.lieferscheinnummer"));
 
 		wlaGelieferteMenge.setText(LPMain
 				.getTextRespectUISPr("bes.geliefertemenge"));
@@ -1240,6 +1332,18 @@ public class PanelBestellungWEP extends PanelBasis {
 				.addFocusListener(new WnfGelieferterPreisFocusAdapter(this));
 		wnfGelieferterPreis.setFractionDigits(Defaults.getInstance()
 				.getIUINachkommastellenPreiseEK());
+
+		wlaGelieferterWert.setText(LPMain
+				.getTextRespectUISPr("bes.gelieferterwert"));
+		wnfGelieferterWert.setMandatoryField(true);
+		wnfGelieferterWert.setEditable(true);
+
+		wnfGelieferterWert.addFocusListener(new WnfGelieferterWertFocusAdapter(
+				this));
+
+		// SP2712 Wert=Positionssumme hat lt. WH immer 2 Nachkommastellen
+		wnfGelieferterWert.setFractionDigits(2);
+
 		wlaEinstandspreis.setText(LPMain
 				.getTextRespectUISPr("bes.einstandspreis"));
 		wlaLFArtnr.setText(LPMain.getTextRespectUISPr("bes.lfartikelnummer"));
@@ -1256,7 +1360,7 @@ public class PanelBestellungWEP extends PanelBasis {
 
 		wtfBezeichnung.setMandatoryField(false);
 
-		wtfSeriennr = new WrapperSnrChnrField(getInternalFrame());
+		wtfSeriennr = new WrapperSnrChnrField(getInternalFrame(), true);
 		wtfSeriennr.setActivatable(false);
 
 		wtfSeriennr.setWnfBelegMenge(wnfGelieferteMenge);
@@ -1265,6 +1369,7 @@ public class PanelBestellungWEP extends PanelBasis {
 		wlaBSWaehrungBS1 = new WrapperLabel();
 		wlaBSWaehrungBS2 = new WrapperLabel();
 		wlaBSWaehrungBS3 = new WrapperLabel();
+		wlaBSWaehrungBS4 = new WrapperLabel();
 		wlaNettoeinzelpreisWaehrung = new WrapperLabel();
 		wlaWEPOSEinheit = new WrapperLabel();
 
@@ -1283,10 +1388,13 @@ public class PanelBestellungWEP extends PanelBasis {
 		wlaBSWaehrungBS1.setHorizontalAlignment(SwingConstants.LEADING);
 		wlaBSWaehrungBS2.setHorizontalAlignment(SwingConstants.LEADING);
 		wlaBSWaehrungBS3.setHorizontalAlignment(SwingConstants.LEADING);
+		wlaBSWaehrungBS4.setHorizontalAlignment(SwingConstants.LEADING);
 
 		wlaFixkosten = new WrapperLabel(
 				LPMain.getTextRespectUISPr("lp.fixkosten"));
 		wnfFixkosten = new WrapperNumberField();
+		wnfFixkosten.setFractionDigits(Defaults.getInstance()
+				.getIUINachkommastellenPreiseWE());
 
 		wcbPreiseErfasst = new WrapperCheckBox();
 		wcbPreiseErfasst.setText(LPMain
@@ -1341,9 +1449,16 @@ public class PanelBestellungWEP extends PanelBasis {
 
 		if (!getInternalFrame().bRechtDarfPreiseAendernEinkauf) {
 			wnfGelieferterPreis.setActivatable(false);
+			wnfGelieferterWert.setActivatable(false);
 			wnfFixkosten.setActivatable(false);
 			wcbPreiseErfasst.setActivatable(false);
 		}
+
+		wbuHandartikelAnlegen.setIcon(new ImageIcon(getClass().getResource(
+				"/com/lp/client/res/notebook.png")));
+		wbuHandartikelAnlegen
+				.setActionCommand(ACTION_SPECIAL_HANDARTIKEL_ERZEUGEN);
+		wbuHandartikelAnlegen.addActionListener(this);
 
 		iZeile++;
 		/*
@@ -1352,14 +1467,20 @@ public class PanelBestellungWEP extends PanelBasis {
 		 * new Insets(2, 2, 2, 2), 0, 0));
 		 */
 
-		jpaWorkingOn.add(wtfArtikel, new GridBagConstraints(1, iZeile, 2, 1,
-				1.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(1, 2, 1, 2), 0, 0));
 		jpaWorkingOn.add(wifArtikelauswahl.getWbuArtikel(),
 				new GridBagConstraints(0, iZeile, 1, 1, 1.0, 0.0,
 						GridBagConstraints.CENTER,
 						GridBagConstraints.HORIZONTAL, new Insets(1, 2, 1, 2),
 						0, 0));
+
+		jpaWorkingOn.add(wtfArtikel, new GridBagConstraints(1, iZeile, 2, 1,
+				1.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(1, 2, 1, 25), 0, 0));
+
+		jpaWorkingOn.add(wbuHandartikelAnlegen, new GridBagConstraints(2,
+				iZeile, 1, 1, 1.0, 0.0, GridBagConstraints.EAST,
+				GridBagConstraints.NONE, new Insets(1, 30, 1, 2), 10, 0));
+
 		if (bHerstellerUrsprungsland == true) {
 
 			jpaWorkingOn.add(wsfHersteller.getWrapperButton(),
@@ -1445,6 +1566,16 @@ public class PanelBestellungWEP extends PanelBasis {
 		jpaWorkingOn.add(wlaBSWaehrungBS2, new GridBagConstraints(5, iZeile, 1,
 				1, 0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(2, 2, 2, 2), 0, 0));
+		iZeile++;
+		jpaWorkingOn.add(wlaGelieferterWert, new GridBagConstraints(3, iZeile,
+				1, 1, 0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(1, 2, 1, 2), 0, 0));
+		jpaWorkingOn.add(wnfGelieferterWert, new GridBagConstraints(4, iZeile,
+				1, 1, 0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(1, 2, 1, 2), 160, 0));
+		jpaWorkingOn.add(wlaBSWaehrungBS4, new GridBagConstraints(5, iZeile, 1,
+				1, 0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
+				new Insets(2, 2, 2, 2), 0, 0));
 
 		// Zeile
 		iZeile++;
@@ -1524,9 +1655,9 @@ public class PanelBestellungWEP extends PanelBasis {
 				ACTION_SPECIAL_STAFFELPREIS_RUECKPFLEGEN,
 				RechteFac.RECHT_LP_DARF_PREISE_AENDERN_EINKAUF);
 
-		wkvLieferscheinnr.setMinimumSize(new Dimension(188, 23));
-		wkvLieferscheinnr.setPreferredSize(new Dimension(188, 23));
-		getToolBar().getToolsPanelRight().add(wkvLieferscheinnr);
+		wlaWareneingang.setMinimumSize(new Dimension(400, 23));
+		wlaWareneingang.setPreferredSize(new Dimension(400, 23));
+		getToolBar().getToolsPanelRight().add(wlaWareneingang);
 
 		if (LPMain
 				.getInstance()
@@ -1627,6 +1758,37 @@ public class PanelBestellungWEP extends PanelBasis {
 					tpBestellung.getBesDto().getStatusCNr());
 
 		}
+
+		MessageFormat mf = new MessageFormat(
+				LPMain.getTextRespectUISPr("best.wareneingangspostiotn.selektierterwareneingang"));
+		mf.setLocale(LPMain.getTheClient().getLocUi());
+
+		Calendar c = Calendar.getInstance();
+		c.setTimeInMillis(tpBestellung.getWareneingangDto()
+				.getTLieferscheindatum().getTime());
+
+		String lsDatum = Helper.formatDatum(c.getTime(), LPMain.getTheClient()
+				.getLocUi());
+
+		c.setTimeInMillis(tpBestellung.getWareneingangDto()
+				.getTWareneingangsdatum().getTime());
+		String weDatum = Helper.formatDatum(c.getTime(), LPMain.getTheClient()
+				.getLocUi());
+
+		String lager = DelegateFactory
+				.getInstance()
+				.getLagerDelegate()
+				.lagerFindByPrimaryKey(
+						tpBestellung.getWareneingangDto().getLagerIId())
+				.getCNr();
+
+		Object pattern[] = {
+				tpBestellung.getWareneingangDto().getCLieferscheinnr(),
+				lsDatum, weDatum, lager };
+
+		wlaWareneingang.setText(mf.format(pattern));
+		wlaWareneingang.setToolTipText(mf.format(pattern));
+
 	}
 
 	private void setForNew() throws Throwable {
@@ -1663,6 +1825,14 @@ public class PanelBestellungWEP extends PanelBasis {
 		}
 
 		weposDto.setNGelieferterpreis(bdPreiMitAktuellemZusschlag);
+
+		if (bdPreiMitAktuellemZusschlag != null
+				&& getBestellpositionDto().getNMenge() != null) {
+			wnfGelieferterWert.setBigDecimal(getBestellpositionDto()
+					.getNNettogesamtpreis().multiply(
+							getBestellpositionDto().getNMenge()));
+		}
+
 		tpBestellung.setWareneingangspositionenDto(weposDto);
 	}
 
@@ -1896,6 +2066,11 @@ class FocusAdapterGewichtPreis implements FocusListener {
 							umrechnung = preis.multiply(faktor);
 						}
 						adaptee.wnfGelieferterPreis.setBigDecimal(umrechnung);
+						if (adaptee.wnfGelieferteMenge.getBigDecimal() != null) {
+							adaptee.wnfGelieferterWert.setBigDecimal(umrechnung
+									.multiply(adaptee.wnfGelieferteMenge
+											.getBigDecimal()));
+						}
 					}
 				}
 			}
@@ -1980,11 +2155,25 @@ class WnfGelieferteMengeFocusAdapter extends java.awt.event.FocusAdapter {
 												adaptee.getArtikelDto()
 														.getNUmrechnungsfaktor()));
 					}
+
 				}
 			} catch (Throwable tDummy) {
 				LPMain.getInstance().exitFrame(adaptee.getInternalFrame());
 			}
 		}
+		try {
+			if (adaptee.wnfGelieferteMenge.getBigDecimal() != null
+					&& adaptee.wnfGelieferterPreis.getBigDecimal() != null) {
+				adaptee.wnfGelieferterWert
+						.setBigDecimal(adaptee.wnfGelieferterPreis
+								.getBigDecimal().multiply(
+										adaptee.wnfGelieferteMenge
+												.getBigDecimal()));
+			}
+		} catch (Throwable tDummy) {
+			LPMain.getInstance().exitFrame(adaptee.getInternalFrame());
+		}
+
 	}
 }
 
@@ -2016,6 +2205,79 @@ class WnfGelieferterPreisFocusAdapter extends java.awt.event.FocusAdapter {
 				}
 
 				adaptee.wnfGewichtPreis.setBigDecimal(nPreisPerEinheit);
+
+			}
+
+			if (adaptee.wnfGelieferterPreis.getBigDecimal() != null
+					&& adaptee.wnfGelieferteMenge.getBigDecimal() != null) {
+				adaptee.wnfGelieferterWert
+						.setBigDecimal(adaptee.wnfGelieferterPreis
+								.getBigDecimal().multiply(
+										adaptee.wnfGelieferteMenge
+												.getBigDecimal()));
+			}
+		} catch (Throwable tDummy) {
+			LPMain.getInstance().exitFrame(adaptee.getInternalFrame());
+		}
+	}
+}
+
+class WnfGelieferterWertFocusAdapter extends java.awt.event.FocusAdapter {
+	private PanelBestellungWEP adaptee;
+
+	WnfGelieferterWertFocusAdapter(PanelBestellungWEP adaptee) {
+		this.adaptee = adaptee;
+	}
+
+	public void focusLost(FocusEvent e) {
+		try {
+			if (adaptee.wnfGelieferterWert.getBigDecimal() != null) {
+
+				if (adaptee.wnfGelieferteMenge.getBigDecimal() != null
+						&& adaptee.wnfGelieferteMenge.getBigDecimal()
+								.doubleValue() != 0) {
+
+					BigDecimal bdGelPreis = adaptee.wnfGelieferterWert
+							.getBigDecimal().divide(
+									adaptee.wnfGelieferteMenge.getBigDecimal(),
+									4, BigDecimal.ROUND_HALF_EVEN);
+
+					adaptee.wnfGelieferterPreis.setBigDecimal(bdGelPreis);
+				} else {
+					adaptee.wnfGelieferterPreis.setBigDecimal(BigDecimal.ZERO);
+				}
+
+				//
+				if (adaptee.wnfGelieferterPreis.getBigDecimal() != null
+						&& adaptee.getArtikelDto() != null
+						&& adaptee.getArtikelDto().getNUmrechnungsfaktor() != null) {
+
+					BigDecimal nPreisPerEinheit = null;
+					if (Helper.short2boolean(adaptee.getArtikelDto()
+							.getbBestellmengeneinheitInvers())) {
+						nPreisPerEinheit = (adaptee.wnfGelieferterPreis
+								.getBigDecimal().multiply(adaptee
+								.getArtikelDto().getNUmrechnungsfaktor()));
+					} else {
+						nPreisPerEinheit = (adaptee.wnfGelieferterPreis
+								.getBigDecimal().divide(adaptee.getArtikelDto()
+								.getNUmrechnungsfaktor(),
+								Defaults.getInstance()
+										.getIUINachkommastellenPreiseEK(),
+								BigDecimal.ROUND_HALF_EVEN));
+					}
+
+					adaptee.wnfGewichtPreis.setBigDecimal(nPreisPerEinheit);
+
+					if (adaptee.wnfGelieferteMenge.getBigDecimal() != null) {
+						adaptee.wnfGelieferterWert
+								.setBigDecimal(adaptee.wnfGelieferterPreis
+										.getBigDecimal().multiply(
+												adaptee.wnfGelieferteMenge
+														.getBigDecimal()));
+					}
+				}
+
 			}
 		} catch (Throwable tDummy) {
 			LPMain.getInstance().exitFrame(adaptee.getInternalFrame());

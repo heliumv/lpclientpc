@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -359,6 +359,8 @@ public abstract class PanelPositionenSichtAuftrag extends PanelPositionen2 {
 						sBelegwaehrung);
 		panelArtikel.wbuArtikelauswahl.setOKey(oAuftragpositionDto
 				.getArtikelIId());
+		//SP2881
+		panelArtikel.setUebersteuertesLagerIId(null);
 		// wenn der Wechselkurs zwischen Auftragwaehrung und
 		// Lieferscheinwaehrung nicht hinterlegt ist .
 		if (bdKurs == null) {
@@ -569,8 +571,9 @@ public abstract class PanelPositionenSichtAuftrag extends PanelPositionen2 {
 			panelUrsprung.wtfUrsprung.setText(oAuftragpositionDto.getCBez());
 		} else if (oAuftragpositionDto.getPositionsartCNr()
 				.equalsIgnoreCase(LocaleFac.POSITIONSART_TEXTEINGABE)) {
-			panelTexteingabe.getLpEditor().setText(
+			panelTexteingabe.setText(
 					oAuftragpositionDto.getXTextinhalt());
+			panelTexteingabe.setEditable(false);
 		} else if (oAuftragpositionDto.getPositionsartCNr()
 				.equalsIgnoreCase(LocaleFac.POSITIONSART_TEXTBAUSTEIN)) {
 			panelTextbaustein.oMediastandardDto = DelegateFactory

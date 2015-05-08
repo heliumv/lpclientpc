@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -45,19 +45,20 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.EventObject;
 import java.util.GregorianCalendar;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
+import net.miginfocom.swing.MigLayout;
+
 import com.lp.client.angebot.InternalFrameAngebot;
-import com.lp.client.auftrag.AuftragFilterFactory;
+import com.lp.client.angebotstkl.InternalFrameAngebotstkl;
 import com.lp.client.auftrag.InternalFrameAuftrag;
-import com.lp.client.auftrag.TabbedPaneAuftrag;
 import com.lp.client.frame.HelperClient;
 import com.lp.client.frame.component.DialogQuery;
 import com.lp.client.frame.component.ISourceEvent;
@@ -86,16 +87,17 @@ import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.frame.dialog.DialogFactory;
 import com.lp.client.partner.PartnerFilterFactory;
 import com.lp.client.pc.Desktop;
-import com.lp.client.pc.LPButtonAction;
 import com.lp.client.pc.LPMain;
 import com.lp.client.personal.PersonalFilterFactory;
 import com.lp.server.benutzer.service.RechteFac;
 import com.lp.server.partner.service.AnsprechpartnerDto;
+import com.lp.server.partner.service.KundeDto;
 import com.lp.server.partner.service.PartnerDto;
 import com.lp.server.partner.service.PartnerFac;
 import com.lp.server.personal.service.PersonalDto;
 import com.lp.server.projekt.service.ProjektDto;
 import com.lp.server.projekt.service.ProjektServiceFac;
+import com.lp.server.system.jcr.service.JCRRepoInfo;
 import com.lp.server.system.jcr.service.PrintInfoDto;
 import com.lp.server.system.jcr.service.docnode.DocPath;
 import com.lp.server.system.service.LandplzortDto;
@@ -140,6 +142,8 @@ public class PanelProjektKopfdaten extends PanelBasis implements
 			.createImageIcon("document_attachment16x16.png");
 	private JButton jbDokumente;
 
+	private boolean bAufInternErledigteBuchen = true;
+
 	private InternalFrameProjekt intFrame = null;
 	private TabbedPaneProjekt tpProjekt = null;
 
@@ -175,8 +179,8 @@ public class PanelProjektKopfdaten extends PanelBasis implements
 	private static final String ACTION_SPECIAL_PARTNER = "action_special_partner";
 	private static final String ACTION_SPECIAL_ANSPRECHPARTNER = "action_special_ansprechpartner";
 
-	public final static String MY_OWN_NEW_DOKUMENTENABLAGE = PanelBasis.ACTION_MY_OWN_NEW
-			+ "MY_OWN_NEW_DOKUMENTENABLAGE";
+	public final static String MY_OWN_NEW_DOKUMENTENABLAGE = PanelBasis.LEAVEALONE
+			+ "DOKUMENTENABLAGE";
 
 	public final static String MY_OWN_NEW_TOGGLE_INTERN_ERLEDIGT = PanelBasis.ACTION_MY_OWN_NEW
 			+ "MY_OWN_NEW_INTERN_ERLEDIGT";
@@ -185,6 +189,9 @@ public class PanelProjektKopfdaten extends PanelBasis implements
 			+ "MY_OWN_NEW_ANGEBOT";
 	public final static String MY_OWN_NEW_AUFTRAG = PanelBasis.ACTION_MY_OWN_NEW
 			+ "MY_OWN_NEW_AUFTRAG";
+	
+	public final static String MY_OWN_NEW_AGSTKL = PanelBasis.ACTION_MY_OWN_NEW
+			+ "MY_OWN_NEW_AGSTKL";
 
 	private WrapperLabel wlfTyp;
 	private WrapperComboBox wcoTyp;
@@ -194,7 +201,7 @@ public class PanelProjektKopfdaten extends PanelBasis implements
 	private WrapperComboBox wcoStatus;
 
 	private WrapperLabel wlaLkzPlzOrt = new WrapperLabel();
-	private WrapperLabel wlaInternErledigt = new WrapperLabel();
+	private JLabel wlaInternErledigt = new JLabel();
 
 	private WrapperDateField wdfLiefertermin = null;
 	private WrapperLabel wlaLiefertermin = null;
@@ -229,6 +236,9 @@ public class PanelProjektKopfdaten extends PanelBasis implements
 	private PersonalDto personalDtoZugewiesenerVorbesetzen = null;
 	private PartnerDto partnerDtoVorbesetzen = null;
 
+	private WrapperTextField wtfBuildNumber;
+	private WrapperTextField wtfDeployNumber;
+
 	private WrapperSelectField wsfNachfolger = new WrapperSelectField(
 			WrapperSelectField.PROJEKT, getInternalFrame(), true);
 
@@ -249,6 +259,15 @@ public class PanelProjektKopfdaten extends PanelBasis implements
 		super(internalFrame, add2TitleI, key);
 		intFrame = (InternalFrameProjekt) internalFrame;
 		tpProjekt = intFrame.getTabbedPaneProjekt();
+
+		ParametermandantDto parameter = DelegateFactory
+				.getInstance()
+				.getParameterDelegate()
+				.getMandantparameter(LPMain.getTheClient().getMandant(),
+						ParameterFac.KATEGORIE_PROJEKT,
+						ParameterFac.PARAMETER_INTERN_ERLEDIGT_BEBUCHBAR);
+		bAufInternErledigteBuchen = ((Boolean) parameter.getCWertAsObject());
+
 		jbInit();
 		initPanel();
 		initComponents();
@@ -268,8 +287,6 @@ public class PanelProjektKopfdaten extends PanelBasis implements
 		enableToolsPanelButtons(aWhichButtonIUse);
 
 		// Workingpanel
-		jPanelWorkingOn = new JPanel();
-		jPanelWorkingOn.setLayout(gridBagLayoutAll);
 		getInternalFrame().addItemChangedListener(this);
 
 		wlfKategorie = new WrapperLabel(
@@ -301,6 +318,9 @@ public class PanelProjektKopfdaten extends PanelBasis implements
 		wbuPersonalZugewiesener.addActionListener(this);
 
 		wtfEmail = new WrapperEmailField();
+
+		wtfBuildNumber = new WrapperTextField(10);
+		wtfDeployNumber = new WrapperTextField(10);
 
 		wtfPersonalZugewiesener = new WrapperTextField();
 		wtfPersonalZugewiesener.setMandatoryField(true);
@@ -411,7 +431,6 @@ public class PanelProjektKopfdaten extends PanelBasis implements
 
 		wtfEmail.setActivatable(false);
 
-		// wlaBild.setText(LPMain.getInstance().getTextRespectUISPr("lp.bild"));
 		wmcBild = new WrapperMediaControlTexteingabe(getInternalFrame(), "",
 				true);
 
@@ -426,6 +445,10 @@ public class PanelProjektKopfdaten extends PanelBasis implements
 		wlaErledigt = new WrapperLabel(
 				LPMain.getTextRespectUISPr("label.erledigt"));
 
+		jPanelWorkingOn = new JPanel(
+				new MigLayout("wrap 7, hidemode 2",
+						"[15%,fill|15%,fill|10%,fill|10%,fill|15%,fill|20%,fill|15%,fill]"));
+
 		this.add(panelButtonAction, new GridBagConstraints(0, 0, 1, 1, 1.0,
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(0, 0, 0, 0), 0, 0));
@@ -436,165 +459,75 @@ public class PanelProjektKopfdaten extends PanelBasis implements
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(0, 0, 0, 0), 0, 0));
 
-		// Zeile
-		iZeile++;
-		jPanelWorkingOn.add(wlfKategorie, new GridBagConstraints(0, iZeile, 1,
-				1, 1.5, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 70, 0));
-		jPanelWorkingOn.add(wcoKategorie, new GridBagConstraints(1, iZeile, 2,
-				1, 1.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wcoBereich, new GridBagConstraints(3, iZeile, 1, 1,
-				1.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wcbVerrechenbar, new GridBagConstraints(4, iZeile,
-				1, 1, 1.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wcbFreigegeben, new GridBagConstraints(5, iZeile,
-				1, 1, 1.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+		jPanelWorkingOn.add(wlfKategorie);
+		jPanelWorkingOn.add(wcoKategorie, "span 3");
+		jPanelWorkingOn.add(wcoBereich);
+		jPanelWorkingOn.add(wcbVerrechenbar);
+		jPanelWorkingOn.add(wcbFreigegeben, "wrap");
 
-		iZeile++;
-		jPanelWorkingOn.add(wlfTitel, new GridBagConstraints(0, iZeile, 1, 1,
-				1.5, 0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wtfTitel, new GridBagConstraints(1, iZeile, 5, 1,
-				4.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-		iZeile++;
-		jPanelWorkingOn.add(wlfTyp, new GridBagConstraints(0, iZeile, 1, 1,
-				1.5, 0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wcoTyp, new GridBagConstraints(1, iZeile, 2, 1,
-				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
+		jPanelWorkingOn.add(wlfTitel);
+		jPanelWorkingOn.add(wtfTitel, "span");
 
 		wsfNachfolger.setText(LPMain
 				.getTextRespectUISPr("proj.nachfolgeprojekt") + "...");
+		jPanelWorkingOn.add(wlfTyp);
+		jPanelWorkingOn.add(wcoTyp, "span 3");
+		jPanelWorkingOn.add(wsfNachfolger.getWrapperGotoButton());
+		jPanelWorkingOn.add(wsfNachfolger.getWrapperTextField(), "span");
 
-		jPanelWorkingOn.add(wsfNachfolger.getWrapperGotoButton(),
-				new GridBagConstraints(3, iZeile, 1, 1, 1.5, 0.0,
-						GridBagConstraints.WEST, GridBagConstraints.BOTH,
-						new Insets(2, 2, 2, 2), 80, 0));
-		jPanelWorkingOn.add(wsfNachfolger.getWrapperTextField(),
-				new GridBagConstraints(4, iZeile, 3, 1, 0.0, 0.0,
-						GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-						new Insets(2, 2, 2, 2), 140, 0));
+		jPanelWorkingOn.add(wbuPersonalErzeuger);
+		jPanelWorkingOn.add(wtfPersonalErzeuger, "span 3");
+		jPanelWorkingOn.add(wbuPersonalZugewiesener);
+		jPanelWorkingOn.add(wtfPersonalZugewiesener, "span");
 
-		iZeile++;
-		jPanelWorkingOn.add(wbuPersonalErzeuger, new GridBagConstraints(0,
-				iZeile, 1, 1, 1.5, 0.0, GridBagConstraints.WEST,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wtfPersonalErzeuger, new GridBagConstraints(1,
-				iZeile, 2, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wbuPersonalZugewiesener, new GridBagConstraints(3,
-				iZeile, 1, 1, 1.5, 0.0, GridBagConstraints.WEST,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wtfPersonalZugewiesener, new GridBagConstraints(4,
-				iZeile, 3, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+		jPanelWorkingOn.add(wbuPartner);
+		jPanelWorkingOn.add(wtfPartner, "span 3");
+		jPanelWorkingOn.add(wtfDurchwahl);
+		jPanelWorkingOn.add(wlaUmsatzGeplant);
+		jPanelWorkingOn.add(wnfUmsatzGeplant, "wrap");
 
-		iZeile++;
-		jPanelWorkingOn.add(wbuPartner, new GridBagConstraints(0, iZeile, 1, 1,
-				0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wtfPartner, new GridBagConstraints(1, iZeile, 2, 1,
-				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
+		jPanelWorkingOn.add(wbuAnsprechpartner);
+		jPanelWorkingOn.add(wtfAnsprechpartner, "span 3");
+		jPanelWorkingOn.add(wtfHandy);
+		jPanelWorkingOn.add(wlaWahrscheinlichkeit);
+		jPanelWorkingOn.add(wnfWahrscheinlichkeit, "wrap");
 
-		jPanelWorkingOn.add(wtfDurchwahl, new GridBagConstraints(3, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 80, 0));
-		jPanelWorkingOn.add(wlaUmsatzGeplant, new GridBagConstraints(4, iZeile,
-				1, 1, 1.0, 0.0, GridBagConstraints.WEST,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+		jPanelWorkingOn.add(wlaLkzPlzOrt, "skip, span 3");
+		jPanelWorkingOn.add(wtfEmail, "span");
 
-		jPanelWorkingOn.add(wnfUmsatzGeplant, new GridBagConstraints(5, iZeile,
-				1, 1, 0, 0.0, GridBagConstraints.WEST,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		iZeile++;
-		jPanelWorkingOn.add(wbuAnsprechpartner, new GridBagConstraints(0,
-				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.WEST,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wtfAnsprechpartner, new GridBagConstraints(1,
-				iZeile, 2, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wtfHandy, new GridBagConstraints(3, iZeile, 1, 1,
-				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 80, 0));
-		jPanelWorkingOn.add(wlaWahrscheinlichkeit, new GridBagConstraints(4,
-				iZeile, 1, 1, 1.0, 0.0, GridBagConstraints.WEST,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 60, 0));
+		jPanelWorkingOn.add(wlfPrio);
+		jPanelWorkingOn.add(wcoPrio);
+		jPanelWorkingOn.add(wlfStatus, "skip");
+		jPanelWorkingOn.add(wcoStatus);
+		jPanelWorkingOn.add(wlaDauer);
+		jPanelWorkingOn.add(wnfDauer, "wrap");
 
-		jPanelWorkingOn.add(wnfWahrscheinlichkeit, new GridBagConstraints(5,
-				iZeile, 1, 1, 0, 0.0, GridBagConstraints.WEST,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jPanelWorkingOn.add(wlaLiefertermin);
+		jPanelWorkingOn.add(wdfLiefertermin);
+		jPanelWorkingOn.add(wtfZeit, "split 2, span 2, growx");
+		jPanelWorkingOn.add(wlaErledigt, "growx 50");
+		jPanelWorkingOn.add(wdfErledigt);
 
-		iZeile++;
+		ParametermandantDto parameter = DelegateFactory
+				.getInstance()
+				.getParameterDelegate()
+				.getMandantparameter(LPMain.getTheClient().getMandant(),
+						ParameterFac.KATEGORIE_PROJEKT,
+						ParameterFac.PARAMETER_BUILD_ANZEIGEN);
+		boolean bBuildAnzeigen = ((Boolean) parameter.getCWertAsObject());
 
-		jPanelWorkingOn.add(wlaLkzPlzOrt, new GridBagConstraints(1, iZeile, 2,
-				1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+		if (bBuildAnzeigen) {
+			jPanelWorkingOn.add(new WrapperLabel(LPMain
+					.getTextRespectUISPr("proj.deploy")), "split, span");
+			jPanelWorkingOn.add(wtfDeployNumber);
+			jPanelWorkingOn.add(new WrapperLabel(LPMain
+					.getTextRespectUISPr("proj.build")));
+			jPanelWorkingOn.add(wtfBuildNumber);
+		}
 
-		jPanelWorkingOn.add(wtfEmail, new GridBagConstraints(3, iZeile, 2, 1,
-				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 80, 0));
-		iZeile++;
-		jPanelWorkingOn.add(wlfPrio, new GridBagConstraints(0, iZeile, 1, 1,
-				1.3, 0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
+		jPanelWorkingOn.add(wefText, "newline, span, pushy");
 
-		jPanelWorkingOn.add(wcoPrio, new GridBagConstraints(1, iZeile, 1, 1,
-				1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wlfStatus, new GridBagConstraints(2, iZeile, 1, 1,
-				1.5, 0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-
-		jPanelWorkingOn.add(wcoStatus, new GridBagConstraints(3, iZeile, 1, 1,
-				1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wlaDauer, new GridBagConstraints(4, iZeile, 1, 1,
-				1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-
-		jPanelWorkingOn.add(wnfDauer, new GridBagConstraints(5, iZeile, 1, 1,
-				0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE,
-				new Insets(2, 2, 2, 2), 60, 0));
-
-		iZeile++;
-		jPanelWorkingOn.add(wlaLiefertermin, new GridBagConstraints(0, iZeile,
-				1, 1, 1.5, 0.0, GridBagConstraints.EAST,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wdfLiefertermin, new GridBagConstraints(1, iZeile,
-				1, 1, 1.0, 0.0, GridBagConstraints.WEST,
-				GridBagConstraints.NONE, new Insets(2, 2, 2, 2), 0, 0));
-
-		jPanelWorkingOn.add(wtfZeit, new GridBagConstraints(1, iZeile, 1, 1, 0,
-				0.0, GridBagConstraints.WEST, GridBagConstraints.NONE,
-				new Insets(2, 120, 2, 2), 50, 0));
-
-		jPanelWorkingOn.add(wlaErledigt, new GridBagConstraints(2, iZeile, 1,
-				1, 1.5, 0.0, GridBagConstraints.EAST,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wdfErledigt, new GridBagConstraints(3, iZeile, 1,
-				1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE,
-				new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wlaInternErledigt, new GridBagConstraints(3,
-				iZeile, 3, 1, 1.0, 0.0, GridBagConstraints.EAST,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		iZeile++;
-
-		jPanelWorkingOn.add(wefText, new GridBagConstraints(0, iZeile, 0, 1,
-				0.0, 1.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-
-		iZeile++;
-
-		jPanelWorkingOn.add(wmcBild, new GridBagConstraints(0, iZeile, 6, 1,
-				0.0, 1.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
+		jPanelWorkingOn.add(wmcBild, "span, w :0:");
 
 		if (LPMain
 				.getInstance()
@@ -617,6 +550,14 @@ public class PanelProjektKopfdaten extends PanelBasis implements
 						LPMain.getTextRespectUISPr("proj.neues.auftrag"),
 						MY_OWN_NEW_AUFTRAG, null, null);
 			}
+			
+			if (LPMain.getInstance().getDesktop()
+					.darfAnwenderAufModulZugreifen(LocaleFac.BELEGART_AGSTUECKLISTE)) {
+				getToolBar().addButtonLeft(
+						"/com/lp/client/res/note_add16x16.png",
+						LPMain.getTextRespectUISPr("proj.neue.agstkl"),
+						MY_OWN_NEW_AGSTKL, null, null);
+			}
 		}
 
 		if (LPMain
@@ -635,13 +576,30 @@ public class PanelProjektKopfdaten extends PanelBasis implements
 				getToolBar().addButtonCenter("/com/lp/client/res/check2.png",
 						LPMain.getTextRespectUISPr("proj.internerledigen"),
 						MY_OWN_NEW_TOGGLE_INTERN_ERLEDIGT, null, null);
+				getToolBar().getToolsPanelCenter().add(wlaInternErledigt);
 
-				getToolBar().addButtonRight("/com/lp/client/res/gear_run.png",
-						LPMain.getTextRespectUISPr("proj.startzeit"),
-						Desktop.MY_OWN_NEW_ZEIT_START, null, null);
-				getToolBar().addButtonRight("/com/lp/client/res/gear_stop.png",
-						LPMain.getTextRespectUISPr("proj.stopzeit"),
-						Desktop.MY_OWN_NEW_ZEIT_STOP, null, null);
+				ParametermandantDto parameterVB = DelegateFactory
+						.getInstance()
+						.getParameterDelegate()
+						.getMandantparameter(
+								LPMain.getTheClient().getMandant(),
+								ParameterFac.KATEGORIE_PERSONAL,
+								ParameterFac.PARAMETER_VON_BIS_ERFASSUNG);
+				boolean bVonBisErfassung = (java.lang.Boolean) parameterVB
+						.getCWertAsObject();
+
+				// SP2352
+				if (bVonBisErfassung == false) {
+
+					getToolBar().addButtonRight(
+							"/com/lp/client/res/gear_run.png",
+							LPMain.getTextRespectUISPr("proj.startzeit"),
+							Desktop.MY_OWN_NEW_ZEIT_START, null, null);
+					getToolBar().addButtonRight(
+							"/com/lp/client/res/gear_stop.png",
+							LPMain.getTextRespectUISPr("proj.stopzeit"),
+							Desktop.MY_OWN_NEW_ZEIT_STOP, null, null);
+				}
 
 				enableToolsPanelButtons(true, Desktop.MY_OWN_NEW_ZEIT_START,
 						Desktop.MY_OWN_NEW_ZEIT_STOP);
@@ -783,6 +741,7 @@ public class PanelProjektKopfdaten extends PanelBasis implements
 		}
 
 		wlaInternErledigt.setText(text);
+//		wlaInternErledigt.setCutOffEnd(false);
 
 		if (tpProjekt.getProjektDto().getXFreetext() != null) {
 			wefText.setText(tpProjekt.getProjektDto().getXFreetext());
@@ -831,19 +790,31 @@ public class PanelProjektKopfdaten extends PanelBasis implements
 					.getTime());
 			wtfZeit.setTime(time);
 		}
+		wtfDeployNumber.setText(tpProjekt.getProjektDto().getDeployNumber());
+		wtfBuildNumber.setText(tpProjekt.getProjektDto().getBuildNumber());
 		PrintInfoDto values = DelegateFactory
 				.getInstance()
 				.getJCRDocDelegate()
 				.getPathAndPartnerAndTable(tpProjekt.getProjektDto().getIId(),
 						QueryParameters.UC_ID_PROJEKT);
-		boolean hasFiles = false;
-		if (values != null) {
-			if (values.getDocPath() != null) {
-				hasFiles = DelegateFactory.getInstance().getJCRDocDelegate()
-						.checkIfNodeExists(values.getDocPath());
-			}
+		
+		JCRRepoInfo repoInfo = new JCRRepoInfo() ;
+//		boolean hasFiles = false;
+		if (values != null && values.getDocPath() != null) {
+			repoInfo = DelegateFactory.getInstance()
+					.getJCRDocDelegate().checkIfNodeExists(values.getDocPath()) ;
+			enableToolsPanelButtons(repoInfo.isOnline(), MY_OWN_NEW_DOKUMENTENABLAGE);
+//				boolean online = DelegateFactory.getInstance()
+//						.getJCRDocDelegate().isOnline();
+//				enableToolsPanelButtons(online, MY_OWN_NEW_DOKUMENTENABLAGE);
+//				if (online) {
+//					hasFiles = DelegateFactory.getInstance()
+//							.getJCRDocDelegate()
+//							.checkIfNodeExists(values.getDocPath());
+//				}
+//			}
 		}
-		jbDokumente.setIcon(hasFiles ? DOKUMENTE : KEINE_DOKUMENTE);
+		jbDokumente.setIcon(repoInfo.isExists() ? DOKUMENTE : KEINE_DOKUMENTE);
 
 	}
 
@@ -961,17 +932,7 @@ public class PanelProjektKopfdaten extends PanelBasis implements
 
 		String statusCNr = (String) wcoStatus.getKeyOfSelectedItem();
 		tpProjekt.getProjektDto().setStatusCNr(statusCNr);
-		if (statusCNr.equals(ProjektServiceFac.PROJEKT_STATUS_ERLEDIGT)) {
-			tpProjekt.getProjektDto().setTErledigt(
-					new Timestamp(System.currentTimeMillis()));
-			tpProjekt.getProjektDto().setPersonalIIdErlediger(
-					LPMain.getTheClient().getIDPersonal());
-		} else if (statusCNr.equals(ProjektServiceFac.PROJEKT_STATUS_GETESTET)) {
-
-		} else {
-			tpProjekt.getProjektDto().setTErledigt(null);
-			tpProjekt.getProjektDto().setProjekterledigungsgrundIId(null);
-		}
+		
 		tpProjekt.getProjektDto().setCTitel(wtfTitel.getText());
 
 		tpProjekt.getProjektDto().setIWahrscheinlichkeit(
@@ -997,6 +958,9 @@ public class PanelProjektKopfdaten extends PanelBasis implements
 		tpProjekt.getProjektDto().setTZielwunschdatum(
 				wdfLiefertermin.getTimestamp());
 		tpProjekt.getProjektDto().setXFreetext(wefText.getText());
+
+		tpProjekt.getProjektDto().setDeployNumber(wtfDeployNumber.getText());
+		tpProjekt.getProjektDto().setBuildNumber(wtfBuildNumber.getText());
 		if (wmcBild.getOMediaImage() != null) {
 			tpProjekt.getProjektDto()
 					.setCAttachmentsType(wmcBild.getMimeType());
@@ -1086,10 +1050,16 @@ public class PanelProjektKopfdaten extends PanelBasis implements
 		}
 
 		aktualisiereStatusbar();
-		if (tpProjekt.getProjektDto() != null
-				&& tpProjekt.getProjektDto().getStatusCNr() != null
-				&& tpProjekt.getProjektDto().getStatusCNr()
-						.equals(ProjektServiceFac.PROJEKT_STATUS_STORNIERT)) {
+		zeitbuchungDeaktivierenWennNoetig();
+	}
+
+	private void zeitbuchungDeaktivierenWennNoetig() {
+		if ((tpProjekt.getProjektDto() != null
+				&& tpProjekt.getProjektDto().getStatusCNr() != null && tpProjekt
+				.getProjektDto().getStatusCNr()
+				.equals(ProjektServiceFac.PROJEKT_STATUS_STORNIERT))
+				|| (tpProjekt.getProjektDto() != null
+						&& tpProjekt.getProjektDto().getTInternerledigt() != null && bAufInternErledigteBuchen == false)) {
 			if (this.getHmOfButtons().get(Desktop.MY_OWN_NEW_ZEIT_START) != null) {
 				this.getHmOfButtons().get(Desktop.MY_OWN_NEW_ZEIT_START)
 						.getButton().setEnabled(false);
@@ -1099,25 +1069,14 @@ public class PanelProjektKopfdaten extends PanelBasis implements
 						.getButton().setEnabled(false);
 			}
 		}
+
 	}
 
 	protected void eventActionRefresh(ActionEvent e, boolean bNeedNoRefreshI)
 			throws Throwable {
 		super.eventActionRefresh(e, bNeedNoRefreshI);
 
-		if (tpProjekt.getProjektDto() != null
-				&& tpProjekt.getProjektDto().getStatusCNr() != null
-				&& tpProjekt.getProjektDto().getStatusCNr()
-						.equals(ProjektServiceFac.PROJEKT_STATUS_STORNIERT)) {
-			if (this.getHmOfButtons().get(Desktop.MY_OWN_NEW_ZEIT_START) != null) {
-				this.getHmOfButtons().get(Desktop.MY_OWN_NEW_ZEIT_START)
-						.getButton().setEnabled(false);
-			}
-			if (this.getHmOfButtons().get(Desktop.MY_OWN_NEW_ZEIT_STOP) != null) {
-				this.getHmOfButtons().get(Desktop.MY_OWN_NEW_ZEIT_STOP)
-						.getButton().setEnabled(false);
-			}
-		}
+		zeitbuchungDeaktivierenWennNoetig();
 
 	}
 
@@ -1168,15 +1127,48 @@ public class PanelProjektKopfdaten extends PanelBasis implements
 												+ " " + gesperrterMandant);
 					}
 
+					KundeDto kdDto = DelegateFactory
+							.getInstance()
+							.getKundeDelegate()
+							.kundeFindByiIdPartnercNrMandantOhneExc(
+									partnerDto.getIId(),
+									LPMain.getTheClient().getMandant());
+
+					// PJ18400
+					if (kdDto != null) {
+						DelegateFactory.getInstance().getKundeDelegate()
+								.pruefeKreditlimit(kdDto.getIId());
+					}
+
 					dto2ComponentsPartner(partnerDto);
 					tpProjekt.setPartnerDto(partnerDto);
 					// den Ansprechpartner beim Partner zuruecksetzen
-					AnsprechpartnerDto anspDtoTemp = DelegateFactory
+					
+				
+					
+					
+					AnsprechpartnerDto anspDtoTemp =null;
+					
+					
+					ParametermandantDto parameter = (ParametermandantDto) DelegateFactory
 							.getInstance()
-							.getAnsprechpartnerDelegate()
-							.ansprechpartnerFindErstenEinesPartnersOhneExc(
-									tpProjekt.getPartnerDto().getIId());
+							.getParameterDelegate()
+							.getParametermandant(
+									ParameterFac.PARAMETER_PROJEKT_ANSPRECHPARTNER_VORBESETZEN,
+									ParameterFac.KATEGORIE_PROJEKT,
+									LPMain.getTheClient().getMandant());
+					if ((Boolean) parameter.getCWertAsObject()) {
+						anspDtoTemp = DelegateFactory
+								.getInstance()
+								.getAnsprechpartnerDelegate()
+								.ansprechpartnerFindErstenEinesPartnersOhneExc(
+										tpProjekt.getPartnerDto().getIId());
+					}
+					
 					if (anspDtoTemp != null) {
+						
+						
+						
 						tpProjekt.setAnsprechpartnerDto(anspDtoTemp);
 					} else {
 						tpProjekt
@@ -1214,6 +1206,9 @@ public class PanelProjektKopfdaten extends PanelBasis implements
 		if (ansprechpartnerDto != null) {
 			if (ansprechpartnerDto.getCTelefon() != null) {
 
+				wtfDurchwahl.setPartnerKommunikationDto(
+						tpProjekt.getPartnerDto(), null);
+
 				wtfDurchwahl.setTextDurchwahl(DelegateFactory
 						.getInstance()
 						.getPartnerDelegate()
@@ -1221,12 +1216,6 @@ public class PanelProjektKopfdaten extends PanelBasis implements
 								PartnerFac.KOMMUNIKATIONSART_TELEFON,
 								ansprechpartnerDto.getCTelefon(), false));
 
-				// Nachfolgender Code ist nur Durchwahl # CG 2011-08-08
-				/*
-				 * wtfDurchwahl.setPartnerKommunikationDto(
-				 * tpProjekt.getPartnerDto(),
-				 * ansprechpartnerDto.getPartnerkommunikationDtoTelefon());
-				 */
 			} else {
 				wtfDurchwahl.setPartnerKommunikationDto(tpProjekt
 						.getPartnerDto(), tpProjekt.getPartnerDto()
@@ -1345,6 +1334,17 @@ public class PanelProjektKopfdaten extends PanelBasis implements
 						.getInstance().getDesktop()
 						.holeModul(LocaleFac.BELEGART_AUFTRAG);
 				ifAB.getTabbedPaneAuftrag().erstelleAuftragAusProjekt(
+						tpProjekt.getProjektDto().getIId());
+			}
+
+		}else if (e.getActionCommand().equals(MY_OWN_NEW_AGSTKL)) {
+
+			if (LPMain.getInstance().getDesktop()
+					.darfAnwenderAufModulZugreifen(LocaleFac.BELEGART_AGSTUECKLISTE)) {
+				InternalFrameAngebotstkl ifAS = (InternalFrameAngebotstkl) LPMain
+						.getInstance().getDesktop()
+						.holeModul(LocaleFac.BELEGART_AGSTUECKLISTE);
+				ifAS.getTabbedPaneAngebotstkl().erstelleAgstklAusProjekt(
 						tpProjekt.getProjektDto().getIId());
 			}
 

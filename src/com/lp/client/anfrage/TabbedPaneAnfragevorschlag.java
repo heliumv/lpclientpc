@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -33,12 +33,17 @@
 package com.lp.client.anfrage;
 
 import java.io.File;
+import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.event.ChangeEvent;
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.xml.sax.SAXException;
 
 import jxl.CellType;
 import jxl.LabelCell;
@@ -46,6 +51,7 @@ import jxl.NumberCell;
 import jxl.Sheet;
 import jxl.Workbook;
 
+import com.lp.client.bestellung.InternalFrameBestellung;
 import com.lp.client.bestellung.ReportBestellVorschlag;
 import com.lp.client.frame.ExceptionLP;
 import com.lp.client.frame.HelperClient;
@@ -66,15 +72,21 @@ import com.lp.client.frame.component.TabbedPane;
 import com.lp.client.frame.component.WrapperMenuBar;
 import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.frame.dialog.DialogFactory;
+import com.lp.client.pc.LPButtonAction;
 import com.lp.client.pc.LPMain;
 import com.lp.client.stueckliste.SheetImportController;
 import com.lp.client.system.SystemFilterFactory;
 import com.lp.server.artikel.service.ArtikelDto;
 import com.lp.server.benutzer.service.RechteFac;
+import com.lp.server.bestellung.service.BestellpositionDto;
+import com.lp.server.bestellung.service.BestellpositionFac;
+import com.lp.server.bestellung.service.BestellvorschlagDto;
 import com.lp.server.stueckliste.service.StrukturierterImportDto;
 import com.lp.server.util.fastlanereader.service.query.FilterKriterium;
 import com.lp.server.util.fastlanereader.service.query.QueryParameters;
+import com.lp.service.BelegpositionDto;
 import com.lp.util.EJBExceptionLP;
+import com.lp.util.Helper;
 
 /**
  * <p>
@@ -146,6 +158,100 @@ public class TabbedPaneAnfragevorschlag extends TabbedPane {
 		getInternalFrame().addItemChangedListener(this);
 	}
 
+	public void copyHV() throws ExceptionLP, Throwable {
+		Object[] iId = panelAnfragevorschlagQP1.getSelectedIds();
+		BestellpositionDto[] bestellpositionDto = new BestellpositionDto[iId.length];
+		for (int i = 0; i < iId.length; i++) {
+			BestellvorschlagDto bestvorDto = DelegateFactory.getInstance()
+					.getBestellvorschlagDelegate()
+					.bestellvorschlagFindByPrimaryKey((Integer) iId[i]);
+			if (bestvorDto != null) {
+				ArtikelDto artikelDto = DelegateFactory.getInstance()
+						.getArtikelDelegate()
+						.artikelFindByPrimaryKey(bestvorDto.getIArtikelId());
+				bestellpositionDto[i] = new BestellpositionDto();
+				bestellpositionDto[i].setArtikelIId(bestvorDto.getIArtikelId());
+				bestellpositionDto[i].setBDrucken(Helper.boolean2Short(false));
+				bestellpositionDto[i]
+						.setPositionsartCNr(BestellpositionFac.BESTELLPOSITIONART_IDENT);
+				bestellpositionDto[i]
+						.setBestellpositionstatusCNr(BestellpositionFac.BESTELLPOSITIONSTATUS_OFFEN);
+				bestellpositionDto[i].setCBez(artikelDto.getArtikelsprDto()
+						.getCBez());
+				bestellpositionDto[i]
+						.setLieferantIIdWennCopyInBestellvorschlag(bestvorDto
+								.getILieferantId());
+				bestellpositionDto[i].setEinheitCNr(artikelDto.getEinheitCNr());
+				bestellpositionDto[i].setNMenge(bestvorDto
+						.getNZubestellendeMenge());
+
+				bestellpositionDto[i].setTUebersteuerterLiefertermin(bestvorDto
+						.getTLiefertermin());
+				if (bestvorDto.getNNettoeinzelpreis() != null) {
+					bestellpositionDto[i].setNNettoeinzelpreis(bestvorDto
+							.getNNettoeinzelpreis());
+				} else {
+					bestellpositionDto[i]
+							.setNNettoeinzelpreis(new BigDecimal(0));
+				}
+				if (bestvorDto.getNNettogesamtpreis() != null) {
+					bestellpositionDto[i].setNNettogesamtpreis(bestvorDto
+							.getNNettogesamtpreis());
+				} else {
+					bestellpositionDto[i]
+							.setNNettogesamtpreis(new BigDecimal(0));
+				}
+				if (bestvorDto.getNRabattbetrag() != null) {
+					bestellpositionDto[i].setNRabattbetrag(bestvorDto
+							.getNRabattbetrag());
+				} else {
+					bestellpositionDto[i].setNRabattbetrag(new BigDecimal(0));
+				}
+				if (bestvorDto.getDRabattsatz() != null) {
+					bestellpositionDto[i].setDRabattsatz(bestvorDto
+							.getDRabattsatz());
+				} else {
+					bestellpositionDto[i].setDRabattsatz(new Double(0));
+				}
+				bestellpositionDto[i].setNMaterialzuschlag(new BigDecimal(0));
+				bestellpositionDto[i].setBNettopreisuebersteuert(Helper
+						.boolean2Short(false));
+
+				LPMain.getPasteBuffer().writeObjectToPasteBuffer(
+						bestellpositionDto);
+			}
+		}
+
+	}
+
+	public void einfuegenHV() throws IOException, ParserConfigurationException,
+			SAXException, Throwable {
+
+		Object o = LPMain.getPasteBuffer().readObjectFromPasteBuffer();
+		if (o instanceof BelegpositionDto[]) {
+			BestellvorschlagDto[] bestVorDto = DelegateFactory.getInstance()
+					.getBelegpostionkonvertierungDelegate()
+					.konvertiereNachBestellvorschlagDto((BelegpositionDto[]) o);
+			Integer iId = null;
+			for (int i = 0; i < bestVorDto.length; i++) {
+
+				iId = DelegateFactory.getInstance()
+						.getBestellvorschlagDelegate()
+						.createBestellvorschlag(bestVorDto[i]);
+
+			}
+
+			panelAnfragevorschlagQP1.eventYouAreSelected(false);
+			panelAnfragevorschlagQP1.setSelectedId(iId);
+			panelAnfragevorschlagSP1.eventYouAreSelected(false);
+
+		}
+	}
+
+	public PanelSplit getPanelAnfragevorschlagSP1() {
+		return panelAnfragevorschlagSP1;
+	}
+
 	private PanelSplit refreshPanelAnfragevorschlag() throws Throwable {
 		if (panelAnfragevorschlagSP1 == null) {
 			panelAnfragevorschlagD1 = new PanelPositionenBestellvorschlag(
@@ -160,7 +266,9 @@ public class TabbedPaneAnfragevorschlag extends TabbedPane {
 			FilterKriterium[] fkPositionen = SystemFilterFactory.getInstance()
 					.createFKMandantCNr();
 
-			String[] aWhichButtonIUse = { PanelBasis.ACTION_NEW };
+			String[] aWhichButtonIUse = { PanelBasis.ACTION_NEW,
+					PanelBasis.ACTION_KOPIEREN,
+					PanelBasis.ACTION_EINFUEGEN_LIKE_NEW };
 
 			panelAnfragevorschlagQP1 = new PanelQuery(null, fkPositionen,
 					QueryParameters.UC_ID_BESTELLVORSCHLAG, aWhichButtonIUse,
@@ -174,6 +282,8 @@ public class TabbedPaneAnfragevorschlag extends TabbedPane {
 																				// des
 																				// panels
 																				// loslaeuft
+
+			panelAnfragevorschlagQP1.setMultipleRowSelectionEnabled(true);
 
 			panelAnfragevorschlagQP1.createAndSaveAndShowButton(
 					"/com/lp/client/res/clipboard.png",
@@ -240,6 +350,20 @@ public class TabbedPaneAnfragevorschlag extends TabbedPane {
 		}
 	}
 
+	public InternalFrameAnfrage getInternalFrameAnfrage() {
+		return (InternalFrameAnfrage) getInternalFrame();
+	}
+
+	public void deleteAuswahl() throws ExceptionLP, Throwable {
+		if (panelAnfragevorschlagQP1.getSelectedIds() == null)
+			return;
+		for (Object id : panelAnfragevorschlagQP1.getSelectedIds()) {
+			DelegateFactory.getInstance().getBestellvorschlagDelegate()
+					.removeBestellvorschlag((Integer) id);
+		}
+		panelAnfragevorschlagQP1.eventYouAreSelected(false);
+	}
+
 	public void lPEventItemChanged(ItemChangedEvent e) throws Throwable {
 		if (pdKriterienAnfragevorschlag != null) {
 			pdKriterienAnfragevorschlag.eventItemchanged(e);
@@ -251,11 +375,24 @@ public class TabbedPaneAnfragevorschlag extends TabbedPane {
 
 		if (e.getID() == ItemChangedEvent.ITEM_CHANGED) {
 			if (e.getSource() == panelAnfragevorschlagQP1) {
+
 				Object key = ((ISourceEvent) e.getSource()).getIdSelected();
+
+				if (key != null) {
+					getInternalFrameAnfrage().setKeyWasForLockMe(
+							panelAnfragevorschlagQP1.getSelectedId() + "");
+				}
+
 				panelAnfragevorschlagD1.setKeyWhenDetailPanel(key);
 				panelAnfragevorschlagD1.eventYouAreSelected(false);
-				panelAnfragevorschlagQP1.updateButtons(panelAnfragevorschlagD1
-						.getLockedstateDetailMainKey());
+				panelAnfragevorschlagQP1.updateButtons();
+
+				panelAnfragevorschlagQP1
+						.enableToolsPanelButtons(
+								panelAnfragevorschlagQP1.getSelectedIds() != null
+										&& panelAnfragevorschlagQP1
+												.getSelectedIds().length > 0,
+								PanelBasis.ACTION_DELETE);
 			}
 		} else if (e.getID() == ItemChangedEvent.ACTION_UPDATE) {
 			// hier kommt man nach update im D bei einem 1:n hin.
@@ -323,7 +460,9 @@ public class TabbedPaneAnfragevorschlag extends TabbedPane {
 										pdKriterienAnfragevorschlag
 												.isbMitNichtlagerbeweirtschaftetenArtikeln(),
 										pdKriterienAnfragevorschlag
-												.isbNurBetroffeneLospositionen());
+												.isbNurBetroffeneLospositionen(),
+												pdKriterienAnfragevorschlag
+												.isbVormerklisteLoeschen());
 					}
 					panelAnfragevorschlagSP1.eventYouAreSelected(false);
 				} catch (Throwable t) {
@@ -412,6 +551,14 @@ public class TabbedPaneAnfragevorschlag extends TabbedPane {
 				getInternalFrame().showPanelDialog(
 						pdKritBestellvorschlagAnhandAngebot);
 			}
+		} else if (e.getID() == ItemChangedEvent.ACTION_KOPIEREN) {
+			if (e.getSource() == panelAnfragevorschlagQP1) {
+				copyHV();
+			}
+		} else if (e.getID() == ItemChangedEvent.ACTION_MY_OWN_NEW) {
+			if (e.getSource() == panelAnfragevorschlagQP1) {
+				einfuegenHV();
+			}
 		}
 	}
 
@@ -473,8 +620,6 @@ public class TabbedPaneAnfragevorschlag extends TabbedPane {
 			getInternalFrame().setKeyWasForLockMe(null);
 		}
 	}
-
-	
 
 	protected void lPActionEvent(java.awt.event.ActionEvent e) throws Throwable {
 

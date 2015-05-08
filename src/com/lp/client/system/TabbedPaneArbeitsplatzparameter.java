@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -236,6 +236,8 @@ public class TabbedPaneArbeitsplatzparameter extends TabbedPane {
 		else if (e.getID() == ItemChangedEvent.ACTION_DISCARD) {
 			if (e.getSource() == panelDetailArbeitsplatz) {
 				panelDetailArbeitsplatz.eventYouAreSelected(false);
+			} else if(e.getSource() == panelDetailArbeitsplatzparameter) {
+				panelQueryArbeitsplatzparameter.eventYouAreSelected(false);
 			}
 		}
 
@@ -246,8 +248,7 @@ public class TabbedPaneArbeitsplatzparameter extends TabbedPane {
 				panelQueryAuswahl.eventYouAreSelected(false);
 				panelQueryAuswahl.setSelectedId(oKey);
 				panelQueryAuswahl.eventYouAreSelected(false);
-			}
-			if (e.getSource() == panelDetailArbeitsplatzparameter) {
+			} else if (e.getSource() == panelDetailArbeitsplatzparameter) {
 				Object oKey = panelDetailArbeitsplatzparameter
 						.getKeyWhenDetailPanel();
 				panelQueryArbeitsplatzparameter.eventYouAreSelected(false);

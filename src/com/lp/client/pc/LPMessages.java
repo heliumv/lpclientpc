@@ -1,39 +1,40 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
- * 
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
+ *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published 
- * by the Free Software Foundation, either version 3 of theLicense, or 
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of theLicense, or
  * (at your option) any later version.
- * 
- * According to sec. 7 of the GNU Affero General Public License, version 3, 
+ *
+ * According to sec. 7 of the GNU Affero General Public License, version 3,
  * the terms of the AGPL are supplemented with the following terms:
- * 
- * "HELIUM V" and "HELIUM 5" are registered trademarks of 
- * HELIUM V IT-Solutions GmbH. The licensing of the program under the 
+ *
+ * "HELIUM V" and "HELIUM 5" are registered trademarks of
+ * HELIUM V IT-Solutions GmbH. The licensing of the program under the
  * AGPL does not imply a trademark license. Therefore any rights, title and
  * interest in our trademarks remain entirely with us. If you want to propagate
  * modified versions of the Program under the name "HELIUM V" or "HELIUM 5",
- * you may only do so if you have a written permission by HELIUM V IT-Solutions 
+ * you may only do so if you have a written permission by HELIUM V IT-Solutions
  * GmbH (to acquire a permission please contact HELIUM V IT-Solutions
  * at trademark@heliumv.com).
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Affero General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Contact: developers@heliumv.com
  ******************************************************************************/
 package com.lp.client.pc;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -54,8 +55,11 @@ public class LPMessages {
 	private static Map<Integer, String> simpleErrorMsgs = new HashMap<Integer, String>() {
 		private static final long serialVersionUID = 1L;
 		{
-			put(EJBExceptionLP.FEHLER_STATUS,
-					"lp.error.status");
+			put(EJBExceptionLP.FEHLER_FINANZ_KEIN_LAND_IM_KUNDEN,
+					"fb.error.keinlandimkunden");
+			put(EJBExceptionLP.FEHLER_FINANZ_UNGUELTIGE_STEUERBUCHUNG,
+					"fb.error.ungueltigesteuerbuchung");
+			put(EJBExceptionLP.FEHLER_STATUS, "lp.error.status");
 			put(EJBExceptionLP.FEHLER_BELEG_HAT_KEINE_POSITIONEN,
 					"lp.error.beleg.keinemengenbehaftetenpositionen");
 			put(EJBExceptionLP.FEHLER_BEIM_AKTIVIEREN_BELEG_WURDE_GEAENDERT,
@@ -377,8 +381,6 @@ public class LPMessages {
 					"finanz.error.uva.aufganzesjahrnichterlaubt");
 			put(EJBExceptionLP.FEHLER_RAHMENAUFTRAG_IST_IM_STATUS_ANGELEGT,
 					"auft.rahmenauftrag.statuswechsel.angelegtteilerledigt.ungueltig");
-			put(EJBExceptionLP.FEHLER_KEINE_ANZAHLUNGEN_VORHANDEN,
-					"rech.schlussrechnung.keineanzahlungen");
 			put(EJBExceptionLP.FEHLER_ZUSATZKOSTEN_FEHLER_WIEDERHOLUNGERLEDIGT,
 					"er.zusatzkosten.fehler.wiederholungerledigt");
 			put(EJBExceptionLP.FEHLER_KUNDE_ZUSAMMENFUEHREN_NICHT_MOEGLICH_UNTERSCHIEDLICHE_DEBITOREN,
@@ -401,6 +403,56 @@ public class LPMessages {
 					"iv.inseratkunde.loeschennichtmoeglich");
 			put(EJBExceptionLP.FEHLER_EINZELPREIS_NUR_LOESCHBAR_WENN_KEINE_STAFFELN,
 					"artikel.lieferant.einzelpreis.loeschen.error");
+			put(EJBExceptionLP.FEHLER_BUCHUNG_ZWISCHEN_VON_BIS,
+					"zeiterfassung.error.buchungzwischenvonbisvorhanden");
+			put(EJBExceptionLP.FEHLER_BUCHUNG_EINFUEGEN_ZWISCHEN_VON_BIS_NICHT_ERLAUBT,
+					"zeiterfassung.error.einfuegenzwischenvonbisnichterlaubt");
+			put(EJBExceptionLP.FEHLER_ZEITBUCHUNG_AUF_FERTIGEN_ARBEITSGANG_NICHT_MOEGLICH,
+					"fert.zeitbuchung.ag.fertig.error");
+			put(EJBExceptionLP.FEHLER_EINHEIT_C_NR_VPE_IN_ARTIKELLIEFERANT_VORHANDEN,
+					"artikel.error.bestellmengeneinheiten.bereitsvorhanden");
+
+			put(EJBExceptionLP.FEHLER_ANSPRECHPARTNER_EMAIL_NICHT_DEFINIERT,
+					"part.ansprechpartner.email.error1");
+			put(EJBExceptionLP.FEHLER_ANSPRECHPARTNER_EMAIL_NICHT_EINDEUTIG,
+					"part.ansprechpartner.email.error");
+
+			put(EJBExceptionLP.FEHLER_PJ18612_BENUTZER_MUSS_AN_MANDANT_002_ANGEMELDET_SEIN,
+					"lp.error.pj18612");
+
+			put(EJBExceptionLP.FEHLER_PROJEKT_DARF_NICHT_STORNIERT_WERDEN_ZEITEN_VORHANDEN,
+					"proj.error.zeitdatenvorhanden");
+			put(EJBExceptionLP.FEHLER_ZEITBUCHUNG_STORNIERTES_PROJEKT_NICHT_MOEGLICH,
+					"proj.error.zeitbuchungnichtmoeglich.storniert");
+			put(EJBExceptionLP.FEHLER_ZEITBUCHUNG_INTERN_ERLEDIGTES_PROJEKT_NICHT_MOEGLICH,
+					"proj.error.zeitbuchungnichtmoeglich.internerledigt");
+			put(EJBExceptionLP.FEHLER_ZEITBUCHUNG_ANGELEGTES_LOS_NICHT_MOEGLICH,
+					"fert.error.zeitbuchungnichtmoeglich.angelegt");
+			put(EJBExceptionLP.FEHLER_ZEITBUCHUNG_ERLEDIGTES_PROJEKT_NICHT_MOEGLICH,
+					"proj.error.zeitbuchungnichtmoeglich.erledigt");
+			put(EJBExceptionLP.FEHLER_ZEITBUCHUNG_ERLEDIGTES_LOS_NICHT_MOEGLICH,
+					"fert.error.zeitbuchungnichtmoeglich.erledigt");
+			put(EJBExceptionLP.FEHLER_ZEITBUCHUNG_STORNIERTES_ANGEBOT_NICHT_MOEGLICH,
+					"angb.error.zeitbuchungnichtmoeglich.storniert");
+			put(EJBExceptionLP.FEHLER_ZEITBUCHUNG_ERLEDIGTES_ANGEBOT_NICHT_MOEGLICH,
+					"angb.error.zeitbuchungnichtmoeglich.erledigt");
+			put(EJBExceptionLP.FEHLER_ZEITBUCHUNG_GESTOPPTES_LOS_NICHT_MOEGLICH,
+					"fert.error.zeitbuchungnichtmoeglich.gestoppt");
+			put(EJBExceptionLP.FEHLER_ZEITBUCHUNG_STORNIERTES_LOS_NICHT_MOEGLICH,
+					"fert.error.zeitbuchungnichtmoeglich.storniert");
+			put(EJBExceptionLP.FEHLER_ZEITBUCHUNG_ERLEDIGTER_AUFTRAG_NICHT_MOEGLICH,
+					"auft.error.zeitbuchungnichtmoeglich.erledigt");
+			put(EJBExceptionLP.FEHLER_ZEITBUCHUNG_STORNIERTER_AUFTRAG_NICHT_MOEGLICH,
+					"auft.error.zeitbuchungnichtmoeglich.storniert");
+			put(EJBExceptionLP.FEHLER_LIEFERSCHEIN_ANDERN_MANDANT_NACHFUELLEN_MANDANT_KEIN_KUNDE,
+					"ls.fuelle.fehlmengen.anderesmandanten.nach.error.mandantkeinkunde");
+			put(EJBExceptionLP.FEHLER_LIEFERADRESSE_NUR_AENDERBAR_WENN_KEINE_PREISE_ERFASST,
+					"bes.readresse.aendern.error");
+			put(EJBExceptionLP.FEHLER_LAGER_HAUPTLAGERDESMANDANTEN_NICHT_ANGELEGT,
+					"auft.mandant.hauptlager_fehlt");
+			put(EJBExceptionLP.FEHLER_LIEFERSCHEIN_HAT_KEINEN_AUFTRAGSBEZUG,
+					"ls.error.keinauftragsbezug") ;
+			put(EJBExceptionLP.FEHLER_RECHNUNG_UNTERSCHIEDLICHE_MWSTSAETZE_BEI_RC, "rech.fehler.gleichermwstsatznotwendigbeireversecharge") ;
 		}
 	};
 
@@ -409,7 +461,7 @@ public class LPMessages {
 
 		{
 			put(EJBExceptionLP.FEHLER_KONTIERUNG_ZUGEORDNET,
-				"fb.buchungsjournal.export.kontierungaufsteuerkonto");
+					"fb.buchungsjournal.export.kontierungaufsteuerkonto");
 			put(EJBExceptionLP.FEHLER_FINANZ_EXPORT_KEIN_MWSTCODE,
 					"finanz.error.keinmwstcode");
 			put(EJBExceptionLP.FEHLER_ANZAHLUNG_SCHLUSSRECHNUNG_BEREITS_VORHANDEN,
@@ -464,6 +516,13 @@ public class LPMessages {
 					"rech.error.lsinproformadoppeltverrechnet");
 			put(EJBExceptionLP.FEHLER_FINANZ_UNGUELTIGER_BETRAG_ZAHLUNG_VORAUSZAHLUNG,
 					"fb.error.zahlungvorauszahlungsbetrag");
+			put(EJBExceptionLP.FEHLER_JCR_ROOT_EXISTIERT_NICHT,
+					"lp.error.jcrrootnode");
+			put(EJBExceptionLP.FEHLER_RECHNUNG_GS_AUF_ANZAHLUNG_NICHT_MOEGLICH,
+					"rech.error.gsaufanzahlungnichtmoeglich.wennfibu");
+			put(EJBExceptionLP.FEHLER_LIEFERSCHEIN_ENTHAELT_VERKETTETE_LIEFERSCHEINE,
+					"ls.stornieren.nichtmoeglich.enthaelt.verkettete");
+
 		}
 	};
 
@@ -484,9 +543,17 @@ public class LPMessages {
 					"fb.error.buchungaufmitlaufendeskontonichtmoeglich");
 			put(EJBExceptionLP.FEHLER_FINANZ_KONTO_IN_ANDERER_MWST_VERWENDET,
 					"fb.error.kontoinsteuerkategorieinanderermwstvorhanden");
+			put(EJBExceptionLP.FEHLER_FINANZ_KEINE_KONTONUMMER_FUER_BEREICH_VERFUEGBAR,
+					"fb.error.keinekontonummerfuerbereichverfuegbar");
+			put(EJBExceptionLP.FEHLER_FINANZ_KONTONUMMER_AUSSERHALB_DEFINITION,
+					"fb.error.kontonummerausserhalbdeserlaubtenbereiches");
+			put(EJBExceptionLP.FEHLER_POSITION_ZWISCHENSUMME_UNVOLLSTAENDIG,
+					"lp.error.zwsunvollstaendig");
+			put(EJBExceptionLP.FEHLER_FINANZ_GESCHAEFTSJAHR_EXISTIERT_NICHT,
+					"finanz.error.geschaeftsjahrexistiertnicht");
 		}
 	};
-	
+
 	private static Map<Integer, String> causeMessages = new HashMap<Integer, String>() {
 		private static final long serialVersionUID = 1L;
 
@@ -505,6 +572,10 @@ public class LPMessages {
 					"finanz.erorr.keinsteuerkonto");
 			put(EJBExceptionLP.FEHLER_FINANZ_KEIN_SKONTOKONTO,
 					"finanz.error.keinskontokonto");
+			put(EJBExceptionLP.FEHLER_SCRIPT_NICHT_GEFUNDEN,
+					"pers.reisezeiten.kein.script.gefunden");
+			put(EJBExceptionLP.FEHLER_SCRIPT_NICHT_AUSFUEHRBAR,
+					"pers.reisezeiten.script.nicht.ausfuehrbar") ;
 		}
 	};
 
@@ -573,13 +644,14 @@ public class LPMessages {
 		sMsg = sMsg + "\n(" + ec.getCause().getMessage() + ")";
 		return sMsg;
 	}
-	
+
 	protected String getMsgWithArguments(ExceptionLP ec) {
 		String errorToken = argumentMessages.get(ec.getICode());
 		if (errorToken == null)
 			return errorToken;
 
-		return LPMain.getMessageTextRespectUISPr(errorToken, ec.getAlInfoForTheClient().toArray());
+		return LPMain.getMessageTextRespectUISPr(errorToken, ec
+				.getAlInfoForTheClient().toArray());
 	}
 
 	protected String getMsgWithExceptionMessage(ExceptionLP ec) {
@@ -613,7 +685,7 @@ public class LPMessages {
 		sMsg = getMsgWithCauseMessage(ec);
 		if (null != sMsg)
 			return sMsg;
-		
+
 		sMsg = getMsgWithArguments(ec);
 		if (null != sMsg)
 			return sMsg;
@@ -646,16 +718,15 @@ public class LPMessages {
 						+ LPMain.getTextRespectUISPr("artikel.artikelnummer");
 
 				sMsg += ": " + al.get(0);
-				
-				
-				//SP1943 Wenn SnrChnr angegeben
-				
-				if(al.size() > 1) {
+
+				// SP1943 Wenn SnrChnr angegeben
+
+				if (al.size() > 1) {
 					sMsg += " ("
-							+ LPMain.getTextRespectUISPr("lp.seriennrchargennr")+": "+al.get(1)+")";
+							+ LPMain.getTextRespectUISPr("lp.seriennrchargennr")
+							+ ": " + al.get(1) + ")";
 				}
-				
-				
+
 			}
 			break;
 		}
@@ -670,6 +741,25 @@ public class LPMessages {
 
 			break;
 		}
+		case EJBExceptionLP.FEHLER_SERIENNUMMER_ENTHAELT_NICHT_NUMERISCHE_ZEICHEN: {
+			sMsg = LPMain
+					.getTextRespectUISPr("lp.error.zeicheninsnrnummernichterlaubt");
+
+			if (ec.getAlInfoForTheClient() != null) {
+				sMsg = sMsg + " (" + ec.getAlInfoForTheClient().get(1) + " '"
+						+ ec.getAlInfoForTheClient().get(0) + "')";
+			}
+			break;
+		}
+		case EJBExceptionLP.FEHLER_FERTIGUNG_HILFSSTUECKLISTE_DARF_KEINE_SOLLPOSITION_SEIN: {
+			sMsg = LPMain
+					.getTextRespectUISPr("fert.sollarbeitsplan.error.hilsstueckliste");
+			if (ec.getAlInfoForTheClient() != null) {
+				sMsg = sMsg + " (" + ec.getAlInfoForTheClient().get(0) + ")";
+			}
+			break;
+		}
+
 		case EJBExceptionLP.FEHLER_PERSONAL_ZEICHEN_IN_PERSONALNUMMER_NICHT_ERLAUBT: {
 			sMsg = LPMain
 					.getTextRespectUISPr("lp.error.zeicheninpersonalnummernichterlaubt");
@@ -682,6 +772,17 @@ public class LPMessages {
 			break;
 		}
 
+		case EJBExceptionLP.FEHLER_FERTIGUNG_MATERIAL_VOLLSTAENDIG: {
+			sMsg = LPMain
+					.getTextRespectUISPr("fert.los.materialvollstaendig.error");
+
+			if (ec.getAlInfoForTheClient() != null) {
+				sMsg = sMsg + " (Los: " + ec.getAlInfoForTheClient().get(0)
+						+ ") ";
+			}
+
+			break;
+		}
 		case EJBExceptionLP.FEHLER_ARTIKEL_ARTIKELNUMMER_ZU_KURZ: {
 			sMsg = LPMain.getTextRespectUISPr("lp.error.artikelnrzukurz");
 
@@ -694,11 +795,42 @@ public class LPMessages {
 			break;
 		}
 		case EJBExceptionLP.FEHLER_EINHEITKONVERTIERUNG_KEIN_DIVISOR_DEFINIERT: {
-			sMsg = LPMain.getTextRespectUISPr("system.error.keindivisorfuereinheit");
+			sMsg = LPMain
+					.getTextRespectUISPr("system.error.keindivisorfuereinheit");
 
 			if (ec.getAlInfoForTheClient() != null) {
-				sMsg = sMsg + ": "
-						+ ec.getAlInfoForTheClient().get(0);
+				sMsg = sMsg + ": " + ec.getAlInfoForTheClient().get(0);
+			}
+
+			break;
+		}
+		case EJBExceptionLP.FEHLER_LIEFERSCHEIN_IST_VERKETTET: {
+			sMsg = LPMain
+					.getTextRespectUISPr("ls.stornieren.nichtmoeglich.istverkettet");
+
+			if (ec.getAlInfoForTheClient() != null) {
+				sMsg = sMsg + ": " + ec.getAlInfoForTheClient().get(0);
+			}
+
+			break;
+		}
+		case EJBExceptionLP.FEHLER_LIEFERSCHEIN_IST_BEREITS_VERKETTET: {
+			sMsg = LPMain
+					.getTextRespectUISPr("ls.verketten.nichtmoeglich.istverkettet");
+
+			if (ec.getAlInfoForTheClient() != null) {
+				sMsg = sMsg + " " + ec.getAlInfoForTheClient().get(0);
+			}
+
+			break;
+		}
+
+		case EJBExceptionLP.FEHLER_PARTNERART_DARF_NICHT_GELOESCHT_GEAENDERT_WERDEN: {
+			sMsg = LPMain
+					.getTextRespectUISPr("part.error.partnerart.darf.nicht.geloeschtwerden");
+
+			if (ec.getAlInfoForTheClient() != null) {
+				sMsg = sMsg + " " + ec.getAlInfoForTheClient().get(0);
 			}
 
 			break;
@@ -772,6 +904,17 @@ public class LPMessages {
 
 		}
 			break;
+		case EJBExceptionLP.FEHLER_SONDERZEITENIMPORT_DOPPELTER_EINTRAG: {
+			sMsg = LPMain
+					.getTextRespectUISPr("pers.sondrzeitenimport.error.doppelt");
+
+			ArrayList<?> al = ec.getAlInfoForTheClient();
+			if (al != null && al.size() > 0) {
+				sMsg += al.get(0);
+			}
+
+		}
+			break;
 		case EJBExceptionLP.FEHLER_IN_ZEITDATEN: {
 			try {
 				ArrayList<?> al = ec.getAlInfoForTheClient();
@@ -841,16 +984,6 @@ public class LPMessages {
 					+ " " + ec.getMessage();
 			break;
 		}
-		case EJBExceptionLP.FEHLER_PROJEKT_DARF_NICHT_STORNIERT_WERDEN_ZEITEN_VORHANDEN: {
-			sMsg = LPMain.getTextRespectUISPr("proj.error.zeitdatenvorhanden");
-			break;
-		}
-		case EJBExceptionLP.FEHLER_ZEITBUCHUNG_STORNIERTES_PROJEKT_NICHT_MOEGLICH: {
-			sMsg = LPMain
-					.getTextRespectUISPr("proj.error.zeitbuchungnichtmoeglich.storniert");
-			break;
-		}
-
 		case EJBExceptionLP.FEHLER_FINANZ_EXPORT_MEHRERE_FINANZAEMTER: {
 			sMsg = LPMain.getTextRespectUISPr("fb.mehrerefinanzaemter");
 			sMsg += "\n(" + ec.getCause().getMessage() + ")";
@@ -878,8 +1011,30 @@ public class LPMessages {
 			break;
 		}
 
+		case EJBExceptionLP.FEHLER_STORNIEREN_ANZAHLUNG_SCHLUSSRECHNUNG_VORHANDEN: {
+			sMsg = LPMain
+					.getTextRespectUISPr("rech.anhzahlung.stornieren.error")
+					+ " ";
+			for (Iterator<?> iter = ec.getAlInfoForTheClient().iterator(); iter
+					.hasNext();) {
+				String item = (String) iter.next();
+				sMsg = sMsg + item + "\n";
+			}
+			break;
+		}
+
 		case EJBExceptionLP.FEHLER_IMPORT_STUECKLISTENIMPORT_ALLGEMEIN: {
 			sMsg = LPMain.getTextRespectUISPr("stkl.import.fehler.allgemein");
+			for (Iterator<?> iter = ec.getAlInfoForTheClient().iterator(); iter
+					.hasNext();) {
+				String item = (String) iter.next();
+				sMsg = sMsg + "\n" + item;
+			}
+			break;
+		}
+		case EJBExceptionLP.FEHLER_LIEFERSCHEIN_BEREITS_IN_PROFORMARECHNUNG: {
+			sMsg = LPMain
+					.getTextRespectUISPr("rech.error.ls.bereitsin.proformarechnung");
 			for (Iterator<?> iter = ec.getAlInfoForTheClient().iterator(); iter
 					.hasNext();) {
 				String item = (String) iter.next();
@@ -985,6 +1140,17 @@ public class LPMessages {
 					+ ": " + ec.getAlInfoForTheClient().get(0);
 			break;
 		}
+		case EJBExceptionLP.FEHLER_CHARGENNUMMERNGENERATOR_UNGUELTIGE_ZEICHEN: {
+			sMsg = LPMain.getTextRespectUISPr("fert.chargengenerator.error")
+					+ ": " + ec.getAlInfoForTheClient().get(0);
+			break;
+		}
+		case EJBExceptionLP.FEHLER_CHARGENNUMMER_NICHT_NUMERISCH: {
+			sMsg = LPMain
+					.getTextRespectUISPr("fert.chargennummernichtnumerisch.error")
+					+ ": " + ec.getAlInfoForTheClient().get(0);
+			break;
+		}
 
 		case EJBExceptionLP.FEHLER_BESTELLUNG_WEPOS_PREIS_NOCH_NICHT_ERFASST: {
 			sMsg = LPMain.getTextRespectUISPr("bes.error.preisnichterfasst");
@@ -993,6 +1159,44 @@ public class LPMessages {
 			if (al != null && al.size() > 0) {
 				sMsg += " Lieferscheinnummer: " + al.get(0)
 						+ ", Positionsnummer: " + al.get(1);
+			}
+
+			break;
+		}
+		case EJBExceptionLP.FEHLER_ZEITEN_BEREITS_ABGESCHLOSSEN: {
+			sMsg = LPMain
+					.getTextRespectUISPr("pers.zeiterfassung.zeitenbereitsabgeschlossen.bis");
+
+			ArrayList<?> al = ec.getAlInfoForTheClient();
+			if (al != null && al.size() > 0) {
+
+				try {
+					MessageFormat mf = new MessageFormat(
+							LPMain.getTextRespectUISPr("pers.zeiterfassung.zeitenbereitsabgeschlossen.bis"));
+					mf.setLocale(LPMain.getTheClient().getLocUi());
+
+					Calendar c = Calendar.getInstance();
+					c.setTimeInMillis(((java.sql.Timestamp) al.get(0))
+							.getTime());
+					c.get(Calendar.WEEK_OF_YEAR);
+					Object pattern[] = { c.get(Calendar.WEEK_OF_YEAR) };
+
+					sMsg = mf.format(pattern);
+				} catch (Throwable e) {
+					e.printStackTrace();
+				}
+
+			}
+
+			break;
+		}
+		case EJBExceptionLP.FEHLER_FLRDRUCK_SPALTE_NICHT_VORHANDEN: {
+			sMsg = LPMain
+					.getTextRespectUISPr("lp.error.flrdruck.spaltenichtvorhanden");
+
+			ArrayList<?> al = ec.getAlInfoForTheClient();
+			if (al != null && al.size() > 0) {
+				sMsg += " " + al.get(0);
 			}
 
 			break;
@@ -1073,11 +1277,25 @@ public class LPMessages {
 
 		case EJBExceptionLP.FEHLER_FINANZ_GESCHAEFTSJAHR_GESPERRT: {
 			Object jahr = null;
-			if(ec.getAlInfoForTheClient() != null && ec.getAlInfoForTheClient().size() > 0)
+			if (ec.getAlInfoForTheClient() != null
+					&& ec.getAlInfoForTheClient().size() > 0)
 				jahr = ec.getAlInfoForTheClient().get(0);
-			
+
 			sMsg = LPMain.getMessageTextRespectUISPr(
 					"finanz.error.geschaeftsjahrgesperrt", jahr);
+			break;
+		}
+		case EJBExceptionLP.FEHLER_ALLE_LOSE_BERUECKSICHTIGEN_UND_SAMMELLIEFERSCHIEN_MEHRERE_AUFTRAEGE: {
+			Object auftrag = null;
+			if (ec.getAlInfoForTheClient() != null
+					&& ec.getAlInfoForTheClient().size() > 0)
+				auftrag = ec.getAlInfoForTheClient().get(0);
+			MessageFormat mf = new MessageFormat(
+					LPMain.getTextRespectUISPr("auftrag.nachkalkulation.allels.andererauftrag.error"));
+
+			Object pattern[] = { auftrag };
+
+			sMsg = mf.format(pattern);
 			break;
 		}
 		case EJBExceptionLP.FEHLER_FERTIGUNG_FERTIGUNGSGRUPPE_SOFORTVERBRAUCH_NICHT_VORHANDEN: {
@@ -1098,6 +1316,13 @@ public class LPMessages {
 
 		case EJBExceptionLP.FEHLER_BEIM_LOESCHEN: {
 			sMsg = getMsgFehlerBeimLoeschen(ec);
+			break;
+		}
+
+		case EJBExceptionLP.FEHLER_FINANZ_DATUM_NICHT_LETZTER_TAG_DES_MONATS: {
+			sMsg = LPMain.getMessageTextRespectUISPr(
+					"finanz.error.buchungsdatum.nichtletztertag",
+					ec.getMessage());
 			break;
 		}
 

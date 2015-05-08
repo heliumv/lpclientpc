@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -74,7 +74,9 @@ import com.lp.client.pc.LPMain;
 import com.lp.client.system.SystemFilterFactory;
 import com.lp.server.anfrage.service.AnfrageDto;
 import com.lp.server.anfrage.service.AnfrageServiceFac;
+import com.lp.server.anfrage.service.AnfrageerledigungsgrundDto;
 import com.lp.server.anfrage.service.AnfragetextDto;
+import com.lp.server.angebot.service.AngeboterledigungsgrundDto;
 import com.lp.server.bestellung.service.BestellungDto;
 import com.lp.server.partner.service.AnsprechpartnerDto;
 import com.lp.server.partner.service.LfliefergruppeDto;
@@ -172,6 +174,9 @@ public class PanelAnfrageKopfdaten extends PanelBasis {
 	private WrapperSelectField wsfProjekt = new WrapperSelectField(
 			WrapperSelectField.PROJEKT, getInternalFrame(), true);
 
+	private WrapperLabel wlaAnfrageerledigungsgrund = null;
+	private WrapperTextField wtfAnfrageerledigungsgrund = null;
+
 	private Map<?, ?> tmWaehrungen = null;
 
 	public PanelAnfrageKopfdaten(InternalFrame internalFrame,
@@ -195,7 +200,9 @@ public class PanelAnfrageKopfdaten extends PanelBasis {
 
 		// Actionpanel setzen und anhaengen
 		JPanel panelButtonAction = getToolsPanel();
-		add(panelButtonAction, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.NORTHWEST, GridBagConstraints.NONE, new Insets(0, 0, 0, 0), 0, 0));
+		add(panelButtonAction, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
+				GridBagConstraints.NORTHWEST, GridBagConstraints.NONE,
+				new Insets(0, 0, 0, 0), 0, 0));
 
 		// zusaetzliche Buttons auf das Actionpanel setzen
 		String[] aWhichButtonIUse = { PanelBasis.ACTION_UPDATE,
@@ -206,10 +213,14 @@ public class PanelAnfrageKopfdaten extends PanelBasis {
 		// Workingpanel
 		jPanelWorkingOn = new JPanel();
 		jPanelWorkingOn.setLayout(new GridBagLayout());
-		add(jPanelWorkingOn, new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0, GridBagConstraints.SOUTH, GridBagConstraints.BOTH, new Insets(0, 0, 0, 0), 0, 0));
+		add(jPanelWorkingOn, new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0,
+				GridBagConstraints.SOUTH, GridBagConstraints.BOTH, new Insets(
+						0, 0, 0, 0), 0, 0));
 
 		// Statusbar an den unteren Rand des Panels haengen
-		add(getPanelStatusbar(), new GridBagConstraints(0, 2, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(0, 0, 0, 0), 0, 0));
+		add(getPanelStatusbar(), new GridBagConstraints(0, 2, 1, 1, 1.0, 0.0,
+				GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(
+						0, 0, 0, 0), 0, 0));
 
 		// wegen Dialogauswahl auf FLR events hoeren
 		getInternalFrame().addItemChangedListener(this);
@@ -348,34 +359,67 @@ public class PanelAnfrageKopfdaten extends PanelBasis {
 		wtfLiefergruppenanfrage.setColumnsMax(Facade.MAX_UNBESCHRAENKT);
 		wtfLiefergruppenanfrage.setActivatable(false);
 
+		wlaAnfrageerledigungsgrund = new WrapperLabel(LPMain.getInstance()
+				.getTextRespectUISPr("anf.erledigungsgrund"));
+		wtfAnfrageerledigungsgrund = new WrapperTextField();
+		wtfAnfrageerledigungsgrund.setActivatable(false);
+
 		// Zeile
-		jPanelWorkingOn.add(wlaAnfrageart, new GridBagConstraints(0, iZeile, 1, 1, 0.3, 0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH, new Insets(2, 2, 10, 2), 0, 0));
-		jPanelWorkingOn.add(wcoAnfrageart, new GridBagConstraints(1, iZeile, 1, 1, 0.5, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2, 2, 10, 2), 0, 0));
-		jPanelWorkingOn.add(wlaBelegdatum, new GridBagConstraints(2, iZeile, 1, 1, 0.3, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2, 2, 10, 2), 0, 0));
-		jPanelWorkingOn.add(wdfBelegdatum, new GridBagConstraints(3, iZeile, 1, 1, 0.2, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2, 2, 10, 2), 0, 0));
+		jPanelWorkingOn.add(wlaAnfrageart, new GridBagConstraints(0, iZeile, 1,
+				1, 0.3, 0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
+				new Insets(2, 2, 10, 2), 0, 0));
+		jPanelWorkingOn.add(wcoAnfrageart, new GridBagConstraints(1, iZeile, 1,
+				1, 0.5, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(2, 2, 10, 2), 0, 0));
+		jPanelWorkingOn.add(wlaBelegdatum, new GridBagConstraints(2, iZeile, 1,
+				1, 0.3, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(2, 2, 10, 2), 0, 0));
+		jPanelWorkingOn.add(wdfBelegdatum, new GridBagConstraints(3, iZeile, 1,
+				1, 0.2, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(2, 2, 10, 2), 0, 0));
 
 		iZeile++;
-		jPanelWorkingOn.add(jpaLieferant, new GridBagConstraints(0, iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wtfLieferant, new GridBagConstraints(1, iZeile, 3, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+		jPanelWorkingOn.add(jpaLieferant, new GridBagConstraints(0, iZeile, 1,
+				1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
+				new Insets(2, 2, 2, 2), 0, 0));
+		jPanelWorkingOn.add(wtfLieferant, new GridBagConstraints(1, iZeile, 3,
+				1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
 
 		iZeile++;
-		jPanelWorkingOn.add(wtfLieferantAdresse, new GridBagConstraints(1, iZeile, 3, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+		jPanelWorkingOn.add(wtfLieferantAdresse, new GridBagConstraints(1,
+				iZeile, 3, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
 
 		iZeile++;
-		jPanelWorkingOn.add(wlaLieferantAbteilung, new GridBagConstraints(0, iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wtfLieferantAbteilung, new GridBagConstraints(1, iZeile, 3, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+		jPanelWorkingOn.add(wlaLieferantAbteilung, new GridBagConstraints(0,
+				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+		jPanelWorkingOn.add(wtfLieferantAbteilung, new GridBagConstraints(1,
+				iZeile, 3, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
 
 		iZeile++;
-		jPanelWorkingOn.add(wbuAnsprechpartner, new GridBagConstraints(0, iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wtfAnsprechpartner, new GridBagConstraints(1, iZeile, 3, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+		jPanelWorkingOn.add(wbuAnsprechpartner, new GridBagConstraints(0,
+				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+		jPanelWorkingOn.add(wtfAnsprechpartner, new GridBagConstraints(1,
+				iZeile, 3, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
 
 		iZeile++;
-		jPanelWorkingOn.add(wbuLiefergruppe, new GridBagConstraints(0, iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wtfLiefergruppe, new GridBagConstraints(1, iZeile, 3, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+		jPanelWorkingOn.add(wbuLiefergruppe, new GridBagConstraints(0, iZeile,
+				1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+		jPanelWorkingOn.add(wtfLiefergruppe, new GridBagConstraints(1, iZeile,
+				3, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
 
 		iZeile++;
 
-		jPanelWorkingOn.add(wlaProjekt, new GridBagConstraints(0, iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(10, 2, 2, 2), 0, 0));
+		jPanelWorkingOn.add(wlaProjekt, new GridBagConstraints(0, iZeile, 1, 1,
+				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
+				new Insets(10, 2, 2, 2), 0, 0));
 
 		if (LPMain
 				.getInstance()
@@ -383,46 +427,89 @@ public class PanelAnfrageKopfdaten extends PanelBasis {
 				.darfAnwenderAufZusatzfunktionZugreifen(
 						MandantFac.ZUSATZFUNKTION_PROJEKTKLAMMER)) {
 
-			jPanelWorkingOn.add(wtfProjekt, new GridBagConstraints(1, iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(10, 2, 2, 2), 0, 0));
+			jPanelWorkingOn.add(wtfProjekt, new GridBagConstraints(1, iZeile,
+					1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+					GridBagConstraints.BOTH, new Insets(10, 2, 2, 2), 0, 0));
 
 			jPanelWorkingOn.add(wsfProjekt.getWrapperGotoButton(),
-					new GridBagConstraints(2, iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(10, 2, 2, 2), 0, 0));
+					new GridBagConstraints(2, iZeile, 1, 1, 0.0, 0.0,
+							GridBagConstraints.CENTER, GridBagConstraints.BOTH,
+							new Insets(10, 2, 2, 2), 0, 0));
 			jPanelWorkingOn.add(wsfProjekt.getWrapperTextField(),
-					new GridBagConstraints(3, iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(10, 2, 2, 2), 0, 0));
+					new GridBagConstraints(3, iZeile, 1, 1, 0.0, 0.0,
+							GridBagConstraints.CENTER, GridBagConstraints.BOTH,
+							new Insets(10, 2, 2, 2), 0, 0));
 
 		} else {
 
-			jPanelWorkingOn.add(wtfProjekt, new GridBagConstraints(1, iZeile, 3, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(10, 2, 2, 2), 0, 0));
+			jPanelWorkingOn.add(wtfProjekt, new GridBagConstraints(1, iZeile,
+					3, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+					GridBagConstraints.BOTH, new Insets(10, 2, 2, 2), 0, 0));
 		}
 
 		// Zeile
 		iZeile++;
-		jPanelWorkingOn.add(wlaWaehrung, new GridBagConstraints(0, iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wcbWaehrung, new GridBagConstraints(1, iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wlaKurs, new GridBagConstraints(2, iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wnfKurs, new GridBagConstraints(3, iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+		jPanelWorkingOn.add(wlaWaehrung, new GridBagConstraints(0, iZeile, 1,
+				1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+		jPanelWorkingOn.add(wcbWaehrung, new GridBagConstraints(1, iZeile, 1,
+				1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+		jPanelWorkingOn.add(wlaKurs, new GridBagConstraints(2, iZeile, 1, 1,
+				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
+				new Insets(2, 2, 2, 2), 0, 0));
+		jPanelWorkingOn.add(wnfKurs, new GridBagConstraints(3, iZeile, 1, 1,
+				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
+				new Insets(2, 2, 2, 2), 0, 0));
 
 		// Zeile
 		iZeile++;
-		jPanelWorkingOn.add(wlaAnliefertermin, new GridBagConstraints(0, iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wdfAnliefertermin, new GridBagConstraints(1, iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+		jPanelWorkingOn.add(wlaAnliefertermin, new GridBagConstraints(0,
+				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+		jPanelWorkingOn.add(wdfAnliefertermin, new GridBagConstraints(1,
+				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
 
 		// Zeile
 		iZeile++;
-		jPanelWorkingOn.add(wbuKostenstelle, new GridBagConstraints(0, iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wtfKostenstelle, new GridBagConstraints(1, iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+		jPanelWorkingOn.add(wbuKostenstelle, new GridBagConstraints(0, iZeile,
+				1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+		jPanelWorkingOn.add(wtfKostenstelle, new GridBagConstraints(1, iZeile,
+				1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+		iZeile++;
+		jPanelWorkingOn.add(wlaAnfrageerledigungsgrund, new GridBagConstraints(
+				0, iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+		jPanelWorkingOn.add(wtfAnfrageerledigungsgrund, new GridBagConstraints(
+				1, iZeile, 3, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
 
 		iZeile++;
-		jPanelWorkingOn.add(wlaBestellungen, new GridBagConstraints(0, iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wtaBestellungen, new GridBagConstraints(1, iZeile, 3, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+		jPanelWorkingOn.add(wlaBestellungen, new GridBagConstraints(0, iZeile,
+				1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+		jPanelWorkingOn.add(wtaBestellungen, new GridBagConstraints(1, iZeile,
+				3, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
 
 		iZeile++;
-		jPanelWorkingOn.add(wlaErzeugteAnfragen, new GridBagConstraints(0, iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wtaErzeugteAnfragen, new GridBagConstraints(1, iZeile, 3, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+		jPanelWorkingOn.add(wlaErzeugteAnfragen, new GridBagConstraints(0,
+				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+		jPanelWorkingOn.add(wtaErzeugteAnfragen, new GridBagConstraints(1,
+				iZeile, 3, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
 
 		iZeile++;
-		jPanelWorkingOn.add(wlaLiefergruppenanfrage, new GridBagConstraints(0, iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wtfLiefergruppenanfrage, new GridBagConstraints(1, iZeile, 3, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+		jPanelWorkingOn.add(wlaLiefergruppenanfrage, new GridBagConstraints(0,
+				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+		jPanelWorkingOn.add(wtfLiefergruppenanfrage, new GridBagConstraints(1,
+				iZeile, 3, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
 	}
 
 	public void setDefaults() throws Throwable {
@@ -799,6 +886,20 @@ public class PanelAnfrageKopfdaten extends PanelBasis {
 
 			wsfProjekt.setKey(tpAnfrage.getAnfrageDto().getProjektIId());
 
+			if (tpAnfrage.getAnfrageDto().getAnfrageerledigungsgrundIId() != null) {
+
+				AnfrageerledigungsgrundDto grundDto = DelegateFactory
+						.getInstance()
+						.getAnfrageServiceDelegate()
+						.anfrageerledigungsgrundFindByPrimaryKey(
+								tpAnfrage.getAnfrageDto()
+										.getAnfrageerledigungsgrundIId());
+
+				wtfAnfrageerledigungsgrund.setText(grundDto.getCBez());
+			} else {
+				wtfAnfrageerledigungsgrund.setText(null);
+			}
+
 			aktualisiereStatusbar();
 		}
 	}
@@ -1040,7 +1141,9 @@ public class PanelAnfrageKopfdaten extends PanelBasis {
 							.getLieferantDelegate()
 							.pruefeLieferant(
 									tpAnfrage.getAnfrageDto()
-											.getLieferantIIdAnfrageadresse());
+											.getLieferantIIdAnfrageadresse(),
+									LocaleFac.BELEGART_ANFRAGE,
+									getInternalFrame());
 				}
 			} else {
 				boolean bUpdate = true;
@@ -1096,11 +1199,12 @@ public class PanelAnfrageKopfdaten extends PanelBasis {
 							.getAnfrageDelegate()
 							.updateAnfrage(
 									tpAnfrage.getAnfrageDto(),
+									true,
 									waehrungOriDto == null ? null
 											: waehrungOriDto.getCNr());
 				}
 			}
-
+			setKeyWhenDetailPanel(tpAnfrage.getAnfrageDto().getIId());
 			super.eventActionSave(e, true);
 
 			eventYouAreSelected(false);
@@ -1355,7 +1459,15 @@ public class PanelAnfrageKopfdaten extends PanelBasis {
 						wbuAnsprechpartner.setEnabled(true);
 						wbuKostenstelle.setEnabled(true);
 
-						jpaLieferant.setEnabled(false);
+						if (tpAnfrage
+								.getAnfrageDto()
+								.getStatusCNr()
+								.equals(AnfrageServiceFac.ANFRAGESTATUS_ANGELEGT)) {
+							jpaLieferant.setEnabled(true);
+						} else {
+							jpaLieferant.setEnabled(false);
+						}
+
 						wtfLieferant.setMandatoryField(false);
 						wbuLiefergruppe.setEnabled(false);
 						wtfLiefergruppe.setMandatoryField(false);
@@ -1429,14 +1541,6 @@ public class PanelAnfrageKopfdaten extends PanelBasis {
 
 		if (tpAnfrage.getAnfrageDto().getIId() != null) {
 			if (tpAnfrage.getAnfrageDto().getStatusCNr()
-					.equals(AnfrageServiceFac.ANFRAGESTATUS_ANGELEGT)
-					&& tpAnfrage.getAnfrageDto().getArtCNr()
-							.equals(AnfrageServiceFac.ANFRAGEART_LIEFERANT)) {
-				// Button Stornieren ist im Status Angelegt nicht verfuegbar, in
-				// diesen Faellen wird ein echtes Update ausgeloest
-				lockStateValue = new LockStateValue(
-						PanelBasis.LOCK_ENABLE_REFRESHANDUPDATEANDPRINT_ONLY);
-			} else if (tpAnfrage.getAnfrageDto().getStatusCNr()
 					.equals(AnfrageServiceFac.ANFRAGESTATUS_OFFEN)
 					&& tpAnfrage.getAnfrageDto().getArtCNr()
 							.equals(AnfrageServiceFac.ANFRAGEART_LIEFERGRUPPE)) {
@@ -1460,6 +1564,11 @@ public class PanelAnfrageKopfdaten extends PanelBasis {
 					lockStateValue = new LockStateValue(
 							PanelBasis.LOCK_ENABLE_REFRESHANDUPDATEANDPRINT_ONLY);
 				}
+			} else if (tpAnfrage.getAnfrageDto().getStatusCNr()
+					.equals(AnfrageServiceFac.ANFRAGESTATUS_OFFEN)
+					&& tpAnfrage.getAnfrageDto().getCAngebotnummer() != null) {
+				lockStateValue = new LockStateValue(
+						PanelBasis.LOCK_ENABLE_REFRESHANDPRINT_ONLY);
 			}
 		}
 

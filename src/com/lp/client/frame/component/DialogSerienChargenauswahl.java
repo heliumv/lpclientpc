@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -40,6 +40,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.math.BigDecimal;
@@ -65,6 +67,7 @@ import javax.swing.event.TableModelListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableColumn;
 
+import com.lp.client.frame.Defaults;
 import com.lp.client.frame.ExceptionLP;
 import com.lp.client.frame.HelperClient;
 import com.lp.client.frame.NumberColumnFormat;
@@ -74,20 +77,25 @@ import com.lp.client.lieferschein.InternalFrameLieferschein;
 import com.lp.client.pc.LPMain;
 import com.lp.server.artikel.service.ArtikelDto;
 import com.lp.server.artikel.service.SeriennrChargennrMitMengeDto;
+import com.lp.server.system.service.PanelFac;
+import com.lp.server.system.service.PanelbeschreibungDto;
 import com.lp.server.system.service.ParameterFac;
 import com.lp.server.system.service.ParametermandantDto;
+import com.lp.util.BigDecimal3;
 import com.lp.util.BigDecimal4;
 import com.lp.util.EJBExceptionLP;
 import com.lp.util.Helper;
 
 @SuppressWarnings("static-access")
 public class DialogSerienChargenauswahl extends JDialog implements
-		ActionListener, KeyListener, TableModelListener {
+		ActionListener, KeyListener, TableModelListener, MouseListener {
 
 	private static final long serialVersionUID = 1L;
 	private String ACTION_NEW_FROM_LAGER = "action_new_from_lager";
 	private String ACTION_DELETE = "action_delete";
 	private String ACTION_ADD_FROM_HAND = "ACTION_ADD_FROM_HAND";
+	private String ACTION_NEUER_SNR_VORSCHLAG = "ACTION_NEUER_SNR_VORSCHLAG";
+	private String ACTION_RUECKGABE = "action_rueckgabe";
 
 	ArtikelDto artikelDto = null;
 	JPanel panel1 = new JPanel();
@@ -98,12 +106,16 @@ public class DialogSerienChargenauswahl extends JDialog implements
 
 	JScrollPane jScrollPane1 = new JScrollPane();
 	WrapperTableEditable jTableSnrChnrs = new WrapperTableEditable();
+	JLabel wlaVersion = new JLabel(
+			LPMain.getTextRespectUISPr("artikel.lager.version"));
 	JButton jButtonUebernehmen = new JButton();
 	JLabel jLabelGesamtMenge = new JLabel();
 	JLabel jLabelBenoetigt = new JLabel();
 	WrapperNumberField wnfSnrchnr = null;
+	public WrapperTextField wtfVersion = new WrapperTextField(40);
 	public WrapperSNRField tfSnrchnr = null;
 	public WrapperCheckBox wcbRueckgabe = new WrapperCheckBox();
+	public WrapperCheckBox wcbAutomatik = new WrapperCheckBox();
 	private WrapperDateField wdfMHD = new WrapperDateField();
 
 	String[] colNames = null;
@@ -113,8 +125,22 @@ public class DialogSerienChargenauswahl extends JDialog implements
 	Integer lagerIId = null;
 	InternalFrame internalFrame = null;
 	private boolean bMindesthaltbarkeitsdatum = false;
+	private boolean bVersionMitangeben = false;
 	private boolean bFuehrendeNullenWegschneiden = false;
+	private boolean bZugang = false;
 	boolean selektierteNichtAnzeigen = false;
+	int iNachkommastelleMenge = 3;
+	private BigDecimal bdBenoetigteMenge = null;
+
+	public void setBdBenoetigteMenge(BigDecimal bdBenoetigteMenge)
+			throws Throwable {
+		this.bdBenoetigteMenge = bdBenoetigteMenge;
+		getLabelBenoetigt().setText(
+				"Ben\u00F6tigt: "
+						+ Helper.formatZahl(bdBenoetigteMenge, 4, LPMain
+								.getTheClient().getLocUi()));
+
+	}
 
 	public JLabel getLabelBenoetigt() {
 		return jLabelBenoetigt;
@@ -123,10 +149,14 @@ public class DialogSerienChargenauswahl extends JDialog implements
 	public DialogSerienChargenauswahl(Integer artikelIId, Integer lagerIId,
 			List<SeriennrChargennrMitMengeDto> alSeriennummern,
 			boolean bMultiselection, boolean selektierteNichtAnzeigen,
-			InternalFrame internalFrame, WrapperNumberField wnfBeleg)
-			throws Throwable {
+			InternalFrame internalFrame, WrapperNumberField wnfBeleg,
+			boolean bZugang) throws Throwable {
 		super(LPMain.getInstance().getDesktop(), "", true);
 		this.selektierteNichtAnzeigen = selektierteNichtAnzeigen;
+		this.bZugang = bZugang;
+
+		iNachkommastelleMenge = Defaults.getInstance()
+				.getIUINachkommastellenMenge();
 
 		if (alSeriennummern != null) {
 
@@ -169,6 +199,17 @@ public class DialogSerienChargenauswahl extends JDialog implements
 		if (parameter.getCWert() != null && !parameter.getCWert().equals("0")) {
 			bFuehrendeNullenWegschneiden = true;
 		}
+
+		parameter = (ParametermandantDto) DelegateFactory
+				.getInstance()
+				.getParameterDelegate()
+				.getParametermandant(
+						ParameterFac.PARAMETER_VERSION_BEI_SNR_MITANGEBEN,
+						ParameterFac.KATEGORIE_ARTIKEL,
+						LPMain.getInstance().getTheClient().getMandant());
+
+		bVersionMitangeben = (Boolean) parameter.getCWertAsObject();
+
 		artikelDto = DelegateFactory.getInstance().getArtikelDelegate()
 				.artikelFindByPrimaryKey(artikelIId);
 
@@ -176,8 +217,18 @@ public class DialogSerienChargenauswahl extends JDialog implements
 				+ artikelDto.formatArtikelbezeichnung());
 
 		if (Helper.short2Boolean(artikelDto.getBSeriennrtragend())) {
-			colNames = new String[] { LPMain.getInstance().getTextRespectUISPr(
-					"artikel.seriennummer") };
+
+			if (bVersionMitangeben == true) {
+				colNames = new String[] {
+						LPMain.getInstance().getTextRespectUISPr(
+								"artikel.seriennummer"),
+						LPMain.getInstance().getTextRespectUISPr(
+								"artikel.lager.version") };
+			} else {
+				colNames = new String[] { LPMain.getInstance()
+						.getTextRespectUISPr("artikel.seriennummer") };
+			}
+
 		} else {
 			colNames = new String[] {
 					LPMain.getInstance().getTextRespectUISPr(
@@ -253,14 +304,20 @@ public class DialogSerienChargenauswahl extends JDialog implements
 										.getValueAt(i, 1));
 					}
 					if (jTableSnrChnrs.getModel().getValueAt(i, 1) instanceof Double) {
+
 						alSeriennummern.get(i).setNMenge(
-								new BigDecimal4((Double) jTableSnrChnrs
-										.getModel().getValueAt(i, 1)));
+								Helper.rundeKaufmaennisch(new BigDecimal4(
+										(Double) jTableSnrChnrs.getModel()
+												.getValueAt(i, 1)),
+										iNachkommastelleMenge));
+
 					}
 					if (jTableSnrChnrs.getModel().getValueAt(i, 1) instanceof Long) {
 						alSeriennummern.get(i).setNMenge(
-								new BigDecimal4((Long) jTableSnrChnrs
-										.getModel().getValueAt(i, 1)));
+								Helper.rundeKaufmaennisch(new BigDecimal4(
+										(Long) jTableSnrChnrs.getModel()
+												.getValueAt(i, 1)),
+										iNachkommastelleMenge));
 					}
 				}
 			}
@@ -295,6 +352,27 @@ public class DialogSerienChargenauswahl extends JDialog implements
 				return false;
 
 			}
+
+			parameter = (ParametermandantDto) DelegateFactory
+					.getInstance()
+					.getParameterDelegate()
+					.getParametermandant(
+							ParameterFac.PARAMETER_ARTIKEL_MAXIMALELAENGE_SERIENNUMMER,
+							ParameterFac.KATEGORIE_ARTIKEL,
+							LPMain.getInstance().getTheClient().getMandant());
+
+			Integer iLaengeSnr = (Integer) parameter.getCWertAsObject();
+			if (dto.getCSeriennrChargennr().length() > iLaengeSnr) {
+
+				DialogFactory.showModalDialog(
+						LPMain.getTextRespectUISPr("lp.error"),
+						LPMain.getTextRespectUISPr("artikel.error.snrzulang")
+								+ " " + iLaengeSnr + "  ("
+								+ dto.getCSeriennrChargennr() + ")");
+				return false;
+
+			}
+
 			// Pruefen, ob bereits vorhanden
 			for (int i = 0; i < alSeriennummern.size(); i++) {
 
@@ -312,7 +390,7 @@ public class DialogSerienChargenauswahl extends JDialog implements
 			}
 			alSeriennummern.add(dto);
 
-			refreshFromArrayList();
+			BigDecimal bdAusgewaehlt = refreshFromArrayList();
 
 			// Focus in Zelle setzen
 			jTableSnrChnrs.changeSelection(jTableSnrChnrs.getModel()
@@ -329,6 +407,16 @@ public class DialogSerienChargenauswahl extends JDialog implements
 						.getModel().getRowCount() - 1, jTableSnrChnrs
 						.getModel().getRowCount() - 1, true));
 
+			}
+
+			// PJ18588
+			if (wcbAutomatik.isSelected()
+					&& bdBenoetigteMenge != null
+					&& bdAusgewaehlt != null
+					&& bdAusgewaehlt.doubleValue() >= bdBenoetigteMenge
+							.doubleValue()) {
+				alSeriennummernReturn = alSeriennummern;
+				setVisible(false);
 			}
 
 		} else {
@@ -350,6 +438,35 @@ public class DialogSerienChargenauswahl extends JDialog implements
 				return false;
 
 			}
+
+			// PJ18452 Nur bei Chargen
+			ArtikelDto artikelDto = DelegateFactory.getInstance()
+					.getArtikelDelegate().artikelFindByPrimaryKey(artikelIId);
+
+			if (bZugang) {
+				if (artikelDto.isChargennrtragend()) {
+					PanelbeschreibungDto[] dtos = DelegateFactory
+							.getInstance()
+							.getPanelDelegate()
+							.panelbeschreibungFindByPanelCNrMandantCNr(
+									PanelFac.PANEL_CHARGENEIGENSCHAFTEN,
+									artikelDto.getArtgruIId());
+					if (dtos.length > 0) {
+
+						DialogDynamischChargeneigenschaften d = new DialogDynamischChargeneigenschaften(
+								artikelDto, internalFrame, dto);
+						LPMain.getInstance().getDesktop()
+								.platziereDialogInDerMitteDesFensters(d);
+						d.setVisible(true);
+
+						if (d.bAbbruch == true) {
+							return false;
+						}
+
+					}
+				}
+			}
+
 			alSeriennummern.add(dto);
 
 			refreshFromArrayList();
@@ -394,7 +511,9 @@ public class DialogSerienChargenauswahl extends JDialog implements
 
 			} else if (e.getActionCommand().equals(ACTION_ADD_FROM_HAND)) {
 
-				if (bMindesthaltbarkeitsdatum == true) {
+				if (bMindesthaltbarkeitsdatum == true
+						&& Helper.short2Boolean(artikelDto
+								.getBChargennrtragend())) {
 					if (tfSnrchnr.getText() == null
 							|| wnfSnrchnr.getBigDecimal() == null
 							|| wdfMHD.getTimestamp() == null) {
@@ -429,7 +548,8 @@ public class DialogSerienChargenauswahl extends JDialog implements
 						}
 
 						boolean bHatFunktioniert = add2List(new SeriennrChargennrMitMengeDto(
-								snrs[i], new BigDecimal(1)));
+								snrs[i], wtfVersion.getText(),
+								new BigDecimal(1)));
 						if (bHatFunktioniert == false) {
 							break;
 						}
@@ -472,6 +592,7 @@ public class DialogSerienChargenauswahl extends JDialog implements
 
 				}
 				tfSnrchnr.setText(null);
+				wtfVersion.setText(null);
 
 			} else if (e.getActionCommand().equals(ACTION_NEW_FROM_LAGER)) {
 
@@ -495,6 +616,37 @@ public class DialogSerienChargenauswahl extends JDialog implements
 					add2List(s.get(i));
 				}
 
+			} else if (e.getActionCommand().equals(ACTION_NEUER_SNR_VORSCHLAG)) {
+				try {
+					String snrVorhanden = null;
+					if (alSeriennummern.size() > 0) {
+						snrVorhanden = alSeriennummern.get(
+								alSeriennummern.size() - 1)
+								.getCSeriennrChargennr();
+					}
+
+					String naechsteSNR = DelegateFactory.getInstance()
+							.getLagerDelegate()
+							.getNaechsteSeriennummer(artikelIId, snrVorhanden);
+					tfSnrchnr.setText(naechsteSNR);
+
+				} catch (ExceptionLP ex) {
+
+					if (ex.getICode() == EJBExceptionLP.FEHLER_SERIENNUMMERNGENERATOR_UNGUELTIGE_ZEICHEN) {
+						String sMsg = LPMain
+								.getTextRespectUISPr("fert.seriennummerngenerator.error")
+								+ ": " + ex.getAlInfoForTheClient().get(0);
+						DialogFactory.showModalDialog(
+								LPMain.getTextRespectUISPr("lp.error"), sMsg);
+					} else {
+						throw ex;
+					}
+
+				}
+
+			} else if (e.getActionCommand().equals(ACTION_RUECKGABE)) {
+				refreshZeileVersion();
+
 			}
 		} catch (EJBExceptionLP e1) {
 			internalFrame.handleException(new ExceptionLP(e1.getCode(), e1),
@@ -506,25 +658,48 @@ public class DialogSerienChargenauswahl extends JDialog implements
 
 	}
 
-	private void refreshFromArrayList() {
+	private BigDecimal refreshFromArrayList() {
 		Object[][] data = null;
 
 		BigDecimal bdGesamt = new BigDecimal(0);
 
 		if (Helper.short2Boolean(artikelDto.getBSeriennrtragend())) {
 			if (alSeriennummern != null) {
-				data = new String[alSeriennummern.size()][1];
-				for (int i = 0; i < alSeriennummern.size(); i++) {
-					if (alSeriennummern.get(i) != null) {
-						data[i][0] = alSeriennummern.get(i)
-								.getCSeriennrChargennr();
 
-						bdGesamt = bdGesamt.add(alSeriennummern.get(i)
-								.getNMenge());
+				if (bVersionMitangeben) {
+					data = new String[alSeriennummern.size()][2];
+					for (int i = 0; i < alSeriennummern.size(); i++) {
+						if (alSeriennummern.get(i) != null) {
+							data[i][0] = alSeriennummern.get(i)
+									.getCSeriennrChargennr();
+
+							if (alSeriennummern.get(i).getCVersion() != null) {
+								data[i][1] = alSeriennummern.get(i)
+										.getCVersion();
+
+							} else {
+								data[i][1] = "";
+							}
+
+							bdGesamt = bdGesamt.add(alSeriennummern.get(i)
+									.getNMenge());
+						}
+					}
+
+				} else {
+					data = new String[alSeriennummern.size()][1];
+					for (int i = 0; i < alSeriennummern.size(); i++) {
+						if (alSeriennummern.get(i) != null) {
+							data[i][0] = alSeriennummern.get(i)
+									.getCSeriennrChargennr();
+
+							bdGesamt = bdGesamt.add(alSeriennummern.get(i)
+									.getNMenge());
+						}
 					}
 				}
 			} else {
-				data = new String[0][1];
+				data = new String[0][2];
 			}
 
 		} else {
@@ -535,8 +710,14 @@ public class DialogSerienChargenauswahl extends JDialog implements
 						data[i][0] = alSeriennummern.get(i)
 								.getCSeriennrChargennr();
 
-						data[i][1] = new BigDecimal4(alSeriennummern.get(i)
-								.getNMenge());
+						if (iNachkommastelleMenge == 3) {
+							data[i][1] = new BigDecimal3(alSeriennummern.get(i)
+									.getNMenge());
+						} else {
+							data[i][1] = new BigDecimal4(alSeriennummern.get(i)
+									.getNMenge());
+						}
+
 						bdGesamt = bdGesamt.add(alSeriennummern.get(i)
 								.getNMenge());
 					}
@@ -551,6 +732,7 @@ public class DialogSerienChargenauswahl extends JDialog implements
 				data));
 
 		jTableSnrChnrs.getModel().addTableModelListener(this);
+		jTableSnrChnrs.addMouseListener(this);
 
 		if (!Helper.short2Boolean(artikelDto.getBSeriennrtragend())) {
 
@@ -574,15 +756,35 @@ public class DialogSerienChargenauswahl extends JDialog implements
 
 		try {
 			jLabelGesamtMenge.setText("Ausgew\u00E4hlt: "
-					+ Helper.formatZahl(bdGesamt, 4, LPMain.getInstance()
-							.getTheClient().getLocUi()));
+					+ Helper.formatZahl(bdGesamt, Defaults.getInstance()
+							.getIUINachkommastellenMenge(), LPMain
+							.getInstance().getTheClient().getLocUi()));
 		} catch (Throwable e) {
 			internalFrame.handleException(e, true);
+		}
+		return bdGesamt;
+
+	}
+
+	private void refreshZeileVersion() throws Throwable {
+		if (bVersionMitangeben == true) {
+			panel1.removeAll();
+			remove(panel1);
+			if (wcbRueckgabe.isSelected()) {
+				bZugang = true;
+
+			} else {
+				bZugang = false;
+			}
+
+			jbInit();
+			repaint();
+			LPMain.getInstance().getDesktop().repaint();
 		}
 
 	}
 
-	private void jbInit() throws Exception {
+	private void jbInit() throws Throwable {
 		panel1.setLayout(gridBagLayout1);
 		jButtonUebernehmen.setText(LPMain.getInstance().getTextRespectUISPr(
 				"lp.uebernehmen"));
@@ -624,7 +826,7 @@ public class DialogSerienChargenauswahl extends JDialog implements
 		buttonNeuAusLager.getActionMap().put(ACTION_NEW_FROM_LAGER,
 				new ButtonAbstractAction(this, ACTION_NEW_FROM_LAGER));
 
-		panel1.add(buttonEntfernen, new GridBagConstraints(3, 0, 1, 1, 1.0, 0,
+		panel1.add(buttonEntfernen, new GridBagConstraints(4, 0, 1, 1, 1.0, 0,
 				GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(
 						0, 0, 0, 0), 0, 0));
 		panel1.add(buttonNeuAusLager, new GridBagConstraints(0, 0, 1, 1, 1.0,
@@ -633,17 +835,18 @@ public class DialogSerienChargenauswahl extends JDialog implements
 		panel1.add(jLabelBenoetigt, new GridBagConstraints(1, 0, 1, 1, 1.0, 0,
 				GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(
 						0, 0, 0, 0), 0, 0));
-		panel1.add(jLabelGesamtMenge, new GridBagConstraints(2, 0, 1, 1, 1.0,
+		panel1.add(jLabelGesamtMenge, new GridBagConstraints(2, 0, 2, 1, 1.0,
 				0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(0, 0, 0, 0), 0, 0));
 
-		panel1.add(jScrollPane, new GridBagConstraints(0, 1, 4, 1, 1.0, 1.0,
+		panel1.add(jScrollPane, new GridBagConstraints(0, 1, 5, 1, 1.0, 1.0,
 				GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(
 						0, 0, 0, 0), 0, 0));
 
 		tfSnrchnr = new WrapperSNRField();
 		tfSnrchnr.setMandatoryField(true);
 		tfSnrchnr.addKeyListener(this);
+		wtfVersion.addKeyListener(this);
 
 		JButton buttonNeuAusString = HelperClient.createButton(new ImageIcon(
 				getClass().getResource("/com/lp/client/res/plus_sign.png")),
@@ -652,7 +855,7 @@ public class DialogSerienChargenauswahl extends JDialog implements
 		buttonNeuAusString.addActionListener(this);
 
 		panel1.add(new JLabel(LPMain.getTextRespectUISPr("label.menge")),
-				new GridBagConstraints(2, 2, 1, 1, 1.0, 0,
+				new GridBagConstraints(3, 2, 1, 1, 1.0, 0,
 						GridBagConstraints.WEST, GridBagConstraints.BOTH,
 						new Insets(2, 0, 2, 0), 0, 0));
 
@@ -663,7 +866,8 @@ public class DialogSerienChargenauswahl extends JDialog implements
 		wdfMHD.setMandatoryField(true);
 
 		wnfSnrchnr = new WrapperNumberField();
-		wnfSnrchnr.setFractionDigits(4);
+		wnfSnrchnr.setFractionDigits(Defaults.getInstance()
+				.getIUINachkommastellenMenge());
 		wnfSnrchnr.setMinimumValue(0);
 		wnfSnrchnr.setMandatoryField(true);
 		wnfSnrchnr.addKeyListener(this);
@@ -681,7 +885,20 @@ public class DialogSerienChargenauswahl extends JDialog implements
 
 			wnfSnrchnr.setBigDecimal(new BigDecimal(1));
 			labnelsnrChnr.setLabelFor(tfSnrchnr);
+
+			ParametermandantDto parameter = (ParametermandantDto) DelegateFactory
+					.getInstance()
+					.getParameterDelegate()
+					.getParametermandant(
+							ParameterFac.PARAMETER_SERIENNUMMER_NUMERISCH,
+							ParameterFac.KATEGORIE_ARTIKEL,
+							LPMain.getTheClient().getMandant());
+			if ((Boolean) parameter.getCWertAsObject()) {
+				tfSnrchnr.setMaskNumerisch();
+			}
+
 		} else {
+
 			labnelsnrChnr = new JLabel(LPMain.getInstance()
 					.getTextRespectUISPr("lp.chargennummer_lang"));
 			panel1.add(labnelsnrChnr, new GridBagConstraints(1, 2, 1, 1, 1.0,
@@ -702,36 +919,108 @@ public class DialogSerienChargenauswahl extends JDialog implements
 						new Insets(0, 0, 0, 0), -10, 0));
 
 			}
+
+			if (alSeriennummern == null || alSeriennummern.size() == 0) {
+
+				PanelbeschreibungDto[] dtos = DelegateFactory
+						.getInstance()
+						.getPanelDelegate()
+						.panelbeschreibungFindByPanelCNrMandantCNr(
+								PanelFac.PANEL_CHARGENEIGENSCHAFTEN,
+								artikelDto.getArtgruIId());
+				if (dtos.length > 0) {
+
+					tfSnrchnr.setText(DelegateFactory.getInstance()
+							.getLagerDelegate()
+							.getNaechsteChargennummer(artikelDto.getIId()));
+				}
+			}
+
 		}
 
 		labnelsnrChnr.setDisplayedMnemonic('N');
 
-		panel1.add(wnfSnrchnr, new GridBagConstraints(2, 3, 1, 1, 1.0, 0,
+		if (Helper.short2Boolean(artikelDto.getBSeriennrtragend())) {
+			JButton buttonSnrVorschlagen = HelperClient.createButton(
+					new ImageIcon(getClass().getResource(
+							"/com/lp/client/res/document_add.png")),
+					LPMain.getTextRespectUISPr("artikel.lager.snrvorschlagen"),
+					ACTION_NEUER_SNR_VORSCHLAG);
+			buttonSnrVorschlagen.setEnabled(true);
+			buttonSnrVorschlagen.addActionListener(this);
+			buttonSnrVorschlagen.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+					.put(KeyStroke.getKeyStroke('O',
+							java.awt.event.InputEvent.CTRL_MASK),
+							ACTION_NEUER_SNR_VORSCHLAG);
+			buttonSnrVorschlagen.getActionMap().put(ACTION_NEUER_SNR_VORSCHLAG,
+					new ButtonAbstractAction(this, ACTION_NEUER_SNR_VORSCHLAG));
+			panel1.add(buttonSnrVorschlagen, new GridBagConstraints(0, 3, 1, 1,
+					0, 0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
+					new Insets(0, 0, 0, 0), 0, 0));
+
+			// SP2605 Wenn Abgang, dann nicth anzeigen
+			if (bZugang == false) {
+				buttonSnrVorschlagen.setVisible(false);
+			}
+
+			if (bVersionMitangeben && bZugang == true) {
+				panel1.add(wlaVersion, new GridBagConstraints(2, 2, 1, 1, 0, 0,
+						GridBagConstraints.WEST, GridBagConstraints.BOTH,
+						new Insets(2, 0, 2, 0), 0, 0));
+
+				panel1.add(wtfVersion, new GridBagConstraints(2, 3, 1, 1, 1.0,
+						0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
+						new Insets(0, 2, 0, 0), 50, 0));
+			}
+
+		}
+
+		panel1.add(wnfSnrchnr, new GridBagConstraints(3, 3, 1, 1, 1.0, 0,
 				GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(
-						0, 2, 0, 0), 50, 0));
+						0, 2, 0, 0), 70, 0));
 
 		wcbRueckgabe.setText(LPMain.getInstance().getTextRespectUISPr(
 				"artikel.rueckgabe"));
+		wcbRueckgabe.addActionListener(this);
+		wcbRueckgabe.setActionCommand(ACTION_RUECKGABE);
 
 		if (internalFrame instanceof InternalFrameLieferschein) {
-			panel1.add(wcbRueckgabe, new GridBagConstraints(3, 2, 1, 1, 1.0, 0,
+			panel1.add(wcbRueckgabe, new GridBagConstraints(4, 2, 1, 1, 1.0, 0,
 					GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 					new Insets(0, 2, 0, 0), 50, 0));
 		}
 
-		panel1.add(buttonNeuAusString, new GridBagConstraints(3, 3, 1, 1, 1.0,
+		panel1.add(buttonNeuAusString, new GridBagConstraints(4, 3, 1, 1, 1.0,
 				0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(0, 0, 0, 0), 0, 0));
 
-		panel1.add(jButtonUebernehmen, new GridBagConstraints(0, 4, 4, 1, 0.0,
-				0.0, GridBagConstraints.CENTER, GridBagConstraints.NONE,
-				new Insets(0, 0, 0, 0), 0, 0));
+		if (Helper.short2Boolean(artikelDto.getBSeriennrtragend())) {
+			panel1.add(jButtonUebernehmen, new GridBagConstraints(0, 4, 2, 1,
+					0.0, 0.0, GridBagConstraints.EAST, GridBagConstraints.NONE,
+					new Insets(0, 0, 0, 0), 0, 0));
+
+			wcbAutomatik.setText(LPMain
+					.getTextRespectUISPr("artikel.srnchrndialog.automatik"));
+			wcbAutomatik.setSelected(true);
+			panel1.add(wcbAutomatik,
+					new GridBagConstraints(2, 4, 2, 1, 0.0, 0.0,
+							GridBagConstraints.CENTER,
+							GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0,
+									0), 0, 0));
+
+		} else {
+			panel1.add(jButtonUebernehmen, new GridBagConstraints(0, 4, 4, 1,
+					0.0, 0.0, GridBagConstraints.CENTER,
+					GridBagConstraints.NONE, new Insets(0, 0, 0, 0), 0, 0));
+		}
+
 	}
 
 	public void keyPressed(KeyEvent e) {
 
 		if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-			if (e.getSource() == tfSnrchnr || e.getSource() == wnfSnrchnr) {
+			if (e.getSource() == tfSnrchnr || e.getSource() == wtfVersion
+					|| e.getSource() == wnfSnrchnr) {
 
 				actionPerformed(new ActionEvent(tfSnrchnr, 0,
 						ACTION_ADD_FROM_HAND));
@@ -801,6 +1090,70 @@ public class DialogSerienChargenauswahl extends JDialog implements
 		public String getSActionCommand() {
 			return sActionCommand;
 		}
+	}
+
+	@Override
+	public void mouseClicked(MouseEvent e) {
+		if (e.getSource().equals(jTableSnrChnrs) && e.getClickCount() == 2) {
+
+			try {
+				// PJ18452 Nur bei Chargen
+				ArtikelDto artikelDto = DelegateFactory.getInstance()
+						.getArtikelDelegate()
+						.artikelFindByPrimaryKey(artikelIId);
+
+				if (bZugang) {
+					if (artikelDto.isChargennrtragend()) {
+						PanelbeschreibungDto[] dtos = DelegateFactory
+								.getInstance()
+								.getPanelDelegate()
+								.panelbeschreibungFindByPanelCNrMandantCNr(
+										PanelFac.PANEL_CHARGENEIGENSCHAFTEN,
+										artikelDto.getArtgruIId());
+						if (dtos.length > 0) {
+
+							SeriennrChargennrMitMengeDto dto = alSeriennummern
+									.get(jTableSnrChnrs.getSelectedRow());
+
+							DialogDynamischChargeneigenschaften d = new DialogDynamischChargeneigenschaften(
+									artikelDto, internalFrame, dto);
+							LPMain.getInstance().getDesktop()
+									.platziereDialogInDerMitteDesFensters(d);
+							d.setVisible(true);
+
+						}
+					}
+				}
+			} catch (Throwable e1) {
+				internalFrame.handleException(e1, true);
+			}
+
+		}
+
+	}
+
+	@Override
+	public void mousePressed(MouseEvent e) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void mouseReleased(MouseEvent e) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void mouseEntered(MouseEvent e) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void mouseExited(MouseEvent e) {
+		// TODO Auto-generated method stub
+
 	}
 
 }

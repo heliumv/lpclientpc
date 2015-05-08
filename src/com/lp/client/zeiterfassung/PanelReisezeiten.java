@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -93,6 +93,7 @@ import com.lp.server.personal.service.ZeiterfassungFac;
 import com.lp.server.projekt.service.ProjektDto;
 import com.lp.server.system.service.LocaleFac;
 import com.lp.server.system.service.MandantDto;
+import com.lp.server.system.service.MandantFac;
 import com.lp.server.system.service.ParameterFac;
 import com.lp.server.system.service.ParametermandantDto;
 import com.lp.server.util.Facade;
@@ -534,10 +535,9 @@ public class PanelReisezeiten extends PanelBasis implements
 	public void eventActionSave(ActionEvent e, boolean bNeedNoSaveI)
 			throws Throwable {
 		if (allMandatoryFieldsSetDlg()) {
-			components2Dto();
 
 			if (pruefeObBuchungMoeglich()) {
-
+				components2Dto();
 				if (wnfKmBeginn.getInteger() != null
 						&& wnfKmEnde.getInteger() != null) {
 					if (wnfKmBeginn.getInteger() > wnfKmEnde.getInteger()) {
@@ -758,7 +758,7 @@ public class PanelReisezeiten extends PanelBasis implements
 		wbuKunde.addActionListener(this);
 
 		wbuBeleg.setText(LPMain.getTextRespectUISPr("lp.beleg") + "...");
-		wbuBeleg.setActionCommand(PanelZeitdaten.ACTION_SPECIAL_BELEG_FROM_LISTE);
+		wbuBeleg.setActionCommand(ACTION_SPECIAL_BELEG_FROM_LISTE);
 		wbuBeleg.addActionListener(this);
 
 		Map<String, String> mBelegarten = new TreeMap<String, String>();
@@ -1169,6 +1169,39 @@ public class PanelReisezeiten extends PanelBasis implements
 
 		if (wtfZeit.getTimestamp() != null) {
 
+			// SP3285
+			if (LPMain
+					.getInstance()
+					.getDesktop()
+					.darfAnwenderAufZusatzfunktionZugreifen(
+							MandantFac.ZUSATZFUNKTION_ZEITEN_ABSCHLIESSEN)) {
+
+				java.sql.Timestamp t = DelegateFactory
+						.getInstance()
+						.getZeiterfassungDelegate()
+						.gibtEsBereitseinenZeitabschlussBisZurKW(
+								internalFrameZeiterfassung.getPersonalDto()
+										.getIId(), wtfZeit.getTimestamp());
+
+				if (t != null) {
+					MessageFormat mf = new MessageFormat(
+							LPMain.getTextRespectUISPr("pers.zeiterfassung.zeitenbereitsabgeschlossen.bis"));
+					mf.setLocale(LPMain.getTheClient().getLocUi());
+
+					Calendar c = Calendar.getInstance();
+					c.setTimeInMillis(t.getTime());
+					c.get(Calendar.WEEK_OF_YEAR);
+					Object pattern[] = { c.get(Calendar.WEEK_OF_YEAR) };
+
+					String sMsg = mf.format(pattern);
+
+					DialogFactory.showModalDialog(
+							LPMain.getTextRespectUISPr("lp.error"), sMsg);
+					return false;
+				}
+
+			}
+
 			boolean bRechtChefbuchhalter = DelegateFactory.getInstance()
 					.getTheJudgeDelegate()
 					.hatRecht(RechteFac.RECHT_FB_CHEFBUCHHALTER);
@@ -1389,20 +1422,20 @@ class PanelReisezeiten_wtfFahrzeug_keyListener implements
 	@Override
 	public void keyTyped(KeyEvent e) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void keyPressed(KeyEvent e) {
-	
+
 	}
 
 	@Override
 	public void keyReleased(KeyEvent e) {
 		// TODO Auto-generated method stub
-		if(adaptee.wtfFahrzeug.getText()==null){
+		if (adaptee.wtfFahrzeug.getText() == null) {
 			adaptee.wsfFahrzeug.setEnabled(true);
-		} else{
+		} else {
 			adaptee.wsfFahrzeug.setEnabled(false);
 			try {
 				adaptee.wsfFahrzeug.setKey(null);

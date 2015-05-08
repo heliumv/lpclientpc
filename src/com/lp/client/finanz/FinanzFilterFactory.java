@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -326,12 +326,11 @@ public class FinanzFilterFactory {
 
 	/**
 	 * Filter auf Waehrung
+	 * @param waehrungCNr 
 	 * 
 	 * @return FilterKriterium[] Default Filter Kriterien
 	 * @throws Throwable
 	 *             Ausnahme
-	 * @param waehrungCNr
-	 *            String
 	 */
 	public FilterKriterium[] createFKWechselkurs(String waehrungCNr)
 			throws Throwable {
@@ -358,7 +357,7 @@ public class FinanzFilterFactory {
 	 * Konten welche nicht von der Art UstKonto bzw VstKonto sind, werden ebenfalls gefiltert. 
 	 * 
 	 * @param mwstSatzBezIId die Mwst, in denen die Ust- und Vstkonten hinterlegt sein d&uuml;rfen
-	 * @return
+	 * @return die Filterkriterien
 	 * @throws Throwable
 	 */
 	protected List<FilterKriterium> createFKKontenInMwstSatzBez(Integer mwstSatzBezIId) throws Throwable {
@@ -415,7 +414,7 @@ public class FinanzFilterFactory {
 	 * Filter auf Kontotyp.&nbsp;
 	 * Bei Sachkonten: Mitlaufende Konten werden nicht angezeigt.
 	 * @param kontotypCNr
-	 * @return
+	 * @return die Filterkriterien
 	 * @throws Throwable
 	 */
 	public FilterKriterium[] createFKKonten(String kontotypCNr) throws Throwable {
@@ -425,8 +424,7 @@ public class FinanzFilterFactory {
 	/**
 	 * Filter auf Kontotyp.&nbsp;
 	 * @param kontotypCNr
-	 * @param mitlaufende wenn true werden mitlaufende Konten angezeigt.
-	 * @return
+	 * @return die Filterkriterien
 	 * @throws Throwable
 	 */
 	public FilterKriterium[] createFKKontenInklMitlaufende(String kontotypCNr) throws Throwable {
@@ -650,11 +648,13 @@ public class FinanzFilterFactory {
 		}
 			break;
 		}
+		
+		
 		PanelQueryFLR panelQueryBankverbindung = new PanelQueryFLR(
 				createQTBankverbindung(), SystemFilterFactory.getInstance()
 						.createFKMandantCNr(), QueryParameters.UC_ID_BANKKONTO,
 				aWhichButtonIUse, internalFrameI,
-				LPMain.getTextRespectUISPr("finanz.liste.bankverbindungen"));
+				LPMain.getTextRespectUISPr("finanz.liste.bankverbindungen"),FinanzFilterFactory.getInstance().createFKVBankverbindung(),null);
 		panelQueryBankverbindung.befuellePanelFilterkriterienDirekt(
 				createFKDBankverbindungBank(),
 				createFKDBankverbindungKontonummer());
@@ -713,9 +713,8 @@ public class FinanzFilterFactory {
 		kriterien[1] = new FilterKriterium("flrrechnungart.rechnungtyp_c_nr",
 				true, "'Gutschrift'", FilterKriterium.OPERATOR_EQUAL, true);
 		// nur Gutschriften die angelegt oder Teilbezahlt sind sind
-		kriterien[2] = new FilterKriterium("status_c_nr", true, "'Bezahlt'",
-				FilterKriterium.OPERATOR_NOT + " "
-						+ FilterKriterium.OPERATOR_LIKE, true);
+		kriterien[2] = new FilterKriterium("status_c_nr", true, "('Offen', 'Teilbezahlt')",
+				FilterKriterium.OPERATOR_IN, true);
 		// nur Gutschriften des Lieferanten
 		kriterien[3] = new FilterKriterium("flrkunde.i_id", true,
 				kundeIId.toString(), FilterKriterium.OPERATOR_EQUAL, false);
@@ -932,6 +931,24 @@ public class FinanzFilterFactory {
 		return fkVersteckt;
 	}
 
+	public FilterKriterium createFKVBankverbindung() {
+		FilterKriterium fkVersteckt = new FilterKriterium(
+				FinanzFac.FLR_BANKKONTO_FLRKONTO+".b_versteckt", true, "(1)", // wenn
+				// das
+				// Kriterium
+				// verwendet
+				// wird,
+				// sollen
+				// die
+				// versteckten
+				// nicht
+				// mitangezeigt
+				// werden
+				FilterKriterium.OPERATOR_NOT_IN, false);
+
+		return fkVersteckt;
+	}
+	
 	public FilterKriterium createFKVStornoDetailliert() {
 		FilterKriterium fkVersteckt = new FilterKriterium(
 				FinanzFac.FLR_BUCHUNGDETAIL_FLRBUCHUNG + "."
@@ -946,20 +963,20 @@ public class FinanzFilterFactory {
 		return new FilterKriteriumDirekt(FinanzFac.FLR_BUCHUNG_C_BELEGNUMMER,
 				"", FilterKriterium.OPERATOR_LIKE,
 				LPMain.getTextRespectUISPr("lp.beleg"),
-				FilterKriteriumDirekt.PROZENT_LEADING, // Auswertung als 'XX%'
-				false, // wrapWithSingleQuotes
+				FilterKriteriumDirekt.PROZENT_LEADING, // Auswertung als '%XX%'
+				true, // wrapWithSingleQuotes
 				false, Facade.MAX_UNBESCHRAENKT);
 	}
-
-	public FilterKriteriumDirekt createFKDNurOffene() throws Throwable {
-		return new FilterKriteriumDirekt(FinanzFac.FLR_BUCHUNG_C_BELEGNUMMER,
+	
+	public FilterKriteriumDirekt createFKDTextsuche() throws Throwable {
+		return new FilterKriteriumDirekt(FinanzFac.FLR_BUCHUNGDETAIL_FLRBUCHUNG + "." + FinanzFac.FLR_BUCHUNG_C_TEXT,
 				"", FilterKriterium.OPERATOR_LIKE,
-				LPMain.getTextRespectUISPr("lp.schnellansicht"),
-				FilterKriteriumDirekt.PROZENT_LEADING, // Auswertung als 'XX%'
-				false, // wrapWithSingleQuotes
-				false, Facade.MAX_UNBESCHRAENKT);
+				LPMain.getTextRespectUISPr("lp.textsuche"),
+				FilterKriteriumDirekt.PROZENT_BOTH, // Auswertung als 'XX%'
+				true, // wrapWithSingleQuotes
+				true, Facade.MAX_UNBESCHRAENKT);
 	}
-
+	
 	public FilterKriterium[] createFKSchnellansicht() throws Throwable {
 		FilterKriterium[] filters = new FilterKriterium[1];
 		filters[0] = new FilterKriteriumSchnellansicht(
@@ -1002,6 +1019,22 @@ public class FinanzFilterFactory {
 				true, // wrapWithSingleQuotes
 				true, Facade.MAX_UNBESCHRAENKT);
 	}
+	
+	/**
+	 * Direktes Filter Kriterium Kontonummer fuer das PanelQueryKonto.
+	 * 
+	 * @return FilterKriteriumDirekt
+	 * @throws Throwable
+	 */
+	public FilterKriteriumDirekt createFKBuchungsjournalDetailiertKontonummer() throws Throwable {
+		return new FilterKriteriumDirekt(FinanzFac.FLR_BUCHUNGDETAIL_FLRKONTO + ".c_nr", "",
+				FilterKriterium.OPERATOR_LIKE,
+				LPMain.getTextRespectUISPr("finanz.kontonummer"),
+				FilterKriteriumDirekt.PROZENT_TRAILING, // Auswertung als 'XX%'
+				true, // wrapWithSingleQuotes
+				false, Facade.MAX_UNBESCHRAENKT);
+	}
+
 
 	public PanelQueryFLR createPanelFLRWarenverkehrsnummer(
 			InternalFrame internalFrameI, String selectedCNr) throws Throwable {
@@ -1077,4 +1110,26 @@ public class FinanzFilterFactory {
 				true, // wrapWithSingleQuotes
 				true, 3);
 	}
+	
+	public FilterKriteriumDirekt createFKDBuchungsart()
+			throws Throwable {
+		return new FilterKriteriumDirekt(FinanzFac.FLR_BUCHUNGDETAIL_BUCHUNGART, "",
+				FilterKriterium.OPERATOR_LIKE,
+				LPMain.getTextRespectUISPr("label.fbbuchungsart"),
+				FilterKriteriumDirekt.PROZENT_BOTH, // Auswertung als 'XX%'
+				true, // wrapWithSingleQuotes
+				true, Facade.MAX_UNBESCHRAENKT);
+	}
+	
+	public FilterKriteriumDirekt createFKDBelegart()
+			throws Throwable {
+		return new FilterKriteriumDirekt(FinanzFac.FLR_BUCHUNGDETAIL_BELEGART, "",
+				FilterKriterium.OPERATOR_LIKE,
+				LPMain.getTextRespectUISPr("label.fbbelegart"),
+				FilterKriteriumDirekt.PROZENT_BOTH, // Auswertung als 'XX%'
+				true, // wrapWithSingleQuotes
+				true, Facade.MAX_UNBESCHRAENKT);
+	}
+	
+	
 }

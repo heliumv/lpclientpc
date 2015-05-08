@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -418,6 +418,7 @@ public class PanelAngebotKopfdaten extends PanelBasis implements
 				.getTextRespectUISPr("angb.angeboterledigungsgrund"));
 		wtfAngeboterledigungsgrund = new WrapperTextField();
 		wtfAngeboterledigungsgrund.setActivatable(false);
+		wtfAngeboterledigungsgrund.setColumnsMax(Facade.MAX_UNBESCHRAENKT);
 
 		wlaErfassteauftrage = new WrapperLabel(LPMain.getInstance()
 				.getTextRespectUISPr("angb.erfasstauftraege"));
@@ -509,7 +510,7 @@ public class PanelAngebotKopfdaten extends PanelBasis implements
 			if (bProjektIstPflichtfeld) {
 				wsfProjekt.setMandatoryField(true);
 			}
-			
+
 			jpaWorkingOn.add(wtfProjektbezeichnung, new GridBagConstraints(1,
 					iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
 					GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
@@ -594,7 +595,7 @@ public class PanelAngebotKopfdaten extends PanelBasis implements
 		jpaWorkingOn.add(wtfErfassteauftraege, new GridBagConstraints(1,
 				iZeile, 3, 1, 0.0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		
+
 		if (LPMain.getInstance().getDesktop()
 				.darfAnwenderAufModulZugreifen(LocaleFac.BELEGART_ANGEBOT)
 				&& LPMain
@@ -606,21 +607,37 @@ public class PanelAngebotKopfdaten extends PanelBasis implements
 					.getTheJudgeDelegate()
 					.hatRecht(RechteFac.RECHT_PERS_ZEITEREFASSUNG_CUD);
 			if (hatRecht) {
-				
 
-				getToolBar().addButtonRight("/com/lp/client/res/gear_run.png",
-						LPMain.getTextRespectUISPr("angb.startzeit"),
-						Desktop.MY_OWN_NEW_ZEIT_START, null, null);
-				getToolBar().addButtonRight("/com/lp/client/res/gear_stop.png",
-						LPMain.getTextRespectUISPr("angb.stopzeit"),
-						Desktop.MY_OWN_NEW_ZEIT_STOP, null, null);
+				ParametermandantDto parameter = DelegateFactory
+						.getInstance()
+						.getParameterDelegate()
+						.getMandantparameter(
+								LPMain.getTheClient().getMandant(),
+								ParameterFac.KATEGORIE_PERSONAL,
+								ParameterFac.PARAMETER_VON_BIS_ERFASSUNG);
+				boolean bVonBisErfassung = (java.lang.Boolean) parameter
+						.getCWertAsObject();
 
-				enableToolsPanelButtons(true, Desktop.MY_OWN_NEW_ZEIT_START,
-						Desktop.MY_OWN_NEW_ZEIT_STOP);
+				// SP2352
+				if (bVonBisErfassung == false) {
+
+					getToolBar().addButtonRight(
+							"/com/lp/client/res/gear_run.png",
+							LPMain.getTextRespectUISPr("angb.startzeit"),
+							Desktop.MY_OWN_NEW_ZEIT_START, null, null);
+					getToolBar().addButtonRight(
+							"/com/lp/client/res/gear_stop.png",
+							LPMain.getTextRespectUISPr("angb.stopzeit"),
+							Desktop.MY_OWN_NEW_ZEIT_STOP, null, null);
+
+					enableToolsPanelButtons(true,
+							Desktop.MY_OWN_NEW_ZEIT_START,
+							Desktop.MY_OWN_NEW_ZEIT_STOP);
+				}
 
 			}
 		}
-		
+
 	}
 
 	public void setDefaultsAusProjekt(Integer projektIId) throws Throwable {
@@ -759,9 +776,9 @@ public class PanelAngebotKopfdaten extends PanelBasis implements
 							ParameterFac.KATEGORIE_ALLGEMEIN,
 							ParameterFac.PARAMETER_GESCHAEFTSJAHRBEGINNMONAT);
 
-			// 0 ... Januar bis 11 ... Dezember
 			int iGeschaeftsjahrbeginnmonat = ((Integer) parametermandantDto
 					.getCWertAsObject()).intValue();
+			iGeschaeftsjahrbeginnmonat=iGeschaeftsjahrbeginnmonat-1;
 
 			GregorianCalendar gcReferenz = new GregorianCalendar(LPMain
 					.getInstance().getTheClient().getLocUi());
@@ -911,7 +928,7 @@ public class PanelAngebotKopfdaten extends PanelBasis implements
 
 	private void kundendatenVorbesetzen(Integer iIdKunde) throws ExceptionLP,
 			Throwable {
-		DelegateFactory.getInstance().getKundeDelegate().pruefeKunde(iIdKunde);
+		DelegateFactory.getInstance().getKundeDelegate().pruefeKunde(iIdKunde,LocaleFac.BELEGART_ANGEBOT, getInternalFrame());
 
 		if (tpAngebot.getAngebotDto().getWaehrungCNr() != null) {
 			waehrungOriDto = DelegateFactory
@@ -1115,7 +1132,7 @@ public class PanelAngebotKopfdaten extends PanelBasis implements
 							LocaleFac.BELEGART_ANGEBOT,
 							tpAngebot.getAngebotDto().getIId());
 
-		} 
+		}
 	}
 
 	void dialogQueryKunde(ActionEvent e) throws Throwable {
@@ -1465,6 +1482,7 @@ public class PanelAngebotKopfdaten extends PanelBasis implements
 									.getBelegVerkaufDto());
 						} else {
 							bUpdate = false;
+							return;
 						}
 					}
 
@@ -1663,8 +1681,6 @@ public class PanelAngebotKopfdaten extends PanelBasis implements
 		}
 	}
 
-	
-	
 	protected void eventActionPrint(ActionEvent e) throws Throwable {
 		tpAngebot.printAngebot();
 		eventYouAreSelected(false);

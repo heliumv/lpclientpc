@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -32,6 +32,7 @@
  ******************************************************************************/
 package com.lp.client.partner;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -44,6 +45,7 @@ import java.util.SortedMap;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
+import javax.swing.UIManager;
 
 import net.miginfocom.swing.MigLayout;
 
@@ -125,6 +127,10 @@ abstract public class PanelAnsprechpartner extends PanelBasis {
 	private WrapperCheckBox wcbNewsletterEmpfaenger = new WrapperCheckBox();
 	private WrapperLabel wlaFremdsystem = null;
 	private WrapperTextField wtfFremdsystem = null;
+	private WrapperButton wbuPasswort = null;
+
+	private WrapperLabel wlaAbteilung = null;
+	private WrapperTextField wtfAbteilung = null;
 
 	protected WrapperTextNumberField wtfSort = null;
 
@@ -142,6 +148,7 @@ abstract public class PanelAnsprechpartner extends PanelBasis {
 	static final public String ACTION_SPECIAL_FLR_ANSPRECHPARTNER = "action_special_flr_ansprechpartner";
 
 	private static final String ACTION_SPECIAL_VCARD_EXPORT = "action_special_vcard_export";
+	private static final String ACTION_SPECIAL_PASSWORD = "action_special_password";
 
 	public PanelAnsprechpartner(InternalFrame internalFrame, String add2TitleI,
 			Object keyI) throws Throwable {
@@ -168,7 +175,6 @@ abstract public class PanelAnsprechpartner extends PanelBasis {
 		gridBagLayoutAll = new GridBagLayout();
 		setLayout(gridBagLayoutAll);
 
-
 		// Ab hier Ansprechpartnerfelder.
 		wlaGueltigAb = new WrapperLabel();
 		LPMain.getInstance();
@@ -193,6 +199,10 @@ abstract public class PanelAnsprechpartner extends PanelBasis {
 		wcbNewsletterEmpfaenger
 				.setText(LPMain
 						.getTextRespectUISPr("part.ansprechpartner.newsletterempfaenger"));
+
+		wlaAbteilung = new WrapperLabel(
+				LPMain.getTextRespectUISPr("lp.abteilung"));
+		wtfAbteilung = new WrapperTextField();
 
 		wtfVorname = new WrapperTextField();
 		wdfGebDatum = new WrapperDateField();
@@ -283,8 +293,14 @@ abstract public class PanelAnsprechpartner extends PanelBasis {
 		wtfSort.setMinimumValue(new Integer(0));
 		wtfSort.setMaximumDigits(4);
 		wtfSort.setMaximumValue(new Integer(9999));
-		
-		jpaWorkingOn = new JPanel(new MigLayout("wrap 7", "[25%][10%][20%][10%][10%][10%][20%]"));
+
+		wbuPasswort = new WrapperButton(
+				LPMain.getTextRespectUISPr("part.ansprechpartner.passwort"));
+		wbuPasswort.addActionListener(this);
+		wbuPasswort.setActionCommand(ACTION_SPECIAL_PASSWORD);
+
+		jpaWorkingOn = new JPanel(new MigLayout("wrap 8",
+				"[25%][10%][20%][10%][10%][10%][20%]"));
 
 		// Actionpanel von Oberklasse holen und einhaengen.
 		panelButtonAction = getToolsPanel();
@@ -299,29 +315,31 @@ abstract public class PanelAnsprechpartner extends PanelBasis {
 		add(getPanelStatusbar(), new GridBagConstraints(0, 2, 1, 1, 1.0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(
 						0, 0, 0, 0), 0, 0));
-		
+
 		// Ab hier einhaengen.
 		// Zeile
 
 		jpaWorkingOn.add(wbuAnsprechpartner, "growx");
-		jpaWorkingOn.add(wcoAnrede, "growx");
+		jpaWorkingOn.add(wcoAnrede, "growx, width 70:70:70");
 		jpaWorkingOn.add(wtfAnsprechpartner, "growx");
-		jpaWorkingOn.add(wlaGebDatum, "growx, span 2");
-		jpaWorkingOn.add(wdfGebDatum, "left, span 2, wrap");
-		
+		jpaWorkingOn.add(wlaGebDatum, "growx, width 70:70:70");
+		jpaWorkingOn.add(wdfGebDatum, "growx");
+		jpaWorkingOn.add(wlaGueltigAb, "growx");
+		jpaWorkingOn.add(wdfGueltigAb, "growx, span2");
+
 		jpaWorkingOn.add(wcbNewsletterEmpfaenger, "growx");
 		jpaWorkingOn.add(wlaVorname, "growx");
 		jpaWorkingOn.add(wtfVorname, "growx");
 		jpaWorkingOn.add(wlaTitel, "growx");
 		jpaWorkingOn.add(wtfTitel, "growx");
-		jpaWorkingOn.add(wlaNtitel, "growx");
-		jpaWorkingOn.add(wtfNtitel, "growx");
-		
+		jpaWorkingOn.add(wlaNtitel, "growx, width 50:50:50");
+		jpaWorkingOn.add(wtfNtitel, "growx, span2");
+
 		jpaWorkingOn.add(wbuAnsprechpartnerfunktion, "growx");
 		jpaWorkingOn.add(wtfAnsprechpartnerfunktion, "growx, span 2");
-		jpaWorkingOn.add(wlaGueltigAb, "growx, span 2");
-		jpaWorkingOn.add(wdfGueltigAb, "left, span 2, wrap");
-		
+		jpaWorkingOn.add(wlaAbteilung, "growx");
+		jpaWorkingOn.add(wtfAbteilung, "growx, span 3, wrap");
+
 		jpaWorkingOn.add(wlaBemerkung, "top, growx");
 		jpaWorkingOn.add(wefBemerkung, "grow, span");
 		iZeile++;
@@ -348,8 +366,12 @@ abstract public class PanelAnsprechpartner extends PanelBasis {
 				.getTheJudgeDelegate()
 				.hatRecht(
 						com.lp.server.benutzer.service.RechteFac.RECHT_LP_DARF_VERSTECKTE_SEHEN)) {
-			jpaWorkingOn.add(wcbVersteckt, "skip 2, growx, span");
+			jpaWorkingOn.add(wcbVersteckt, "skip 2, growx, width 80:80:80");
+		} else {
+			jpaWorkingOn.add(new WrapperLabel(""), "skip 2, growx");
 		}
+
+		jpaWorkingOn.add(wbuPasswort, "growx");
 
 		// Zeile
 
@@ -416,6 +438,9 @@ abstract public class PanelAnsprechpartner extends PanelBasis {
 			throws Throwable {
 
 		super.eventYouAreSelected(true);
+		
+		wbuPasswort.setBackground(UIManager
+				.getColor("Button.background"));
 
 		// Die normale Telefon/Faxnummer vor der Durchwajl anzeigen
 		PartnerDto dto = null;
@@ -586,6 +611,22 @@ abstract public class PanelAnsprechpartner extends PanelBasis {
 							.partnerFindByPrimaryKey(
 									getAnsprechpartnerDto().getPartnerIId()),
 					getAnsprechpartnerDto());
+		} else if (e.getActionCommand().equals(ACTION_SPECIAL_PASSWORD)) {
+			// Passwort Dialog erstellen
+			DialogAnsprechpartnerPasswort d = new DialogAnsprechpartnerPasswort(
+					getAnsprechpartnerDto());
+			LPMain.getInstance().getDesktop()
+					.platziereDialogInDerMitteDesFensters(d);
+			d.setVisible(true);
+
+			if (getAnsprechpartnerDto().getCKennwort() != null) {
+				wbuPasswort.setBackground(new Color(0, 200, 0));
+
+			} else {
+				wbuPasswort.setBackground(UIManager
+						.getColor("Button.background"));
+			}
+
 		}
 
 	}
@@ -694,7 +735,7 @@ abstract public class PanelAnsprechpartner extends PanelBasis {
 		AnsprechpartnerDto ansprechpartnerDto = getAnsprechpartnerDto();
 
 		wcbVersteckt.setShort(ansprechpartnerDto.getBVersteckt());
-
+		wtfAbteilung.setText(ansprechpartnerDto.getCAbteilung());
 		wdfGueltigAb.setDate(getAnsprechpartnerDto().getDGueltigab());
 
 		// Partnerkommunikation
@@ -725,9 +766,19 @@ abstract public class PanelAnsprechpartner extends PanelBasis {
 
 		wcbNewsletterEmpfaenger.setSelected(ansprechpartnerDto
 				.isNewsletterEmpfaenger());
+		
+		
+		if (getAnsprechpartnerDto().getCKennwort() != null) {
+			wbuPasswort.setBackground(new Color(0, 200, 0));
+
+		} else {
+			wbuPasswort.setBackground(UIManager
+					.getColor("Button.background"));
+		}
+		
 	}
 
-	abstract protected AnsprechpartnerDto getAnsprechpartnerDto();
+	abstract public AnsprechpartnerDto getAnsprechpartnerDto();
 
 	abstract protected void setAnsprechpartnerDto(
 			AnsprechpartnerDto ansprechpartnerDtoI);
@@ -752,6 +803,7 @@ abstract public class PanelAnsprechpartner extends PanelBasis {
 		getAnsprechpartnerDto().setCHandy(wtfHandy.getText());
 		getAnsprechpartnerDto().setNewsletterEmpfaenger(
 				wcbNewsletterEmpfaenger.isSelected());
+		getAnsprechpartnerDto().setCAbteilung(wtfAbteilung.getText());
 
 	}
 

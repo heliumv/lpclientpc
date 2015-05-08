@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -35,22 +35,25 @@ package com.lp.client.frame.component.frameposition;
 import com.lp.client.pc.LPMain;
 import com.lp.util.Helper;
 
-
-
 public class LocalSettingsPathGenerator {
 
 	public static final String SEP = System.getProperty("file.separator");
 	private static final String HELIUMV_DIR = ".heliumv";
 	private static final String USERNAMEDEFAULT = "Default";
+	private static final String LOG_DIR = "log";
 	
 	private String mandant;
 	private String username;
 	
 	public LocalSettingsPathGenerator() {
 		try {
-			String benutzername = LPMain.getTheClient().getBenutzername();
-			mandant = LPMain.getTheClient().getMandant();
-			username = Helper.getMD5Hash(benutzername.trim().substring(0,	benutzername.indexOf("|"))).toString();
+			if(LPMain.getTheClient() == null) {
+				username = USERNAMEDEFAULT;
+			} else {
+				String benutzername = LPMain.getTheClient().getBenutzername();
+				mandant = LPMain.getTheClient().getMandant();
+				username = Helper.getMD5Hash(benutzername.trim().substring(0,	benutzername.indexOf("|"))).toString();
+			}
 		} catch (Throwable e) {
 			username = USERNAMEDEFAULT;
 		}
@@ -60,12 +63,19 @@ public class LocalSettingsPathGenerator {
 		return mandant == null? "" : mandant + SEP;
 	}
 	
-	public String getPath() {
+	public String getUserPath() {
 		return  getUserHomeDir() + SEP + HELIUMV_DIR + SEP + username + SEP + getMandantFolder();
+	}
+
+	public String getDefaultPath() {
+		return  getUserHomeDir() + SEP + HELIUMV_DIR + SEP + USERNAMEDEFAULT + SEP;
+	}
+	
+	public String getLogPath() {
+		return  getDefaultPath() + LOG_DIR + SEP;
 	}
 	
 	private String getUserHomeDir() {
-//		return SystemProperties.isWindows() ? "%APPDATA%" : System.getProperty("user.home");
 		return System.getProperty("user.home");
 	}
 }

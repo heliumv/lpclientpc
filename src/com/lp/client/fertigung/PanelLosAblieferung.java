@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -38,25 +38,30 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.FocusEvent;
+import java.awt.event.InputEvent;
 import java.math.BigDecimal;
 import java.util.EventObject;
 
 import javax.swing.BorderFactory;
+import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JEditorPane;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
 import javax.swing.border.Border;
 
 import com.lp.client.frame.Defaults;
 import com.lp.client.frame.ExceptionLP;
 import com.lp.client.frame.HelperClient;
+import com.lp.client.frame.component.DialogSnrauswahl;
 import com.lp.client.frame.component.FehlmengenAufloesen;
 import com.lp.client.frame.component.InternalFrame;
 import com.lp.client.frame.component.PanelBasis;
+import com.lp.client.frame.component.WrapperButton;
 import com.lp.client.frame.component.WrapperCheckBox;
 import com.lp.client.frame.component.WrapperDateField;
 import com.lp.client.frame.component.WrapperLabel;
@@ -97,6 +102,7 @@ public class PanelLosAblieferung extends PanelBasis {
 	private static final long serialVersionUID = 1L;
 
 	static final private String ACTION_SPECIAL_ETIKETTDRUCKEN = "action_special_etikettdrucken";
+	static final private String ACTION_SPECIAL_ALLE_GSNR_ANZEIGEN = "action_special_alle_gsnr_anzeigen";
 
 	private TabbedPaneLos tabbedPaneLos = null;
 
@@ -130,15 +136,13 @@ public class PanelLosAblieferung extends PanelBasis {
 	WrapperLabel wlagGsnr = null;
 	private JScrollPane jScrollPaneGsnr = new JScrollPane();
 	JEditorPane textPanelGsnr = new JEditorPane();
+	private JButton wbuAlleGsnrAnzeigen = new JButton();
 
 	private BigDecimal bdVorherigeMenge = null;
 	private boolean bGeraeteseriennummern = false;
 
 	private WrapperCheckBox wcbErledigt = null;
 	private WrapperCheckBox wcbMaterialzurueckgeben = new WrapperCheckBox();
-
-	private WrapperLabel wlaVersion = null;
-	private WrapperTextField wtfVersion = null;
 
 	// private WrapperCheckBox wcbMaterialZurueckbuchen = new WrapperCheckBox();
 
@@ -197,7 +201,7 @@ public class PanelLosAblieferung extends PanelBasis {
 		wlaEinheit3 = new WrapperLabel();
 		wlaDatum = new WrapperLabel();
 		wdfDatum = new WrapperDateField();
-		wsfSerieCharge = new WrapperSnrChnrField(getInternalFrame());
+		wsfSerieCharge = new WrapperSnrChnrField(getInternalFrame(), true);
 		wsfSerieCharge.setWnfBelegMenge(wnfMenge);
 		wsfSerieCharge.setActivatable(false);
 		wlaGestehungspreis = new WrapperLabel();
@@ -210,8 +214,6 @@ public class PanelLosAblieferung extends PanelBasis {
 		wnfMaterialwert = new WrapperNumberField();
 		wlaWaehrung3 = new WrapperLabel();
 		wcbErledigt = new WrapperCheckBox();
-		wlaVersion = new WrapperLabel();
-		wtfVersion = new WrapperTextField();
 
 		wlaMenge.setMinimumSize(new Dimension(100, Defaults.getInstance()
 				.getControlHeight()));
@@ -229,7 +231,6 @@ public class PanelLosAblieferung extends PanelBasis {
 		wlaLosgroesse.setText(LPMain.getTextRespectUISPr("label.losgroesse"));
 		wlaOffen.setText(LPMain.getTextRespectUISPr("label.offen"));
 		wlaDatum.setText(LPMain.getTextRespectUISPr("lp.datum"));
-		wlaVersion.setText(LPMain.getTextRespectUISPr("lp.version"));
 
 		wlaGestehungspreis.setText(LPMain
 				.getTextRespectUISPr("fert.ablieferung.ablieferpreis"));
@@ -270,6 +271,12 @@ public class PanelLosAblieferung extends PanelBasis {
 		jScrollPaneGsnr.getViewport().add(textPanelGsnr);
 		wlagGsnr = new WrapperLabel(
 				LPMain.getTextRespectUISPr("fert.geraeteseriennummern") + ":");
+
+		wbuAlleGsnrAnzeigen.setText(LPMain
+				.getTextRespectUISPr("fert.ablieferung.geraetesnrs.anzeigen"));
+		wbuAlleGsnrAnzeigen.setActionCommand(ACTION_SPECIAL_ALLE_GSNR_ANZEIGEN);
+		wbuAlleGsnrAnzeigen.addActionListener(this);
+
 		wlagGsnr.setHorizontalAlignment(SwingConstants.LEFT);
 		wnfMenge.setFractionDigits(0);
 		wnfLosgroesse.setFractionDigits(0);
@@ -337,7 +344,7 @@ public class PanelLosAblieferung extends PanelBasis {
 
 		jScrollPaneGsnr.setVisible(false);
 		jPanelWorkingOn.add(jScrollPaneGsnr, new GridBagConstraints(3, iZeile,
-				2, 6, 0.0, 0.0, GridBagConstraints.CENTER,
+				2, 5, 0.0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 300, 0));
 
 		iZeile++;
@@ -379,13 +386,10 @@ public class PanelLosAblieferung extends PanelBasis {
 				1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
 		iZeile++;
-		jPanelWorkingOn.add(wlaVersion, new GridBagConstraints(0, iZeile, 1, 1,
-				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wtfVersion, new GridBagConstraints(1, iZeile, 1, 1,
-				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-
+		wbuAlleGsnrAnzeigen.setVisible(false);
+		jPanelWorkingOn.add(wbuAlleGsnrAnzeigen, new GridBagConstraints(3,
+				iZeile, 2, 1, 0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
 		if (DelegateFactory.getInstance().getTheJudgeDelegate()
 				.hatRecht(RechteFac.RECHT_FERT_DARF_LOS_ERLEDIGEN)) {
 			iZeile++;
@@ -399,9 +403,12 @@ public class PanelLosAblieferung extends PanelBasis {
 				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
 		wcbMaterialzurueckgeben.setVisible(false);
 
-		this.createAndSaveAndShowButton("/com/lp/client/res/printer216x16.png",
-				LPMain.getTextRespectUISPr("artikel.report.etikett"),
-				ACTION_SPECIAL_ETIKETTDRUCKEN, null);
+		this.createAndSaveAndShowButton(
+				"/com/lp/client/res/printer216x16.png",
+				LPMain.getTextRespectUISPr("artikel.report.etikett.shortcut"),
+				ACTION_SPECIAL_ETIKETTDRUCKEN,
+				KeyStroke.getKeyStroke('P', InputEvent.CTRL_DOWN_MASK
+						| InputEvent.SHIFT_DOWN_MASK), null);
 
 	}
 
@@ -448,17 +455,42 @@ public class PanelLosAblieferung extends PanelBasis {
 				boolean bSpeichern;
 
 				if (losablieferungDto.getIId() == null) {
+
+					StuecklisteDto stklDto = null;
+					if (getTabbedPaneLos().getLosDto().getStuecklisteIId() != null) {
+
+						stklDto = DelegateFactory
+								.getInstance()
+								.getStuecklisteDelegate()
+								.stuecklisteFindByPrimaryKey(
+										getTabbedPaneLos().getLosDto()
+												.getStuecklisteIId());
+					}
+
+					ParametermandantDto parameter = (ParametermandantDto) DelegateFactory
+							.getInstance()
+							.getParameterDelegate()
+							.getParametermandant(
+									ParameterFac.PARAMETER_KEINE_AUTOMATISCHE_MATERIALBUCHUNG,
+									ParameterFac.KATEGORIE_FERTIGUNG,
+									LPMain.getInstance().getTheClient()
+											.getMandant());
+
+					boolean bKeineAutomatischeMaterialbuchung = ((Boolean) parameter
+							.getCWertAsObject());
+
+					// PJ18630
+					if (stklDto != null) {
+						bKeineAutomatischeMaterialbuchung = Helper
+								.short2boolean(stklDto
+										.getBKeineAutomatischeMaterialbuchung());
+					}
+
 					// PJ 16622
 					if (bGeraeteseriennummern == true) {
 
-						if (getTabbedPaneLos().getLosDto().getStuecklisteIId() != null) {
+						if (stklDto != null) {
 
-							StuecklisteDto stklDto = DelegateFactory
-									.getInstance()
-									.getStuecklisteDelegate()
-									.stuecklisteFindByPrimaryKey(
-											getTabbedPaneLos().getLosDto()
-													.getStuecklisteIId());
 							ArtikelDto aDto = DelegateFactory
 									.getInstance()
 									.getArtikelDelegate()
@@ -502,15 +534,7 @@ public class PanelLosAblieferung extends PanelBasis {
 						}
 					}
 
-					ParametermandantDto parameter = (ParametermandantDto) DelegateFactory
-							.getInstance()
-							.getParameterDelegate()
-							.getParametermandant(
-									ParameterFac.PARAMETER_KEINE_AUTOMATISCHE_MATERIALBUCHUNG,
-									ParameterFac.KATEGORIE_FERTIGUNG,
-									LPMain.getInstance().getTheClient()
-											.getMandant());
-					if (((Boolean) parameter.getCWertAsObject()) == false) {
+					if (bKeineAutomatischeMaterialbuchung == false) {
 
 						parameter = (ParametermandantDto) DelegateFactory
 								.getInstance()
@@ -533,18 +557,15 @@ public class PanelLosAblieferung extends PanelBasis {
 											true,
 											getTabbedPaneLos()
 													.getAbzubuchendeSeriennrChargen(
+															getTabbedPaneLos()
+																	.getLosDto()
+																	.getIId(),
 															losablieferungDto
-																	.getNMenge()));
+																	.getNMenge(),
+															true));
 
 						} else {
-							if (getTabbedPaneLos().getLosDto()
-									.getStuecklisteIId() != null) {
-								StuecklisteDto stklDto = DelegateFactory
-										.getInstance()
-										.getStuecklisteDelegate()
-										.stuecklisteFindByPrimaryKey(
-												getTabbedPaneLos().getLosDto()
-														.getStuecklisteIId());
+							if (stklDto != null) {
 								if (Helper.short2Boolean(stklDto
 										.getBMaterialbuchungbeiablieferung()) == true) {
 									DelegateFactory
@@ -560,8 +581,12 @@ public class PanelLosAblieferung extends PanelBasis {
 													true,
 													getTabbedPaneLos()
 															.getAbzubuchendeSeriennrChargen(
+																	getTabbedPaneLos()
+																			.getLosDto()
+																			.getIId(),
 																	losablieferungDto
-																			.getNMenge()));
+																			.getNMenge(),
+																	true));
 								}
 							}
 						}
@@ -803,20 +828,13 @@ public class PanelLosAblieferung extends PanelBasis {
 								.getFertigungDelegate()
 								.createLosablieferung(losablieferungDto,
 										wcbErledigt.isSelected());
-						DelegateFactory
-						.getInstance()
-						.getLagerDelegate()
-						.versionInLagerbewegungUpdaten(
-								LocaleFac.BELEGART_LOSABLIEFERUNG,
-								savedDto.getIId(), wtfVersion.getText());
+
 						this.losablieferungDto = savedDto;
 						setKeyWhenDetailPanel(losablieferungDto.getIId());
 						super.eventActionSave(e, true);
 						// los refresh
 						getTabbedPaneLos().reloadLosDto();
 						// jetz den anzeigen
-
-					
 
 						eventYouAreSelected(false);
 
@@ -854,20 +872,12 @@ public class PanelLosAblieferung extends PanelBasis {
 								.getFertigungDelegate()
 								.updateLosablieferung(losablieferungDto,
 										bMaterialZurueckgeben);
-						DelegateFactory
-						.getInstance()
-						.getLagerDelegate()
-						.versionInLagerbewegungUpdaten(
-								LocaleFac.BELEGART_LOSABLIEFERUNG,
-								losablieferungDto.getIId(),
-								wtfVersion.getText());
+
 						setKeyWhenDetailPanel(losablieferungDto.getIId());
 						super.eventActionSave(e, true);
 						// los refresh
 						getTabbedPaneLos().reloadLosDto();
 						// jetz den anzeigen
-
-						
 
 						eventYouAreSelected(false);
 						wcbErledigt.setVisible(true);
@@ -990,18 +1000,8 @@ public class PanelLosAblieferung extends PanelBasis {
 					textPanelGsnr.setText("");
 				}
 
-				// Erste gefundene Version anzeigen
-				LagerbewegungDto[] lDto = DelegateFactory
-						.getInstance()
-						.getLagerDelegate()
-						.lagerbewegungFindByBelegartCNrBelegartPositionIId(
-								LocaleFac.BELEGART_LOSABLIEFERUNG,
-								losablieferungDto.getIId());
-				if (lDto != null && lDto.length > 0) {
-					wtfVersion.setText(lDto[0].getCVersion());
-				}
-
 			}
+
 		} else {
 			textPanelGsnr.setText("");
 			wsfSerieCharge.setSeriennummern(null, (Integer) null, null);
@@ -1022,12 +1022,21 @@ public class PanelLosAblieferung extends PanelBasis {
 				.getFertigungDelegate()
 				.getErledigteMenge(getTabbedPaneLos().getLosDto().getIId());
 
+		boolean bSnrTragend = false;
+		if (getTabbedPaneLos().getStuecklisteDto() != null
+				&& getTabbedPaneLos().getStuecklisteDto().getArtikelDto() != null
+				&& getTabbedPaneLos().getStuecklisteDto().getArtikelDto()
+						.istArtikelSnrOderchargentragend()) {
+			bSnrTragend = true;
+		}
+
 		// Wenn ueberliefert, dann kein Vorschlag
 		if (getTabbedPaneLos().getLosDto().getNLosgroesse()
 				.subtract(bdErledigt).doubleValue() > 0) {
-
-			wnfMenge.setBigDecimal(getTabbedPaneLos().getLosDto()
-					.getNLosgroesse().subtract(bdErledigt));
+			if (bSnrTragend == false) {
+				wnfMenge.setBigDecimal(getTabbedPaneLos().getLosDto()
+						.getNLosgroesse().subtract(bdErledigt));
+			}
 		}
 
 		wcbErledigt.setSelected(true);
@@ -1072,6 +1081,19 @@ public class PanelLosAblieferung extends PanelBasis {
 			ReportAblieferetikett reportEtikett = new ReportAblieferetikett(
 					getInternalFrame(), losablieferungDto.getIId(), "");
 			getInternalFrame().showReportKriterien(reportEtikett, false);
+		} else if (e.getActionCommand().equals(
+				ACTION_SPECIAL_ALLE_GSNR_ANZEIGEN)) {
+			if (losablieferungDto != null
+					&& losablieferungDto.getSeriennrChargennrMitMenge() != null) {
+
+				DialogAlleGeraeteseriennummernEinerLosablieferungAnzeigen d = new DialogAlleGeraeteseriennummernEinerLosablieferungAnzeigen(
+						losablieferungDto.getIId(),
+						losablieferungDto.getSeriennrChargennrMitMenge());
+
+				LPMain.getInstance().getDesktop()
+						.platziereDialogInDerMitteDesFensters(d);
+				d.setVisible(true);
+			}
 		}
 	}
 
@@ -1092,12 +1114,13 @@ public class PanelLosAblieferung extends PanelBasis {
 		super.eventYouAreSelected(false);
 		if (!bNeedNoYouAreSelectedI) {
 
-			wlaVersion.setVisible(false);
-			wtfVersion.setVisible(false);
+			textPanelGsnr.setText("");
+
 			Object key = getKeyWhenDetailPanel();
 			if (key == null || key.equals(LPMain.getLockMeForNew())) {
 				// einen neuen Eintrag anlegen oder die letzte Position wurde
 				// geloescht.
+
 			} else {
 				// einen alten Eintrag laden.
 				losablieferungDto = DelegateFactory.getInstance()
@@ -1158,56 +1181,11 @@ public class PanelLosAblieferung extends PanelBasis {
 
 						wlagGsnr.setVisible(true);
 						jScrollPaneGsnr.setVisible(true);
+						wbuAlleGsnrAnzeigen.setVisible(true);
 					} else {
 						wlagGsnr.setVisible(false);
 						jScrollPaneGsnr.setVisible(false);
-					}
-
-					wlaVersion.setVisible(true);
-					wtfVersion.setVisible(true);
-
-					// PJ 16250 Seriennummer vorschlagen
-					if (key != null && key.equals(LPMain.getLockMeForNew())) {
-						ParametermandantDto parameter = (ParametermandantDto) DelegateFactory
-								.getInstance()
-								.getParameterDelegate()
-								.getParametermandant(
-										ParameterFac.PARAMETER_SERIENNUMMERNGENERATOR,
-										ParameterFac.KATEGORIE_FERTIGUNG,
-										LPMain.getInstance().getTheClient()
-												.getMandant());
-						if (((Integer) parameter.getCWertAsObject()) == 1) {
-							try {
-
-								wsfSerieCharge.setText(DelegateFactory
-										.getInstance()
-										.getLagerDelegate()
-										.getNaechsteSeriennummer(
-												getTabbedPaneLos()
-														.getStuecklisteDto()
-														.getArtikelDto()
-														.getIId(),
-												getTabbedPaneLos().getLosDto()
-														.getLagerIIdZiel()));
-								wnfMenge.setBigDecimal(new BigDecimal(1));
-								focusLost(new FocusEvent(wnfMenge, 0));
-
-							} catch (ExceptionLP e) {
-
-								if (e.getICode() == EJBExceptionLP.FEHLER_SERIENNUMMERNGENERATOR_UNGUELTIGE_ZEICHEN) {
-									String sMsg = LPMain
-											.getTextRespectUISPr("fert.seriennummerngenerator.error")
-											+ ": "
-											+ e.getAlInfoForTheClient().get(0);
-									DialogFactory.showModalDialog(LPMain
-											.getTextRespectUISPr("lp.error"),
-											sMsg);
-								} else {
-									throw e;
-								}
-
-							}
-						}
+						wbuAlleGsnrAnzeigen.setVisible(false);
 					}
 
 				} else {
@@ -1218,6 +1196,7 @@ public class PanelLosAblieferung extends PanelBasis {
 					wsfSerieCharge.setMandatoryField(false);
 					wlagGsnr.setVisible(false);
 					jScrollPaneGsnr.setVisible(false);
+					wbuAlleGsnrAnzeigen.setVisible(false);
 				}
 			} else {
 				wnfMenge.setActivatable(true);
@@ -1227,6 +1206,7 @@ public class PanelLosAblieferung extends PanelBasis {
 				wsfSerieCharge.setMandatoryField(false);
 				wlagGsnr.setVisible(false);
 				jScrollPaneGsnr.setVisible(false);
+				wbuAlleGsnrAnzeigen.setVisible(false);
 			}
 
 		}
@@ -1280,6 +1260,8 @@ public class PanelLosAblieferung extends PanelBasis {
 		} else {
 			wcbMaterialzurueckgeben.setVisible(false);
 		}
+
+		wcbErledigt.setEnabled(false);
 
 	}
 

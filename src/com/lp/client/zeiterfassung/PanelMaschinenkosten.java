@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -32,7 +32,6 @@
  ******************************************************************************/
 package com.lp.client.zeiterfassung;
 
-
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -57,257 +56,244 @@ import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.pc.LPMain;
 import com.lp.server.personal.service.MaschinenkostenDto;
 
+public class PanelMaschinenkosten extends PanelBasis {
 
-public class PanelMaschinenkosten
-    extends PanelBasis
-{
-
-  /**
+	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-//von hier ...
-  private GridBagLayout gridBagLayoutAll = null;
-  private JPanel jpaWorkingOn = new JPanel();
-  private JPanel jpaButtonAction = null;
-  private Border border = null;
-  private GridBagLayout gridBagLayoutWorkingPanel = null;
-  private InternalFrameZeiterfassung internalFrameZeiterfassung = null;
-  private WrapperLabel wlaLager = new WrapperLabel();
-  private MaschinenkostenDto maschinenkostenDto = null;
-  private WrapperLabel wlaLagerart = new WrapperLabel();
-  private WrapperLabel wlaWaehrung = new WrapperLabel();
-  private WrapperNumberField wnfStundensatz = new WrapperNumberField();
-  private WrapperDateField wdfGueltigab = new WrapperDateField();
+	// von hier ...
+	private GridBagLayout gridBagLayoutAll = null;
+	private JPanel jpaWorkingOn = new JPanel();
+	private JPanel jpaButtonAction = null;
+	private Border border = null;
+	private GridBagLayout gridBagLayoutWorkingPanel = null;
+	private InternalFrameZeiterfassung internalFrameZeiterfassung = null;
+	private WrapperLabel wlaLager = new WrapperLabel();
+	private MaschinenkostenDto maschinenkostenDto = null;
+	private WrapperLabel wlaLagerart = new WrapperLabel();
+	private WrapperLabel wlaWaehrung = new WrapperLabel();
+	private WrapperNumberField wnfStundensatz = new WrapperNumberField();
+	private WrapperLabel wlaVKStundensatz = new WrapperLabel();
+	private WrapperNumberField wnfVKStundensatz = new WrapperNumberField();
+	private WrapperDateField wdfGueltigab = new WrapperDateField();
 
-  private WrapperLabel wlaKaufdatum = new WrapperLabel();
+	private WrapperLabel wlaKaufdatum = new WrapperLabel();
 
-  public PanelMaschinenkosten(InternalFrame internalFrame, String add2TitleI,
-                              Object pk)
-      throws Throwable {
-    super(internalFrame, add2TitleI, pk);
-    internalFrameZeiterfassung = (InternalFrameZeiterfassung) internalFrame;
-    jbInit();
-    setDefaults();
-    initComponents();
-    enableAllComponents(this, false);
-  }
+	public PanelMaschinenkosten(InternalFrame internalFrame, String add2TitleI,
+			Object pk) throws Throwable {
+		super(internalFrame, add2TitleI, pk);
+		internalFrameZeiterfassung = (InternalFrameZeiterfassung) internalFrame;
+		jbInit();
+		setDefaults();
+		initComponents();
+		enableAllComponents(this, false);
+	}
 
+	protected JComponent getFirstFocusableComponent() throws Exception {
+		return wnfStundensatz;
+	}
 
-  protected JComponent getFirstFocusableComponent()
-      throws Exception {
-    return wnfStundensatz;
-  }
+	protected void setDefaults() {
 
+	}
 
-  protected void setDefaults() {
+	public void eventYouAreSelected(boolean bNeedNoYouAreSelectedI)
+			throws Throwable {
 
-  }
+		super.eventYouAreSelected(false);
+		Object key = getKeyWhenDetailPanel();
 
+		if (key == null || (key.equals(LPMain.getLockMeForNew()))) {
 
-  public void eventYouAreSelected(boolean bNeedNoYouAreSelectedI)
-      throws Throwable {
+			leereAlleFelder(this);
+			clearStatusbar();
 
-    super.eventYouAreSelected(false);
-    Object key = getKeyWhenDetailPanel();
+			// Das default-Kostendatum, gueltig ab, ist beim ersten Eintrag das
+			// Kaufdatum, sonst heute.
 
-    if (key == null
-        || (key.equals(LPMain.getLockMeForNew()))) {
+			if (internalFrameZeiterfassung.getTabbedPaneMaschinen()
+					.getPanelQueryMaschinenkosten().getSelectedId() == null
+					&& internalFrameZeiterfassung.getMaschineDto()
+							.getTKaufdatum() != null) {
+				wdfGueltigab.setTimestamp(internalFrameZeiterfassung
+						.getMaschineDto().getTKaufdatum());
+			} else {
+				wdfGueltigab.setDate(new java.sql.Date(System
+						.currentTimeMillis()));
+			}
+		} else {
+			maschinenkostenDto = DelegateFactory.getInstance()
+					.getZeiterfassungDelegate()
+					.maschinenkostenFindByPrimaryKey((Integer) key);
 
-      leereAlleFelder(this);
-      clearStatusbar();
+			dto2Components();
 
-      //Das default-Kostendatum, gueltig ab, ist beim ersten Eintrag das Kaufdatum, sonst heute.
+		}
+		wlaKaufdatum.setText(LPMain
+				.getTextRespectUISPr("zeiterfassung.kaufdatum") + ": ");
+		if (internalFrameZeiterfassung.getMaschineDto().getTKaufdatum() != null) {
+			Date date = new Date(internalFrameZeiterfassung.getMaschineDto()
+					.getTKaufdatum().getTime());
+			wlaKaufdatum.setText(wlaKaufdatum.getText()
+					+ com.lp.util.Helper.formatDatum(date, LPMain
+							.getTheClient().getLocUi()));
+		}
 
-      if (internalFrameZeiterfassung.getTabbedPaneMaschinen().
-          getPanelQueryMaschinenkosten().getSelectedId() == null &&
-          internalFrameZeiterfassung.getMaschineDto().getTKaufdatum() != null) {
-        wdfGueltigab.setTimestamp(internalFrameZeiterfassung.getMaschineDto().
-                                  getTKaufdatum());
-      }
-      else {
-        wdfGueltigab.setDate(new java.sql.Date(System.currentTimeMillis()));
-      }
-    }
-    else {
-      maschinenkostenDto = DelegateFactory.getInstance().getZeiterfassungDelegate().
-          maschinenkostenFindByPrimaryKey( (Integer) key);
+	}
 
-      dto2Components();
+	public void eventActionNew(EventObject eventObject, boolean bLockMeI,
+			boolean bNeedNoNewI) throws Throwable {
+		super.eventActionNew(eventObject, true, false);
+		leereAlleFelder(this);
+		maschinenkostenDto = new MaschinenkostenDto();
 
-    }
-    wlaKaufdatum.setText(LPMain.getTextRespectUISPr(
-        "zeiterfassung.kaufdatum") + ": ");
-    if (internalFrameZeiterfassung.getMaschineDto().getTKaufdatum() != null) {
-      Date date = new Date(internalFrameZeiterfassung.getMaschineDto().getTKaufdatum().
-                           getTime());
-      wlaKaufdatum.setText(wlaKaufdatum.getText() +
-                           com.lp.util.Helper.formatDatum(date,
-          LPMain.getTheClient().getLocUi()));
-    }
+	}
 
-  }
+	protected void dto2Components() throws Throwable {
+		wnfVKStundensatz.setBigDecimal(maschinenkostenDto.getNVkstundensatz());
+		wnfStundensatz.setBigDecimal(maschinenkostenDto.getNStundensatz());
+		wdfGueltigab.setTimestamp(maschinenkostenDto.getTGueltigab());
 
+	}
 
-  public void eventActionNew(EventObject eventObject, boolean bLockMeI,
-                             boolean bNeedNoNewI)
-      throws Throwable {
-    super.eventActionNew(eventObject, true, false);
-    leereAlleFelder(this);
-    maschinenkostenDto = new MaschinenkostenDto();
+	protected void eventItemchanged(EventObject eI) throws Throwable {
+		ItemChangedEvent e = (ItemChangedEvent) eI;
+	}
 
-  }
+	public void eventActionSave(ActionEvent e, boolean bNeedNoSaveI)
+			throws Throwable {
+		if (allMandatoryFieldsSetDlg()) {
+			components2Dto();
+			if (maschinenkostenDto.getIId() == null) {
+				maschinenkostenDto.setMaschineIId(internalFrameZeiterfassung
+						.getMaschineDto().getIId());
+				maschinenkostenDto.setIId(DelegateFactory.getInstance()
+						.getZeiterfassungDelegate()
+						.createMaschinenkosten(maschinenkostenDto));
+				setKeyWhenDetailPanel(maschinenkostenDto.getIId());
+			} else {
+				DelegateFactory.getInstance().getZeiterfassungDelegate()
+						.updateMaschinenkosten(maschinenkostenDto);
+			}
+			super.eventActionSave(e, true);
 
+			if (getInternalFrame().getKeyWasForLockMe() == null) {
+				getInternalFrame().setKeyWasForLockMe(
+						internalFrameZeiterfassung.getMaschineDto().getIId()
+								.toString());
+			}
+			eventYouAreSelected(false);
+		}
+	}
 
-  protected void dto2Components()
-      throws Throwable {
-    wnfStundensatz.setBigDecimal(maschinenkostenDto.getNStundensatz());
-    wdfGueltigab.setTimestamp(maschinenkostenDto.getTGueltigab());
+	protected void components2Dto() throws ExceptionLP {
+		maschinenkostenDto.setNVkstundensatz(wnfVKStundensatz.getBigDecimal());
+		maschinenkostenDto.setNStundensatz(wnfStundensatz.getBigDecimal());
+		maschinenkostenDto.setTGueltigab(wdfGueltigab.getTimestamp());
+	}
 
-  }
+	protected void eventActionDelete(ActionEvent e,
+			boolean bAdministrateLockKeyI, boolean bNeedNoDeleteI)
+			throws Throwable {
+		MaschinenkostenDto dto = new MaschinenkostenDto();
+		dto.setIId((Integer) getKeyWhenDetailPanel());
+		DelegateFactory.getInstance().getZeiterfassungDelegate()
+				.removeMaschinenkosten(dto);
+		this.setKeyWhenDetailPanel(null);
+		super.eventActionDelete(e, false, false);
+		maschinenkostenDto = new MaschinenkostenDto();
+	}
 
+	private void jbInit() throws Throwable {
+		// von hier ...
+		border = BorderFactory.createEmptyBorder(10, 10, 10, 10);
+		setBorder(border);
+		// das Aussenpanel hat immer das Gridbaglayout.
+		gridBagLayoutAll = new GridBagLayout();
+		this.setLayout(gridBagLayoutAll);
 
-  protected void eventItemchanged(EventObject eI)
-      throws Throwable {
-    ItemChangedEvent e = (ItemChangedEvent) eI;
-  }
+		// Actionpanel von Oberklasse holen und anhaengen.
+		jpaButtonAction = getToolsPanel();
+		this.setActionMap(null);
 
+		wlaLager.setText(LPMain.getTextRespectUISPr("lp.gueltigab"));
+		getInternalFrame().addItemChangedListener(this);
 
-  public void eventActionSave(ActionEvent e, boolean bNeedNoSaveI)
-      throws Throwable {
-    if (allMandatoryFieldsSetDlg()) {
-      components2Dto();
-      if (maschinenkostenDto.getIId() == null) {
-        maschinenkostenDto.setMaschineIId(internalFrameZeiterfassung.getMaschineDto().
-                                          getIId());
-        maschinenkostenDto.setIId(DelegateFactory.getInstance().getZeiterfassungDelegate().
-                                  createMaschinenkosten(
-                                      maschinenkostenDto));
-        setKeyWhenDetailPanel(maschinenkostenDto.getIId());
-      }
-      else {
-        DelegateFactory.getInstance().getZeiterfassungDelegate().updateMaschinenkosten(
-            maschinenkostenDto);
-      }
-      super.eventActionSave(e, true);
+		wlaLagerart.setToolTipText("");
+		wlaLagerart.setText(LPMain
+				.getTextRespectUISPr("pers.personalgehalt.stundensatz"));
 
-      if (getInternalFrame().getKeyWasForLockMe() == null) {
-        getInternalFrame().setKeyWasForLockMe(internalFrameZeiterfassung.
-                                              getMaschineDto().getIId().
-                                              toString());
-      }
-      eventYouAreSelected(false);
-    }
-  }
+		wlaVKStundensatz.setText(LPMain
+				.getTextRespectUISPr("pers.personalgehalt.vkstundensatz"));
 
+		wlaWaehrung.setText(DelegateFactory.getInstance().getMandantDelegate()
+				.mandantFindByPrimaryKey(LPMain.getTheClient().getMandant())
+				.getWaehrungCNr());
+		;
+		wdfGueltigab.setMandatoryField(true);
+		wnfStundensatz.setMandatoryField(true);
+		wnfVKStundensatz.setMandatoryField(true);
+		this.add(jpaButtonAction, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(0,
+						0, 0, 0), 0, 0));
 
-  protected void components2Dto()
-      throws ExceptionLP {
-    maschinenkostenDto.setNStundensatz(wnfStundensatz.getBigDecimal());
-    maschinenkostenDto.setTGueltigab(wdfGueltigab.getTimestamp());
-  }
+		// jetzt meine felder
+		jpaWorkingOn = new JPanel();
+		gridBagLayoutWorkingPanel = new GridBagLayout();
+		jpaWorkingOn.setLayout(gridBagLayoutWorkingPanel);
+		this.add(jpaWorkingOn, new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0,
+				GridBagConstraints.SOUTHEAST, GridBagConstraints.BOTH,
+				new Insets(0, 0, 0, 0), 0, 0));
+		this.add(getPanelStatusbar(), new GridBagConstraints(0, 2, 1, 1, 1.0,
+				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
+				new Insets(0, 0, 0, 0), 0, 0));
+		jpaWorkingOn.add(wlaKaufdatum, new GridBagConstraints(0, 0, 1, 1, 0,
+				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+				new Insets(2, 2, 2, 2), 0, 0));
 
+		jpaWorkingOn.add(wlaLager, new GridBagConstraints(0, 1, 1, 1, 0.05,
+				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+				new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wlaLagerart, new GridBagConstraints(3, 1, 1, 1, 0.05,
+				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+				new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wnfStundensatz, new GridBagConstraints(4, 1, 1, 1,
+				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.NONE,
+				new Insets(0, 0, 0, 0), 0, 0));
+		jpaWorkingOn.add(wdfGueltigab, new GridBagConstraints(1, 1, 1, 1, 0.1,
+				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+				new Insets(0, 0, 0, 0), 0, 0));
+		jpaWorkingOn.add(wlaWaehrung, new GridBagConstraints(5, 1, 1, 1, 0,
+				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+				new Insets(0, 0, 0, 0), 20, 0));
+		jpaWorkingOn.add(wlaVKStundensatz, new GridBagConstraints(3, 2, 1, 1,
+				0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
 
-  protected void eventActionDelete(ActionEvent e, boolean bAdministrateLockKeyI,
-                                   boolean bNeedNoDeleteI)
-      throws Throwable {
-    MaschinenkostenDto dto = new MaschinenkostenDto();
-    dto.setIId( (Integer) getKeyWhenDetailPanel());
-    DelegateFactory.getInstance().getZeiterfassungDelegate().removeMaschinenkosten(dto);
-    this.setKeyWhenDetailPanel(null);
-    super.eventActionDelete(e, false, false);
-    maschinenkostenDto = new MaschinenkostenDto();
-  }
+		jpaWorkingOn.add(wnfVKStundensatz, new GridBagConstraints(4, 2, 1, 1,
+				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.NONE,
+				new Insets(0, 0, 0, 0), 0, 0));
+		jpaWorkingOn.add(
+				new WrapperLabel(DelegateFactory
+						.getInstance()
+						.getMandantDelegate()
+						.mandantFindByPrimaryKey(
+								LPMain.getTheClient().getMandant())
+						.getWaehrungCNr()), new GridBagConstraints(5, 2, 1, 1,
+						0, 0.0, GridBagConstraints.CENTER,
+						GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0),
+						20, 0));
 
+		String[] aWhichButtonIUse = { ACTION_UPDATE, ACTION_SAVE,
+				ACTION_DELETE, ACTION_DISCARD, };
 
-  private void jbInit()
-      throws Throwable {
-    //von hier ...
-    border = BorderFactory.createEmptyBorder(10, 10, 10, 10);
-    setBorder(border);
-    //das Aussenpanel hat immer das Gridbaglayout.
-    gridBagLayoutAll = new GridBagLayout();
-    this.setLayout(gridBagLayoutAll);
+		enableToolsPanelButtons(aWhichButtonIUse);
 
-    //Actionpanel von Oberklasse holen und anhaengen.
-    jpaButtonAction = getToolsPanel();
-    this.setActionMap(null);
+	}
 
-    wlaLager.setText(LPMain.getTextRespectUISPr("lp.gueltigab"));
-    getInternalFrame().addItemChangedListener(this);
-
-    wlaLagerart.setToolTipText("");
-    wlaLagerart.setText(LPMain.getTextRespectUISPr(
-        "pers.personalgehalt.stundensatz"));
-
-    wlaWaehrung.setText(DelegateFactory.getInstance().getMandantDelegate().
-                        mandantFindByPrimaryKey(LPMain.
-                                                getTheClient().getMandant()).
-                        getWaehrungCNr());
-    ;
-    wdfGueltigab.setMandatoryField(true);
-    wnfStundensatz.setMandatoryField(true);
-    this.add(jpaButtonAction, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0
-        , GridBagConstraints.WEST, GridBagConstraints.NONE,
-        new Insets(0, 0, 0, 0), 0, 0));
-
-    //jetzt meine felder
-    jpaWorkingOn = new JPanel();
-    gridBagLayoutWorkingPanel = new GridBagLayout();
-    jpaWorkingOn.setLayout(gridBagLayoutWorkingPanel);
-    this.add(jpaWorkingOn, new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0
-                                                  , GridBagConstraints.SOUTHEAST,
-                                                  GridBagConstraints.BOTH,
-                                                  new Insets(0, 0, 0, 0), 0, 0));
-    this.add(getPanelStatusbar(), new GridBagConstraints(0, 2, 1, 1, 1.0, 0.0
-        , GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-        new Insets(0, 0, 0, 0), 0, 0));
-    jpaWorkingOn.add(wlaKaufdatum,
-                     new GridBagConstraints(0, 0,1, 1, 0, 0.0
-                                            , GridBagConstraints.CENTER,
-                                            GridBagConstraints.HORIZONTAL,
-                                            new Insets(2, 2, 2, 2), 0, 0));
-
-    jpaWorkingOn.add(wlaLager,
-                     new GridBagConstraints(0, 1, 1, 1, 0.05, 0.0
-                                            , GridBagConstraints.CENTER,
-                                            GridBagConstraints.HORIZONTAL,
-                                            new Insets(2, 2, 2, 2), 0, 0));
-    jpaWorkingOn.add(wlaLagerart,
-                     new GridBagConstraints(3, 1, 1, 1, 0.05, 0.0
-                                            , GridBagConstraints.CENTER,
-                                            GridBagConstraints.HORIZONTAL,
-                                            new Insets(2, 2, 2, 2), 0, 0));
-    jpaWorkingOn.add(wnfStundensatz,
-                     new GridBagConstraints(4, 1, 1, 1, 0.0, 0.0
-                                            , GridBagConstraints.CENTER,
-                                            GridBagConstraints.NONE,
-                                            new Insets(0, 0, 0, 0), 0, 0));
-    jpaWorkingOn.add(wdfGueltigab,
-                     new GridBagConstraints(1, 1, 1, 1, 0.1, 0.0
-                                            , GridBagConstraints.CENTER,
-                                            GridBagConstraints.HORIZONTAL,
-                                            new Insets(0, 0, 0, 0), 0, 0));
-    jpaWorkingOn.add(wlaWaehrung,
-                     new GridBagConstraints(5, 1, 1, 1, 0, 0.0
-                                            , GridBagConstraints.CENTER,
-                                            GridBagConstraints.HORIZONTAL,
-                                            new Insets(0, 0, 0, 0), 20, 0));
-    String[] aWhichButtonIUse = {
-        ACTION_UPDATE,
-        ACTION_SAVE,
-        ACTION_DELETE,
-        ACTION_DISCARD,
-    };
-
-    enableToolsPanelButtons(aWhichButtonIUse);
-
-  }
-
-
-  protected String getLockMeWer()
-      throws Exception {
-    return HelperClient.LOCKME_MASCHINE;
-  }
+	protected String getLockMeWer() throws Exception {
+		return HelperClient.LOCKME_MASCHINE;
+	}
 
 }

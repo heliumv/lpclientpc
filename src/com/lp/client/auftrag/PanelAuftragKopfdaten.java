@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -53,6 +53,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JTextArea;
@@ -61,8 +62,10 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingWorker;
 
 import net.miginfocom.swing.MigLayout;
+import net.sf.jasperreports.engine.JRException;
 
 import com.lp.client.artikel.ArtikelFilterFactory;
+import com.lp.client.fertigung.ReportAusgabeliste;
 import com.lp.client.finanz.FinanzFilterFactory;
 import com.lp.client.frame.ExceptionLP;
 import com.lp.client.frame.HelperClient;
@@ -88,13 +91,17 @@ import com.lp.client.frame.component.WrapperTextField;
 import com.lp.client.frame.component.WrapperTimeField;
 import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.frame.dialog.DialogFactory;
+import com.lp.client.frame.report.PanelReportKriterien;
 import com.lp.client.partner.PartnerFilterFactory;
 import com.lp.client.pc.Desktop;
 import com.lp.client.pc.LPButtonAction;
 import com.lp.client.pc.LPMain;
 import com.lp.client.personal.PersonalFilterFactory;
+import com.lp.client.rechnung.ReportRechnung;
 import com.lp.client.system.SystemFilterFactory;
 import com.lp.server.angebot.service.AngebotDto;
+import com.lp.server.artikel.service.ArtgruDto;
+import com.lp.server.artikel.service.ArtikelFac;
 import com.lp.server.artikel.service.LagerDto;
 import com.lp.server.auftrag.service.AuftragDto;
 import com.lp.server.auftrag.service.AuftragFac;
@@ -113,6 +120,8 @@ import com.lp.server.system.service.ParameterFac;
 import com.lp.server.system.service.ParametermandantDto;
 import com.lp.server.system.service.WaehrungDto;
 import com.lp.server.util.Facade;
+import com.lp.server.util.fastlanereader.service.query.FilterKriterium;
+import com.lp.server.util.fastlanereader.service.query.QueryParameters;
 import com.lp.util.EJBExceptionLP;
 import com.lp.util.Helper;
 
@@ -149,6 +158,9 @@ public class PanelAuftragKopfdaten extends PanelBasis implements
 	private KostenstelleDto kostenstelleDto = null;
 
 	private PanelQueryFLR panelQueryFLRAbbuchungsLager = null;
+	private PanelQueryFLR panelQueryFLRArtikelFuerSchnellanlage = null;
+
+	private PanelDialogAuftragArtikelSchnellanlage panelDialogAuftragArtikelSchnellanlage = null;
 
 	// aenderewaehrung: 0 die urspruengliche Belegwaehrung hinterlegen
 	private WaehrungDto waehrungOriDto = null;
@@ -254,7 +266,7 @@ public class PanelAuftragKopfdaten extends PanelBasis implements
 	private WrapperLabel wlaAngebot = null;
 	private WrapperTextField wtfAngebot = null;
 
-	private WrapperButton wbuRahmenauswahl = null;
+	private WrapperGotoButton wbuRahmenauswahl = null;
 	private PanelQueryFLR panelQueryFLRRahmenauswahl = null;
 
 	private WrapperTextField wtfRahmencnr = null;
@@ -295,6 +307,16 @@ public class PanelAuftragKopfdaten extends PanelBasis implements
 	private static final ImageIcon RESPONSE_ICON_DONE = HelperClient
 			.createImageIcon("data_out_green.png");
 
+	private boolean bSchnellanlage = false;
+
+	public boolean isSchnellanlage() {
+		return bSchnellanlage;
+	}
+
+	public void setSchnellanlage(boolean bSchnellanlage) {
+		this.bSchnellanlage = bSchnellanlage;
+	}
+
 	/**
 	 * Konstruktor.
 	 * 
@@ -325,6 +347,13 @@ public class PanelAuftragKopfdaten extends PanelBasis implements
 		initComponents();
 	}
 
+	public PanelDialogAuftragArtikelSchnellanlage getAuftragArtikelSchnellanlage(
+			Integer artikelIId, AuftragDto auftragDto) throws Throwable {
+		panelDialogAuftragArtikelSchnellanlage = new PanelDialogAuftragArtikelSchnellanlage(
+				getInternalFrame(), artikelIId);
+		return panelDialogAuftragArtikelSchnellanlage;
+	}
+
 	private String getIconNameLieferaviso() {
 		String iconName = "/com/lp/client/res/data_out.png";
 		if (tpAuftrag.getAuftragDto() != null
@@ -336,10 +365,21 @@ public class PanelAuftragKopfdaten extends PanelBasis implements
 
 	void jbInit() throws Throwable {
 
-		createAndSaveAndShowButton(
-				"/com/lp/client/res/element_preferences.png",
-				LPMain.getTextRespectUISPr("auftrag.verstecken"),
-				ACTION_SPECIAL_VERSTECKEN, RechteFac.RECHT_AUFT_AUFTRAG_CUD);
+		ParametermandantDto parameterMandant = DelegateFactory
+				.getInstance()
+				.getParameterDelegate()
+				.getMandantparameter(
+						LPMain.getTheClient().getMandant(),
+						ParameterFac.KATEGORIE_AUFTRAG,
+						ParameterFac.PARAMETER_AUFTRAEGE_KOENNEN_VERSTECKT_WERDEN);
+
+		boolean b = (Boolean) parameterMandant.getCWertAsObject();
+		if (b == true) {
+			createAndSaveAndShowButton(
+					"/com/lp/client/res/element_preferences.png",
+					LPMain.getTextRespectUISPr("auftrag.verstecken"),
+					ACTION_SPECIAL_VERSTECKEN, RechteFac.RECHT_AUFT_AUFTRAG_CUD);
+		}
 
 		if (bZusatzfunktionVersandweg) {
 			createAndSaveAndShowButton(getIconNameLieferaviso(), LPMain
@@ -426,8 +466,9 @@ public class PanelAuftragKopfdaten extends PanelBasis implements
 		gc.set(Calendar.DATE, iTagen);
 		wdfBelegdatum.setMinimumValue(new Date(gc.getTimeInMillis()));
 
-		wbuRahmenauswahl = new WrapperButton(LPMain.getInstance()
-				.getTextRespectUISPr("button.rahmen"));
+		wbuRahmenauswahl = new WrapperGotoButton(LPMain.getInstance()
+				.getTextRespectUISPr("button.rahmen"),
+				WrapperGotoButton.GOTO_AUFTRAG_AUSWAHL);
 		wbuRahmenauswahl.setActionCommand(ACTION_SPECIAL_RAHMENAUSWAHL);
 		wbuRahmenauswahl.addActionListener(this);
 
@@ -729,7 +770,6 @@ public class PanelAuftragKopfdaten extends PanelBasis implements
 				.darfAnwenderAufZusatzfunktionZugreifen(
 						MandantFac.ZUSATZFUNKTION_PROJEKTKLAMMER)) {
 
-			
 			ParametermandantDto parametermandantDto = DelegateFactory
 					.getInstance()
 					.getParameterDelegate()
@@ -743,7 +783,6 @@ public class PanelAuftragKopfdaten extends PanelBasis implements
 				wsfProjekt.setMandatoryField(true);
 			}
 
-			
 			jPanelWorkingOn.add(wtfProjekt, "span 3");
 			jPanelWorkingOn.add(wsfProjekt.getWrapperGotoButton());
 			jPanelWorkingOn.add(wsfProjekt.getWrapperTextField(), "span");
@@ -857,15 +896,32 @@ public class PanelAuftragKopfdaten extends PanelBasis implements
 					.hatRecht(RechteFac.RECHT_PERS_ZEITEREFASSUNG_CUD);
 			if (hatRecht) {
 
-				getToolBar().addButtonRight("/com/lp/client/res/gear_run.png",
-						LPMain.getTextRespectUISPr("proj.startzeit"),
-						Desktop.MY_OWN_NEW_ZEIT_START, null, null);
-				getToolBar().addButtonRight("/com/lp/client/res/gear_stop.png",
-						LPMain.getTextRespectUISPr("proj.stopzeit"),
-						Desktop.MY_OWN_NEW_ZEIT_STOP, null, null);
+				ParametermandantDto parameter = DelegateFactory
+						.getInstance()
+						.getParameterDelegate()
+						.getMandantparameter(
+								LPMain.getTheClient().getMandant(),
+								ParameterFac.KATEGORIE_PERSONAL,
+								ParameterFac.PARAMETER_VON_BIS_ERFASSUNG);
+				boolean bVonBisErfassung = (java.lang.Boolean) parameter
+						.getCWertAsObject();
 
-				enableToolsPanelButtons(true, Desktop.MY_OWN_NEW_ZEIT_START,
-						Desktop.MY_OWN_NEW_ZEIT_STOP);
+				// SP2352
+				if (bVonBisErfassung == false) {
+
+					getToolBar().addButtonRight(
+							"/com/lp/client/res/gear_run.png",
+							LPMain.getTextRespectUISPr("proj.startzeit"),
+							Desktop.MY_OWN_NEW_ZEIT_START, null, null);
+					getToolBar().addButtonRight(
+							"/com/lp/client/res/gear_stop.png",
+							LPMain.getTextRespectUISPr("proj.stopzeit"),
+							Desktop.MY_OWN_NEW_ZEIT_STOP, null, null);
+
+					enableToolsPanelButtons(true,
+							Desktop.MY_OWN_NEW_ZEIT_START,
+							Desktop.MY_OWN_NEW_ZEIT_STOP);
+				}
 
 			}
 		}
@@ -1076,6 +1132,12 @@ public class PanelAuftragKopfdaten extends PanelBasis implements
 				wtfAbbuchungslager.setText(lagerDto.getCNr());
 				tpAuftrag.getAuftragDto().setLagerIIdAbbuchungslager(
 						lagerDto.getIId());
+			} else if (e.getSource() == panelQueryFLRArtikelFuerSchnellanlage) {
+				Object key = ((ISourceEvent) e.getSource()).getIdSelected();
+				getInternalFrame().showPanelDialog(
+						getAuftragArtikelSchnellanlage((Integer) key,
+								tpAuftrag.getAuftragDto()));
+
 			} else
 
 			// Source ist der Ansprechpartnerauswahldialog
@@ -1294,6 +1356,7 @@ public class PanelAuftragKopfdaten extends PanelBasis implements
 					tpAuftrag.setAuftragDto(rahmenauftragDto);
 
 					wtfRahmencnr.setText(rahmenauftragDto.getCNr());
+					wbuRahmenauswahl.setOKey(rahmenauftragDto.getIId());
 					wtfRahmenbez.setText(rahmenauftragDto
 							.getCBezProjektbezeichnung());
 
@@ -1318,11 +1381,62 @@ public class PanelAuftragKopfdaten extends PanelBasis implements
 				wtfAnsprechpartnerRechungsadresse.setText("");
 			}
 		}
+
+		else if (e.getID() == ItemChangedEvent.ACTION_KRITERIEN_HAVE_BEEN_SELECTED) {
+			if (e.getSource() == panelDialogAuftragArtikelSchnellanlage) {
+				// ANLEGEN
+				Integer auftragIId = DelegateFactory
+						.getInstance()
+						.getAuftragDelegate()
+						.erzeugeAuftragUeberSchnellanlage(
+								tpAuftrag.getAuftragDto(),
+								panelDialogAuftragArtikelSchnellanlage
+										.getArtikelDto(),
+								panelDialogAuftragArtikelSchnellanlage
+										.getPaneldatenDtos());
+				tpAuftrag.setAuftragDto(DelegateFactory.getInstance()
+						.getAuftragDelegate()
+						.auftragFindByPrimaryKey(auftragIId));
+				setKeyWhenDetailPanel(auftragIId);
+				super.eventActionSave(null, true);
+				eventYouAreSelected(false);
+
+				if (panelDialogAuftragArtikelSchnellanlage
+						.getPacklisteDrucken()) {
+
+					KundeDto kdDto = DelegateFactory
+							.getInstance()
+							.getKundeDelegate()
+							.kundeFindByPrimaryKey(
+									tpAuftrag.getAuftragDto()
+											.getKundeIIdAuftragsadresse());
+
+					PanelReportKriterien krit = null;
+
+					// DruckPanel instantiieren
+					krit = new PanelReportKriterien(getInternalFrame(),
+							new ReportAuftragPackliste(getInternalFrame(),
+									auftragIId, ""), "", kdDto.getPartnerDto(),
+							tpAuftrag.getAuftragDto().getAnsprechparnterIId(),
+							false, false, false);
+					// jetzt das tatsaechliche Drucken
+					krit.druckeArchiviereUndSetzeVersandstatusEinesBelegs();
+
+				}
+
+				bSchnellanlage = false;
+			}
+		}
+
 	}
 
 	private void kundenDatenVorbesetzen(Integer iIdKunde) throws ExceptionLP,
 			Throwable {
-		DelegateFactory.getInstance().getKundeDelegate().pruefeKunde(iIdKunde);
+		DelegateFactory
+				.getInstance()
+				.getKundeDelegate()
+				.pruefeKunde(iIdKunde, LocaleFac.BELEGART_AUFTRAG,
+						getInternalFrame());
 
 		// aenderewaehrung: 2 die urspruengliche Waehrung
 		// hinterlegen, wenn es eine gibt
@@ -1553,7 +1667,7 @@ public class PanelAuftragKopfdaten extends PanelBasis implements
 
 		// Lieferadresse
 
-		if (iAdressvorbelegung == 0) {
+		if (iAdressvorbelegung == 0 || iAdressvorbelegung == 2) {
 			// PJ 17644 Rechnungsadresse aus Haeufigkeit holen
 			ArrayList<KundeDto> listKundenLieferadresse = DelegateFactory
 					.getInstance()
@@ -1704,6 +1818,14 @@ public class PanelAuftragKopfdaten extends PanelBasis implements
 			super.eventActionUpdate(aE, false);
 
 			enableComponentsInAbhaengigkeitZuStatusUndAnzahlMengenbehafteterPositionen();
+
+			// SP2202 Wenn Auftrag aus Angebot, dann Projekt hier nicht mehr
+			// auswaehlbar
+			if (tpAuftrag.getAuftragDto().getAngebotIId() != null) {
+				wsfProjekt.getWrapperGotoButton().setEnabled(false);
+
+			}
+
 		}
 
 	}
@@ -1729,7 +1851,7 @@ public class PanelAuftragKopfdaten extends PanelBasis implements
 			boolean bAdministrateLockKeyI, boolean bNeedNoDeleteI)
 			throws Throwable {
 		if (!isLockedDlg()) {
-			if (!tpAuftrag.getAuftragDto().getAuftragstatusCNr()
+			if (!tpAuftrag.getAuftragDto().getStatusCNr()
 					.equals(AuftragServiceFac.AUFTRAGSTATUS_OFFEN)) {
 				DialogFactory.showModalDialog(LPMain.getInstance()
 						.getTextRespectUISPr("lp.hint"), LPMain.getInstance()
@@ -1872,17 +1994,116 @@ public class PanelAuftragKopfdaten extends PanelBasis implements
 				// vorbelegt, damit
 				// man spaeter erkennen kann, ob die Konditionen abgespeichert
 				// wurden
-				Integer iIdAuftrag = DelegateFactory.getInstance()
-						.getAuftragDelegate()
-						.createAuftrag(tpAuftrag.getAuftragDto());
-				tpAuftrag.setAuftragDto(DelegateFactory.getInstance()
-						.getAuftragDelegate()
-						.auftragFindByPrimaryKey(iIdAuftrag));
-				setKeyWhenDetailPanel(iIdAuftrag);
+
+				// PJ18737
+
+				if (bSchnellanlage == true) {
+
+					// PJ18897
+					if (wtfProjekt.getText() == null
+							&& wtfBestellnummer.getText() == null) {
+						DialogFactory
+								.showModalDialog(
+										LPMain.getInstance()
+												.getTextRespectUISPr("lp.info"),
+										LPMain.getInstance()
+												.getTextRespectUISPr(
+														"auft.schnellanlage.pflichtfelder.ausfuellen"));
+						return;
+					}
+
+					// Nun noch Musterartikel abfragen
+
+					String[] aWhichButtonIUse = null;
+
+					FilterKriterium[] kriterien = new FilterKriterium[3];
+
+					if (LPMain
+							.getInstance()
+							.getDesktop()
+							.darfAnwenderAufZusatzfunktionZugreifen(
+									MandantFac.ZUSATZFUNKTION_ZENTRALER_ARTIKELSTAMM)) {
+						kriterien[0] = new FilterKriterium(
+								"artikelliste.mandant_c_nr", true, "'"
+										+ DelegateFactory.getInstance()
+												.getSystemDelegate()
+												.getHauptmandant() + "'",
+								FilterKriterium.OPERATOR_EQUAL, false);
+					} else {
+						kriterien[0] = new FilterKriterium(
+								"artikelliste.mandant_c_nr", true, "'"
+										+ LPMain.getInstance().getTheClient()
+												.getMandant() + "'",
+								FilterKriterium.OPERATOR_EQUAL, false);
+
+					}
+
+					ParametermandantDto parameter = (ParametermandantDto) DelegateFactory
+							.getInstance()
+							.getParameterDelegate()
+							.getParametermandant(
+									ParameterFac.PARAMETER_TRENNZEICHEN_ARTIKELGRUPPE_AUFTRAGSNUMMER,
+									ParameterFac.KATEGORIE_AUFTRAG,
+									LPMain.getTheClient().getMandant());
+
+					String trennzeichen = (String) parameter.getCWertAsObject();
+
+					kriterien[1] = new FilterKriterium("artikelliste.c_nr",
+							true, "'%" + trennzeichen + "MUSTER" + "'",
+							FilterKriterium.OPERATOR_LIKE, true, false);
+					kriterien[2] = new FilterKriterium("ag.i_id", true, "",
+							FilterKriterium.OPERATOR_IS + " "
+									+ FilterKriterium.OPERATOR_NOT_NULL, true,
+							false);
+
+					panelQueryFLRArtikelFuerSchnellanlage = new PanelQueryFLR(
+							null, kriterien,
+							QueryParameters.UC_ID_ARTIKELLISTE,
+							aWhichButtonIUse, getInternalFrame(), LPMain
+									.getInstance().getTextRespectUISPr(
+											"title.artikelauswahlliste"),
+							ArtikelFilterFactory.getInstance()
+									.createFKVArtikel(), null);
+
+					panelQueryFLRArtikelFuerSchnellanlage
+							.befuellePanelFilterkriterienDirekt(
+									ArtikelFilterFactory.getInstance()
+											.createFKDArtikelnummer(
+													getInternalFrame()),
+									ArtikelFilterFactory.getInstance()
+											.createFKDVolltextsuche());
+					panelQueryFLRArtikelFuerSchnellanlage
+							.addDirektFilter(ArtikelFilterFactory.getInstance()
+									.createFKDLieferantennrBezeichnung());
+
+					panelQueryFLRArtikelFuerSchnellanlage.setFilterComboBox(
+							DelegateFactory.getInstance().getArtikelDelegate()
+									.getAllSprArtgru(), new FilterKriterium(
+									"ag.i_id", true, "" + "",
+									FilterKriterium.OPERATOR_IN, false), false,
+							LPMain.getTextRespectUISPr("lp.alle"), false);
+
+					panelQueryFLRArtikelFuerSchnellanlage
+							.addDirektFilter(ArtikelFilterFactory.getInstance()
+									.createFKDAKAG());
+
+					new DialogQuery(panelQueryFLRArtikelFuerSchnellanlage);
+
+					return;
+
+				} else {
+					Integer iIdAuftrag = DelegateFactory.getInstance()
+							.getAuftragDelegate()
+							.createAuftrag(tpAuftrag.getAuftragDto());
+					tpAuftrag.setAuftragDto(DelegateFactory.getInstance()
+							.getAuftragDelegate()
+							.auftragFindByPrimaryKey(iIdAuftrag));
+					setKeyWhenDetailPanel(iIdAuftrag);
+				}
 
 			} else {
 				bUpdate = true;
-				if (tpAuftrag.getAuftragDto().getAuftragstatusCNr()
+				if (tpAuftrag.getAuftragDto().getStatusCNr()
 						.equals(AuftragServiceFac.AUFTRAGSTATUS_OFFEN)) {
 					if (DialogFactory
 							.showMeldung(
@@ -1925,6 +2146,7 @@ public class PanelAuftragKopfdaten extends PanelBasis implements
 										.getBelegVerkaufDto());
 							} else {
 								bUpdate = false;
+								return;
 							}
 						}
 
@@ -2353,7 +2575,18 @@ public class PanelAuftragKopfdaten extends PanelBasis implements
 		wcoAuftragsart.setKeyOfSelectedItem(tpAuftrag.getAuftragDto()
 				.getAuftragartCNr());
 
-		wsfProjekt.setKey(tpAuftrag.getAuftragDto().getProjektIId());
+		// SP2202
+		if (tpAuftrag.getAuftragDto().getAngebotIId() != null) {
+			AngebotDto agDto = DelegateFactory
+					.getInstance()
+					.getAngebotDelegate()
+					.angebotFindByPrimaryKey(
+							tpAuftrag.getAuftragDto().getAngebotIId());
+			wsfProjekt.setKey(agDto.getProjektIId());
+		} else {
+			wsfProjekt.setKey(tpAuftrag.getAuftragDto().getProjektIId());
+		}
+
 		Integer auftragIIdRahmenauftrag = tpAuftrag.getAuftragDto()
 				.getAuftragIIdRahmenauftrag();
 
@@ -2374,6 +2607,7 @@ public class PanelAuftragKopfdaten extends PanelBasis implements
 					.auftragFindByPrimaryKey(auftragIIdRahmenauftrag);
 
 			wtfRahmencnr.setText(rahmenauftragDto.getCNr());
+			wbuRahmenauswahl.setOKey(rahmenauftragDto.getIId());
 			wtfRahmenbez.setText(rahmenauftragDto.getCBezProjektbezeichnung());
 		}
 
@@ -2719,7 +2953,7 @@ public class PanelAuftragKopfdaten extends PanelBasis implements
 			// tpAuftrag.setAuftragDto(new AuftragDto());
 			tpAuftrag.getAuftragDto().setMandantCNr(
 					LPMain.getInstance().getTheClient().getMandant());
-			tpAuftrag.getAuftragDto().setAuftragstatusCNr(
+			tpAuftrag.getAuftragDto().setStatusCNr(
 					AuftragServiceFac.AUFTRAGSTATUS_ANGELEGT);
 		}
 
@@ -2893,9 +3127,9 @@ public class PanelAuftragKopfdaten extends PanelBasis implements
 		if (tpAuftrag.getAuftragDto().getIId() != null && isLocked()) {
 			// Schritt 1a: Der Auftrag befindet sich im Status Angelegt oder
 			// Offen
-			if (tpAuftrag.getAuftragDto().getAuftragstatusCNr()
+			if (tpAuftrag.getAuftragDto().getStatusCNr()
 					.equals(AuftragServiceFac.AUFTRAGSTATUS_ANGELEGT)
-					|| tpAuftrag.getAuftragDto().getAuftragstatusCNr()
+					|| tpAuftrag.getAuftragDto().getStatusCNr()
 							.equals(AuftragServiceFac.AUFTRAGSTATUS_OFFEN)) {
 				// Schritt 1b: Der Auftrag hat keine mengenbehafteten Positionen
 				if (DelegateFactory
@@ -2933,7 +3167,8 @@ public class PanelAuftragKopfdaten extends PanelBasis implements
 						com.lp.server.benutzer.service.RechteFac.RECHT_AUFT_AUFTRAG_CUD)) {
 
 			if (tpAuftrag.getAuftragDto() != null
-					&& tpAuftrag.getAuftragDto().getIId() != null) {
+					&& tpAuftrag.getAuftragDto().getIId() != null && getHmOfButtons().get(
+							ACTION_SPECIAL_VERSTECKEN)!=null) {
 
 				((LPButtonAction) getHmOfButtons().get(
 						ACTION_SPECIAL_VERSTECKEN)).getButton().setEnabled(
@@ -2956,13 +3191,13 @@ public class PanelAuftragKopfdaten extends PanelBasis implements
 		}
 
 	}
-	
+
 	@Override
 	public void eventActionLock(ActionEvent e) throws Throwable {
 		// ist public wegen Termin verschieben aus TabbedPaneAuftrag
 		super.eventActionLock(e);
 	}
-	
+
 	@Override
 	public void eventActionUnlock(ActionEvent e) throws Throwable {
 		// ist public wegen Termin verschieben aus TabbedPaneAuftrag
@@ -3040,8 +3275,8 @@ public class PanelAuftragKopfdaten extends PanelBasis implements
 			}
 		}
 		if (tpAuftrag.getAuftragDto() != null
-				&& tpAuftrag.getAuftragDto().getAuftragstatusCNr() != null
-				&& tpAuftrag.getAuftragDto().getAuftragstatusCNr()
+				&& tpAuftrag.getAuftragDto().getStatusCNr() != null
+				&& tpAuftrag.getAuftragDto().getStatusCNr()
 						.equals(AuftragServiceFac.AUFTRAGSTATUS_STORNIERT)) {
 			if (this.getHmOfButtons().get(Desktop.MY_OWN_NEW_ZEIT_START) != null) {
 				this.getHmOfButtons().get(Desktop.MY_OWN_NEW_ZEIT_START)
@@ -3179,7 +3414,14 @@ public class PanelAuftragKopfdaten extends PanelBasis implements
 
 		if (aAuftragDtoI != null && aAuftragDtoI.length > 0) {
 			for (int i = 0; i < aAuftragDtoI.length; i++) {
-				cFormat += aAuftragDtoI[i].getCNr();
+
+				if (aAuftragDtoI[i].getStatusCNr().equals(
+						LocaleFac.STATUS_STORNIERT)) {
+					cFormat += "(" + aAuftragDtoI[i].getCNr() + ")";
+				} else {
+					cFormat += aAuftragDtoI[i].getCNr();
+				}
+
 				iAnzahl++;
 
 				if (iAnzahl == 5) {
@@ -3295,7 +3537,7 @@ public class PanelAuftragKopfdaten extends PanelBasis implements
 				&& lockStateValue.getIState() != PanelBasis.LOCK_FOR_NEW
 				&& lockStateValue.getIState() != PanelBasis.LOCK_IS_LOCKED_BY_ME
 				&& lockStateValue.getIState() != PanelBasis.LOCK_IS_LOCKED_BY_OTHER_USER) {
-			if (tpAuftrag.getAuftragDto().getAuftragstatusCNr()
+			if (tpAuftrag.getAuftragDto().getStatusCNr()
 					.equals(AuftragServiceFac.AUFTRAGSTATUS_ANGELEGT)) {
 				// Drucken kann man nur, wenn die Konditionen und
 				// mengenbehaftete Positionen erfasst wurden
@@ -3312,11 +3554,11 @@ public class PanelAuftragKopfdaten extends PanelBasis implements
 					lockStateValue = new LockStateValue(
 							PanelBasis.LOCK_ENABLE_REFRESHANDUPDATE_ONLY);
 				}
-			} else if (tpAuftrag.getAuftragDto().getAuftragstatusCNr()
+			} else if (tpAuftrag.getAuftragDto().getStatusCNr()
 					.equals(AuftragServiceFac.AUFTRAGSTATUS_TEILERLEDIGT)
-					|| tpAuftrag.getAuftragDto().getAuftragstatusCNr()
+					|| tpAuftrag.getAuftragDto().getStatusCNr()
 							.equals(AuftragServiceFac.AUFTRAGSTATUS_ERLEDIGT)
-					|| tpAuftrag.getAuftragDto().getAuftragstatusCNr()
+					|| tpAuftrag.getAuftragDto().getStatusCNr()
 							.equals(AuftragServiceFac.AUFTRAGSTATUS_STORNIERT)) {
 				// Button Stornieren ist nicht verfuegbar, in diesen Faellen
 				// wird ein echtes Update ausgeloest
@@ -3343,8 +3585,8 @@ public class PanelAuftragKopfdaten extends PanelBasis implements
 					.setEnabled(true);
 		}
 		if (tpAuftrag.getAuftragDto() != null
-				&& tpAuftrag.getAuftragDto().getAuftragstatusCNr() != null
-				&& tpAuftrag.getAuftragDto().getAuftragstatusCNr()
+				&& tpAuftrag.getAuftragDto().getStatusCNr() != null
+				&& tpAuftrag.getAuftragDto().getStatusCNr()
 						.equals(AuftragServiceFac.AUFTRAGSTATUS_STORNIERT)) {
 			if (this.getHmOfButtons().get(Desktop.MY_OWN_NEW_ZEIT_START) != null) {
 				this.getHmOfButtons().get(Desktop.MY_OWN_NEW_ZEIT_START)
@@ -3360,7 +3602,7 @@ public class PanelAuftragKopfdaten extends PanelBasis implements
 
 	protected void eventActionDiscard(ActionEvent e) throws Throwable {
 		super.eventActionDiscard(e);
-
+		bSchnellanlage = false;
 		tpAuftrag.enablePanelsNachBitmuster();
 	}
 

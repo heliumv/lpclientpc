@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -41,6 +41,7 @@ import java.awt.event.FocusEvent;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.EventObject;
+import java.util.List;
 
 import javax.swing.JComponent;
 import javax.swing.SwingConstants;
@@ -48,6 +49,7 @@ import javax.swing.SwingConstants;
 import com.lp.client.frame.Defaults;
 import com.lp.client.frame.ExceptionLP;
 import com.lp.client.frame.HelperClient;
+import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.frame.dialog.DialogFactory;
 import com.lp.client.pc.LPMain;
 import com.lp.server.system.service.SystemFac;
@@ -83,6 +85,8 @@ public class PanelPositionenIntelligenteZwischensumme extends PanelBasis {
 
 	public WrapperNumberField wnfZwsBetrag = null;
 
+	public WrapperCheckBox wcbPositionspreisZeigen = null ;
+	
 	protected IntelligenteZwischensummeController zwController;
 	private InternalFrame internalFrame;
 
@@ -104,6 +108,9 @@ public class PanelPositionenIntelligenteZwischensumme extends PanelBasis {
 			wnfBisPosition.setText("");
 		if (wnfRabattsatz != null)
 			wnfRabattsatz.setBigDecimal(BigDecimal.ZERO);
+		if(wcbPositionspreisZeigen != null) {
+			wcbPositionspreisZeigen.setSelected(true); 
+		}
 	}
 
 	private void jbInit() throws Throwable {
@@ -134,7 +141,8 @@ public class PanelPositionenIntelligenteZwischensumme extends PanelBasis {
 		wlaProzent1.setPreferredSize(new Dimension(12, Defaults.getInstance()
 				.getControlHeight()));
 
-		wlaVonPosition = new WrapperLabel("Von Position");
+		wlaVonPosition = new WrapperLabel(
+				LPMain.getTextRespectUISPr("lp.zws.vonposition"));
 		HelperClient.setDefaultsToComponent(wlaVonPosition, BREITE_SPALTE_1);
 
 		wnfVonPosition = new WrapperTextNumberField();
@@ -144,7 +152,8 @@ public class PanelPositionenIntelligenteZwischensumme extends PanelBasis {
 				.addFocusListener(new PanelPositionenIntelligenteZwischensumme_wnfVonPosition_focusAdapter(
 						this));
 
-		wlaBisPosition = new WrapperLabel("Bis Position");
+		wlaBisPosition = new WrapperLabel(
+				LPMain.getTextRespectUISPr("lp.zws.bisposition"));
 		HelperClient.setDefaultsToComponent(wlaBisPosition, BREITE_SPALTE_1);
 		wnfBisPosition = new WrapperTextNumberField();
 		wnfBisPosition.setMaximumDigits(3);
@@ -167,6 +176,10 @@ public class PanelPositionenIntelligenteZwischensumme extends PanelBasis {
 		wnfZwsBetrag.setDependenceField(true);
 		HelperClient.setDefaultsToComponent(wnfZwsBetrag, BREITE_SPALTE_1);
 
+		wcbPositionspreisZeigen = new WrapperCheckBox(
+				LPMain.getTextRespectUISPr("lp.zws.preiszeigen")) ;
+		HelperClient.setDefaultsToComponent(wcbPositionspreisZeigen, BREITE_SPALTE_1);
+		
 		if (!internalFrame.bRechtDarfPreiseSehenVerkauf) {
 			wnfRabattbetrag.setVisible(false);
 			wnfZwsBetrag.setVisible(false);
@@ -223,6 +236,11 @@ public class PanelPositionenIntelligenteZwischensumme extends PanelBasis {
 				GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 2, 2, 2), 0, 0));
 
+		++zeile ;
+		add(wcbPositionspreisZeigen, new GridBagConstraints(1, zeile, 2, 1, 0.0, 0.0,
+				GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL,
+				new Insets(2, 2, 2, 2), 0, 0)) ;
+		
 		setDefaults();
 
 		getInternalFrame().addItemChangedListener(this);
@@ -232,20 +250,16 @@ public class PanelPositionenIntelligenteZwischensumme extends PanelBasis {
 		ItemChangedEvent e = (ItemChangedEvent) eI;
 		if (e.getID() == ItemChangedEvent.ACTION_SAVE) {
 			zwController.setChanged(true);
-			System.out.println("Saving the changed element");
 		}
 	}
 
 	public void calculateFields() throws Throwable, ExceptionLP {
-		int von = wnfVonPosition.getInteger();
-		if (von < 1)
+		Integer von = wnfVonPosition.getInteger();
+		if (von == null || von < 1)
 			throw new ExceptionLP(
 					EJBExceptionLP.FEHLER_INT_ZWISCHENSUMME_VON_KLEINER_EINS,
 					"Von '" + wnfVonPosition.getText() + "' muss >= 1 sein",
 					new ArrayList<String>() {
-						/**
-					 * 
-					 */
 						private static final long serialVersionUID = -1834810833095924275L;
 
 						{
@@ -253,8 +267,8 @@ public class PanelPositionenIntelligenteZwischensumme extends PanelBasis {
 						}
 					}, new IllegalArgumentException(wnfVonPosition.getText()));
 
-		int bis = wnfBisPosition.getInteger();
-		if (bis < von)
+		Integer bis = wnfBisPosition.getInteger();
+		if (bis == null || bis < von)
 			throw new ExceptionLP(
 					EJBExceptionLP.FEHLER_INT_ZWISCHENSUMME_BIS_KLEINER_VON,
 					"Bis '" + wnfBisPosition.getText()
@@ -299,6 +313,7 @@ public class PanelPositionenIntelligenteZwischensumme extends PanelBasis {
 	public void dto2Components(BelegpositionDto positionDto) throws Throwable,
 			ExceptionLP {
 		if (positionDto instanceof BelegpositionVerkaufDto) {
+			
 			BelegpositionVerkaufDto positionDtoVK = (BelegpositionVerkaufDto) positionDto;
 
 			wtfBezeichnung.setText(positionDto.getCBez());
@@ -321,7 +336,8 @@ public class PanelPositionenIntelligenteZwischensumme extends PanelBasis {
 			wnfRabattbetrag.setBigDecimal(positionDtoVK
 					.getNEinzelpreisplusversteckteraufschlag());
 			wnfZwsBetrag.setBigDecimal(positionDtoVK.getZwsNettoSumme());
-
+			wcbPositionspreisZeigen.setShort(positionDtoVK.getBZwsPositionspreisZeigen());
+			
 			if (zwController.getChanged()) {
 				wnfRabattbetrag.setBackground(Color.ORANGE);
 				wnfZwsBetrag.setBackground(Color.ORANGE);
@@ -339,27 +355,17 @@ public class PanelPositionenIntelligenteZwischensumme extends PanelBasis {
 
 	public Integer components2Dto(BelegVerkaufDto rechnungDto,
 			BelegpositionVerkaufDto positionDto) throws Throwable, ExceptionLP {
-		// Integer zwsPositionIId = DelegateFactory.getInstance()
-		// .getRechnungDelegate().getPositionIIdFromPositionNummer(
-		// rechnungDto.getIId(), wnfVonPosition.getInteger());
 		Integer zwsPositionIId = zwController.getPositionIIdFromPositionNummer(
 				rechnungDto.getIId(), wnfVonPosition.getInteger());
 		positionDto.setZwsVonPosition(zwsPositionIId);
 
-		// zwsPositionIId = DelegateFactory.getInstance()
-		// .getRechnungDelegate().getPositionIIdFromPositionNummer(
-		// rechnungDto.getIId(), wnfBisPosition.getInteger());
 		zwsPositionIId = zwController.getPositionIIdFromPositionNummer(
 				rechnungDto.getIId(), wnfBisPosition.getInteger());
 		positionDto.setZwsBisPosition(zwsPositionIId);
 		positionDto.setFRabattsatz(wnfRabattsatz.getDouble());
 
-		// RechnungPositionDto lastPosition =
-		// DelegateFactory.getInstance().getRechnungDelegate().rechnungPositionFindByPrimaryKey(zwsPositionIId)
-		// ;
-		// positionDto.setMwstsatzIId(lastPosition.getMwstsatzIId()) ;
-
 		positionDto.setCBez(wtfBezeichnung.getText());
+		positionDto.setBZwsPositionspreisDrucken(wcbPositionspreisZeigen.getShort()) ;
 
 		zwController.setBelegDto(rechnungDto);
 		return zwsPositionIId;

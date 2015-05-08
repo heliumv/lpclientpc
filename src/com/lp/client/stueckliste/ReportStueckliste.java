@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -45,6 +45,7 @@ import javax.swing.ButtonGroup;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JSplitPane;
 import javax.swing.SwingConstants;
 
 import com.lp.client.artikel.ArtikelFilterFactory;
@@ -69,6 +70,7 @@ import com.lp.client.frame.report.PanelReportIfJRDS;
 import com.lp.client.frame.report.PanelReportKriterien;
 import com.lp.client.pc.LPMain;
 import com.lp.server.artikel.service.LagerDto;
+import com.lp.server.benutzer.service.RechteFac;
 import com.lp.server.stueckliste.service.StuecklisteDto;
 import com.lp.server.stueckliste.service.StuecklisteReportFac;
 import com.lp.server.system.service.MailtextDto;
@@ -105,7 +107,11 @@ public class ReportStueckliste extends PanelBasis implements PanelReportIfJRDS {
 
 	private WrapperRadioButton wrbUnterstklSortierungNachIdent = new WrapperRadioButton();
 	private WrapperRadioButton wrbUnterstklSortierungPosition = new WrapperRadioButton();
+	private WrapperRadioButton wrbUnterstklSortierungWieErfasst = new WrapperRadioButton();
 	private WrapperCheckBox wcbUnterstklstrukturBelassen = new WrapperCheckBox();
+
+	Map<Integer, String> mSortierungAlle = new LinkedHashMap<Integer, String>();
+	Map<Integer, String> mSortierungNurArtikelNrBez = new LinkedHashMap<Integer, String>();
 
 	private WrapperCheckBox wcbStuecklistenkommentar = new WrapperCheckBox();
 	private WrapperCheckBox wcbPositionskommentar = new WrapperCheckBox();
@@ -113,6 +119,8 @@ public class ReportStueckliste extends PanelBasis implements PanelReportIfJRDS {
 	private WrapperCheckBox wcbUnterstuecklistenEinbinden = new WrapperCheckBox();
 	private WrapperCheckBox wcbSortiertNachAenderungsdatum = new WrapperCheckBox();
 	private WrapperCheckBox wcbSortiertNachMontageart = new WrapperCheckBox();
+
+	private WrapperCheckBox wcbNurAbbuchungslaeger = new WrapperCheckBox();
 
 	static final public String ACTION_SPECIAL_STKL_FROM_LISTE = "ACTION_SPECIAL_STKL_FROM_LISTE";
 
@@ -128,6 +136,7 @@ public class ReportStueckliste extends PanelBasis implements PanelReportIfJRDS {
 	private static int SORT_MONTAGEART = 3;
 	private static int SORT_KOMMENTAR = 4;
 	private static int SORT_WIE_ERFASST = 5;
+	private static int SORT_ARTIKELBEZEICHNUNG = 6;
 
 	private WrapperLabel wlaLosgroesse = new WrapperLabel();
 	private WrapperNumberField wnfLosgroesse = new WrapperNumberField();
@@ -169,7 +178,6 @@ public class ReportStueckliste extends PanelBasis implements PanelReportIfJRDS {
 		internalFrameStueckliste.addItemChangedListener(this);
 		wbuStueckliste.setText(LPMain.getInstance().getTextRespectUISPr(
 				"stkl.report.selektiertestueckliste"));
-		
 
 		wbuStueckliste.setActionCommand(ACTION_SPECIAL_STKL_FROM_LISTE);
 		wbuStueckliste.addActionListener(this);
@@ -190,6 +198,7 @@ public class ReportStueckliste extends PanelBasis implements PanelReportIfJRDS {
 		wrbAusgabestueckliste.addActionListener(this);
 		wrbAllgemeinMitPreis.addActionListener(this);
 		wcbUnterstuecklistenEinbinden.addActionListener(this);
+		wcbNurAbbuchungslaeger.addActionListener(this);
 
 		wrbUnterstklSortierungNachIdent.setText(LPMain.getInstance()
 				.getTextRespectUISPr("artikel.artikelnummer"));
@@ -198,13 +207,19 @@ public class ReportStueckliste extends PanelBasis implements PanelReportIfJRDS {
 
 		wrbUnterstklSortierungPosition.setText(LPMain.getInstance()
 				.getTextRespectUISPr("lp.position"));
+		wrbUnterstklSortierungWieErfasst.setText(LPMain.getInstance()
+				.getTextRespectUISPr("stk.sort.wieerfasst"));
 		wrbUnterstklSortierungNachIdent.setSelected(true);
 
 		wcbGleichePositionenZusammenfassen
 				.setText("gleiche Positionen zusammenfassen");
 		wcbPositionskommentar.setText("Positionskommentar");
-		wcbSortiertNachAenderungsdatum.setText("sortiert nach \u00C4nderungsdatum");
+		wcbSortiertNachAenderungsdatum
+				.setText("sortiert nach \u00C4nderungsdatum");
 		wcbSortiertNachMontageart.setText("sortiert nach Montageart");
+		wcbNurAbbuchungslaeger.setText(LPMain.getInstance()
+				.getTextRespectUISPr("stk.report.nurabuchungslaeger"));
+
 		wcbStuecklistenkommentar.setText(LPMain.getInstance()
 				.getTextRespectUISPr("stkl.report.stuecklistenkommentar"));
 
@@ -243,18 +258,26 @@ public class ReportStueckliste extends PanelBasis implements PanelReportIfJRDS {
 
 		wcbUnterstklstrukturBelassen.setSelected(true);
 
-		Map<Integer, String> mSortierung = new LinkedHashMap<Integer, String>();
-		mSortierung.put(new Integer(SORT_ARTIKELNUMMER), "Artikelnummer");
-		mSortierung.put(new Integer(SORT_POSITION), LPMain.getInstance()
+		mSortierungAlle = new LinkedHashMap<Integer, String>();
+		mSortierungAlle.put(new Integer(SORT_ARTIKELNUMMER), "Artikelnummer");
+		mSortierungAlle.put(new Integer(SORT_ARTIKELBEZEICHNUNG),
+				"Artikelbezeichnung");
+		mSortierungAlle.put(new Integer(SORT_POSITION), LPMain.getInstance()
 				.getTextRespectUISPr("lp.position"));
-		mSortierung.put(new Integer(SORT_LFDNUMMER), "LfdNr");
-		mSortierung.put(new Integer(SORT_MONTAGEART), LPMain.getInstance()
+		mSortierungAlle.put(new Integer(SORT_LFDNUMMER), "LfdNr");
+		mSortierungAlle.put(new Integer(SORT_MONTAGEART), LPMain.getInstance()
 				.getTextRespectUISPr("stkl.montageart"));
-		mSortierung.put(new Integer(SORT_WIE_ERFASST), LPMain.getInstance()
+		mSortierungAlle.put(new Integer(SORT_WIE_ERFASST), LPMain.getInstance()
 				.getTextRespectUISPr("stk.sortierung.report.wieerfasst"));
-		wcoSortierung1.setMap(mSortierung);
-		wcoSortierung2.setMap(mSortierung);
-		wcoSortierung3.setMap(mSortierung);
+		wcoSortierung1.setMap(mSortierungAlle);
+		wcoSortierung2.setMap(mSortierungAlle);
+		wcoSortierung3.setMap(mSortierungAlle);
+
+		mSortierungNurArtikelNrBez = new LinkedHashMap<Integer, String>();
+		mSortierungNurArtikelNrBez.put(new Integer(SORT_ARTIKELNUMMER),
+				"Artikelnummer");
+		mSortierungNurArtikelNrBez.put(new Integer(SORT_ARTIKELBEZEICHNUNG),
+				"Artikelbezeichnung");
 
 		this.add(jpaWorkingOn, new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
 				GridBagConstraints.WEST, GridBagConstraints.BOTH, new Insets(0,
@@ -308,8 +331,13 @@ public class ReportStueckliste extends PanelBasis implements PanelReportIfJRDS {
 						GridBagConstraints.CENTER,
 						GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2),
 						0, 0));
+		jpaWorkingOn.add(wrbUnterstklSortierungWieErfasst,
+				new GridBagConstraints(0, 9, 1, 1, 0.0, 0.0,
+						GridBagConstraints.CENTER,
+						GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2),
+						0, 0));
 		jpaWorkingOn.add(wcbUnterstklstrukturBelassen, new GridBagConstraints(
-				0, 9, 2, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+				0, 10, 2, 1, 0.0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
 
 		jpaWorkingOn.add(wcoPreis, new GridBagConstraints(1, 3, 1, 1, 0.0, 0.0,
@@ -337,6 +365,9 @@ public class ReportStueckliste extends PanelBasis implements PanelReportIfJRDS {
 						GridBagConstraints.CENTER,
 						GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2),
 						0, 0));
+		jpaWorkingOn.add(wcbNurAbbuchungslaeger, new GridBagConstraints(1, 7,
+				1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
 
 		jpaWorkingOn.add(wcoSortierung1, new GridBagConstraints(2, 4, 1, 1,
 				0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE,
@@ -354,6 +385,7 @@ public class ReportStueckliste extends PanelBasis implements PanelReportIfJRDS {
 
 		buttonGroupUnterstklSortierung.add(wrbUnterstklSortierungNachIdent);
 		buttonGroupUnterstklSortierung.add(wrbUnterstklSortierungPosition);
+		buttonGroupUnterstklSortierung.add(wrbUnterstklSortierungWieErfasst);
 
 		eventActionSpecial(new ActionEvent(wrbAllgemein, -1, ""));
 	}
@@ -363,7 +395,15 @@ public class ReportStueckliste extends PanelBasis implements PanelReportIfJRDS {
 	}
 
 	public String getReportname() {
-		return StuecklisteReportFac.REPORT_STUECKLISTE_ALLGEMEIN_MITPREIS;
+
+		if (wrbAllgemein.isSelected()) {
+			return StuecklisteReportFac.REPORT_STUECKLISTE_ALLGEMEIN_OHNEPREIS;
+		} else if (wrbAllgemeinMitPreis.isSelected()) {
+			return StuecklisteReportFac.REPORT_STUECKLISTE_ALLGEMEIN_MITPREIS;
+		} else {
+			return StuecklisteReportFac.REPORT_STUECKLISTE_AUSGABESTUECKLSITE;
+		}
+
 	}
 
 	protected void eventItemchanged(EventObject eI) throws Throwable {
@@ -398,7 +438,9 @@ public class ReportStueckliste extends PanelBasis implements PanelReportIfJRDS {
 				}
 
 				wtStueckliste.setText(stuecklisten);
-				panelQueryFLRStueckliste.getDialog().setVisible(false);
+				if (panelQueryFLRStueckliste.getDialog() != null) {
+					panelQueryFLRStueckliste.getDialog().setVisible(false);
+				}
 
 			}
 		}
@@ -425,7 +467,16 @@ public class ReportStueckliste extends PanelBasis implements PanelReportIfJRDS {
 			panelQueryFLRStueckliste = StuecklisteFilterFactory.getInstance()
 					.createPanelFLRStueckliste(getInternalFrame(), selectedId,
 							false);
-			panelQueryFLRStueckliste.setMultipleRowSelectionEnabled(true);
+
+			if (wcbNurAbbuchungslaeger.isEnabled()
+					&& wcbNurAbbuchungslaeger.isSelected()) {
+
+			} else {
+				panelQueryFLRStueckliste.setMultipleRowSelectionEnabled(true);
+			}
+
+			panelQueryFLRStueckliste.addButtonAuswahlBestaetigen(null);
+
 			new DialogQuery(panelQueryFLRStueckliste);
 		} else {
 
@@ -438,57 +489,137 @@ public class ReportStueckliste extends PanelBasis implements PanelReportIfJRDS {
 				wnfLosgroesse.setEditable(false);
 				wnfLosgroesse.setMandatoryField(false);
 
+				if (wcbUnterstuecklistenEinbinden.isSelected()) {
+
+					if (wrbAusgabestueckliste.isSelected()) {
+						wrbUnterstklSortierungNachIdent.setEnabled(false);
+						wcbUnterstklstrukturBelassen.setEnabled(false);
+						wrbUnterstklSortierungPosition.setEnabled(false);
+						wrbUnterstklSortierungWieErfasst.setEnabled(false);
+					} else {
+
+						wrbUnterstklSortierungNachIdent.setEnabled(true);
+						wcbUnterstklstrukturBelassen.setEnabled(true);
+						wrbUnterstklSortierungPosition.setEnabled(true);
+						wrbUnterstklSortierungWieErfasst.setEnabled(true);
+					}
+				} else {
+					wrbUnterstklSortierungNachIdent.setEnabled(false);
+					wcbUnterstklstrukturBelassen.setEnabled(false);
+					wrbUnterstklSortierungPosition.setEnabled(false);
+					wrbUnterstklSortierungWieErfasst.setEnabled(false);
+				}
+
 			}
 
 			if (wcbUnterstuecklistenEinbinden.isSelected() == false) {
 				wrbUnterstklSortierungNachIdent.setEnabled(false);
 				wcbUnterstklstrukturBelassen.setEnabled(false);
 				wrbUnterstklSortierungPosition.setEnabled(false);
+				wrbUnterstklSortierungWieErfasst.setEnabled(false);
 			}
+
+			// SP2600
+			if (e.getSource().equals(wrbAllgemein)
+					|| e.getSource().equals(wrbAllgemeinMitPreis)
+					|| e.getSource().equals(wrbAusgabestueckliste)) {
+
+				System.out.println("XX");
+
+				if (getParent() instanceof JPanel) {
+					JPanel jpa = (JPanel) getParent();
+
+					if (jpa.getParent() instanceof JSplitPane) {
+						JSplitPane jsp = (JSplitPane) jpa.getParent();
+						if (jsp.getParent() instanceof JPanel) {
+							JPanel jpaworkingon = (JPanel) jsp.getParent();
+							if (jpaworkingon.getParent() instanceof PanelReportKriterien) {
+								PanelReportKriterien panelReportKriterien = (PanelReportKriterien) jpaworkingon
+										.getParent();
+
+								wrbAllgemein.removeActionListener(this);
+								wrbAllgemeinMitPreis.removeActionListener(this);
+								wrbAusgabestueckliste
+										.removeActionListener(this);
+
+								panelReportKriterien.refreshVarianten();
+
+								wrbAllgemein.addActionListener(this);
+								wrbAllgemeinMitPreis.addActionListener(this);
+								wrbAusgabestueckliste.addActionListener(this);
+
+							}
+						}
+
+					}
+
+				}
+			}
+
 			if (e.getSource().equals(wrbAllgemein)) {
 				wcbGleichePositionenZusammenfassen.setEnabled(true);
 				wcbPositionskommentar.setEnabled(true);
+				wcbNurAbbuchungslaeger.setEnabled(false);
 				wcbStuecklistenkommentar.setEnabled(true);
 
-				wcoSortierung1.setEnabled(true);
-				wcoSortierung2.setEnabled(true);
-				wcoSortierung3.setEnabled(true);
+				wcoSortierung1.setMap(mSortierungAlle);
+				wcoSortierung2.setMap(mSortierungAlle);
+				wcoSortierung3.setMap(mSortierungAlle);
+
 				wbuStueckliste.setEnabled(false);
 			} else if (e.getSource().equals(wrbAllgemeinMitPreis)) {
 				wcbGleichePositionenZusammenfassen.setEnabled(true);
 				wcbPositionskommentar.setEnabled(true);
+				wcbNurAbbuchungslaeger.setEnabled(false);
 				wcbStuecklistenkommentar.setEnabled(true);
 				wcoPreis.setEnabled(true);
 
-				wcoSortierung1.setEnabled(true);
-				wcoSortierung2.setEnabled(true);
-				wcoSortierung3.setEnabled(true);
+				wcoSortierung1.setMap(mSortierungAlle);
+				wcoSortierung2.setMap(mSortierungAlle);
+				wcoSortierung3.setMap(mSortierungAlle);
+
 				wbuStueckliste.setEnabled(false);
 
 			} else if (e.getSource().equals(wrbAusgabestueckliste)) {
 				wcbStuecklistenkommentar.setEnabled(true);
+				wcbNurAbbuchungslaeger.setEnabled(true);
 				wnfLosgroesse.setEditable(true);
 				wnfLosgroesse.setMandatoryField(true);
 
-				wcoSortierung1.setEnabled(false);
-				wcoSortierung2.setEnabled(false);
-				wcoSortierung3.setEnabled(false);
+				wcoSortierung1.setMap(mSortierungNurArtikelNrBez);
+				wcoSortierung2.setMap(mSortierungNurArtikelNrBez);
+				wcoSortierung3.setMap(mSortierungNurArtikelNrBez);
+
 				wbuStueckliste.setEnabled(true);
 
 			} else if (e.getSource().equals(wcbUnterstuecklistenEinbinden)) {
 				if (wcbUnterstuecklistenEinbinden.isSelected()) {
+
 					wrbUnterstklSortierungNachIdent.setEnabled(true);
 					wcbUnterstklstrukturBelassen.setEnabled(true);
 					wrbUnterstklSortierungPosition.setEnabled(true);
+					wrbUnterstklSortierungWieErfasst.setEnabled(true);
 
-					wcoSortierung1.setEnabled(false);
-					wcoSortierung2.setEnabled(false);
-					wcoSortierung3.setEnabled(false);
+					if (wrbAusgabestueckliste.isSelected()) {
+						wrbUnterstklSortierungNachIdent.setEnabled(false);
+						wcbUnterstklstrukturBelassen.setEnabled(false);
+						wrbUnterstklSortierungPosition.setEnabled(false);
+						wrbUnterstklSortierungWieErfasst.setEnabled(false);
+						wcoSortierung1.setEnabled(true);
+						wcoSortierung2.setEnabled(true);
+						wcoSortierung3.setEnabled(true);
+					} else {
+						wcoSortierung1.setEnabled(false);
+						wcoSortierung2.setEnabled(false);
+						wcoSortierung3.setEnabled(false);
+
+					}
 
 				} else {
 					wrbUnterstklSortierungNachIdent.setEnabled(false);
 					wcbUnterstklstrukturBelassen.setEnabled(false);
 					wrbUnterstklSortierungPosition.setEnabled(false);
+					wrbUnterstklSortierungWieErfasst.setEnabled(false);
 
 					wcoSortierung1.setEnabled(true);
 					wcoSortierung2.setEnabled(true);
@@ -497,6 +628,14 @@ public class ReportStueckliste extends PanelBasis implements PanelReportIfJRDS {
 				}
 
 			}
+
+			if (wcbNurAbbuchungslaeger.isEnabled()
+					&& wcbNurAbbuchungslaeger.isSelected()) {
+				wbuLager.setEnabled(false);
+			} else {
+				wbuLager.setEnabled(true);
+			}
+
 		}
 	}
 
@@ -517,6 +656,8 @@ public class ReportStueckliste extends PanelBasis implements PanelReportIfJRDS {
 				iSortierung = StuecklisteReportFac.REPORT_STUECKLISTE_ALLGEMEINMITPREIS_POSITION;
 			} else if (iOption == SORT_WIE_ERFASST) {
 				iSortierung = StuecklisteReportFac.REPORT_STUECKLISTE_ALLGEMEINMITPREIS_I_SORT;
+			} else if (iOption == SORT_ARTIKELBEZEICHNUNG) {
+				iSortierung = StuecklisteReportFac.REPORT_STUECKLISTE_ALLGEMEINMITPREIS_ARTIKELBEZEICHNUNG;
 			}
 		} else {
 			if (iOption == SORT_ARTIKELNUMMER) {
@@ -531,6 +672,8 @@ public class ReportStueckliste extends PanelBasis implements PanelReportIfJRDS {
 				iSortierung = StuecklisteReportFac.REPORT_STUECKLISTE_ALLGEMEINOHNEPREIS_POSITION;
 			} else if (iOption == SORT_WIE_ERFASST) {
 				iSortierung = StuecklisteReportFac.REPORT_STUECKLISTE_ALLGEMEINOHNEPREIS_I_SORT;
+			} else if (iOption == SORT_ARTIKELBEZEICHNUNG) {
+				iSortierung = StuecklisteReportFac.REPORT_STUECKLISTE_ALLGEMEINMITPREIS_ARTIKELBEZEICHNUNG;
 			}
 		}
 		return iSortierung;
@@ -567,6 +710,8 @@ public class ReportStueckliste extends PanelBasis implements PanelReportIfJRDS {
 				iSortierungUnterstueckliste = StuecklisteReportFac.REPORT_STUECKLISTE_OPTION_SORTIERUNG_ARTIKELNR;
 			} else if (wrbUnterstklSortierungPosition.isSelected()) {
 				iSortierungUnterstueckliste = StuecklisteReportFac.REPORT_STUECKLISTE_OPTION_SORTIERUNG_POSITION;
+			} else if (wrbUnterstklSortierungWieErfasst.isSelected()) {
+				iSortierungUnterstueckliste = StuecklisteReportFac.REPORT_STUECKLISTE_OPTION_SORTIERUNG_OHNE;
 			}
 		}
 
@@ -611,6 +756,19 @@ public class ReportStueckliste extends PanelBasis implements PanelReportIfJRDS {
 								iSortierung1, iSortierung2, iSortierung3);
 			} else if (wrbAusgabestueckliste.isSelected()) {
 
+				boolean bSortiertNachArtikelbezeichnung = false;
+
+				Integer iSort = (Integer) wcoSortierung1.getKeyOfSelectedItem();
+				if (iSort == SORT_ARTIKELBEZEICHNUNG) {
+					bSortiertNachArtikelbezeichnung = true;
+				}
+
+				
+				if(wcbNurAbbuchungslaeger.isSelected()){
+					Integer stuecklisteIIdTemp=stuecklisteIId[0];
+					stuecklisteIId=new Integer[]{stuecklisteIIdTemp};
+				}
+				
 				return DelegateFactory
 						.getInstance()
 						.getStuecklisteReportDelegate()
@@ -623,15 +781,15 @@ public class ReportStueckliste extends PanelBasis implements PanelReportIfJRDS {
 										.getShort()),
 								Helper.short2boolean(wcbGleichePositionenZusammenfassen
 										.getShort()),
-								iSortierungUnterstueckliste,
 								wnfLosgroesse.getBigDecimal(),
-								wcbUnterstklstrukturBelassen.isSelected());
+								bSortiertNachArtikelbezeichnung,wcbNurAbbuchungslaeger.isSelected());
 			} else {
 				return null;
 			}
 		} catch (ExceptionLP ex) {
 			if (ex.getICode() == com.lp.util.EJBExceptionLP.FEHLER_MUSS_GROESSER_0_SEIN) {
-				DialogFactory.showModalDialog("Fehler", "Losgr\u00F6sse zu klein");
+				DialogFactory.showModalDialog("Fehler",
+						"Losgr\u00F6sse zu klein");
 			}
 
 			else {

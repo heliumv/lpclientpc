@@ -1,33 +1,33 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
- * 
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
+ *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published 
- * by the Free Software Foundation, either version 3 of theLicense, or 
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of theLicense, or
  * (at your option) any later version.
- * 
- * According to sec. 7 of the GNU Affero General Public License, version 3, 
+ *
+ * According to sec. 7 of the GNU Affero General Public License, version 3,
  * the terms of the AGPL are supplemented with the following terms:
- * 
- * "HELIUM V" and "HELIUM 5" are registered trademarks of 
- * HELIUM V IT-Solutions GmbH. The licensing of the program under the 
+ *
+ * "HELIUM V" and "HELIUM 5" are registered trademarks of
+ * HELIUM V IT-Solutions GmbH. The licensing of the program under the
  * AGPL does not imply a trademark license. Therefore any rights, title and
  * interest in our trademarks remain entirely with us. If you want to propagate
  * modified versions of the Program under the name "HELIUM V" or "HELIUM 5",
- * you may only do so if you have a written permission by HELIUM V IT-Solutions 
+ * you may only do so if you have a written permission by HELIUM V IT-Solutions
  * GmbH (to acquire a permission please contact HELIUM V IT-Solutions
  * at trademark@heliumv.com).
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Affero General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Contact: developers@heliumv.com
  ******************************************************************************/
 package com.lp.client.rechnung;
@@ -86,7 +86,7 @@ import com.lp.service.BelegpositionDto;
 import com.lp.util.Helper;
 
 /**
- * 
+ *
  * <p>
  * Diese Klasse ist eine TabbedPane, die fuer alle Rechnungstypen gleich ist
  * </p>
@@ -98,7 +98,7 @@ import com.lp.util.Helper;
  * </p>
  * <p>
  * </p>
- * 
+ *
  * @author Martin Bluehweis
  * @version $Revision: 1.36 $
  */
@@ -121,9 +121,9 @@ abstract class TabbedPaneRechnungAll extends TabbedPaneBasis implements
 	private PanelSplit panelSplitKontierung = null;
 	private PanelQuery panelQueryKontierung = null;
 
-	private PanelSplit panelSplitZahlungen = null;
+	protected PanelSplit panelSplitZahlungen = null;
 	private PanelQuery panelQueryZahlungen = null;
-	private PanelRechnungZahlung panelDetailZahlung = null;
+	protected PanelRechnungZahlung panelDetailZahlung = null;
 
 	private PanelRechnungKontierung panelDetailKontierung = null;
 	private PanelQueryFLR panelQueryFLRAuftragauswahl = null;
@@ -375,6 +375,14 @@ abstract class TabbedPaneRechnungAll extends TabbedPaneBasis implements
 					.getInstance().createFKDKundename();
 			panelQueryRechnung.befuellePanelFilterkriterienDirekt(fkDirekt1,
 					fkDirekt2);
+			
+			
+			//PJ18912
+			
+			panelQueryRechnung.addDirektFilter(RechnungFilterFactory
+					.getInstance().createFKDProjekt());
+			
+			
 			FilterKriteriumDirekt fkDirektStatistikadresse = RechnungFilterFactory
 					.getInstance().createFKDKundestatistikadresse();
 			panelQueryRechnung.addDirektFilter(fkDirektStatistikadresse);
@@ -396,12 +404,17 @@ abstract class TabbedPaneRechnungAll extends TabbedPaneBasis implements
 								.getInstance().getTheJudgeDelegate()
 								.hatRecht(RechteFac.RECHT_ANGB_ANGEBOT_CUD))) {
 
-					panelQueryRechnung
-							.createAndSaveAndShowButton(
-									"/com/lp/client/res/presentation_chart16x16.png",
-									LPMain.getTextRespectUISPr("rech.rechnungausangebot"),
-									MY_OWN_NEW_AUS_ANGEBOT,
-									RechteFac.RECHT_RECH_RECHNUNG_CUD);
+					// SP3051 nicht bei Proformarechnung
+					if (this.rechnungsTyp
+							.equals(RechnungFac.RECHNUNGTYP_RECHNUNG)) {
+
+						panelQueryRechnung
+								.createAndSaveAndShowButton(
+										"/com/lp/client/res/presentation_chart16x16.png",
+										LPMain.getTextRespectUISPr("rech.rechnungausangebot"),
+										MY_OWN_NEW_AUS_ANGEBOT,
+										RechteFac.RECHT_RECH_RECHNUNG_CUD);
+					}
 				}
 				if (bAuftragRechnung
 						&& this.rechnungsTyp
@@ -517,7 +530,8 @@ abstract class TabbedPaneRechnungAll extends TabbedPaneBasis implements
 										rechnungIId,
 										getInternalFrameRechnung()
 												.getNeuDatum(),
-										dialog.bKundeSelektiert);
+										dialog.bKundeSelektiert,
+										getInternalFrame());
 
 					}
 				} else {
@@ -526,7 +540,7 @@ abstract class TabbedPaneRechnungAll extends TabbedPaneBasis implements
 							.getRechnungDelegate()
 							.createRechnungAusRechnung(rechnungIId,
 									getInternalFrameRechnung().getNeuDatum(),
-									false);
+									false, getInternalFrame());
 				}
 				if (rechnungIIdNeu != null) {
 					getPanelQueryRechnung().clearDirektFilter();
@@ -543,7 +557,8 @@ abstract class TabbedPaneRechnungAll extends TabbedPaneBasis implements
 						.getInstance()
 						.getRechnungDelegate()
 						.createRechnungAusAngebot(angebotIId,
-								getInternalFrameRechnung().getNeuDatum());
+								getInternalFrameRechnung().getNeuDatum(),
+								getInternalFrame());
 
 				if (rechnungIIdNeu != null) {
 					getPanelQueryRechnung().clearDirektFilter();
@@ -583,7 +598,8 @@ abstract class TabbedPaneRechnungAll extends TabbedPaneBasis implements
 							.getInstance()
 							.getRechnungDelegate()
 							.createRechnungAusAuftrag(iIdAuftragBasis,
-									getInternalFrameRechnung().getNeuDatum());
+									getInternalFrameRechnung().getNeuDatum(),
+									getInternalFrame());
 					getPanelQueryRechnung().eventYouAreSelected(false);
 					holeRechnungDto(rechnungIId);
 					getPanelQueryRechnung().setSelectedId(rechnungIId);
@@ -593,21 +609,18 @@ abstract class TabbedPaneRechnungAll extends TabbedPaneBasis implements
 		} else if (e.getID() == ItemChangedEvent.ITEM_CHANGED) {
 			if (e.getSource() == getPanelQueryRechnung()) {
 				Object key = ((ISourceEvent) e.getSource()).getIdSelected();
-				holeRechnungDto(key);
 				if (key == null) {
 					getInternalFrame().enableAllOberePanelsExceptMe(this,
 							IDX_RECHNUNGEN, false);
 				} else {
 					getInternalFrame().enableAllOberePanelsExceptMe(this,
 							IDX_RECHNUNGEN, true);
+					holeRechnungDto(key);
 				}
 				getPanelQueryRechnung().updateButtons();
 			} else if (e.getSource() == getPanelQueryPositionen(false)) {
 				Object key = ((ISourceEvent) e.getSource()).getIdSelected();
-				getPanelDetailPositionen(true).setKeyWhenDetailPanel(key);
-				getPanelDetailPositionen(true).eventYouAreSelected(false);
-				getPanelQueryPositionen(true).updateButtons();
-				updateISortButtons();
+				panelDetailPositionenSelected(key);
 			} else if (e.getSource() == getPanelQueryKontierung(false)) {
 				Object key = ((ISourceEvent) e.getSource()).getIdSelected();
 				getPanelDetailKontierung(true).setKeyWhenDetailPanel(key);
@@ -794,7 +807,8 @@ abstract class TabbedPaneRechnungAll extends TabbedPaneBasis implements
 
 				}
 			}
-		} else if (e.getID() == ItemChangedEvent.ACTION_KOPIEREN && e.getSource() == getPanelQueryPositionen(false)) {
+		} else if (e.getID() == ItemChangedEvent.ACTION_KOPIEREN
+				&& e.getSource() == getPanelQueryPositionen(false)) {
 			copyHV();
 		} else if (e.getID() == ItemChangedEvent.ACTION_MY_OWN_NEW) {
 			String sAspectInfo = ((ISourceEvent) e.getSource()).getAspect();
@@ -839,31 +853,40 @@ abstract class TabbedPaneRechnungAll extends TabbedPaneBasis implements
 				} else if (sAspectInfo
 						.equals(BUTTON_SORTIERE_LS_NACH_ANSPRECHPARTNER)) {
 
-					ParametermandantDto parameter = (ParametermandantDto) DelegateFactory
-							.getInstance()
-							.getParameterDelegate()
-							.getParametermandant(
-									ParameterFac.PARAMETER_LIEFERSCHEIN_UEBERNAHME_NACH_ANSPRECHPARTNER,
-									ParameterFac.KATEGORIE_RECHNUNG,
-									LPMain.getTheClient().getMandant());
+					// Vorher fragen
 
-					if ((Boolean) parameter.getCWertAsObject()) {
+					boolean b = DialogFactory
+							.showModalJaNeinDialog(
+									getInternalFrame(),
+									LPMain.getTextRespectUISPr("re.sortierenach.frage"));
 
-						DelegateFactory
+					if (b == true) {
+						ParametermandantDto parameter = (ParametermandantDto) DelegateFactory
 								.getInstance()
-								.getRechnungDelegate()
-								.sortiereNachLieferscheinAnsprechpartner(
-										getRechnungDto().getIId());
-						getPanelQueryPositionen(true)
-								.eventYouAreSelected(false);
-					} else {
-						DelegateFactory
-								.getInstance()
-								.getRechnungDelegate()
-								.sortiereNachLieferscheinNummer(
-										getRechnungDto().getIId());
-						getPanelQueryPositionen(true)
-								.eventYouAreSelected(false);
+								.getParameterDelegate()
+								.getParametermandant(
+										ParameterFac.PARAMETER_LIEFERSCHEIN_UEBERNAHME_NACH_ANSPRECHPARTNER,
+										ParameterFac.KATEGORIE_RECHNUNG,
+										LPMain.getTheClient().getMandant());
+
+						if ((Boolean) parameter.getCWertAsObject()) {
+
+							DelegateFactory
+									.getInstance()
+									.getRechnungDelegate()
+									.sortiereNachLieferscheinAnsprechpartner(
+											getRechnungDto().getIId());
+							getPanelQueryPositionen(true).eventYouAreSelected(
+									false);
+						} else {
+							DelegateFactory
+									.getInstance()
+									.getRechnungDelegate()
+									.sortiereNachLieferscheinNummer(
+											getRechnungDto().getIId());
+							getPanelQueryPositionen(true).eventYouAreSelected(
+									false);
+						}
 					}
 				} else {
 
@@ -1002,6 +1025,20 @@ abstract class TabbedPaneRechnungAll extends TabbedPaneBasis implements
 		}
 	}
 
+	/**
+	 * Laden der Info der neu selektierten Position in das PanelDetailPositionen
+	 *
+	 * @param key
+	 *            , selektierte Positions-Id
+	 * @throws Throwable
+	 */
+	protected void panelDetailPositionenSelected(Object key) throws Throwable {
+		getPanelDetailPositionen(true).setKeyWhenDetailPanel(key);
+		getPanelDetailPositionen(true).eventYouAreSelected(false);
+		getPanelQueryPositionen(true).updateButtons();
+		updateISortButtons();
+	}
+
 	private void updateISortButtons() throws Throwable {
 		PanelQuery positionen = getPanelQueryPositionen(true);
 		if (positionen.getTable().getSelectedRow() == 0)
@@ -1019,7 +1056,7 @@ abstract class TabbedPaneRechnungAll extends TabbedPaneBasis implements
 
 	/**
 	 * Eine ausgewaehlte Rechnung holen und die Panels aktualisieren
-	 * 
+	 *
 	 * @param key
 	 *            Object
 	 * @throws Throwable
@@ -1030,10 +1067,14 @@ abstract class TabbedPaneRechnungAll extends TabbedPaneBasis implements
 					.getRechnungDelegate()
 					.rechnungFindByPrimaryKey((Integer) key);
 			setRechnungDto(reDto);
-			getInternalFrameRechnung().setKeyWasForLockMe(key.toString());
-			if (getPanelDetailKopfdaten(false) != null) {
-				getPanelDetailKopfdaten(true).setKeyWhenDetailPanel(key);
-			}
+			setKeyInternalFrame(key);
+		}
+	}
+
+	protected void setKeyInternalFrame(Object key) throws Throwable {
+		getInternalFrameRechnung().setKeyWasForLockMe(key.toString());
+		if (getPanelDetailKopfdaten(false) != null) {
+			getPanelDetailKopfdaten(true).setKeyWhenDetailPanel(key);
 		}
 	}
 
@@ -1239,8 +1280,8 @@ abstract class TabbedPaneRechnungAll extends TabbedPaneBasis implements
 
 	protected void eventActionSpecial(ActionEvent e) throws Throwable {
 		if (e.getActionCommand().equals(MY_OWN_NEW_EXTRA_ACTION_SPECIAL_OK)) {
-//			int z=0;
-		} 
+			// int z=0;
+		}
 	}
 
 	protected void lPActionEvent(java.awt.event.ActionEvent e) throws Throwable {
@@ -1338,7 +1379,7 @@ abstract class TabbedPaneRechnungAll extends TabbedPaneBasis implements
 	/**
 	 * Diese Methode setzt des aktuellen Auftrag aus der Auswahlliste als den zu
 	 * lockenden Auftrag.
-	 * 
+	 *
 	 * @throws java.lang.Throwable
 	 *             Ausnahme
 	 */
@@ -1410,14 +1451,14 @@ abstract class TabbedPaneRechnungAll extends TabbedPaneBasis implements
 		return panelSplitPositionen;
 	}
 
-	public Object getInseratDto() {
+	public Object getDto() {
 		return rechnungDto;
 	}
 
 	/**
 	 * Diese Methode prueft den Status der aktuellen Rechnung und legt fest, ob
 	 * eine Aenderung in den Kopfdaten bzw. Konditionen erlaubt ist.
-	 * 
+	 *
 	 * @return boolean true, wenn ein update erlaubt ist
 	 * @throws java.lang.Throwable
 	 *             Ausnahme
@@ -1483,9 +1524,9 @@ abstract class TabbedPaneRechnungAll extends TabbedPaneBasis implements
 				.createFKGelieferteLieferscheine();
 		String sTitle = LPMain
 				.getTextRespectUISPr("ls.print.listenichtverrechnet");
-		panelQueryFLRLieferschein = LieferscheinFilterFactory
-				.getInstance()
-				.createPanelQueryFLRLieferschein(getInternalFrame(), fk, sTitle);
+		panelQueryFLRLieferschein = LieferscheinFilterFactory.getInstance()
+				.createPanelQueryFLRLieferschein(getInternalFrame(), fk,
+						sTitle, null);
 		panelQueryFLRLieferschein.setMultipleRowSelectionEnabled(true);
 
 		panelQueryFLRLieferschein
@@ -1519,7 +1560,7 @@ abstract class TabbedPaneRechnungAll extends TabbedPaneBasis implements
 
 	/**
 	 * erstelle Rechnung aus Lieferschein.
-	 * 
+	 *
 	 * @param key
 	 *            Object
 	 * @throws Throwable
@@ -1575,7 +1616,8 @@ abstract class TabbedPaneRechnungAll extends TabbedPaneBasis implements
 											new RechnungDto(),
 											this.rechnungsTyp,
 											getInternalFrameRechnung()
-													.getNeuDatum());
+													.getNeuDatum(),
+											getInternalFrame());
 						} catch (Throwable ex) {
 							// Liste neu Laden, wegen Panelsichtbarkeit
 							getPanelAuswahl().eventYouAreSelected(false);
@@ -1607,9 +1649,11 @@ abstract class TabbedPaneRechnungAll extends TabbedPaneBasis implements
 
 			if (bAnswer == true) {
 
-				LieferscheinDto lsDto = DelegateFactory.getInstance()
+				LieferscheinDto lsDto = DelegateFactory
+						.getInstance()
 						.getLsDelegate()
-						.lieferscheinFindByPrimaryKey((Integer) key[0]);
+						.lieferscheinFindByPrimaryKey(
+								(Integer) key[key.length - 1]);
 				KundeDto kundeDto = DelegateFactory
 						.getInstance()
 						.getKundeDelegate()
@@ -1635,7 +1679,8 @@ abstract class TabbedPaneRechnungAll extends TabbedPaneBasis implements
 							.getRechnungDelegate()
 							.createRechnungAusMehrereLieferscheine(key,
 									new RechnungDto(), this.rechnungsTyp,
-									getInternalFrameRechnung().getNeuDatum());
+									getInternalFrameRechnung().getNeuDatum(),
+									getInternalFrame());
 				} catch (Throwable ex) {
 					// Liste neu Laden, wegen Panelsichtbarkeit
 					getPanelAuswahl().eventYouAreSelected(false);
@@ -1818,11 +1863,30 @@ abstract class TabbedPaneRechnungAll extends TabbedPaneBasis implements
 									// Position
 									// nur angelegt wird, wenn genuegend
 									// Menge in Lager vorhanden ist
-									BigDecimal lagerstand = DelegateFactory
+									BigDecimal lagerstand = null;
+
+									ParametermandantDto parameter = (ParametermandantDto) DelegateFactory
 											.getInstance()
-											.getLagerDelegate()
-											.getLagerstandAllerLagerEinesMandanten(
-													artikelDto.getIId());
+											.getParameterDelegate()
+											.getParametermandant(
+													ParameterFac.PARAMETER_LAGER_IMMER_AUSREICHEND_VERFUEGBAR,
+													ParameterFac.KATEGORIE_ARTIKEL,
+													LPMain.getTheClient()
+															.getMandant());
+
+									boolean bImmerAusreichendVerfuegbar = (Boolean) parameter
+											.getCWertAsObject();
+
+									if (bImmerAusreichendVerfuegbar == false) {
+										lagerstand = DelegateFactory
+												.getInstance()
+												.getLagerDelegate()
+												.getLagerstandAllerLagerEinesMandanten(
+														artikelDto.getIId());
+									} else {
+										lagerstand = new BigDecimal(9999999);
+									}
+
 									BigDecimal bdLagerstandDiff = lagerstand
 											.subtract(positionDto.getNMenge());
 									if (bdLagerstandDiff
@@ -1955,7 +2019,7 @@ abstract class TabbedPaneRechnungAll extends TabbedPaneBasis implements
 		return panelSplitZahlungen;
 	}
 
-	private PanelRechnungZahlung getPanelDetailZahlung(
+	protected PanelRechnungZahlung getPanelDetailZahlung(
 			boolean bNeedInstantiationIfNull) throws Throwable {
 		if (panelDetailZahlung == null && bNeedInstantiationIfNull) {
 			panelDetailZahlung = new PanelRechnungZahlung(
@@ -1992,4 +2056,10 @@ abstract class TabbedPaneRechnungAll extends TabbedPaneBasis implements
 	public PanelQuery getRechnungPositionTop() {
 		return panelQueryPositionen;
 	}
+
+	public String getRechnungStatus() throws Throwable {
+		return DelegateFactory.getInstance().getLocaleDelegate()
+				.getStatusCBez(getRechnungDto().getStatusCNr());
+	}
+
 }

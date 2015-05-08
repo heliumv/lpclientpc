@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -33,13 +33,18 @@
 package com.lp.client.stueckliste;
 
 import java.awt.event.ActionEvent;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.TreeMap;
 
+import javax.swing.JFileChooser;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
@@ -61,6 +66,7 @@ import com.lp.client.frame.ExceptionLP;
 import com.lp.client.frame.HelperClient;
 import com.lp.client.frame.ICopyPaste;
 import com.lp.client.frame.LockStateValue;
+import com.lp.client.frame.assistent.view.AssistentView;
 import com.lp.client.frame.component.DialogQuery;
 import com.lp.client.frame.component.ISourceEvent;
 import com.lp.client.frame.component.InternalFrame;
@@ -75,9 +81,11 @@ import com.lp.client.frame.component.WrapperMenuBar;
 import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.frame.dialog.DialogFactory;
 import com.lp.client.pc.LPMain;
+import com.lp.client.stueckliste.importassistent.StklImportController;
 import com.lp.client.system.ReportEntitylog;
 import com.lp.server.artikel.service.ArtikelDto;
 import com.lp.server.artikel.service.ArtikelFac;
+import com.lp.server.benutzer.service.RechteFac;
 import com.lp.server.personal.service.MaschineDto;
 import com.lp.server.stueckliste.service.MontageartDto;
 import com.lp.server.stueckliste.service.StrukturierterImportDto;
@@ -95,6 +103,7 @@ import com.lp.server.system.service.SystemFac;
 import com.lp.server.util.fastlanereader.service.query.QueryParameters;
 import com.lp.service.BelegpositionDto;
 import com.lp.service.POSDocument2POSDto;
+import com.lp.service.StklImportSpezifikation;
 import com.lp.util.EJBExceptionLP;
 import com.lp.util.Helper;
 import com.lp.util.csv.LPCSVReader;
@@ -124,12 +133,19 @@ public class TabbedPaneStueckliste extends TabbedPane implements ICopyPaste {
 	private PanelBasis panelBottomArbeitsplan = null;
 	private PanelSplit panelSplitArbeitsplan = null;
 
+	private PanelQuery panelQueryAbbuchungslager = null;
+	private PanelBasis panelBottomAbbuchungslager = null;
+	private PanelSplit panelSplitAbbuchungslager = null;
+
 	public static int IDX_PANEL_AUSWAHL = -1;
 	public static int IDX_PANEL_DETAIL = -1;
 	public static int IDX_PANEL_POSITIONEN = -1;
 	public static int IDX_PANEL_POSITIONENERSATZ = -1;
 	public static int IDX_PANEL_ARBEITSPLAN = -1;
+	public static int IDX_LAGERENTNAHME = -1;
 	public static int IDX_PANEL_EIGENSCHAFTEN = -1;
+
+	public boolean bStuecklistenfreigabe = false;
 
 	private boolean bPositionen = true;
 
@@ -140,6 +156,9 @@ public class TabbedPaneStueckliste extends TabbedPane implements ICopyPaste {
 	private final String MENU_INFO_ARBEITSPLAN = "MENU_INFO_ARBEITSPLAN";
 	private final String MENU_INFO_GESAMTKALKULATION = "MENU_INFO_GESAMTKALKULATION";
 	private final String MENU_INFO_AENDERUNGEN = "MENU_INFO_AENDERUNGEN";
+
+	private final String MENU_XLSIMPORT_ARBEITSPLAN = "MENU_XLSIMPORT_ARBEITSPLAN";
+	private final String MENU_XLSIMPORT_MATERIAL = "MENU_XLSIMPORT_MATERIAL";
 
 	private final String MENUE_INVENTUR_ACTION_STUECKLISTE = "MENUE_INVENTUR_ACTION_STUECKLISTE";
 	private final String MENU_BEARBEITEN_KOMMENTAR = "MENU_BEARBEITEN_KOMMENTAR";
@@ -193,6 +212,15 @@ public class TabbedPaneStueckliste extends TabbedPane implements ICopyPaste {
 		if (parameter.getCWertAsObject() != null) {
 			iStrukturierterStklImport = (Integer) parameter.getCWertAsObject();
 		}
+
+		if (LPMain
+				.getInstance()
+				.getDesktop()
+				.darfAnwenderAufZusatzfunktionZugreifen(
+						MandantFac.ZUSATZFUNKTION_STUECKLISTENFREIGABE)) {
+			bStuecklistenfreigabe = true;
+		}
+
 		jbInit();
 		initComponents();
 
@@ -239,6 +267,9 @@ public class TabbedPaneStueckliste extends TabbedPane implements ICopyPaste {
 			panelQueryStueckliste.addDirektFilter(StuecklisteFilterFactory
 					.getInstance().createFKDErweiterteTextsuche());
 
+			panelQueryStueckliste.addDirektFilter(StuecklisteFilterFactory
+					.getInstance().createFKDKundeName());
+
 			panelQueryStueckliste.createAndSaveAndShowButton(
 					"/com/lp/client/res/branch_view.png", LPMain.getInstance()
 							.getTextRespectUISPr("stkl.baumansicht"),
@@ -272,20 +303,50 @@ public class TabbedPaneStueckliste extends TabbedPane implements ICopyPaste {
 			menuItemModul.addActionListener(this);
 			menuItemModul.setActionCommand(MENUE_INVENTUR_ACTION_STUECKLISTE);
 
+			JMenu stkimport = new JMenu(LPMain.getInstance()
+					.getTextRespectUISPr("lp.import"));
+
 			JMenu modul = (JMenu) wrapperManuBar
 					.getComponent(WrapperMenuBar.MENU_MODUL);
 			modul.add(new JSeparator(), 0);
 			modul.add(menuItemModul, 0);
 			modul.add(menuItemArbeitsplan, 1);
+			modul.add(stkimport, 2);
+
+			JMenuItem menuItemImportMaterial = new JMenuItem(LPMain
+					.getInstance().getTextRespectUISPr(
+							"stkl.title.panel.positionen"));
+			menuItemImportMaterial.addActionListener(this);
+			menuItemImportMaterial.setActionCommand(MENU_XLSIMPORT_MATERIAL);
+			stkimport.add(menuItemImportMaterial);
+
+			JMenuItem menuItemImportArbeitsplan = new JMenuItem(LPMain
+					.getInstance().getTextRespectUISPr("stkl.arbeitsplan"));
+			menuItemImportArbeitsplan.addActionListener(this);
+			menuItemImportArbeitsplan
+					.setActionCommand(MENU_XLSIMPORT_ARBEITSPLAN);
+			stkimport.add(menuItemImportArbeitsplan);
 
 			if (iStrukturierterStklImport != 0) {
 				// CSV-Import
 
-				JMenuItem menuItemCsvImport = new JMenuItem(LPMain
-						.getInstance().getTextRespectUISPr("lp.import"));
+				String text = LPMain.getInstance().getTextRespectUISPr(
+						"lp.import");
+
+				if (iStrukturierterStklImport == 1) {
+					text = "Solid-Works- " + text;
+				}
+				if (iStrukturierterStklImport == 2) {
+					text = "Siemens NX- " + text;
+				}
+				if (iStrukturierterStklImport == 3) {
+					text = "INFRA- " + text;
+				}
+
+				JMenuItem menuItemCsvImport = new JMenuItem(text);
 				menuItemCsvImport.addActionListener(this);
 				menuItemCsvImport.setActionCommand(MENUE_ACTION_CSVIMPORT);
-				modul.add(menuItemCsvImport, 2);
+				stkimport.add(menuItemCsvImport);
 			}
 			JMenu jmBearbeiten = (JMenu) wrapperManuBar
 					.getComponent(WrapperMenuBar.MENU_BEARBEITEN);
@@ -379,11 +440,20 @@ public class TabbedPaneStueckliste extends TabbedPane implements ICopyPaste {
 						BUTTON_IMPORTAGSTKLPOSITIONEN, null);
 			}
 
-			panelQueryPositionen.createAndSaveAndShowButton(
-					"/com/lp/client/res/document_into.png",
-					LPMain.getInstance().getTextRespectUISPr(
-							"stkl.positionen.cvsimport"),
-					BUTTON_IMPORTCSV_STUECKLISTEPOSITIONEN, null);
+			boolean intelligenterStklImport = LPMain
+					.getInstance()
+					.getDesktop()
+					.darfAnwenderAufZusatzfunktionZugreifen(
+							MandantFac.ZUSATZFUNKTION_INTELLIGENTER_STUECKLISTENIMPORT);
+
+			panelQueryPositionen
+					.createAndSaveAndShowButton(
+							"/com/lp/client/res/document_into.png",
+							LPMain.getInstance()
+									.getTextRespectUISPr(
+											intelligenterStklImport ? "stkl.intelligenterstklimport"
+													: "stkl.positionen.cvsimport"),
+							BUTTON_IMPORTCSV_STUECKLISTEPOSITIONEN, null);
 
 			ArbeitsplatzparameterDto parameter = DelegateFactory
 					.getInstance()
@@ -488,6 +558,36 @@ public class TabbedPaneStueckliste extends TabbedPane implements ICopyPaste {
 		}
 	}
 
+	private void refreshAbbuchungslager(Integer key) throws Throwable {
+
+		if (panelQueryAbbuchungslager == null) {
+			String[] aWhichStandardButtonIUse = { PanelBasis.ACTION_NEW,
+					PanelBasis.ACTION_POSITION_VONNNACHNMINUS1,
+					PanelBasis.ACTION_POSITION_VONNNACHNPLUS1 };
+			panelQueryAbbuchungslager = new PanelQuery(null,
+					StuecklisteFilterFactory.getInstance()
+							.createFKStuecklisteAbbuchungslager(key),
+					QueryParameters.UC_ID_STKLAGERENTNAHME,
+					aWhichStandardButtonIUse, getInternalFrame(), LPMain
+							.getInstance().getTextRespectUISPr(
+									"stk.tab.oben.abbuchungslager"), true);
+
+			panelBottomAbbuchungslager = new PanelStklagerentnahme(
+					getInternalFrame(),
+					LPMain.getInstance().getTextRespectUISPr(
+							"stk.tab.oben.abbuchungslager"), null, this);
+
+			panelSplitAbbuchungslager = new PanelSplit(getInternalFrame(),
+					panelBottomAbbuchungslager, panelQueryAbbuchungslager, 180);
+
+			setComponentAt(IDX_LAGERENTNAHME, panelSplitAbbuchungslager);
+		} else {
+			// filter refreshen.
+			panelQueryAbbuchungslager.setDefaultFilter(StuecklisteFilterFactory
+					.getInstance().createFKStuecklisteAbbuchungslager(key));
+		}
+	}
+
 	private void dialogAgstkl(ItemChangedEvent e) throws Throwable {
 		panelAgstkl = AngebotstklFilterFactory.getInstance()
 				.createPanelFLRAgstkl(getInternalFrame(), true, false);
@@ -579,6 +679,14 @@ public class TabbedPaneStueckliste extends TabbedPane implements ICopyPaste {
 							.getTextRespectUISPr("stkl.arbeitsplan"),
 					IDX_PANEL_ARBEITSPLAN);
 		}
+
+		tabIndex++;
+		IDX_LAGERENTNAHME = tabIndex;
+		insertTab(LPMain.getTextRespectUISPr("stk.tab.oben.abbuchungslager"),
+				null, null,
+				LPMain.getTextRespectUISPr("stk.tab.oben.abbuchungslager"),
+				IDX_LAGERENTNAHME);
+
 		tabIndex++;
 		IDX_PANEL_EIGENSCHAFTEN = tabIndex;
 		insertTab(LPMain.getInstance().getTextRespectUISPr("lp.eigenschaften"),
@@ -653,7 +761,7 @@ public class TabbedPaneStueckliste extends TabbedPane implements ICopyPaste {
 				getInternalFrame().setLpTitle(
 						InternalFrame.TITLE_IDX_AS_I_LIKE,
 						getInternalFrameStueckliste().getStuecklisteDto()
-								.getArtikelDto().formatArtikelbezeichnung()
+								.getArtikelDto().formatArtikelbezeichnungMitZusatzbezeichnung()
 								+ ", LGR: " + sLosgroesse);
 			}
 		}
@@ -685,7 +793,102 @@ public class TabbedPaneStueckliste extends TabbedPane implements ICopyPaste {
 	}
 
 	protected void lPActionEvent(ActionEvent e) throws Throwable {
-		if (e.getActionCommand().equals(MENUE_ACTION_CSVIMPORT)) {
+
+		if (e.getActionCommand().equals(MENU_XLSIMPORT_ARBEITSPLAN)) {
+
+			File[] files = HelperClient.chooseFile(this,
+					HelperClient.FILE_FILTER_XLS, false);
+			if (files == null || files.length < 1 || files[0] == null) {
+				return;
+			}
+
+			File pfad = files[0];
+
+			File test = new File(pfad.getAbsolutePath());
+
+			if (test.getAbsolutePath().toLowerCase().endsWith(".xls")) {
+
+				ByteArrayOutputStream ous = null;
+				InputStream ios = null;
+				try {
+					byte[] buffer = new byte[4096];
+					ous = new ByteArrayOutputStream();
+					ios = new FileInputStream(pfad.getAbsolutePath());
+					int read = 0;
+					while ((read = ios.read(buffer)) != -1) {
+						ous.write(buffer, 0, read);
+					}
+				} finally {
+					try {
+						if (ous != null)
+							ous.close();
+					} catch (IOException ex) {
+					}
+
+					try {
+						if (ios != null)
+							ios.close();
+					} catch (IOException ex) {
+					}
+				}
+
+				DialogArbeitsplanXLSImport d = new DialogArbeitsplanXLSImport(
+						ous.toByteArray(), this);
+				d.setSize(500, 500);
+				LPMain.getInstance().getDesktop()
+						.platziereDialogInDerMitteDesFensters(d);
+				d.setVisible(true);
+
+			}
+
+		} else if (e.getActionCommand().equals(MENU_XLSIMPORT_MATERIAL)) {
+
+			File[] files = HelperClient.chooseFile(this,
+					HelperClient.FILE_FILTER_XLS, false);
+			if (files == null || files.length < 1 || files[0] == null) {
+				return;
+			}
+
+			File pfad = files[0];
+
+			File test = new File(pfad.getAbsolutePath());
+
+			if (test.getAbsolutePath().toLowerCase().endsWith(".xls")) {
+
+				ByteArrayOutputStream ous = null;
+				InputStream ios = null;
+				try {
+					byte[] buffer = new byte[4096];
+					ous = new ByteArrayOutputStream();
+					ios = new FileInputStream(pfad.getAbsolutePath());
+					int read = 0;
+					while ((read = ios.read(buffer)) != -1) {
+						ous.write(buffer, 0, read);
+					}
+				} finally {
+					try {
+						if (ous != null)
+							ous.close();
+					} catch (IOException ex) {
+					}
+
+					try {
+						if (ios != null)
+							ios.close();
+					} catch (IOException ex) {
+					}
+				}
+
+				DialogStuecklisteMaterialXLSImport d = new DialogStuecklisteMaterialXLSImport(
+						ous.toByteArray(), this);
+				d.setSize(500, 500);
+				LPMain.getInstance().getDesktop()
+						.platziereDialogInDerMitteDesFensters(d);
+				d.setVisible(true);
+
+			}
+
+		} else if (e.getActionCommand().equals(MENUE_ACTION_CSVIMPORT)) {
 
 			if (iStrukturierterStklImport == 1) {
 				// Dateiauswahldialog
@@ -724,16 +927,13 @@ public class TabbedPaneStueckliste extends TabbedPane implements ICopyPaste {
 										sb.toString());
 
 					}
-					
-					DialogFactory
-					.showModalDialog(
-							LPMain.getInstance()
-									.getTextRespectUISPr(
-											"lp.info"),LPMain.getInstance()
-											.getTextRespectUISPr(
-													"stkl.import.erfolgreich.info"));
 
-					
+					DialogFactory
+							.showModalDialog(
+									LPMain.getInstance().getTextRespectUISPr(
+											"lp.info"),
+									LPMain.getInstance().getTextRespectUISPr(
+											"stkl.import.erfolgreich.info"));
 
 				} catch (IOException ex) {
 					handleException(ex, true);
@@ -741,7 +941,8 @@ public class TabbedPaneStueckliste extends TabbedPane implements ICopyPaste {
 					workbook.close();
 				}
 			} else if (iStrukturierterStklImport == 2) {
-				// Die Einheiten mm und mm?? muessen vorhanden sein, sonst return
+				// Die Einheiten mm und mm?? muessen vorhanden sein, sonst
+				// return
 
 				try {
 					DelegateFactory
@@ -897,6 +1098,131 @@ public class TabbedPaneStueckliste extends TabbedPane implements ICopyPaste {
 					} catch (IOException ex) {
 						handleException(ex, true);
 					}
+				}
+
+			} else if (iStrukturierterStklImport == 3) {
+				// PJ18568
+				JFileChooser chooser = new JFileChooser();
+				chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+				int returnVal = chooser.showOpenDialog(this);
+				if (returnVal == JFileChooser.APPROVE_OPTION) {
+
+					File pfad = chooser.getSelectedFile();
+
+					File test = new File(pfad.getAbsolutePath());
+
+					// Alle Verzeichnis im "test" auflisten...
+
+					String[] DIR = test.list();
+
+					HashMap<String, HashMap<String, byte[]>> hmDateien = new HashMap<String, HashMap<String, byte[]>>();
+
+					for (int i = 0; i < DIR.length; i++) {
+
+						File einzlneDatei = new File(DIR[i]);
+
+						if (einzlneDatei.getAbsolutePath().toLowerCase()
+								.endsWith(".xls")) {
+
+							ByteArrayOutputStream ous = null;
+							InputStream ios = null;
+							try {
+								byte[] buffer = new byte[4096];
+								ous = new ByteArrayOutputStream();
+								ios = new FileInputStream(
+										pfad.getAbsolutePath()
+												+ System.getProperty("file.separator")
+												+ einzlneDatei.getName());
+								int read = 0;
+								while ((read = ios.read(buffer)) != -1) {
+									ous.write(buffer, 0, read);
+								}
+							} finally {
+								try {
+									if (ous != null)
+										ous.close();
+								} catch (IOException ex) {
+								}
+
+								try {
+									if (ios != null)
+										ios.close();
+								} catch (IOException ex) {
+								}
+							}
+
+							String stueklistenr = einzlneDatei.getName();
+
+							stueklistenr = stueklistenr.substring(0,
+									stueklistenr.length() - 4);
+
+							HashMap<String, byte[]> hmDateienTemp = new HashMap<String, byte[]>();
+							hmDateienTemp.put("XLS", ous.toByteArray());
+
+							hmDateien.put(stueklistenr, hmDateienTemp);
+						}
+
+						System.out.println(DIR[i]);
+
+					}
+					for (int i = 0; i < DIR.length; i++) {
+
+						File einzlneDatei = new File(DIR[i]);
+
+						if (einzlneDatei.getAbsolutePath().toLowerCase()
+								.endsWith(".pdf")) {
+
+							ByteArrayOutputStream ous = null;
+							InputStream ios = null;
+							try {
+								byte[] buffer = new byte[4096];
+								ous = new ByteArrayOutputStream();
+								ios = new FileInputStream(
+										pfad.getAbsolutePath()
+												+ System.getProperty("file.separator")
+												+ einzlneDatei.getName());
+								int read = 0;
+								while ((read = ios.read(buffer)) != -1) {
+									ous.write(buffer, 0, read);
+								}
+							} finally {
+								try {
+									if (ous != null)
+										ous.close();
+								} catch (IOException ex) {
+								}
+
+								try {
+									if (ios != null)
+										ios.close();
+								} catch (IOException ex) {
+								}
+							}
+
+							String stueklistenr = einzlneDatei.getName();
+
+							stueklistenr = stueklistenr.substring(0,
+									stueklistenr.length() - 4);
+
+							if (hmDateien.containsKey(stueklistenr)) {
+
+								HashMap<String, byte[]> hmDateienTemp = hmDateien
+										.get(stueklistenr);
+
+								hmDateienTemp.put(einzlneDatei.getName(),
+										ous.toByteArray());
+
+								hmDateien.put(stueklistenr, hmDateienTemp);
+
+							}
+
+						}
+
+					}
+
+					DelegateFactory.getInstance().getStuecklisteDelegate()
+							.importiereStuecklistenINFRA(hmDateien);
+
 				}
 
 			}
@@ -1060,119 +1386,6 @@ public class TabbedPaneStueckliste extends TabbedPane implements ICopyPaste {
 		}
 	}
 
-	// private StrukturierterImportDto holePositionenNaechsterEbene(
-	// jxl.Sheet sheet, int iStartwert, int iEbeneVorher,
-	// File[] fileArray, StrukturierterImportDto kopfZeileVorher,
-	// ArrayList<StrukturierterImportDto> gesamtliste) {
-	//
-	// ArrayList<StrukturierterImportDto> positionen = new
-	// ArrayList<StrukturierterImportDto>();
-	// for (int i = iStartwert; i < sheet.getRows() - 1; i++) {
-	//
-	// // KOPFSTUECKLISTE
-	// StrukturierterImportDto zeile = befuelleZeile(sheet.getRow(i));
-	// StrukturierterImportDto naechsteZeile = befuelleZeile(sheet
-	// .getRow(i + 1));
-	//
-	// zeile = anhaengeHinzufuegen(fileArray, zeile);
-	//
-	// if (zeile.getIEbene() != naechsteZeile.getIEbene()) {
-	//
-	// if (kopfZeileVorher != null) {
-	//
-	// if (naechsteZeile.getIEbene() > zeile.getIEbene()) {
-	// zeile = holePositionenNaechsterEbene(sheet, i + 1,
-	// zeile.getIEbene(), fileArray, zeile,
-	// gesamtliste);
-	// }
-	//
-	// positionen.add(zeile);
-	//
-	// kopfZeileVorher.setPositionen(positionen);
-	// return kopfZeileVorher;
-	// }
-	//
-	// } else {
-	// positionen.add(zeile);
-	// }
-	//
-	// }
-	//
-	// return null;
-	//
-	// }
-
-	// private StrukturierterImportDto befuelleZeile(jxl.Cell[] cells) {
-	// String posnr = "";
-	// String artikelnr = "";
-	// String artikelbez = "";
-	// String abmessungen = "";
-	// String material = "";
-	// Double gewicht = new Double(0);
-	// String liefergruppe = "";
-	// Double menge = new Double(0);
-	//
-	// posnr = cells[0].getContents();
-	//
-	// if (cells[1].getType() == CellType.NUMBER) {
-	// menge = ((NumberCell) cells[1]).getValue();
-	// }
-	// artikelnr = cells[2].getContents();
-	// if (cells[3].getType() == CellType.LABEL) {
-	// artikelbez = ((LabelCell) cells[3]).getString();
-	// }
-	// if (cells[4].getType() == CellType.LABEL) {
-	// abmessungen = ((LabelCell) cells[4]).getString();
-	// }
-	// if (cells[5].getType() == CellType.LABEL) {
-	// material = ((LabelCell) cells[5]).getString();
-	// }
-	// if (cells[6].getType() == CellType.NUMBER) {
-	// gewicht = ((NumberCell) cells[6]).getValue();
-	// }
-	// liefergruppe = cells[7].getContents();
-	//
-	// String[] ebenen = posnr.split("\\.");
-	//
-	// StrukturierterImportDto kopfZeile = new StrukturierterImportDto();
-	// kopfZeile.setPosnr(posnr);
-	// kopfZeile.setArtikelnr(artikelnr);
-	// kopfZeile.setArtikelbez(artikelbez);
-	// kopfZeile.setAbmessungen(abmessungen);
-	// kopfZeile.setMaterial(material);
-	// kopfZeile.setMenge(menge);
-	// kopfZeile.setLiefergruppe(liefergruppe);
-	// kopfZeile.setGewicht(gewicht);
-	// return kopfZeile;
-	//
-	// }
-
-	// private StrukturierterImportDto anhaengeHinzufuegen(File[] fileArray,
-	// StrukturierterImportDto zeile) {
-	// HashMap<String, byte[]> hm = new HashMap<String, byte[]>();
-	// for (int i = 0; i < fileArray.length; i++) {
-	// if (fileArray[i].isFile()
-	// && fileArray[i].getName().startsWith(zeile.getArtikelnr())) {
-	//
-	// try {
-	// hm.put(fileArray[i].getName(),
-	// Helper.getBytesFromFile(fileArray[i]));
-	// break;
-	// } catch (IOException e) {
-	// handleException(e, true);
-	// }
-	//
-	// }
-	//
-	// }
-	//
-	// if (hm.size() > 0) {
-	// zeile.setAnhaenge(hm);
-	// }
-	//
-	// return zeile;
-	// }
-
 	private void refreshPdKommentar() throws Throwable {
 		// das Panel immer neu anlegen, sonst funktioniert das Locken des
 		// Angebots nicht richtig
@@ -1275,7 +1488,8 @@ public class TabbedPaneStueckliste extends TabbedPane implements ICopyPaste {
 
 					if (sheet == null) {
 						DialogFactory
-								.showModalDialog("Info",
+								.showModalDialog(
+										"Info",
 										"Die Datei enth\u00E4lt kein Tabellenblatt mit dem Namen 'HV_Materialpositionen'");
 						return;
 					}
@@ -1508,17 +1722,34 @@ public class TabbedPaneStueckliste extends TabbedPane implements ICopyPaste {
 								MandantFac.ZUSATZFUNKTION_INTELLIGENTER_STUECKLISTENIMPORT)
 						&& sAspectInfo
 								.equals(BUTTON_IMPORTCSV_STUECKLISTEPOSITIONEN)) {
-					DialogStuecklisteimportDefinition dialogStk = new DialogStuecklisteimportDefinition(
-							(Integer) panelQueryStueckliste.getSelectedId());
+					if(LPMain.getInstance().getDesktop()
+							.darfAnwenderAufZusatzfunktionZugreifen(MandantFac.ZUSATZFUNKTION_KUNDESONDERKONDITIONEN)) {
+						AssistentView av = new AssistentView(
+								getInternalFrameStueckliste(),
+								LPMain.getTextRespectUISPr("stkl.intelligenterstklimport"),
+								new StklImportController(
+										getInternalFrameStueckliste().getStuecklisteDto().getIId(),
+										StklImportSpezifikation.SpezifikationsTyp.FERTIGUNGSSTKL_SPEZ,
+										getInternalFrame()));
+						getInternalFrame().showPanelDialog(av);
+					} else {
+						DialogFactory.showModalDialog(LPMain.getTextRespectUISPr("lp.hint"), 
+								LPMain.getTextRespectUISPr("stkl.error.keinekundesokoberechtigung"));
+					}
+					// refreshTitle();
+					// DialogStuecklisteimportDefinition dialogStk = new
+					// DialogStuecklisteimportDefinition(
+					// (Integer) panelQueryStueckliste.getSelectedId());
+					// //
 					// dialogStk.setDefaultCloseOperation(DialogStuecklisteimportDefinition.EXIT_ON_CLOSE);
-					// dialogStk.setTitle("test");
-					dialogStk.getContentPane().setPreferredSize(
-							dialogStk.getSize());
-					dialogStk.pack();
-					dialogStk.setLocationRelativeTo(LPMain.getInstance()
-							.getDesktop());
-					dialogStk.setVisible(true);
-					panelSplitPositionen.eventYouAreSelected(false);
+					// // dialogStk.setTitle("test");
+					// dialogStk.getContentPane().setPreferredSize(
+					// dialogStk.getSize());
+					// dialogStk.pack();
+					// dialogStk.setLocationRelativeTo(LPMain.getInstance()
+					// .getDesktop());
+					// dialogStk.setVisible(true);
+					// panelSplitPositionen.eventYouAreSelected(false);
 				} else {
 					// PJ 14984
 					File[] files = HelperClient.chooseFile(this,
@@ -1897,6 +2128,12 @@ public class TabbedPaneStueckliste extends TabbedPane implements ICopyPaste {
 				panelQueryArbeitsplan.eventYouAreSelected(false);
 				panelQueryArbeitsplan.setSelectedId(oKey);
 				panelSplitArbeitsplan.eventYouAreSelected(false);
+			} else if (eI.getSource() == panelBottomAbbuchungslager) {
+				Object oKey = panelBottomAbbuchungslager
+						.getKeyWhenDetailPanel();
+				panelQueryAbbuchungslager.eventYouAreSelected(false);
+				panelQueryAbbuchungslager.setSelectedId(oKey);
+				panelSplitAbbuchungslager.eventYouAreSelected(false);
 			}
 		}
 
@@ -1935,7 +2172,7 @@ public class TabbedPaneStueckliste extends TabbedPane implements ICopyPaste {
 								InternalFrame.TITLE_IDX_AS_I_LIKE,
 								getInternalFrameStueckliste()
 										.getStuecklisteDto().getArtikelDto()
-										.formatArtikelbezeichnung()
+										.formatArtikelbezeichnungMitZusatzbezeichnung()
 										+ ", LGR: " + sLosgroesse);
 					}
 
@@ -1970,6 +2207,12 @@ public class TabbedPaneStueckliste extends TabbedPane implements ICopyPaste {
 				panelBottomArbeitsplan.setKeyWhenDetailPanel(iId);
 				panelBottomArbeitsplan.eventYouAreSelected(false);
 				panelQueryArbeitsplan.updateButtons();
+			} else if (eI.getSource() == panelQueryAbbuchungslager) {
+				Integer iId = (Integer) panelQueryAbbuchungslager
+						.getSelectedId();
+				panelBottomAbbuchungslager.setKeyWhenDetailPanel(iId);
+				panelBottomAbbuchungslager.eventYouAreSelected(false);
+				panelQueryAbbuchungslager.updateButtons();
 			}
 
 		}
@@ -1981,6 +2224,10 @@ public class TabbedPaneStueckliste extends TabbedPane implements ICopyPaste {
 				;
 			} else if (eI.getSource() == panelBottomArbeitsplan) {
 				panelQueryArbeitsplan.updateButtons(new LockStateValue(
+						PanelBasis.LOCK_FOR_NEW));
+				;
+			} else if (eI.getSource() == panelBottomAbbuchungslager) {
+				panelQueryAbbuchungslager.updateButtons(new LockStateValue(
 						PanelBasis.LOCK_FOR_NEW));
 				;
 			} else if (eI.getSource() == panelBottomEigenschaft) {
@@ -2037,6 +2284,28 @@ public class TabbedPaneStueckliste extends TabbedPane implements ICopyPaste {
 					// markieren
 					panelQueryPositionenErsatz.setSelectedId(iIdPosition);
 				}
+			} else if (eI.getSource() == panelQueryAbbuchungslager) {
+				int iPos = panelQueryAbbuchungslager.getTable()
+						.getSelectedRow();
+
+				// wenn die Position nicht die erste ist
+				if (iPos > 0) {
+					Integer iIdPosition = (Integer) panelQueryAbbuchungslager
+							.getSelectedId();
+
+					Integer iIdPositionMinus1 = (Integer) panelQueryAbbuchungslager
+							.getTable().getValueAt(iPos - 1, 0);
+					DelegateFactory
+							.getInstance()
+							.getStuecklisteDelegate()
+							.vertauscheStklagerentnahme(iIdPosition,
+									iIdPositionMinus1);
+
+					// die Liste neu anzeigen und den richtigen Datensatz
+					// markieren
+
+					panelQueryAbbuchungslager.setSelectedId(iIdPosition);
+				}
 			}
 		}
 
@@ -2080,6 +2349,27 @@ public class TabbedPaneStueckliste extends TabbedPane implements ICopyPaste {
 					// die Liste neu anzeigen und den richtigen Datensatz
 					// markieren
 					panelQueryPositionenErsatz.setSelectedId(iIdPosition);
+				}
+			} else if (eI.getSource() == panelQueryAbbuchungslager) {
+				int iPos = panelQueryAbbuchungslager.getTable()
+						.getSelectedRow();
+
+				// wenn die Position nicht die letzte ist
+				if (iPos < panelQueryAbbuchungslager.getTable().getRowCount() - 1) {
+					Integer iIdPosition = (Integer) panelQueryAbbuchungslager
+							.getSelectedId();
+
+					Integer iIdPositionPlus1 = (Integer) panelQueryAbbuchungslager
+							.getTable().getValueAt(iPos + 1, 0);
+					DelegateFactory
+							.getInstance()
+							.getStuecklisteDelegate()
+							.vertauscheStklagerentnahme(iIdPosition,
+									iIdPositionPlus1);
+
+					// die Liste neu anzeigen und den richtigen Datensatz
+					// markieren
+					panelQueryAbbuchungslager.setSelectedId(iIdPosition);
 				}
 			}
 		}
@@ -2130,10 +2420,20 @@ public class TabbedPaneStueckliste extends TabbedPane implements ICopyPaste {
 					panelQueryArbeitsplan.setSelectedId(oNaechster);
 				}
 				panelSplitArbeitsplan.eventYouAreSelected(false);
+			} else if (eI.getSource() == panelBottomAbbuchungslager) {
+				setKeyWasForLockMe();
+				if (panelBottomAbbuchungslager.getKeyWhenDetailPanel() == null) {
+					Object oNaechster = panelQueryAbbuchungslager
+							.getId2SelectAfterDelete();
+					panelQueryAbbuchungslager.setSelectedId(oNaechster);
+				}
+				panelSplitAbbuchungslager.eventYouAreSelected(false);
 			}
 		}
 
 		else if (eI.getID() == ItemChangedEvent.ACTION_YOU_ARE_SELECTED) {
+			if (eI.getSource() instanceof AssistentView)
+				getAktuellesPanel().eventYouAreSelected(false);
 			refreshTitle();
 			super.lPEventItemChanged(eI);
 		}
@@ -2145,6 +2445,8 @@ public class TabbedPaneStueckliste extends TabbedPane implements ICopyPaste {
 				panelSplitEigenschaft.eventYouAreSelected(false);
 			} else if (eI.getSource() == panelBottomArbeitsplan) {
 				panelSplitArbeitsplan.eventYouAreSelected(false);
+			} else if (eI.getSource() == panelBottomAbbuchungslager) {
+				panelSplitAbbuchungslager.eventYouAreSelected(false);
 			} else if (eI.getSource() == panelBottomPositionenErsatz) {
 				panelSplitPositionenErsatz.eventYouAreSelected(false);
 			}
@@ -2183,6 +2485,12 @@ public class TabbedPaneStueckliste extends TabbedPane implements ICopyPaste {
 				panelBottomArbeitsplan.eventActionNew(eI, true, false);
 				panelBottomArbeitsplan.eventYouAreSelected(false);
 				this.setSelectedComponent(panelSplitArbeitsplan);
+
+			} else if (eI.getSource() == panelQueryAbbuchungslager) {
+
+				panelBottomAbbuchungslager.eventActionNew(eI, true, false);
+				panelBottomAbbuchungslager.eventYouAreSelected(false);
+				this.setSelectedComponent(panelSplitAbbuchungslager);
 
 			}
 		} else if (eI.getID() == ItemChangedEvent.ACTION_KOPIEREN) {
@@ -2452,7 +2760,19 @@ public class TabbedPaneStueckliste extends TabbedPane implements ICopyPaste {
 		super.lPEventObjectChanged(e);
 		int selectedIndex = this.getSelectedIndex();
 
+		String rechtVorher = getInternalFrame().getRechtModulweit();
+
+		// PJ18550
+		if (bStuecklistenfreigabe == true
+				&& getInternalFrameStueckliste().getStuecklisteDto() != null
+				&& getInternalFrameStueckliste().getStuecklisteDto()
+						.getTFreigabe() != null) {
+			getInternalFrame()
+					.setRechtModulweit(RechteFac.RECHT_MODULWEIT_READ);
+		}
+
 		if (selectedIndex == IDX_PANEL_AUSWAHL) {
+			getInternalFrame().setRechtModulweit(rechtVorher);
 			createAuswahl();
 			panelQueryStueckliste.eventYouAreSelected(false);
 			if (panelQueryStueckliste.getSelectedId() == null) {
@@ -2497,6 +2817,12 @@ public class TabbedPaneStueckliste extends TabbedPane implements ICopyPaste {
 			panelSplitArbeitsplan.eventYouAreSelected(false);
 			panelQueryArbeitsplan.updateButtons();
 
+		} else if (selectedIndex == IDX_LAGERENTNAHME) {
+			refreshAbbuchungslager(getInternalFrameStueckliste()
+					.getStuecklisteDto().getIId());
+			panelSplitAbbuchungslager.eventYouAreSelected(false);
+			panelQueryAbbuchungslager.updateButtons();
+
 		} else if (selectedIndex == IDX_PANEL_EIGENSCHAFTEN) {
 			createEigenschaft(getInternalFrameStueckliste().getStuecklisteDto()
 					.getIId());
@@ -2505,6 +2831,9 @@ public class TabbedPaneStueckliste extends TabbedPane implements ICopyPaste {
 
 		}
 		refreshTitle();
+
+		getInternalFrame().setRechtModulweit(rechtVorher);
+
 	}
 
 }

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -89,7 +89,8 @@ public class InventurDelegate extends Delegate {
 					String meldung = "Die Inventurmenge weicht um mehr als ";
 
 					if (al != null && al.size() > 0) {
-						meldung += al.get(0) + " St\u00FCck vom Lagerstand ab. ";
+						meldung += al.get(0)
+								+ " St\u00FCck vom Lagerstand ab. ";
 					}
 					meldung += "Trotzdem buchen?";
 
@@ -137,7 +138,8 @@ public class InventurDelegate extends Delegate {
 					String meldung = "Die Inventurmenge weicht um mehr als ";
 
 					if (al != null && al.size() > 0) {
-						meldung += al.get(0) + " St\u00FCck vom Lagerstand ab. ";
+						meldung += al.get(0)
+								+ " St\u00FCck vom Lagerstand ab. ";
 					}
 					meldung += "Trotzdem buchen?";
 
@@ -281,7 +283,8 @@ public class InventurDelegate extends Delegate {
 					String meldung = "Die Inventurmenge weicht um mehr als ";
 
 					if (al != null && al.size() > 0) {
-						meldung += al.get(0) + " St\u00FCck vom Lagerstand ab. ";
+						meldung += al.get(0)
+								+ " St\u00FCck vom Lagerstand ab. ";
 					}
 					meldung += "Trotzdem buchen?";
 
@@ -382,10 +385,12 @@ public class InventurDelegate extends Delegate {
 	}
 
 	public JasperPrintLP printInventurliste(Integer inventurIId,
-			Integer lagerIId, boolean bInventurpreis) throws Throwable {
+			Integer lagerIId, boolean bInventurpreis, int iSortierung,Timestamp dVon, Timestamp dBis)
+			throws Throwable {
 		try {
 			return inventurFac.printInventurliste(inventurIId, lagerIId,
-					bInventurpreis, LPMain.getInstance().getTheClient());
+					bInventurpreis, iSortierung,dVon,dBis, LPMain.getInstance()
+							.getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 			return null;
@@ -404,11 +409,13 @@ public class InventurDelegate extends Delegate {
 	}
 
 	public JasperPrintLP printNichterfassteartikel(Integer inventurIId,
-			Integer lagerIId, boolean bNurArtikelMitLagerstand)
-			throws Throwable {
+			Integer lagerIId, boolean bNurArtikelMitLagerstand,
+			boolean bSortiertNachLagerplatz, String lagerplatzVon,
+			String lagerplatzBis,boolean bMitVersteckten) throws Throwable {
 		try {
 			return inventurFac.printNichterfassteartikel(inventurIId, lagerIId,
-					bNurArtikelMitLagerstand, LPMain.getInstance()
+					bNurArtikelMitLagerstand, bSortiertNachLagerplatz,
+					lagerplatzVon, lagerplatzBis, bMitVersteckten, LPMain.getInstance()
 							.getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
@@ -428,9 +435,11 @@ public class InventurDelegate extends Delegate {
 	}
 
 	public JasperPrintLP printInventurprotokoll(Integer inventurIId,
-			Integer lagerIId) throws Throwable {
+			Integer lagerIId, boolean bSortiertNachLagerplatz,
+			String lagerplatzVon, String lagerplatzBis) throws Throwable {
 		try {
 			return inventurFac.printInventurprotokoll(inventurIId, lagerIId,
+					bSortiertNachLagerplatz, lagerplatzVon, lagerplatzBis,
 					LPMain.getInstance().getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -43,14 +43,15 @@ import com.lp.client.frame.component.PanelQuery;
 import com.lp.client.frame.component.PanelSplit;
 import com.lp.client.frame.component.TabbedPane;
 import com.lp.client.frame.component.WrapperMenuBar;
+import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.pc.LPMain;
 import com.lp.client.system.SystemFilterFactory;
 import com.lp.server.artikel.service.ArtikelFac;
 import com.lp.server.artikel.service.ArtikelkommentarFac;
+import com.lp.server.system.service.LocaleFac;
 import com.lp.server.system.service.MandantFac;
 import com.lp.server.util.fastlanereader.service.query.QueryParameters;
 
-@SuppressWarnings("static-access")
 /**
  * <p>&UUml;berschrift: </p>
  * <p>Beschreibung: </p>
@@ -108,6 +109,30 @@ public class TabbedPaneArtikelgrunddaten extends TabbedPane {
 	private PanelBasis panelSplitWebshop = null;
 	private PanelBasis panelBottomWebshop = null;
 
+	private PanelQuery panelQueryReach = null;
+	private PanelBasis panelSplitReach = null;
+	private PanelBasis panelBottomReach = null;
+
+	private PanelQuery panelQueryRohs = null;
+	private PanelBasis panelSplitRohs = null;
+	private PanelBasis panelBottomRohs = null;
+
+	private PanelQuery panelQueryAutomotive = null;
+	private PanelBasis panelSplitAutomotive = null;
+	private PanelBasis panelBottomAutomotive = null;
+
+	private PanelQuery panelQueryMedical = null;
+	private PanelBasis panelSplitMedical = null;
+	private PanelBasis panelBottomMedical = null;
+
+	private PanelQuery panelQueryVorzug = null;
+	private PanelBasis panelSplitVorzug = null;
+	private PanelBasis panelBottomVorzug = null;
+
+	private PanelQuery panelQueryAlergen = null;
+	private PanelBasis panelSplitAlergen = null;
+	private PanelBasis panelBottomAlergen = null;
+
 	private int IDX_PANEL_ARTIKELKLASSEN = -1;
 	private int IDX_PANEL_ARTIKELGRUPPEN = -1;
 	private int IDX_PANEL_LAGER = -1;
@@ -119,12 +144,18 @@ public class TabbedPaneArtikelgrunddaten extends TabbedPane {
 	private int IDX_PANEL_VERLEIH = -1;
 	private int IDX_PANEL_VORSCHLAGSTEXT = -1;
 	private int IDX_PANEL_WEBSHOP = -1;
+	private int IDX_PANEL_REACH = -1;
+	private int IDX_PANEL_ROHS = -1;
+	private int IDX_PANEL_AUTOMOTIVE = -1;
+	private int IDX_PANEL_MEDICAL = -1;
+	private int IDX_PANEL_VORZUG = -1;
+	private int IDX_PANEL_ALERGEN = -1;
 
 	private WrapperMenuBar wrapperManuBar = null;
 
 	public TabbedPaneArtikelgrunddaten(InternalFrame internalFrameI)
 			throws Throwable {
-		super(internalFrameI, LPMain.getInstance().getTextRespectUISPr(
+		super(internalFrameI, LPMain.getTextRespectUISPr(
 				"lp.grunddaten"));
 
 		jbInit();
@@ -145,8 +176,7 @@ public class TabbedPaneArtikelgrunddaten extends TabbedPane {
 					ArtikelFilterFactory.getInstance()
 							.createFKArtklaMandantCNr(),
 					QueryParameters.UC_ID_ARTIKELKLASSE, aWhichButtonIUse,
-					getInternalFrame(), LPMain.getInstance()
-							.getTextRespectUISPr(
+					getInternalFrame(), LPMain.getTextRespectUISPr(
 									"artikel.title.tab.artikelklassen"), true);
 
 			panelQueryArtikelklassen
@@ -159,7 +189,7 @@ public class TabbedPaneArtikelgrunddaten extends TabbedPane {
 											ArtikelFac.FLR_ARTIKELKLASSE_ARTIKELKLASSESPRSET));
 
 			panelBottomArtikelklassen = new PanelArtikelklassen(
-					getInternalFrame(), LPMain.getInstance()
+					getInternalFrame(), LPMain
 							.getTextRespectUISPr(
 									"artikel.title.tab.artikelklassen"), null);
 			panelSplitArtikelklassen = new PanelSplit(getInternalFrame(),
@@ -177,7 +207,7 @@ public class TabbedPaneArtikelgrunddaten extends TabbedPane {
 			panelQueryArtikelkommentarart = new PanelQuery(ArtikelFilterFactory
 					.getInstance().createQTArtikelkommentarart(), null,
 					QueryParameters.UC_ID_ARTIKELKOMMENTARART,
-					aWhichButtonIUse, getInternalFrame(), LPMain.getInstance()
+					aWhichButtonIUse, getInternalFrame(), LPMain
 							.getTextRespectUISPr("lp.kommentarart"), true);
 
 			panelQueryArtikelkommentarart
@@ -190,7 +220,7 @@ public class TabbedPaneArtikelgrunddaten extends TabbedPane {
 											ArtikelkommentarFac.FLR_ARTIKELKOMMENTARART_ARTIKELKOMMENTARARTSPRSET));
 
 			panelBottomArtikelkommentarart = new PanelArtikelkommentarart(
-					getInternalFrame(), LPMain.getInstance()
+					getInternalFrame(), LPMain
 							.getTextRespectUISPr("lp.kommentarart"), null);
 			panelSplitArtikelkommentarart = new PanelSplit(getInternalFrame(),
 					panelBottomArtikelkommentarart,
@@ -209,15 +239,15 @@ public class TabbedPaneArtikelgrunddaten extends TabbedPane {
 			panelQueryFarbcode = new PanelQuery(ArtikelFilterFactory
 					.getInstance().createQTArtikelkommentarart(), null,
 					QueryParameters.UC_ID_FARBCODE, aWhichButtonIUse,
-					getInternalFrame(), LPMain.getInstance()
+					getInternalFrame(), LPMain
 							.getTextRespectUISPr("artikel.farbcode"), true);
 
 			panelQueryFarbcode.befuellePanelFilterkriterienDirekt(
 					SystemFilterFactory.getInstance().createFKDKennung(),
 					SystemFilterFactory.getInstance().createFKDBezeichnung());
 
-			panelBottomFarbcode = new PanelFarbcode(getInternalFrame(), LPMain
-					.getInstance().getTextRespectUISPr("artikel.farbcode"),
+			panelBottomFarbcode = new PanelFarbcode(getInternalFrame(),
+					LPMain.getTextRespectUISPr("artikel.farbcode"),
 					null);
 			panelSplitFarbcode = new PanelSplit(getInternalFrame(),
 					panelBottomFarbcode, panelQueryFarbcode, 380);
@@ -235,7 +265,7 @@ public class TabbedPaneArtikelgrunddaten extends TabbedPane {
 					null,
 					ArtikelFilterFactory.getInstance().createFKVorschlagstext(),
 					QueryParameters.UC_ID_VORSCHLAGSTEXT, aWhichButtonIUse,
-					getInternalFrame(), LPMain.getInstance()
+					getInternalFrame(), LPMain
 							.getTextRespectUISPr("artikel.vorschlagstext"),
 					true);
 
@@ -244,13 +274,161 @@ public class TabbedPaneArtikelgrunddaten extends TabbedPane {
 					null);
 
 			panelBottomVorschlagstext = new PanelVorschlagstext(
-					getInternalFrame(), LPMain.getInstance()
+					getInternalFrame(), LPMain
 							.getTextRespectUISPr("artikel.vorschlagstext"),
 					null);
 			panelSplitVorschlagstext = new PanelSplit(getInternalFrame(),
 					panelBottomVorschlagstext, panelQueryVorschlagstext, 380);
 
 			setComponentAt(IDX_PANEL_VORSCHLAGSTEXT, panelSplitVorschlagstext);
+		}
+	}
+
+	private void createReach() throws Throwable {
+		if (panelSplitReach == null) {
+			String[] aWhichButtonIUse = { PanelBasis.ACTION_NEW,
+					PanelBasis.ACTION_FILTER };
+
+			panelQueryReach = new PanelQuery(null, SystemFilterFactory
+					.getInstance().createFKMandantCNr(),
+					QueryParameters.UC_ID_REACH, aWhichButtonIUse,
+					getInternalFrame(), LPMain
+							.getTextRespectUISPr("artikel.reach"), true);
+
+			panelQueryReach.befuellePanelFilterkriterienDirekt(
+					SystemFilterFactory.getInstance().createFKDBezeichnung(),
+					null);
+
+			panelBottomReach = new PanelReach(getInternalFrame(), 
+					LPMain.getTextRespectUISPr("artikel.reach"), null);
+			panelSplitReach = new PanelSplit(getInternalFrame(),
+					panelBottomReach, panelQueryReach, 380);
+
+			setComponentAt(IDX_PANEL_REACH, panelSplitReach);
+		}
+	}
+
+	private void createVorzug() throws Throwable {
+		if (panelSplitVorzug == null) {
+			String[] aWhichButtonIUse = { PanelBasis.ACTION_NEW,
+					PanelBasis.ACTION_FILTER };
+
+			panelQueryVorzug = new PanelQuery(null, SystemFilterFactory
+					.getInstance().createFKMandantCNr(),
+					QueryParameters.UC_ID_VORZUG, aWhichButtonIUse,
+					getInternalFrame(), LPMain
+							.getTextRespectUISPr("artikel.vorzug"), true);
+
+			panelQueryVorzug.befuellePanelFilterkriterienDirekt(
+					SystemFilterFactory.getInstance().createFKDBezeichnung(),
+					null);
+
+			panelBottomVorzug = new PanelVorzug(getInternalFrame(),
+					LPMain.getTextRespectUISPr("artikel.vorzug"), null);
+			panelSplitVorzug = new PanelSplit(getInternalFrame(),
+					panelBottomVorzug, panelQueryVorzug, 350);
+
+			setComponentAt(IDX_PANEL_VORZUG, panelSplitVorzug);
+		}
+	}
+
+	private void createAlergen() throws Throwable {
+		if (panelSplitAlergen == null) {
+			String[] aWhichButtonIUse = { PanelBasis.ACTION_NEW,
+					PanelBasis.ACTION_FILTER,
+					PanelBasis.ACTION_POSITION_VONNNACHNMINUS1,
+					PanelBasis.ACTION_POSITION_VONNNACHNPLUS1 };
+
+			panelQueryAlergen = new PanelQuery(null, SystemFilterFactory
+					.getInstance().createFKMandantCNr(),
+					QueryParameters.UC_ID_ALERGEN, aWhichButtonIUse,
+					getInternalFrame(), LPMain
+							.getTextRespectUISPr("artikel.allergen"), true);
+
+			panelQueryAlergen.befuellePanelFilterkriterienDirekt(
+					SystemFilterFactory.getInstance().createFKDBezeichnung(),
+					null);
+
+			panelBottomAlergen = new PanelAllergen(getInternalFrame(),
+					LPMain.getTextRespectUISPr("artikel.allergen"),
+					null);
+			panelSplitAlergen = new PanelSplit(getInternalFrame(),
+					panelBottomAlergen, panelQueryAlergen, 350);
+
+			setComponentAt(IDX_PANEL_ALERGEN, panelSplitAlergen);
+		}
+	}
+
+	private void createRohs() throws Throwable {
+		if (panelSplitRohs == null) {
+			String[] aWhichButtonIUse = { PanelBasis.ACTION_NEW,
+					PanelBasis.ACTION_FILTER };
+
+			panelQueryRohs = new PanelQuery(null, SystemFilterFactory
+					.getInstance().createFKMandantCNr(),
+					QueryParameters.UC_ID_ROHS, aWhichButtonIUse,
+					getInternalFrame(), LPMain
+							.getTextRespectUISPr("artikel.rohs"), true);
+
+			panelQueryRohs.befuellePanelFilterkriterienDirekt(
+					SystemFilterFactory.getInstance().createFKDBezeichnung(),
+					null);
+
+			panelBottomRohs = new PanelRohs(getInternalFrame(), 
+					LPMain.getTextRespectUISPr("artikel.rohs"), null);
+			panelSplitRohs = new PanelSplit(getInternalFrame(),
+					panelBottomRohs, panelQueryRohs, 380);
+
+			setComponentAt(IDX_PANEL_ROHS, panelSplitRohs);
+		}
+	}
+
+	private void createAutomotive() throws Throwable {
+		if (panelSplitAutomotive == null) {
+			String[] aWhichButtonIUse = { PanelBasis.ACTION_NEW,
+					PanelBasis.ACTION_FILTER };
+
+			panelQueryAutomotive = new PanelQuery(null, SystemFilterFactory
+					.getInstance().createFKMandantCNr(),
+					QueryParameters.UC_ID_AUTOMOTIVE, aWhichButtonIUse,
+					getInternalFrame(), LPMain
+							.getTextRespectUISPr("artikel.automotive"), true);
+
+			panelQueryAutomotive.befuellePanelFilterkriterienDirekt(
+					SystemFilterFactory.getInstance().createFKDBezeichnung(),
+					null);
+
+			panelBottomAutomotive = new PanelAutomotive(getInternalFrame(),
+					LPMain.getTextRespectUISPr(
+							"artikel.automotive"), null);
+			panelSplitAutomotive = new PanelSplit(getInternalFrame(),
+					panelBottomAutomotive, panelQueryAutomotive, 380);
+
+			setComponentAt(IDX_PANEL_AUTOMOTIVE, panelSplitAutomotive);
+		}
+	}
+
+	private void createMedical() throws Throwable {
+		if (panelSplitMedical == null) {
+			String[] aWhichButtonIUse = { PanelBasis.ACTION_NEW,
+					PanelBasis.ACTION_FILTER };
+
+			panelQueryMedical = new PanelQuery(null, SystemFilterFactory
+					.getInstance().createFKMandantCNr(),
+					QueryParameters.UC_ID_MEDICAL, aWhichButtonIUse,
+					getInternalFrame(), LPMain
+							.getTextRespectUISPr("artikel.medical"), true);
+
+			panelQueryMedical.befuellePanelFilterkriterienDirekt(
+					SystemFilterFactory.getInstance().createFKDBezeichnung(),
+					null);
+
+			panelBottomMedical = new PanelMedical(getInternalFrame(),
+					LPMain.getTextRespectUISPr("artikel.medical"), null);
+			panelSplitMedical = new PanelSplit(getInternalFrame(),
+					panelBottomMedical, panelQueryMedical, 380);
+
+			setComponentAt(IDX_PANEL_MEDICAL, panelSplitMedical);
 		}
 	}
 
@@ -262,15 +440,15 @@ public class TabbedPaneArtikelgrunddaten extends TabbedPane {
 			panelQueryWebshop = new PanelQuery(null, SystemFilterFactory
 					.getInstance().createFKMandantCNr(),
 					QueryParameters.UC_ID_WEBSHOP, aWhichButtonIUse,
-					getInternalFrame(), LPMain.getInstance()
+					getInternalFrame(), LPMain
 							.getTextRespectUISPr("lp.webshop"), true);
 
 			panelQueryWebshop.befuellePanelFilterkriterienDirekt(
 					SystemFilterFactory.getInstance().createFKDBezeichnung(),
 					null);
 
-			panelBottomWebshop = new PanelWebshop(getInternalFrame(), LPMain
-					.getInstance().getTextRespectUISPr("lp.webshop"), null);
+			panelBottomWebshop = new PanelWebshop(getInternalFrame(),
+					LPMain.getTextRespectUISPr("lp.webshop"), null);
 			panelSplitWebshop = new PanelSplit(getInternalFrame(),
 					panelBottomWebshop, panelQueryWebshop, 380);
 
@@ -285,11 +463,11 @@ public class TabbedPaneArtikelgrunddaten extends TabbedPane {
 
 			panelQueryVerleih = new PanelQuery(null, null,
 					QueryParameters.UC_ID_VERLEIH, aWhichButtonIUse,
-					getInternalFrame(), LPMain.getInstance()
+					getInternalFrame(), LPMain
 							.getTextRespectUISPr("artikel.verleih"), true);
 
-			panelBottomVerleih = new PanelVerleih(getInternalFrame(), LPMain
-					.getInstance().getTextRespectUISPr("artikel.verleih"), null);
+			panelBottomVerleih = new PanelVerleih(getInternalFrame(),
+					LPMain.getTextRespectUISPr("artikel.verleih"), null);
 			panelSplitVerleih = new PanelSplit(getInternalFrame(),
 					panelBottomVerleih, panelQueryVerleih, 330);
 
@@ -306,7 +484,7 @@ public class TabbedPaneArtikelgrunddaten extends TabbedPane {
 					.getInstance().createQTLagerplatz(), ArtikelFilterFactory
 					.getInstance().createFKLagerplatz(),
 					QueryParameters.UC_ID_LAGERPLATZ, aWhichButtonIUse,
-					getInternalFrame(), LPMain.getInstance()
+					getInternalFrame(), LPMain
 							.getTextRespectUISPr("lp.lagerplatz"), true);
 
 			panelQueryLagerplatz.befuellePanelFilterkriterienDirekt(
@@ -314,7 +492,7 @@ public class TabbedPaneArtikelgrunddaten extends TabbedPane {
 					null);
 
 			panelBottomLagerplatz = new PanelLagerplatz(getInternalFrame(),
-					LPMain.getInstance().getTextRespectUISPr("lp.lagerplatz"),
+					LPMain.getTextRespectUISPr("lp.lagerplatz"),
 					null);
 			panelSplitLagerplatz = new PanelSplit(getInternalFrame(),
 					panelBottomLagerplatz, panelQueryLagerplatz, 330);
@@ -330,15 +508,15 @@ public class TabbedPaneArtikelgrunddaten extends TabbedPane {
 			panelQuerySperren = new PanelQuery(null, SystemFilterFactory
 					.getInstance().createFKMandantCNr(),
 					QueryParameters.UC_ID_SPERREN, aWhichButtonIUse,
-					getInternalFrame(), LPMain.getInstance()
+					getInternalFrame(), LPMain
 							.getTextRespectUISPr("lp.sperren"), true);
 
 			panelQuerySperren.befuellePanelFilterkriterienDirekt(
 					SystemFilterFactory.getInstance().createFKDBezeichnung(),
 					null);
 
-			panelBottomSperren = new PanelSperren(getInternalFrame(), LPMain
-					.getInstance().getTextRespectUISPr("lp.sperren"), null);
+			panelBottomSperren = new PanelSperren(getInternalFrame(),
+					LPMain.getTextRespectUISPr("lp.sperren"), null);
 			panelSplitSperren = new PanelSplit(getInternalFrame(),
 					panelBottomSperren, panelQuerySperren, 230);
 
@@ -356,7 +534,7 @@ public class TabbedPaneArtikelgrunddaten extends TabbedPane {
 					ArtikelFilterFactory.getInstance()
 							.createFKArtgruMandantCNr(),
 					QueryParameters.UC_ID_ARTIKELGRUPPE, aWhichButtonIUse,
-					getInternalFrame(), LPMain.getInstance()
+					getInternalFrame(), LPMain
 							.getTextRespectUISPr(
 									"artikel.title.tab.artikelgruppen"), true);
 
@@ -370,7 +548,7 @@ public class TabbedPaneArtikelgrunddaten extends TabbedPane {
 											ArtikelFac.FLR_ARTIKELGRUPPE_ARTIKELGRUPPESPRSET));
 
 			panelBottomArtikelgruppen = new PanelArtikelgruppen(
-					getInternalFrame(), LPMain.getInstance()
+					getInternalFrame(), LPMain
 							.getTextRespectUISPr(
 									"artikel.title.tab.artikelgruppen"), null);
 
@@ -387,7 +565,7 @@ public class TabbedPaneArtikelgrunddaten extends TabbedPane {
 			panelQueryHersteller = new PanelQuery(null, null,
 					QueryParameters.UC_ID_ARTIKELHERSTELLER, aWhichButtonIUse,
 					getInternalFrame(),
-					LPMain.getInstance().getTextRespectUISPr(
+					LPMain.getTextRespectUISPr(
 							"artikel.title.tab.hersteller"), true);
 			panelQueryHersteller.befuellePanelFilterkriterienDirekt(
 					ArtikelFilterFactory.getInstance().createFKDHersteller(),
@@ -395,7 +573,7 @@ public class TabbedPaneArtikelgrunddaten extends TabbedPane {
 							.createFKDHerstellerPartner());
 
 			panelBottomHersteller = new PanelHersteller(getInternalFrame(),
-					LPMain.getInstance().getTextRespectUISPr(
+					LPMain.getTextRespectUISPr(
 							"artikel.title.tab.hersteller"), null);
 
 			panelSplitHersteller = new PanelSplit(getInternalFrame(),
@@ -413,7 +591,7 @@ public class TabbedPaneArtikelgrunddaten extends TabbedPane {
 					.createQTLager(), ArtikelFilterFactory.getInstance()
 					.createFKLagerlisteMitVersteckten(),
 					QueryParameters.UC_ID_LAGER_ALLE, aWhichButtonIUse,
-					getInternalFrame(), LPMain.getInstance()
+					getInternalFrame(), LPMain
 							.getTextRespectUISPr("button.lager"), true);
 			panelQueryLager.befuellePanelFilterkriterienDirekt(
 					ArtikelFilterFactory.getInstance()
@@ -421,8 +599,8 @@ public class TabbedPaneArtikelgrunddaten extends TabbedPane {
 					ArtikelFilterFactory.getInstance()
 							.createFKDLagerLagerartGrunddaten());
 
-			panelBottomLager = new PanelLager(getInternalFrame(), LPMain
-					.getInstance().getTextRespectUISPr("button.lager"), null);
+			panelBottomLager = new PanelLager(getInternalFrame(),
+					LPMain.getTextRespectUISPr("button.lager"), null);
 
 			panelSplitLager = new PanelSplit(getInternalFrame(),
 					panelBottomLager, panelQueryLager, 320);
@@ -446,7 +624,21 @@ public class TabbedPaneArtikelgrunddaten extends TabbedPane {
 
 		int tabIndex = 0;
 
-		if (bZentralerArtikelstamm && bGetrennteLager) {
+		boolean bIstHauptmandant = false;
+
+		String hauptMandant = DelegateFactory
+				.getInstance()
+				.getMandantDelegate()
+				.mandantFindByPrimaryKey(
+						LPMain.getTheClient().getMandant())
+				.getAnwenderDto().getMandantCNrHauptmandant();
+		if (hauptMandant.equals(LPMain.getTheClient()
+				.getMandant())) {
+			bIstHauptmandant = true;
+		}
+		//SP3192
+		if (bZentralerArtikelstamm && bGetrennteLager
+				&& bIstHauptmandant == false) {
 			if (LPMain
 					.getInstance()
 					.getDesktop()
@@ -455,10 +647,10 @@ public class TabbedPaneArtikelgrunddaten extends TabbedPane {
 
 				IDX_PANEL_LAGER = tabIndex;
 				insertTab(
-						LPMain.getInstance().getTextRespectUISPr("label.lager"),
+						LPMain.getTextRespectUISPr("label.lager"),
 						null,
 						null,
-						LPMain.getInstance().getTextRespectUISPr("label.lager"),
+						LPMain.getTextRespectUISPr("label.lager"),
 						IDX_PANEL_LAGER);
 				tabIndex++;
 				createLager();
@@ -467,9 +659,9 @@ public class TabbedPaneArtikelgrunddaten extends TabbedPane {
 
 			IDX_PANEL_LAGERPLATZ = tabIndex;
 			insertTab(
-					LPMain.getInstance().getTextRespectUISPr("lp.lagerplatz"),
+					LPMain.getTextRespectUISPr("lp.lagerplatz"),
 					null, null,
-					LPMain.getInstance().getTextRespectUISPr("lp.lagerplatz"),
+					LPMain.getTextRespectUISPr("lp.lagerplatz"),
 					IDX_PANEL_LAGERPLATZ);
 
 			tabIndex++;
@@ -479,21 +671,21 @@ public class TabbedPaneArtikelgrunddaten extends TabbedPane {
 			IDX_PANEL_ARTIKELKLASSEN = tabIndex;
 			// 1 tab oben: QP1 PartnerFLR; lazy loading
 			insertTab(
-					LPMain.getInstance().getTextRespectUISPr(
+					LPMain.getTextRespectUISPr(
 							"artikel.title.tab.artikelklassen"),
 					null,
 					null,
-					LPMain.getInstance().getTextRespectUISPr(
+					LPMain.getTextRespectUISPr(
 							"artikel.title.tab.artikelklassen"),
 					IDX_PANEL_ARTIKELKLASSEN);
 			tabIndex++;
 			IDX_PANEL_ARTIKELGRUPPEN = tabIndex;
 			insertTab(
-					LPMain.getInstance().getTextRespectUISPr(
+					LPMain.getTextRespectUISPr(
 							"artikel.title.tab.artikelgruppen"),
 					null,
 					null,
-					LPMain.getInstance().getTextRespectUISPr(
+					LPMain.getTextRespectUISPr(
 							"artikel.title.tab.artikelgruppen"),
 					IDX_PANEL_ARTIKELGRUPPEN);
 
@@ -505,53 +697,53 @@ public class TabbedPaneArtikelgrunddaten extends TabbedPane {
 				tabIndex++;
 				IDX_PANEL_LAGER = tabIndex;
 				insertTab(
-						LPMain.getInstance().getTextRespectUISPr("label.lager"),
+						LPMain.getTextRespectUISPr("label.lager"),
 						null,
 						null,
-						LPMain.getInstance().getTextRespectUISPr("label.lager"),
+						LPMain.getTextRespectUISPr("label.lager"),
 						IDX_PANEL_LAGER);
 			}
 			tabIndex++;
 			IDX_PANEL_HERSTELLER = tabIndex;
 			insertTab(
-					LPMain.getInstance().getTextRespectUISPr(
+					LPMain.getTextRespectUISPr(
 							"artikel.title.tab.hersteller"),
 					null,
 					null,
-					LPMain.getInstance().getTextRespectUISPr(
+					LPMain.getTextRespectUISPr(
 							"artikel.title.tab.hersteller"),
 					IDX_PANEL_HERSTELLER);
 
 			tabIndex++;
 			IDX_PANEL_ARTIKELKOMMENTARART = tabIndex;
 			insertTab(
-					LPMain.getInstance().getTextRespectUISPr("lp.kommentarart"),
+					LPMain.getTextRespectUISPr("lp.kommentarart"),
 					null,
 					null,
-					LPMain.getInstance().getTextRespectUISPr("lp.kommentarart"),
+					LPMain.getTextRespectUISPr("lp.kommentarart"),
 					IDX_PANEL_ARTIKELKOMMENTARART);
 
 			tabIndex++;
 			IDX_PANEL_FARBCODE = tabIndex;
 			insertTab(
-					LPMain.getInstance()
+					LPMain
 							.getTextRespectUISPr("artikel.farbcode"), null,
 					null,
-					LPMain.getInstance()
+					LPMain
 							.getTextRespectUISPr("artikel.farbcode"),
 					IDX_PANEL_FARBCODE);
 			tabIndex++;
 			IDX_PANEL_SPERREN = tabIndex;
-			insertTab(LPMain.getInstance().getTextRespectUISPr("lp.sperren"),
+			insertTab(LPMain.getTextRespectUISPr("lp.sperren"),
 					null, null,
-					LPMain.getInstance().getTextRespectUISPr("lp.sperren"),
+					LPMain.getTextRespectUISPr("lp.sperren"),
 					IDX_PANEL_SPERREN);
 			tabIndex++;
 			IDX_PANEL_LAGERPLATZ = tabIndex;
 			insertTab(
-					LPMain.getInstance().getTextRespectUISPr("lp.lagerplatz"),
+					LPMain.getTextRespectUISPr("lp.lagerplatz"),
 					null, null,
-					LPMain.getInstance().getTextRespectUISPr("lp.lagerplatz"),
+					LPMain.getTextRespectUISPr("lp.lagerplatz"),
 					IDX_PANEL_LAGERPLATZ);
 
 			if (LPMain
@@ -562,29 +754,82 @@ public class TabbedPaneArtikelgrunddaten extends TabbedPane {
 				tabIndex++;
 				IDX_PANEL_VERLEIH = tabIndex;
 				insertTab(
-						LPMain.getInstance().getTextRespectUISPr(
+						LPMain.getTextRespectUISPr(
 								"artikel.verleih"),
 						null,
 						null,
-						LPMain.getInstance().getTextRespectUISPr(
+						LPMain.getTextRespectUISPr(
 								"artikel.verleih"), IDX_PANEL_VERLEIH);
 			}
 
 			tabIndex++;
 			IDX_PANEL_VORSCHLAGSTEXT = tabIndex;
 			insertTab(
-					LPMain.getInstance().getTextRespectUISPr(
+					LPMain.getTextRespectUISPr(
 							"artikel.vorschlagstext"),
 					null,
 					null,
-					LPMain.getInstance().getTextRespectUISPr(
+					LPMain.getTextRespectUISPr(
 							"artikel.vorschlagstext"), IDX_PANEL_VORSCHLAGSTEXT);
 			tabIndex++;
 			IDX_PANEL_WEBSHOP = tabIndex;
-			insertTab(LPMain.getInstance().getTextRespectUISPr("lp.webshop"),
+			insertTab(LPMain.getTextRespectUISPr("lp.webshop"),
 					null, null,
-					LPMain.getInstance().getTextRespectUISPr("lp.webshop"),
+					LPMain.getTextRespectUISPr("lp.webshop"),
 					IDX_PANEL_WEBSHOP);
+
+			tabIndex++;
+			IDX_PANEL_REACH = tabIndex;
+			insertTab(
+					LPMain.getTextRespectUISPr("artikel.reach"),
+					null, null,
+					LPMain.getTextRespectUISPr("artikel.reach"),
+					IDX_PANEL_REACH);
+
+			tabIndex++;
+			IDX_PANEL_ROHS = tabIndex;
+			insertTab(LPMain.getTextRespectUISPr("artikel.rohs"),
+					null, null,
+					LPMain.getTextRespectUISPr("artikel.rohs"),
+					IDX_PANEL_ROHS);
+
+			tabIndex++;
+			IDX_PANEL_AUTOMOTIVE = tabIndex;
+			insertTab(
+					LPMain.getTextRespectUISPr(
+							"artikel.automotive"),
+					null,
+					null,
+					LPMain.getTextRespectUISPr(
+							"artikel.automotive"), IDX_PANEL_AUTOMOTIVE);
+
+			tabIndex++;
+			IDX_PANEL_MEDICAL = tabIndex;
+			insertTab(
+					LPMain.getTextRespectUISPr("artikel.medical"),
+					null,
+					null,
+					LPMain.getTextRespectUISPr("artikel.medical"),
+					IDX_PANEL_MEDICAL);
+			tabIndex++;
+			IDX_PANEL_VORZUG = tabIndex;
+			insertTab(LPMain
+					.getTextRespectUISPr("artikel.vorzug"), null, null,
+					LPMain.getTextRespectUISPr("artikel.vorzug"),
+					IDX_PANEL_VORZUG);
+			if (LPMain.getInstance().getDesktop()
+					.darfAnwenderAufModulZugreifen(LocaleFac.BELEGART_KUECHE)) {
+
+				tabIndex++;
+				IDX_PANEL_ALERGEN = tabIndex;
+				insertTab(
+						LPMain.getTextRespectUISPr(
+								"artikel.allergen"),
+						null,
+						null,
+						LPMain.getTextRespectUISPr(
+								"artikel.allergen"), IDX_PANEL_ALERGEN);
+			}
 
 			createArtikelklassen();
 
@@ -665,6 +910,44 @@ public class TabbedPaneArtikelgrunddaten extends TabbedPane {
 
 			}
 
+			else if (e.getSource() == panelQueryReach) {
+				Object key = ((ISourceEvent) e.getSource()).getIdSelected();
+				panelBottomReach.setKeyWhenDetailPanel(key);
+				panelBottomReach.eventYouAreSelected(false);
+				panelQueryReach.updateButtons();
+
+			} else if (e.getSource() == panelQueryRohs) {
+				Object key = ((ISourceEvent) e.getSource()).getIdSelected();
+				panelBottomRohs.setKeyWhenDetailPanel(key);
+				panelBottomRohs.eventYouAreSelected(false);
+				panelQueryRohs.updateButtons();
+
+			} else if (e.getSource() == panelQueryAutomotive) {
+				Object key = ((ISourceEvent) e.getSource()).getIdSelected();
+				panelBottomAutomotive.setKeyWhenDetailPanel(key);
+				panelBottomAutomotive.eventYouAreSelected(false);
+				panelQueryAutomotive.updateButtons();
+
+			} else if (e.getSource() == panelQueryMedical) {
+				Object key = ((ISourceEvent) e.getSource()).getIdSelected();
+				panelBottomMedical.setKeyWhenDetailPanel(key);
+				panelBottomMedical.eventYouAreSelected(false);
+				panelQueryMedical.updateButtons();
+
+			} else if (e.getSource() == panelQueryVorzug) {
+				Object key = ((ISourceEvent) e.getSource()).getIdSelected();
+				panelBottomVorzug.setKeyWhenDetailPanel(key);
+				panelBottomVorzug.eventYouAreSelected(false);
+				panelQueryVorzug.updateButtons();
+
+			} else if (e.getSource() == panelQueryAlergen) {
+				Object key = ((ISourceEvent) e.getSource()).getIdSelected();
+				panelBottomAlergen.setKeyWhenDetailPanel(key);
+				panelBottomAlergen.eventYouAreSelected(false);
+				panelQueryAlergen.updateButtons();
+
+			}
+
 		} else if (e.getID() == ItemChangedEvent.ACTION_UPDATE) {
 			if (e.getSource() == panelBottomArtikelklassen) {
 				panelQueryArtikelklassen.updateButtons(new LockStateValue(
@@ -700,6 +983,27 @@ public class TabbedPaneArtikelgrunddaten extends TabbedPane {
 				panelQueryWebshop.updateButtons(new LockStateValue(
 						PanelBasis.LOCK_FOR_NEW));
 			}
+
+			else if (e.getSource() == panelBottomReach) {
+				panelQueryReach.updateButtons(new LockStateValue(
+						PanelBasis.LOCK_FOR_NEW));
+			} else if (e.getSource() == panelBottomRohs) {
+				panelQueryRohs.updateButtons(new LockStateValue(
+						PanelBasis.LOCK_FOR_NEW));
+			} else if (e.getSource() == panelBottomAutomotive) {
+				panelQueryAutomotive.updateButtons(new LockStateValue(
+						PanelBasis.LOCK_FOR_NEW));
+			} else if (e.getSource() == panelBottomMedical) {
+				panelQueryMedical.updateButtons(new LockStateValue(
+						PanelBasis.LOCK_FOR_NEW));
+			} else if (e.getSource() == panelBottomVorzug) {
+				panelQueryVorzug.updateButtons(new LockStateValue(
+						PanelBasis.LOCK_FOR_NEW));
+			} else if (e.getSource() == panelBottomAlergen) {
+				panelQueryAlergen.updateButtons(new LockStateValue(
+						PanelBasis.LOCK_FOR_NEW));
+			}
+
 		}
 
 		else if (e.getID() == ItemChangedEvent.ACTION_YOU_ARE_SELECTED) {
@@ -740,6 +1044,27 @@ public class TabbedPaneArtikelgrunddaten extends TabbedPane {
 				panelBottomWebshop.eventActionNew(e, true, false);
 				panelBottomWebshop.eventYouAreSelected(false);
 			}
+
+			else if (e.getSource() == panelQueryReach) {
+				panelBottomReach.eventActionNew(e, true, false);
+				panelBottomReach.eventYouAreSelected(false);
+			} else if (e.getSource() == panelQueryRohs) {
+				panelBottomRohs.eventActionNew(e, true, false);
+				panelBottomRohs.eventYouAreSelected(false);
+			} else if (e.getSource() == panelQueryAutomotive) {
+				panelBottomAutomotive.eventActionNew(e, true, false);
+				panelBottomAutomotive.eventYouAreSelected(false);
+			} else if (e.getSource() == panelQueryMedical) {
+				panelBottomMedical.eventActionNew(e, true, false);
+				panelBottomMedical.eventYouAreSelected(false);
+			} else if (e.getSource() == panelQueryVorzug) {
+				panelBottomVorzug.eventActionNew(e, true, false);
+				panelBottomVorzug.eventYouAreSelected(false);
+			} else if (e.getSource() == panelQueryAlergen) {
+				panelBottomAlergen.eventActionNew(e, true, false);
+				panelBottomAlergen.eventYouAreSelected(false);
+			}
+
 		} else if (e.getID() == ItemChangedEvent.ACTION_DISCARD) {
 			if (e.getSource() == panelBottomArtikelklassen) {
 				panelSplitArtikelklassen.eventYouAreSelected(false);
@@ -763,6 +1088,18 @@ public class TabbedPaneArtikelgrunddaten extends TabbedPane {
 				panelSplitVorschlagstext.eventYouAreSelected(false);
 			} else if (e.getSource() == panelBottomWebshop) {
 				panelSplitWebshop.eventYouAreSelected(false);
+			} else if (e.getSource() == panelBottomReach) {
+				panelSplitReach.eventYouAreSelected(false);
+			} else if (e.getSource() == panelBottomRohs) {
+				panelSplitRohs.eventYouAreSelected(false);
+			} else if (e.getSource() == panelBottomAutomotive) {
+				panelSplitAutomotive.eventYouAreSelected(false);
+			} else if (e.getSource() == panelBottomMedical) {
+				panelSplitMedical.eventYouAreSelected(false);
+			} else if (e.getSource() == panelBottomVorzug) {
+				panelSplitVorzug.eventYouAreSelected(false);
+			} else if (e.getSource() == panelBottomAlergen) {
+				panelSplitAlergen.eventYouAreSelected(false);
 			}
 		} else if (e.getID() == ItemChangedEvent.ACTION_SAVE) {
 			if (e.getSource() == panelBottomArtikelklassen) {
@@ -828,6 +1165,44 @@ public class TabbedPaneArtikelgrunddaten extends TabbedPane {
 				panelQueryWebshop.eventYouAreSelected(false);
 				panelQueryWebshop.setSelectedId(oKey);
 				panelSplitWebshop.eventYouAreSelected(false);
+
+			}
+
+			else if (e.getSource() == panelBottomReach) {
+				Object oKey = panelBottomReach.getKeyWhenDetailPanel();
+				panelQueryReach.eventYouAreSelected(false);
+				panelQueryReach.setSelectedId(oKey);
+				panelSplitReach.eventYouAreSelected(false);
+
+			} else if (e.getSource() == panelBottomRohs) {
+				Object oKey = panelBottomRohs.getKeyWhenDetailPanel();
+				panelQueryRohs.eventYouAreSelected(false);
+				panelQueryRohs.setSelectedId(oKey);
+				panelSplitRohs.eventYouAreSelected(false);
+
+			} else if (e.getSource() == panelBottomAutomotive) {
+				Object oKey = panelBottomAutomotive.getKeyWhenDetailPanel();
+				panelQueryAutomotive.eventYouAreSelected(false);
+				panelQueryAutomotive.setSelectedId(oKey);
+				panelSplitAutomotive.eventYouAreSelected(false);
+
+			} else if (e.getSource() == panelBottomMedical) {
+				Object oKey = panelBottomMedical.getKeyWhenDetailPanel();
+				panelQueryMedical.eventYouAreSelected(false);
+				panelQueryMedical.setSelectedId(oKey);
+				panelSplitMedical.eventYouAreSelected(false);
+
+			} else if (e.getSource() == panelBottomVorzug) {
+				Object oKey = panelBottomVorzug.getKeyWhenDetailPanel();
+				panelQueryVorzug.eventYouAreSelected(false);
+				panelQueryVorzug.setSelectedId(oKey);
+				panelSplitVorzug.eventYouAreSelected(false);
+
+			} else if (e.getSource() == panelBottomAlergen) {
+				Object oKey = panelBottomAlergen.getKeyWhenDetailPanel();
+				panelQueryAlergen.eventYouAreSelected(false);
+				panelQueryAlergen.setSelectedId(oKey);
+				panelSplitAlergen.eventYouAreSelected(false);
 
 			}
 		} else if (e.getID() == ItemChangedEvent.ACTION_GOTO_MY_DEFAULT_QP) {
@@ -975,6 +1350,115 @@ public class TabbedPaneArtikelgrunddaten extends TabbedPane {
 				}
 				panelSplitWebshop.eventYouAreSelected(false);
 			}
+
+			else if (e.getSource() == panelBottomReach) {
+				Object oKey = panelQueryReach.getSelectedId();
+				if (oKey != null) {
+					getInternalFrame().setKeyWasForLockMe(oKey.toString());
+				} else {
+					getInternalFrame().setKeyWasForLockMe(null);
+				}
+				if (panelBottomReach.getKeyWhenDetailPanel() == null) {
+					Object oNaechster = panelQueryReach
+							.getId2SelectAfterDelete();
+					panelQueryReach.setSelectedId(oNaechster);
+				}
+				panelSplitReach.eventYouAreSelected(false);
+			} else if (e.getSource() == panelBottomRohs) {
+				Object oKey = panelQueryRohs.getSelectedId();
+				if (oKey != null) {
+					getInternalFrame().setKeyWasForLockMe(oKey.toString());
+				} else {
+					getInternalFrame().setKeyWasForLockMe(null);
+				}
+				if (panelBottomRohs.getKeyWhenDetailPanel() == null) {
+					Object oNaechster = panelQueryRohs
+							.getId2SelectAfterDelete();
+					panelQueryRohs.setSelectedId(oNaechster);
+				}
+				panelSplitRohs.eventYouAreSelected(false);
+			} else if (e.getSource() == panelBottomAutomotive) {
+				Object oKey = panelQueryAutomotive.getSelectedId();
+				if (oKey != null) {
+					getInternalFrame().setKeyWasForLockMe(oKey.toString());
+				} else {
+					getInternalFrame().setKeyWasForLockMe(null);
+				}
+				if (panelBottomAutomotive.getKeyWhenDetailPanel() == null) {
+					Object oNaechster = panelQueryAutomotive
+							.getId2SelectAfterDelete();
+					panelQueryAutomotive.setSelectedId(oNaechster);
+				}
+				panelSplitAutomotive.eventYouAreSelected(false);
+			} else if (e.getSource() == panelBottomMedical) {
+				Object oKey = panelQueryMedical.getSelectedId();
+				if (oKey != null) {
+					getInternalFrame().setKeyWasForLockMe(oKey.toString());
+				} else {
+					getInternalFrame().setKeyWasForLockMe(null);
+				}
+				if (panelBottomMedical.getKeyWhenDetailPanel() == null) {
+					Object oNaechster = panelQueryMedical
+							.getId2SelectAfterDelete();
+					panelQueryMedical.setSelectedId(oNaechster);
+				}
+				panelSplitMedical.eventYouAreSelected(false);
+			} else if (e.getSource() == panelBottomVorzug) {
+				Object oKey = panelQueryVorzug.getSelectedId();
+				if (oKey != null) {
+					getInternalFrame().setKeyWasForLockMe(oKey.toString());
+				} else {
+					getInternalFrame().setKeyWasForLockMe(null);
+				}
+				if (panelBottomVorzug.getKeyWhenDetailPanel() == null) {
+					Object oNaechster = panelQueryVorzug
+							.getId2SelectAfterDelete();
+					panelQueryVorzug.setSelectedId(oNaechster);
+				}
+				panelSplitVorzug.eventYouAreSelected(false);
+			} else if (e.getSource() == panelBottomAlergen) {
+				Object oKey = panelQueryAlergen.getSelectedId();
+				if (oKey != null) {
+					getInternalFrame().setKeyWasForLockMe(oKey.toString());
+				} else {
+					getInternalFrame().setKeyWasForLockMe(null);
+				}
+				if (panelBottomAlergen.getKeyWhenDetailPanel() == null) {
+					Object oNaechster = panelQueryAlergen
+							.getId2SelectAfterDelete();
+					panelQueryAlergen.setSelectedId(oNaechster);
+				}
+				panelSplitAlergen.eventYouAreSelected(false);
+			}
+
+		} else if (e.getID() == ItemChangedEvent.ACTION_POSITION_VONNNACHNPLUS1) {
+			if (e.getSource() == panelQueryAlergen) {
+				int iPos = panelQueryAlergen.getTable().getSelectedRow();
+				if (iPos < panelQueryAlergen.getTable().getRowCount() - 1) {
+					Integer idPos1 = (Integer) panelQueryAlergen
+							.getSelectedId();
+					Integer idPos2 = (Integer) panelQueryAlergen.getTable()
+							.getValueAt(iPos + 1, 0);
+
+					DelegateFactory.getInstance().getArtikelDelegate()
+							.vertauscheAlergen(idPos1, idPos2);
+					panelQueryAlergen.setSelectedId(idPos1);
+				}
+			}
+		} else if (e.getID() == ItemChangedEvent.ACTION_POSITION_VONNNACHNMINUS1) {
+			if (e.getSource() == panelQueryAlergen) {
+				int iPos = panelQueryAlergen.getTable().getSelectedRow();
+				if (iPos > 0) {
+					Integer idPos1 = (Integer) panelQueryAlergen
+							.getSelectedId();
+					Integer idPos2 = (Integer) panelQueryAlergen.getTable()
+							.getValueAt(iPos - 1, 0);
+
+					DelegateFactory.getInstance().getArtikelDelegate()
+							.vertauscheAlergen(idPos1, idPos2);
+					panelQueryAlergen.setSelectedId(idPos1);
+				}
+			}
 		}
 
 	}
@@ -982,7 +1466,7 @@ public class TabbedPaneArtikelgrunddaten extends TabbedPane {
 	private void refreshTitle() {
 
 		getInternalFrame().setLpTitle(InternalFrame.TITLE_IDX_OHRWASCHLUNTEN,
-				LPMain.getInstance().getTextRespectUISPr("lp.grunddaten"));
+				LPMain.getTextRespectUISPr("lp.grunddaten"));
 		getInternalFrame().setLpTitle(InternalFrame.TITLE_IDX_OHRWASCHLOBEN,
 				((PanelBasis) this.getSelectedComponent()).getAdd2Title());
 		getInternalFrame().setLpTitle(3, "");
@@ -1041,6 +1525,30 @@ public class TabbedPaneArtikelgrunddaten extends TabbedPane {
 			createWebshop();
 			panelSplitWebshop.eventYouAreSelected(false);
 			panelQueryWebshop.updateButtons();
+		} else if (selectedIndex == IDX_PANEL_REACH) {
+			createReach();
+			panelSplitReach.eventYouAreSelected(false);
+			panelQueryReach.updateButtons();
+		} else if (selectedIndex == IDX_PANEL_ROHS) {
+			createRohs();
+			panelSplitRohs.eventYouAreSelected(false);
+			panelQueryRohs.updateButtons();
+		} else if (selectedIndex == IDX_PANEL_AUTOMOTIVE) {
+			createAutomotive();
+			panelSplitAutomotive.eventYouAreSelected(false);
+			panelQueryAutomotive.updateButtons();
+		} else if (selectedIndex == IDX_PANEL_MEDICAL) {
+			createMedical();
+			panelSplitMedical.eventYouAreSelected(false);
+			panelQueryMedical.updateButtons();
+		} else if (selectedIndex == IDX_PANEL_VORZUG) {
+			createVorzug();
+			panelSplitVorzug.eventYouAreSelected(false);
+			panelQueryVorzug.updateButtons();
+		} else if (selectedIndex == IDX_PANEL_ALERGEN) {
+			createAlergen();
+			panelSplitAlergen.eventYouAreSelected(false);
+			panelQueryAlergen.updateButtons();
 		}
 
 	}

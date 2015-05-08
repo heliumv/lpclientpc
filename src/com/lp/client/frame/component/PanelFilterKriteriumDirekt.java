@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -67,6 +67,7 @@ public class PanelFilterKriteriumDirekt {
 	public WrapperTextField wtfFkdirektValue1 = null;
 	public WrapperNumberField wnfFkdirektValue1 = null;
 	protected WrapperLabel wlaEmpty1 = null;
+	
 
 	/**
 	 * Setzt die Komponenten-Namen fuer die Testumgebung Aufzurufen, wenn die
@@ -138,5 +139,19 @@ public class PanelFilterKriteriumDirekt {
 
 		}
 		return sb;
+	}
+	
+	/**
+	 * Das Eingabefeld l&ouml;schen
+	 */
+	public void clear() {
+		if(wtfFkdirektValue1 != null) {
+			wtfFkdirektValue1.setText(null); 
+		}
+		if(wnfFkdirektValue1 != null) {
+			try {
+				wnfFkdirektValue1.setBigDecimal(null);
+			} catch(ExceptionLP e) {}
+		}
 	}
 }

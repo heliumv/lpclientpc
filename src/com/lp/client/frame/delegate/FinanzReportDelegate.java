@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -41,6 +41,7 @@ import javax.naming.InitialContext;
 
 import com.lp.client.frame.ExceptionLP;
 import com.lp.client.pc.LPMain;
+import com.lp.server.finanz.service.BuchungsjournalReportParameter;
 import com.lp.server.finanz.service.FinanzReportFac;
 import com.lp.server.finanz.service.LiquititaetsvorschauImportDto;
 import com.lp.server.finanz.service.PrintKontoblaetterModel;
@@ -85,6 +86,7 @@ public class FinanzReportDelegate extends Delegate {
 	 * 
 	 * @param kontotypCNr
 	 *            kontotyp
+	 * @param bMitVersteckten
 	 * @return JasperPrint
 	 * @throws ExceptionLP
 	 */
@@ -103,10 +105,10 @@ public class FinanzReportDelegate extends Delegate {
 	/**
 	 * Buchungen auf einem Konto drucken.
 	 * 
-	 * @return JasperPrint
-	 * @throws ExceptionLP
 	 * @param kontoIId
 	 *            Integer
+	 * @return JasperPrint
+	 * @throws ExceptionLP
 	 */
 	public JasperPrintLP printBuchungenAufKonto(Integer kontoIId)
 			throws ExceptionLP {
@@ -123,10 +125,10 @@ public class FinanzReportDelegate extends Delegate {
 	/**
 	 * Buchungen int einem Buchungsjournal drucken.
 	 * 
-	 * @return JasperPrint
-	 * @throws ExceptionLP
 	 * @param buchungsjournalIId
 	 *            Integer
+	 * @return JasperPrint
+	 * @throws ExceptionLP
 	 */
 	public JasperPrintLP printBuchungenInBuchungsjournal(
 			Integer buchungsjournalIId) throws ExceptionLP {
@@ -143,34 +145,60 @@ public class FinanzReportDelegate extends Delegate {
 	/**
 	 * Buchungsjournal drucken.
 	 * 
-	 * @return JasperPrint
-	 * @throws ExceptionLP
 	 * @param buchungsjournalIId
 	 *            Integer
+	 * @param dVon
+	 * @param dBis
+	 * @param storniert
+	 * @param bDatumsfilterIstBuchungsdatum
+	 * @param text
+	 * @param belegnummer
+	 * @param betrag
+	 * @return JasperPrint
+	 * @throws ExceptionLP
 	 */
-	public JasperPrintLP printBuchungsjournal(Integer buchungsjournalIId,
-			Date dVon, Date dBis, boolean storniert,
-			boolean bDatumsfilterIstBuchungsdatum, String text,
-			String belegnummer, BigDecimal betrag) throws ExceptionLP {
+//	public JasperPrintLP printBuchungsjournal(Integer buchungsjournalIId,
+//			Date dVon, Date dBis, boolean storniert,
+//			boolean bDatumsfilterIstBuchungsdatum, String text,
+//			String belegnummer, BigDecimal betrag, String kontonummer) throws ExceptionLP {
+//		JasperPrintLP print = null;
+//		try {
+//			print = this.finanzReportFac.printBuchungsjournal(
+//					LPMain.getTheClient(), buchungsjournalIId, dVon, dBis,
+//					storniert, bDatumsfilterIstBuchungsdatum, text,
+//					belegnummer, betrag, kontonummer);
+//		} catch (Throwable ex) {
+//			handleThrowable(ex);
+//		}
+//		return print;
+//	}
+
+	/**
+	 * Das detailierte Buchungsjournal drucken
+	 * 
+	 * @param params
+	 * @return den Ausdruck
+	 * @throws ExceptionLP
+	 */
+	public JasperPrintLP printBuchungsjournal(BuchungsjournalReportParameter params) throws ExceptionLP {
 		JasperPrintLP print = null;
 		try {
 			print = this.finanzReportFac.printBuchungsjournal(
-					LPMain.getTheClient(), buchungsjournalIId, dVon, dBis,
-					storniert, bDatumsfilterIstBuchungsdatum, text,
-					belegnummer, betrag);
+					LPMain.getTheClient(), params);
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 		}
-		return print;
+		return print;		
 	}
 
+	
 	/**
 	 * RA-Schreiben drucken.
 	 * 
-	 * @return JasperPrint
-	 * @throws ExceptionLP
 	 * @param mahnungIId
 	 *            Integer
+	 * @return JasperPrint
+	 * @throws ExceptionLP
 	 */
 	public JasperPrintLP printRASchreiben(Integer mahnungIId)
 			throws ExceptionLP {
@@ -187,10 +215,10 @@ public class FinanzReportDelegate extends Delegate {
 	/**
 	 * RA-Schreiben drucken.
 	 * 
-	 * @return JasperPrint
-	 * @throws ExceptionLP
 	 * @param rechnungIId
 	 *            Integer
+	 * @return JasperPrint
+	 * @throws ExceptionLP
 	 */
 	public JasperPrintLP printRASchreibenFuerRechnung(Integer rechnungIId)
 			throws ExceptionLP {
@@ -207,10 +235,11 @@ public class FinanzReportDelegate extends Delegate {
 	/**
 	 * Mahnung drucken.
 	 * 
-	 * @return JasperPrint
-	 * @throws ExceptionLP
 	 * @param mahnungIId
 	 *            Integer
+	 * @param bMitLogo
+	 * @return JasperPrint
+	 * @throws ExceptionLP
 	 */
 	public JasperPrintLP printMahnungAusMahnlauf(Integer mahnungIId,
 			boolean bMitLogo) throws ExceptionLP {
@@ -225,44 +254,10 @@ public class FinanzReportDelegate extends Delegate {
 	}
 
 	/**
-	 * 
-	 * @param kontotypCNr
-	 * @param kontoIId
-	 * @param ktoVon
-	 * @param ktoBis
-	 * @param bSortiertNachDatum
-	 * @param tVon
-	 * @param tBis
-	 * @param bSortiertNachBeleg
-	 * @param geschaeftsjahr
-	 * @return
-	 * @throws ExceptionLP
-	 * 
-	 * @deprecated bitte {@link printKontoblaetter(PrintKontoblaetterModel
-	 *             kbModel, TheClientDto theClientDto)} benutzen
-	 */
-	public JasperPrintLP printKontoblaetter(String kontotypCNr,
-			Integer kontoIId, String ktoVon, String ktoBis,
-			boolean bSortiertNachDatum, java.sql.Timestamp tVon,
-			java.sql.Timestamp tBis, boolean bSortiertNachBeleg,
-			String geschaeftsjahr) throws ExceptionLP {
-		JasperPrintLP print = null;
-		try {
-			print = this.finanzReportFac.printKontoblaetter(kontotypCNr,
-					kontoIId, ktoVon, ktoBis, bSortiertNachDatum, tVon, tBis,
-					LPMain.getTheClient(), bSortiertNachBeleg, geschaeftsjahr);
-		} catch (Throwable ex) {
-			handleThrowable(ex);
-		}
-		return print;
-	}
-
-	/**
 	 * Kontobl&auml;tter ausdrucken
 	 * 
 	 * @param kbModel
-	 * @param theClientDto
-	 * @return
+	 * @return JasperPrintLP
 	 * @throws ExceptionLP
 	 */
 	public JasperPrintLP printKontoblaetter(PrintKontoblaetterModel kbModel)
@@ -277,9 +272,13 @@ public class FinanzReportDelegate extends Delegate {
 
 		return print;
 	}
-	
+
 	/**
 	 * Buchungsbeleg ausdrucken
+	 * 
+	 * @param buchungIId
+	 * @return JasperPrint
+	 * @throws ExceptionLP
 	 */
 	public JasperPrintLP printBuchungsbeleg(Integer buchungIId)
 			throws ExceptionLP {
@@ -309,11 +308,13 @@ public class FinanzReportDelegate extends Delegate {
 
 	public JasperPrintLP printOffenPosten(String kontotypCNr,
 			Integer geschaeftsjahr, Integer kontoIId,
-			java.sql.Timestamp tStichtag, boolean sortAlphabethisch) throws ExceptionLP {
+			java.sql.Timestamp tStichtag, boolean sortAlphabethisch)
+			throws ExceptionLP {
 		JasperPrintLP print = null;
 		try {
 			print = this.finanzReportFac.printOffenePosten(kontotypCNr,
-					geschaeftsjahr, kontoIId, tStichtag, LPMain.getTheClient(), sortAlphabethisch);
+					geschaeftsjahr, kontoIId, tStichtag, LPMain.getTheClient(),
+					sortAlphabethisch);
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 		}
@@ -342,12 +343,13 @@ public class FinanzReportDelegate extends Delegate {
 	/**
 	 * Mahnung drucken.
 	 * 
-	 * @return JasperPrint
-	 * @throws ExceptionLP
 	 * @param rechnungIId
 	 *            Integer
 	 * @param mahnstufeIId
 	 *            Integer
+	 * @param bMitLogo
+	 * @return JasperPrint
+	 * @throws ExceptionLP
 	 */
 	public JasperPrintLP printMahnungFuerRechnung(Integer rechnungIId,
 			Integer mahnstufeIId, boolean bMitLogo) throws ExceptionLP {
@@ -364,10 +366,11 @@ public class FinanzReportDelegate extends Delegate {
 	/**
 	 * Alle Mahnungen eines Mahnlaufes drucken.
 	 * 
-	 * @return JasperPrint
-	 * @throws ExceptionLP
 	 * @param mahnlaufIId
 	 *            Integer
+	 * @param bMitLogo
+	 * @return JasperPrint
+	 * @throws ExceptionLP
 	 */
 	public JasperPrintLP[] printSammelMahnungen(Integer mahnlaufIId,
 			Boolean bMitLogo) throws ExceptionLP {
@@ -384,6 +387,8 @@ public class FinanzReportDelegate extends Delegate {
 	/**
 	 * Saldenliste drucken.
 	 * 
+	 * @param krit
+	 * 
 	 * @return JasperPrint
 	 * @throws ExceptionLP
 	 */
@@ -399,8 +404,24 @@ public class FinanzReportDelegate extends Delegate {
 		return print;
 	}
 
+	public JasperPrintLP printAenderungenKonto(Integer kontoIId)
+			throws ExceptionLP {
+		JasperPrintLP print = null;
+		try {
+			print = this.finanzReportFac.printAenderungenKonto(kontoIId,
+					LPMain.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+		return print;
+	}
+
 	/**
 	 * UVA drucken
+	 * 
+	 * @param krit
+	 * @return JasperPrint
+	 * @throws ExceptionLP
 	 * 
 	 */
 	public JasperPrintLP printUva(ReportUvaKriterienDto krit)
@@ -418,12 +439,12 @@ public class FinanzReportDelegate extends Delegate {
 	/**
 	 * Mahnlauf drucken.
 	 * 
-	 * @return JasperPrint
-	 * @throws ExceptionLP
 	 * @param reportJournalKriterienDtoI
 	 *            ReportJournalKriterienDto
 	 * @param mahnlaufIId
 	 *            Integer
+	 * @return JasperPrint
+	 * @throws ExceptionLP
 	 */
 	public JasperPrintLP printMahnlauf(
 			ReportJournalKriterienDto reportJournalKriterienDtoI,
@@ -452,8 +473,6 @@ public class FinanzReportDelegate extends Delegate {
 	/**
 	 * Intrastat-Vorschau drucken.
 	 * 
-	 * @return JasperPrint
-	 * @throws ExceptionLP
 	 * @param sVerfahren
 	 *            ReportJournalKriterienDto
 	 * @param dVon
@@ -462,6 +481,8 @@ public class FinanzReportDelegate extends Delegate {
 	 *            Date
 	 * @param bdTransportkosten
 	 *            BigDecimal
+	 * @return JasperPrint
+	 * @throws ExceptionLP
 	 */
 	public JasperPrintLP printIntrastatVorschau(String sVerfahren, Date dVon,
 			Date dBis, BigDecimal bdTransportkosten) throws ExceptionLP {
@@ -476,16 +497,27 @@ public class FinanzReportDelegate extends Delegate {
 	}
 
 	public JasperPrintLP printErfolgsrechnung(
-			ReportErfolgsrechnungKriterienDto kriterien, boolean bBilanz, boolean bDetails)
-			throws ExceptionLP {
+			ReportErfolgsrechnungKriterienDto kriterien, boolean bBilanz,
+			boolean bDetails) throws ExceptionLP {
 		JasperPrintLP print = null;
 		try {
 			print = this.finanzReportFac.printErfolgsrechnung(LPMain
-					.getTheClient().getMandant(), kriterien, bBilanz, bDetails, LPMain
-					.getTheClient());
+					.getTheClient().getMandant(), kriterien, bBilanz, bDetails,
+					LPMain.getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 		}
 		return print;
+	}
+
+	public JasperPrintLP printUstVerprobung(ReportUvaKriterienDto krit)
+			throws ExceptionLP {
+		try {
+			return finanzReportFac.printUstVerprobung(krit,
+					LPMain.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+		return null;
 	}
 }

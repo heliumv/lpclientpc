@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -1972,7 +1972,7 @@ public abstract class PanelPositionen2 extends PanelBasis {
 		} else if (positionDto.getPositionsartCNr().equalsIgnoreCase(
 				LocaleFac.POSITIONSART_TEXTEINGABE)) {
 			positionDto
-					.setXTextinhalt(panelTexteingabe.getLpEditor().getText());
+					.setXTextinhalt(panelTexteingabe.getText());
 		} else if (positionDto.getPositionsartCNr().equals(
 				LocaleFac.POSITIONSART_URSPRUNGSLAND)) {
 			positionDto.setCBez(panelUrsprung.wtfUrsprung.getText());
@@ -2040,6 +2040,9 @@ public abstract class PanelPositionen2 extends PanelBasis {
 				BelegpositionVerkaufDto positionDtoVK = (BelegpositionVerkaufDto) positionDto;
 
 				positionDtoVK.setKostentraegerIId(panelArtikel.wsfKostentraeger
+						.getIKey());
+
+				positionDtoVK.setLieferantIId(panelArtikel.wsfLieferant
 						.getIKey());
 
 				positionDtoVK.setCLvposition(panelArtikel.wtfLVPosition
@@ -2198,6 +2201,11 @@ public abstract class PanelPositionen2 extends PanelBasis {
 			positionDto.setNMenge(panelHandeingabe.wnfMenge.getBigDecimal());
 			positionDto.setEinheitCNr((String) panelHandeingabe.wcoEinheit
 					.getKeyOfSelectedItem());
+
+			boolean fixNumber = panelHandeingabe.wnfNettopreis.getWrbFixNumber().isSelected() ;
+			positionDto.setBNettopreisuebersteuert(Helper
+					.boolean2Short(fixNumber));
+
 			// Preise und Rabatte fuer Verkaufsbelege.
 			if (positionDto instanceof BelegpositionVerkaufDto) {
 				BelegpositionVerkaufDto positionDtoVK = (BelegpositionVerkaufDto) positionDto;
@@ -2264,8 +2272,7 @@ public abstract class PanelPositionen2 extends PanelBasis {
 			panelUrsprung.wtfUrsprung.setText(positionDto.getCBez());
 		} else if (positionsart
 				.equalsIgnoreCase(LocaleFac.POSITIONSART_TEXTEINGABE)) {
-			panelTexteingabe.getLpEditor()
-					.setText(positionDto.getXTextinhalt());
+			panelTexteingabe.setText(positionDto.getXTextinhalt());
 		} else if (positionsart
 				.equalsIgnoreCase(LocaleFac.POSITIONSART_TEXTBAUSTEIN)) {
 			panelTextbaustein.oMediastandardDto = DelegateFactory
@@ -2412,11 +2419,14 @@ public abstract class PanelPositionen2 extends PanelBasis {
 				BelegpositionVerkaufDto positionDtoVK = (BelegpositionVerkaufDto) positionDto;
 				panelArtikel.wsfKostentraeger.setKey(positionDtoVK
 						.getKostentraegerIId());
+				panelArtikel.wsfLieferant.setKey(positionDtoVK
+						.getLieferantIId());
 				panelArtikel.wtfLVPosition.setText(positionDtoVK
 						.getCLvposition());
 
 				if (positionDto instanceof LieferscheinpositionDto) {
-					panelArtikel.setUebersteuertesLagerIId(((LieferscheinpositionDto) positionDto)
+					panelArtikel
+							.setUebersteuertesLagerIId(((LieferscheinpositionDto) positionDto)
 									.getLagerIId());
 				}
 
@@ -2589,6 +2599,16 @@ public abstract class PanelPositionen2 extends PanelBasis {
 			panelHandeingabe.wnfMenge.setBigDecimal(positionDto.getNMenge());
 			panelHandeingabe.wcoEinheit.setKeyOfSelectedItem(positionDto
 					.getEinheitCNr());
+			
+			if (Helper.short2boolean(positionDto
+					.getBNettopreisuebersteuert()) == true) {
+				panelHandeingabe.wnfNettopreis
+						.getWrbFixNumber().setSelected(true);
+			} else {
+				panelHandeingabe.wnfRabattsumme
+				.getWrbFixNumber().setSelected(true);
+			}
+			
 			// Preise und Rabatte fuer Verkaufsbelege.
 			if (positionDto instanceof BelegpositionVerkaufDto) {
 				BelegpositionVerkaufDto positionDtoVK = (BelegpositionVerkaufDto) positionDto;

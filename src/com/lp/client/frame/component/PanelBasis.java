@@ -1,33 +1,33 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
- * 
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
+ *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published 
- * by the Free Software Foundation, either version 3 of theLicense, or 
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of theLicense, or
  * (at your option) any later version.
- * 
- * According to sec. 7 of the GNU Affero General Public License, version 3, 
+ *
+ * According to sec. 7 of the GNU Affero General Public License, version 3,
  * the terms of the AGPL are supplemented with the following terms:
- * 
- * "HELIUM V" and "HELIUM 5" are registered trademarks of 
- * HELIUM V IT-Solutions GmbH. The licensing of the program under the 
+ *
+ * "HELIUM V" and "HELIUM 5" are registered trademarks of
+ * HELIUM V IT-Solutions GmbH. The licensing of the program under the
  * AGPL does not imply a trademark license. Therefore any rights, title and
  * interest in our trademarks remain entirely with us. If you want to propagate
  * modified versions of the Program under the name "HELIUM V" or "HELIUM 5",
- * you may only do so if you have a written permission by HELIUM V IT-Solutions 
+ * you may only do so if you have a written permission by HELIUM V IT-Solutions
  * GmbH (to acquire a permission please contact HELIUM V IT-Solutions
  * at trademark@heliumv.com).
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Affero General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Contact: developers@heliumv.com
  ******************************************************************************/
 package com.lp.client.frame.component;
@@ -91,18 +91,17 @@ import com.lp.server.system.service.LockMeDto;
 import com.lp.server.system.service.ParameterFac;
 import com.lp.server.system.service.ParametermandantDto;
 import com.lp.server.util.IModificationData;
-import com.lp.service.BelegpositionDto;
 import com.lp.util.EJBExceptionLP;
 import com.lp.util.Helper;
 
 /**
  * <b>frame</b><BR>
  * Dies ist die Basisiklasse aller Panels.<BR>
- * 
+ *
  * <p>
  * Erstellungsdatum 10.10.04
  * </p>
- * 
+ *
  * @version $Revision: 1.45 $
  * @author Josef Ornetsmueller
  */
@@ -110,13 +109,13 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 		ActionListener, MouseListener, ItemChangedListener, FocusListener,
 		IPanelBasis {
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = 1L;
 	private ToolBar toolBar = null;
 	private PanelStatusbar panelStatusbar = null;
 	private InternalFrame internalFrame = null;
-	
+
 	protected final LpLogger myLogger = (LpLogger) LpLogger.getInstance(this
 			.getClass());
 
@@ -146,6 +145,7 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 	static final public String ACTION_UPDATE = "action_update";
 	static final public String ACTION_LEEREN = "action_leeren";
 	static final public String ACTION_TEXT = "action_text";
+
 	// pqaddbutton: 0 Das Action Command jedes eigenen Button, der wie Neu
 	// geschalten werden soll, muss so beginnen
 	static final public String ACTION_MY_OWN_NEW = "action_my_own_new_";
@@ -202,12 +202,13 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 	private static final Integer IIVERWERFEN = new Integer(1);
 
 	private boolean bHatVersandRecht = false;
+	private RequestFocusLater requestFocusLater = new RequestFocusLater();
 
 	final static public JComponent NO_VALUE_THATS_OK_JCOMPONENT = new JLabel();
 
 	/**
 	 * PanelBasis
-	 * 
+	 *
 	 * @param internalFrameI
 	 *            InternalFrame
 	 * @param addTitleI
@@ -223,7 +224,7 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 	 * handleex: Behandle Expection t; Meldung fuer den Benutzer; evtl. close
 	 * Frame. Dies ist die zentrale Methode um allgemeine (frameweite)
 	 * Exceptions abzuhandeln.
-	 * 
+	 *
 	 * @param t
 	 *            Throwable
 	 * @param bHandleHardI
@@ -288,18 +289,36 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 							if (teile.length > 2) {
 								ArrayList<String> alInfo = new ArrayList<String>();
 								String fkZeile = teile[2];
-								fk = fkZeile.substring(0, fkZeile.indexOf("\u00AB"))
+								fk = fkZeile.substring(0,
+										fkZeile.indexOf("\u00AB"))
 										.toUpperCase();
 								alInfo.add(fk);
-								if(teile.length > 3) {
-									String table = teile[3].substring(0, teile[3].indexOf("\u00AB"));
+								if (teile.length > 3) {
+									String table = teile[3].substring(0,
+											teile[3].indexOf("\u00AB"));
 									alInfo.add(table);
-									String iId = teile[3].substring(teile[3].indexOf("(i_id)=(")+8);
+									String iId = teile[3].substring(teile[3]
+											.indexOf("(i_id)=(") + 8);
 									iId = iId.substring(0, iId.indexOf(")"));
 									alInfo.add(iId);
 								}
-								
+
 								efc.setAlInfoForTheClient(alInfo);
+							} else {
+								try {
+									teile = s.split("\u201E");
+
+									if (teile.length > 2) {
+										ArrayList<String> alInfo = new ArrayList<String>();
+										String fkZeile = teile[2];
+										fk = fkZeile.substring(0,
+												fkZeile.indexOf("\u201C")).toUpperCase();
+										alInfo.add(fk);
+										efc.setAlInfoForTheClient(alInfo);
+									}
+								} catch (Throwable e) {
+									//Wenn hier was passiert, dann ignorieren
+								}
 							}
 
 						} else {
@@ -353,7 +372,7 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 
 	/**
 	 * PanelBasis
-	 * 
+	 *
 	 * @param internalFrameI
 	 *            InternalFrame
 	 * @param addTitleI
@@ -381,7 +400,7 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 	/**
 	 * Setze alle Defaultwerte; hier koennen jetzt "schwerer" Methoden
 	 * aufgerufen werden.
-	 * 
+	 *
 	 * @todo ppp abstract PJ 4828
 	 * @throws Throwable
 	 */
@@ -407,7 +426,7 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 	 * Titelleiste des InternalFrame aktualisieren und Status aller Komponenten
 	 * schalten. <br>
 	 * Subklassen muessen diese Implementierung aufrufen!
-	 * 
+	 *
 	 * @param bNeedNoYouAreSelectedI
 	 *            boolean
 	 * @throws Throwable
@@ -442,7 +461,7 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 
 	/**
 	 * Hole den "Lock" fuer diese Panel.
-	 * 
+	 *
 	 * @return LockMeDto Was soll gelockt werden.
 	 * @throws Exception
 	 *             Ausnahme.
@@ -484,13 +503,20 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 				.getCNrUser());
 	}
 
+	/**
+	 * F&uuml;r Welchen Belegtyp ist die Sperre?
+	 *
+	 * @return null wenn kein Lock, sonst der "Locktyp" HelperClient.LOCKME_*
+	 * @throws Exception
+	 */
 	protected String getLockMeWer() throws Exception {
-		throw new Exception("not implemented yet: PanelBasis: getLockMeWer()");
+		throw new Exception("not implemented yet: " + this.getClass().getName()
+				+ ": getLockMeWer()");
 	}
 
 	/**
 	 * Mache einen Button und merke ihn dir.
-	 * 
+	 *
 	 * @param sIconPathI
 	 *            String
 	 * @param sTooltipI
@@ -504,12 +530,13 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 	 */
 	private JButton createAndSaveButton(String sIconPathI, String sTooltipI,
 			String sActionCommandI, String rechtCNrI) {
-		return getToolBar().createAndSaveButton(sIconPathI, sTooltipI, sActionCommandI, null, rechtCNrI);
+		return getToolBar().createAndSaveButton(sIconPathI, sTooltipI,
+				sActionCommandI, null, rechtCNrI);
 	}
 
 	/**
 	 * Mache einen Button und merke ihn dir.
-	 * 
+	 *
 	 * @param sIconPathI
 	 *            String
 	 * @param sTooltipI
@@ -526,13 +553,14 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 	protected final JButton createAndSaveButton(String sIconPathI,
 			String sTooltipI, String sActionCommandI, KeyStroke accelKey,
 			String rechtCNrI) {
-		return getToolBar().createAndSaveButton(sIconPathI, sTooltipI, sActionCommandI, accelKey, rechtCNrI);
+		return getToolBar().createAndSaveButton(sIconPathI, sTooltipI,
+				sActionCommandI, accelKey, rechtCNrI);
 	}
 
 	/**
 	 * Einen Button aufgrund seines ActionCommand vom Panel entfernen. <br>
 	 * Der Button muss existieren!
-	 * 
+	 *
 	 * @param ac
 	 *            ActionCommand UW->JO
 	 * @throws Exception
@@ -543,10 +571,10 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 
 	/**
 	 * Mache einen Button und merke ihn dir.
-	 * 
+	 *
 	 * @deprecated MB: use createAndSaveAndShowButton(String iconPath, String
 	 *             tooltip, String ac, String rechtCNrI)
-	 * 
+	 *
 	 * @param iconPath
 	 *            String
 	 * @param tooltip
@@ -562,6 +590,7 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 
 	/**
 	 * Mache einen Button und f&uuml;ge ihn links im ToolsPanel hinzu.
+	 *
 	 * @param rechtCNrI
 	 *            String: erforderliches Benutzerrecht. (null = kein
 	 *            zusaetzliches Recht erforderlich)
@@ -574,6 +603,7 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 
 	/**
 	 * Mache einen Button und f&uuml;ge ihn links im ToolsPanel hinzu.
+	 *
 	 * @param rechtCNrI
 	 *            String: erforderliches Benutzerrecht. (null = kein
 	 *            zusaetzliches Recht erforderlich)
@@ -583,11 +613,11 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 			String ac, KeyStroke accelKey, String rechtCNrI) throws Exception {
 		getToolBar().addButtonLeft(iconPath, tooltip, ac, accelKey, rechtCNrI);
 	}
-	
+
 	/**
 	 * btnstate: 5 Enable, disable diese Panelbuttons je nach Lockstate dieses
 	 * (this) Panels.
-	 * 
+	 *
 	 * @throws Throwable
 	 */
 	public void updateButtons() throws Throwable {
@@ -603,7 +633,7 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 
 	/**
 	 * btnstate: 6 Enable, disable diese Panelbuttons je nach lockstateValueI.
-	 * 
+	 *
 	 * @param lockstateValueI
 	 *            String, wer lockt?
 	 * @throws Throwable
@@ -977,7 +1007,7 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 
 	/**
 	 * Aktiviere aWhichButtons Buttons.
-	 * 
+	 *
 	 * @param aWhichButtons
 	 *            String[]; zB. ACTION_SAVE, ACTION_LOCK
 	 * @throws Throwable
@@ -988,7 +1018,7 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 
 	/**
 	 * Aktiviere aWhichButtons Buttons.
-	 * 
+	 *
 	 * @param aWhichButtons
 	 *            String[]; zB. ACTION_SAVE, ACTION_LOCK
 	 * @throws ExceptionForLPClients
@@ -999,19 +1029,20 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 		getToolBar().enableToolsPanelButtons(aWhichButtons);
 	}
 
-
 	/**
 	 * Enable oder disable Buttons, auch solche, die nicht LEAVEALONE sind!
+	 *
 	 * @param enable
-	 * @param which die ActionCommands der Buttons
+	 * @param which
+	 *            die ActionCommands der Buttons
 	 */
 	public void enableToolsPanelButtons(boolean enable, String... which) {
 		getToolBar().enableToolsPanelButtons(enable, which);
 	}
-	
+
 	/**
 	 * Enable oder disable der LeaveAlone-Buttons.
-	 * 
+	 *
 	 * @param aButtonStringI
 	 *            die Bezeichnungen der Buttons
 	 * @param bEnableI
@@ -1020,12 +1051,13 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 	 */
 	public void enableToolsPanelLeaveAloneButtons(String[] aButtonStringI,
 			boolean bEnableI) throws Exception {
-		getToolBar().enableToolsPanelLeaveAloneButtons(aButtonStringI, bEnableI);
+		getToolBar()
+				.enableToolsPanelLeaveAloneButtons(aButtonStringI, bEnableI);
 	}
 
 	/**
 	 * Mache einen Button.
-	 * 
+	 *
 	 * @param iconPath
 	 *            String
 	 * @param tooltip
@@ -1091,12 +1123,14 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 		myLogger.debug(lockMeDtoI);
 		DelegateFactory.getInstance().getTheJudgeDelegate()
 				.addLockedObject(lockMeDtoI);
+		getInternalFrame().lock() ;
 	}
 
 	protected void unlock(LockMeDto lockMeDtoI) throws Throwable {
 		myLogger.debug(lockMeDtoI);
 		DelegateFactory.getInstance().getTheJudgeDelegate()
 				.removeLockedObject(lockMeDtoI);
+		getInternalFrame().unlock() ;
 	}
 
 	protected int getLockedByWerWas(LockMeDto lockMeDtoI) throws Throwable {
@@ -1117,7 +1151,7 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 
 	/**
 	 * eventActionSpecial
-	 * 
+	 *
 	 * @param e
 	 *            ActionEvent
 	 * @throws Throwable
@@ -1140,7 +1174,7 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 
 	/**
 	 * Refreshen des Panels, falls noetig.
-	 * 
+	 *
 	 * @param e
 	 *            ActionEvent
 	 * @param bNeedNoRefreshI
@@ -1169,7 +1203,7 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 	/**
 	 * Verwerfen der aktuelle Usereingabe und zurueckgehen auf den bestehenden
 	 * Datensatz, wenn einer existiert.
-	 * 
+	 *
 	 * @param e
 	 *            Ereignis
 	 * @throws Throwable
@@ -1184,6 +1218,10 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 				options, options[0])) == JOptionPane.YES_OPTION) {
 			discard();
 		}
+	}
+
+	protected void doActionDiscard() throws Throwable {
+		discard();
 	}
 
 	protected void eventActionText(ActionEvent e) throws Throwable {
@@ -1246,7 +1284,7 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 
 	/**
 	 * Behandle Ereignis New.
-	 * 
+	 *
 	 * @param eventObject
 	 *            Ereignis.
 	 * @param bAdministrateLockKeyI
@@ -1269,7 +1307,9 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 
 	public boolean allMandatoryFieldsSetDlg() throws Throwable {
 		boolean bOKSave = true;
-		if (!allMandatorySet(this)) {
+		// if (!allMandatorySet(this)) {
+		Component c = allMandatoryComponentSet(this);
+		if (c != null) {
 			showDialogPflichtfelderAusfuellen();
 			bOKSave = false;
 		}
@@ -1282,7 +1322,6 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 	}
 
 	protected void checkLockedDlg(LockMeDto lmI) throws Throwable {
-
 		if (!lmI.getCWas().equals(LPMain.getLockMeForNew())) {
 			// kein Neuer.
 			if (getLockedByWerWas(lmI) == LOCK_IS_NOT_LOCKED) {
@@ -1318,7 +1357,7 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 
 	/**
 	 * btnsave: 0 behandle das ereignis save.
-	 * 
+	 *
 	 * @param e
 	 *            ActionEvent der Event.
 	 * @param bNeedNoSaveI
@@ -1351,6 +1390,16 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 
 	protected void eventActionPrint(ActionEvent e) throws Throwable {
 		LPMain.getInstance().exitFrame(getInternalFrame());
+	}
+
+	protected void eventActionPrint(HvActionEvent e) throws Throwable {
+		// fuehrt einen cast von HvActionEvent auf ActionEvent durch und
+		// ruft default eventActionPrint(ActionEvent e) auf,
+		// wenn im aufgerufenen Modul eventActionPrint(HvActionEvent e)
+		// nicht implementiert ist
+		eventActionPrint((ActionEvent) e) ;
+
+//		LPMain.getInstance().exitFrame(getInternalFrame());
 	}
 
 	protected void eventActionFilter(ActionEvent e) throws Throwable {
@@ -1425,18 +1474,20 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 	/**
 	 * Fange alle ActionEvents; Nur diese Klasse faengt Events, diese werden
 	 * dann umgeleitet ...
-	 * 
+	 *
 	 * @param e
 	 *            ActionEvent
 	 */
 	final public void actionPerformed(ActionEvent e) {
+		myLogger.warn("actionPerformed (start): " + e.paramString());
 		actionPerformedLog(e);
 		this.isEnabled();
+		myLogger.warn("actionPerformed (stop): " + e.paramString());
 	}
 
 	/**
 	 * Hole erste Feld, welches den Focus uebernimmt.
-	 * 
+	 *
 	 * @return Component
 	 * @throws Exception
 	 */
@@ -1448,7 +1499,7 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 
 	/**
 	 * Setze den Eingabefocus auf die erste Component.
-	 * 
+	 *
 	 * @throws Exception
 	 */
 	public final void setFirstFocusableComponent() throws Exception {
@@ -1459,18 +1510,35 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 			myLogger.error("setFirstFocusableComponent(): component != null");
 		} else {
 			// VF
-			component.requestFocusInWindow();
-
-			// MB: Workaround fuer java bug 5089436
-			// see http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=5089436
-			SwingUtilities.invokeLater(new RequestFocusLater(component));
+			// if(!component.requestFocusInWindow()) {
+			// // MB: Workaround fuer java bug 5089436
+			// // see http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=5089436
+			// SwingUtilities.invokeLater(new RequestFocusLater(component));
+			// }
+			// SwingUtilities.invokeLater(new RequestFocusLater(component));
+			SwingUtilities.invokeLater(getRequestFocusLater(component));
 		}
 	}
 
-	private static class RequestFocusLater implements Runnable {
+	private RequestFocusLater getRequestFocusLater(Component focusComponent) {
+		// if(requestFocusLater == null) {
+		// requestFocusLater = new RequestFocusLater() ;
+		// }
+		requestFocusLater.setComponent(focusComponent);
+		return requestFocusLater;
+	}
+
+	private class RequestFocusLater implements Runnable {
 		private Component comp;
 
-		RequestFocusLater(Component src) {
+		// public RequestFocusLater() {
+		// }
+		//
+		// public RequestFocusLater(Component src) {
+		// setComponent(src);
+		// }
+
+		public void setComponent(Component src) {
 			comp = src;
 		}
 
@@ -1481,7 +1549,7 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 
 	/**
 	 * Verteile <b>alle</b> eingehenden Events; ist die einzige Stelle!
-	 * 
+	 *
 	 * @param e
 	 *            ActionEvent
 	 */
@@ -1494,22 +1562,35 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 
 			getInternalFrame().getFrameProgress().start(
 					LPMain.getTextRespectUISPr("lp.working"));
-			getInternalFrame().setCursor(
-					java.awt.Cursor
-							.getPredefinedCursor(java.awt.Cursor.WAIT_CURSOR));
-//			setEnabled(false);
+			if (Defaults.getInstance().isUseWaitCursor()) {
+				getInternalFrame()
+						.setCursor(
+								java.awt.Cursor
+										.getPredefinedCursor(java.awt.Cursor.WAIT_CURSOR));
+			}
+			// setEnabled(false);
 
 			if (e instanceof ActionEvent) {
-				performActionEvents((ActionEvent) e);
+				myLogger.warn("actionPerformedLog (ActionEvent) "
+						+ ((ActionEvent) e).paramString());
+				performActionEvents(new HvActionEvent((ActionEvent) e));
 			} else if (e instanceof MouseEvent) {
+				myLogger.warn("actionPerformedLog (MouseEvent) "
+						+ ((MouseEvent) e).paramString());
 				performMouseEvents((MouseEvent) e);
 			} else if (e instanceof ItemChangedEvent) {
+				ItemChangedEvent ie = (ItemChangedEvent) e;
+				myLogger.warn("actionPerformedLog (ItemChangedEvent) "
+						+ ie.paramString() + " " + ie.getSource());
 				// itemevt: 8 Jeder Itemevent kommt hier rueber, wegen logging,
 				// locking, ...
 				performItemChangedEvents((ItemChangedEvent) e);
 			} else if (e instanceof KeyEvent) {
+				myLogger.warn("actionPerformedLog (KeyEvent) "
+						+ ((KeyEvent) e).paramString());
 				performKeyEvents((KeyEvent) e);
 			} else if (e == null) {
+				myLogger.warn("actionPerformedLog (eventYourAreSelected) ");
 				eventYouAreSelected(false);
 			} else {
 				LPMain.getInstance().exitFrame(getInternalFrame());
@@ -1526,9 +1607,11 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 		} finally {
 			// housekeeping
 			getInternalFrame().getFrameProgress().pause();
-			getInternalFrame().setCursor(
-					Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-//			setEnabled(true);
+			if (Defaults.getInstance().isUseWaitCursor()) {
+				getInternalFrame().setCursor(
+						Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+			}
+			// setEnabled(true);
 			// long tEnd = System.currentTimeMillis();
 			// myLogger.info("action end: " + (tEnd - tStart) + " [ms]");
 		}
@@ -1536,7 +1619,7 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 
 	/**
 	 * performKeyEvents
-	 * 
+	 *
 	 * @param e
 	 *            KeyEvent
 	 * @throws Throwable
@@ -1554,7 +1637,7 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 
 	/**
 	 * eventKeyTyped
-	 * 
+	 *
 	 * @param e
 	 *            KeyEvent
 	 * @throws Throwable
@@ -1565,7 +1648,7 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 
 	/**
 	 * eventKeyReleased
-	 * 
+	 *
 	 * @param e
 	 *            KeyEvent
 	 * @throws Throwable
@@ -1576,7 +1659,7 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 
 	/**
 	 * eventKeyPressed
-	 * 
+	 *
 	 * @param e
 	 *            KeyEvent
 	 * @throws Throwable
@@ -1591,7 +1674,7 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 
 	/**
 	 * itemevt: 9 Fuehre den Itemevent aus.
-	 * 
+	 *
 	 * @param e
 	 *            ItemChangedEvent
 	 * @throws Throwable
@@ -1607,21 +1690,21 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 
 	/**
 	 * itemevt: 10 Informiere ueber Itemevent; ableiten.
-	 * 
+	 *
 	 * @param eI
 	 *            EventObject
 	 * @throws Throwable
 	 */
 	protected void eventItemchanged(EventObject eI) throws Throwable {
-		//myLogger.error("**E: eventItemchanged ableiten!");
-		//LPMain.getInstance().exitFrame(getInternalFrame());
-		
-		//-->Kommt raus lt. Besptrechung vom 16.4.2012
+		// myLogger.error("**E: eventItemchanged ableiten!");
+		// LPMain.getInstance().exitFrame(getInternalFrame());
+
+		// -->Kommt raus lt. Besptrechung vom 16.4.2012
 	}
 
 	/**
 	 * eventMouseEntered.
-	 * 
+	 *
 	 * @param e
 	 *            MouseEvent
 	 * @throws Throwable
@@ -1632,18 +1715,22 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 
 	/**
 	 * eventMouseClicked.
-	 * 
+	 *
 	 * @param e
 	 *            MouseEvent
 	 * @throws Throwable
 	 */
-	protected void eventMouseClicked(MouseEvent e) throws Throwable {
+	protected void eventMouseClicked(MouseEvent me) throws Throwable {
+		if(me.getSource() instanceof JButton) {
+			performActionEvents(new HvActionEvent(me));
+			return ;
+		}
 		LPMain.getInstance().exitFrame(getInternalFrame());
 	}
 
 	/**
 	 * performMouseEvents
-	 * 
+	 *
 	 * @param me
 	 *            MouseEvent
 	 * @throws Throwable
@@ -1667,7 +1754,7 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 		// bei Bedarf implementieren.
 	}
 
-	private void eventMousePressed(MouseEvent me) {
+	private void eventMousePressed(MouseEvent me) throws Throwable {
 		// bei Bedarf implementieren.
 	}
 
@@ -1675,14 +1762,13 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 		// bei Bedarf implementieren.
 	}
 
-	protected boolean pruefeObZertifiziert(Integer artikelIId,
-			LieferantDto lDto) throws Throwable {
+	protected boolean pruefeObZertifiziert(Integer artikelIId, LieferantDto lDto)
+			throws Throwable {
 		boolean bZertifiziert = true;
 		if (artikelIId != null) {
 
 			ArtikelDto aDto = DelegateFactory.getInstance()
-					.getArtikelDelegate()
-					.artikelFindByPrimaryKey(artikelIId);
+					.getArtikelDelegate().artikelFindByPrimaryKey(artikelIId);
 
 			if (!aDto.getArtikelartCNr().equals(
 					ArtikelFac.ARTIKELART_HANDARTIKEL)) {
@@ -1726,7 +1812,7 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 		return bZertifiziert;
 	}
 
-	private void performActionEvents(ActionEvent aE) throws Throwable {
+	private void performActionEvents(HvActionEvent aE) throws Throwable {
 		if (aE.getActionCommand().equals(ACTION_DELETE)) {
 			eventActionDelete(aE, true, false);
 		} else if (aE.getActionCommand().equals(ACTION_UPDATE)) {
@@ -1764,7 +1850,7 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 		} else if (aE.getActionCommand().equals(ACTION_PRINT)) {
 			eventActionPrint(aE);
 		} else if (aE.getActionCommand().equals(ACTION_NEW)) {
-			
+
 			eventActionNew(null, true, false);
 		} else if (aE.getActionCommand().equals(ACTION_DISCARD)) {
 			eventActionDiscard(aE);
@@ -1869,8 +1955,8 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 				LPMain.getTextRespectUISPr("lp.printer"),
 				ACTION_PRINT,
 				KeyStroke
-						.getKeyStroke('P', java.awt.event.InputEvent.CTRL_MASK),
-				null);
+				.getKeyStroke('P', java.awt.event.InputEvent.CTRL_MASK),
+				null).addMouseListener(this);
 
 		createAndSaveButton(
 				"/com/lp/client/res/table_sql_view.png",
@@ -1932,7 +2018,7 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 		for (int i = 0; i < components.length; ++i) {
 			if (components[i] instanceof WrapperEditorField) {
 				((WrapperEditorField) components[i]).removeContent();
-			}else if (components[i] instanceof WrapperBildField) {
+			} else if (components[i] instanceof WrapperBildField) {
 				((WrapperBildField) components[i]).setImage(null);
 			} else if (components[i] instanceof WrapperTimestampField) {
 				((WrapperTimestampField) components[i]).removeContent();
@@ -1952,14 +2038,14 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 				if (component instanceof IControl) {
 					IControl iControl = (IControl) component;
 					iControl.removeContent();
-					
+
 					if (component instanceof WrapperTextField) {
-						WrapperTextField wtf=(WrapperTextField)component;
-						if(wtf.getZugehoerigesSelectField()!=null){
+						WrapperTextField wtf = (WrapperTextField) component;
+						if (wtf.getZugehoerigesSelectField() != null) {
 							wtf.getZugehoerigesSelectField().removeContent();
 						}
 					}
-					
+
 				}
 			}
 		}
@@ -1967,42 +2053,69 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 
 	/**
 	 * Alle Pflichtfelder dieser Component gefuellt?
-	 * 
+	 *
 	 * @param component
 	 *            Component zu pruefen.
 	 * @return boolean true ... ja; false ... sonst
 	 * @throws Throwable
 	 */
-	private boolean allMandatorySet(Component component)
-			throws Throwable {
-			
-		if(component instanceof IControl) {
-			IControl c = (IControl)component;
-			if(c.isMandatoryField() && !c.hasContent())
+	private boolean allMandatorySet(Component component) throws Throwable {
+
+		if (component instanceof IControl) {
+			IControl c = (IControl) component;
+			if (c.isMandatoryField() && !c.hasContent())
 				return false;
-				
-		} else if (component instanceof java.awt.Container && component.isVisible()) {
-			Container c = (Container)component;
-			for(Component child : c.getComponents()) {
+
+		} else if (component instanceof java.awt.Container
+				&& component.isVisible()) {
+			Container c = (Container) component;
+			for (Component child : c.getComponents()) {
 				if (!allMandatorySet(child))
 					return false;
 			}
 		} else if (component instanceof javax.swing.JScrollPane) {
-					// Komponenten fuer TextAreas und Tabellen auf Scrollpanes
-					// ermitteln
-					JScrollPane jScrollPane = (JScrollPane) component;
-					if(!allMandatorySet(jScrollPane.getViewport().getView())) {
-						return false;
+			// Komponenten fuer TextAreas und Tabellen auf Scrollpanes
+			// ermitteln
+			JScrollPane jScrollPane = (JScrollPane) component;
+			if (!allMandatorySet(jScrollPane.getViewport().getView())) {
+				return false;
 			}
 		}
 		// alle Pflichtfelder sind gefuellt
 		return true;
 	}
 
+	private Component allMandatoryComponentSet(Component component)
+			throws Throwable {
+		if (component instanceof IControl) {
+			IControl c = (IControl) component;
+			if (c.isMandatoryField() && !c.hasContent())
+				return component;
+
+		} else if (component instanceof java.awt.Container
+				&& component.isVisible()) {
+			Container c = (Container) component;
+			for (Component child : c.getComponents()) {
+				Component com = allMandatoryComponentSet(child);
+				if (com != null)
+					return com;
+			}
+		} else if (component instanceof javax.swing.JScrollPane) {
+			// Komponenten fuer TextAreas und Tabellen auf Scrollpanes
+			// ermitteln
+			JScrollPane jScrollPane = (JScrollPane) component;
+			if (!allMandatorySet(jScrollPane.getViewport().getView())) {
+				return jScrollPane;
+			}
+		}
+		// alle Pflichtfelder sind gefuellt
+		return null;
+	}
+
 	/*
 	 * Setzt alle Felder auf Enabled/Disabled, wenn Eigenschaft allowEnable ==
 	 * true
-	 * 
+	 *
 	 * @todo ppp eigentlich private PJ 4849
 	 */
 	public static void enableAllComponents(java.awt.Container container,
@@ -2026,7 +2139,8 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 				((WrapperEditorField) components[i]).setEditable(enable);
 			} else if (components[i] instanceof WrapperFixableNumberField) {
 				((WrapperFixableNumberField) components[i]).setEditable(enable);
-				((WrapperFixableNumberField) components[i]).getWrbFixNumber().setEnabled(enable);
+				((WrapperFixableNumberField) components[i]).getWrbFixNumber()
+						.setEnabled(enable);
 			} else if (components[i] instanceof WrapperTimestampField) {
 				if (((WrapperTimestampField) components[i]).isActivatable()) {
 					((WrapperTimestampField) components[i]).setEditable(enable);
@@ -2064,9 +2178,11 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 						}
 					} else if (iControl instanceof WrapperTextFieldWithIconButton) {
 						if (iControl.isActivatable()) {
-							((WrapperTextFieldWithIconButton) component).setEditable(enable);
+							((WrapperTextFieldWithIconButton) component)
+									.setEditable(enable);
 						} else {
-							((WrapperTextFieldWithIconButton) component).setEditable(false);
+							((WrapperTextFieldWithIconButton) component)
+									.setEditable(false);
 						}
 					} else {
 						if (iControl.isActivatable()) {
@@ -2091,7 +2207,7 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 			}
 		}
 	}
-	
+
 	@Override
 	public HashMap<String, LPButtonAction> getHmOfButtons() {
 		return getToolBar().getHmOfButtons();
@@ -2100,17 +2216,19 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 	public JPanel getToolsPanel() throws Exception {
 		return getToolBar().getToolsPanel();
 	}
-	
+
 	public ToolBar getToolBar() {
-		if(toolBar == null) {
+		if (toolBar == null) {
 			toolBar = new ToolBar(this);
 
 			initComponents();
 		}
 		return toolBar;
 	}
-	
-	
+
+	public void setToolBar(ToolBar toolBar) {
+		this.toolBar = toolBar;
+	}
 
 	protected void resetToolsPanel() throws Exception {
 		getToolBar().resetToolsPanel();
@@ -2122,9 +2240,9 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 
 	/**
 	 * @deprecated MB: das ist aber gar nicht schoen!
-	 * 
+	 *
 	 *             Setzen des IF's. nur in diesem Package sichtbar.
-	 * 
+	 *
 	 * @param internalFrame
 	 *            InternalFrame
 	 */
@@ -2138,7 +2256,7 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 
 	/**
 	 * mouseClicked.
-	 * 
+	 *
 	 * @param e
 	 *            MouseEvent
 	 */
@@ -2148,7 +2266,7 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 
 	/**
 	 * mouseEntered.
-	 * 
+	 *
 	 * @param e
 	 *            MouseEvent
 	 */
@@ -2159,7 +2277,7 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 
 	/**
 	 * mouseExited.
-	 * 
+	 *
 	 * @param e
 	 *            MouseEvent
 	 */
@@ -2170,7 +2288,7 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 
 	/**
 	 * mousePressed.
-	 * 
+	 *
 	 * @param e
 	 *            MouseEvent
 	 */
@@ -2181,7 +2299,7 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 
 	/**
 	 * mouseReleased.
-	 * 
+	 *
 	 * @param e
 	 *            MouseEvent
 	 */
@@ -2192,7 +2310,7 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 
 	/**
 	 * keyPressed.
-	 * 
+	 *
 	 * @param e
 	 *            KeyEvent
 	 */
@@ -2202,7 +2320,7 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 
 	/**
 	 * keyReleased.
-	 * 
+	 *
 	 * @param e
 	 *            KeyEvent
 	 */
@@ -2212,7 +2330,7 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 
 	/**
 	 * keyTyped.
-	 * 
+	 *
 	 * @param e
 	 *            KeyEvent
 	 */
@@ -2222,7 +2340,7 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 
 	/**
 	 * itemevt: 7 Informiere Panel ueber einen Itemevent.
-	 * 
+	 *
 	 * @param e
 	 *            ItemChangedEvent
 	 */
@@ -2250,7 +2368,7 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 	/**
 	 * Die Spalten fuer die Datensatzmodifikationen setzen PersonalIId fuer
 	 * Aendern und Anlegen Timestamps fuer Aendern und Anlegen
-	 * 
+	 *
 	 * @param theData
 	 * @throws Throwable
 	 */
@@ -2301,7 +2419,7 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 	/**
 	 * Statusleiste leeren. statusbarneu: 3 hier kannst du die statusbarfelder
 	 * leeren.
-	 * 
+	 *
 	 * @throws Throwable
 	 */
 	protected final void clearStatusbar() throws Throwable {
@@ -2311,7 +2429,7 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 	/**
 	 * panelstatusbar holen mit lazy loading. statusbarneu: 2 hier wird sie
 	 * gebaut
-	 * 
+	 *
 	 * @return JPanel
 	 * @throws Throwable
 	 */
@@ -2325,7 +2443,7 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 
 	/**
 	 * Eigene ExceptionLP's verarbeiten. myexception: 1
-	 * 
+	 *
 	 * @param exfc
 	 *            EJBExceptionLP
 	 * @return boolean
@@ -2339,7 +2457,7 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 	 * evtvet: Gib die PropertyVetoException zurueck, wenn null ohne Meldung aus
 	 * dem Modul ausgestiegen. Achtung: Eigentlich muss jeder Event ueber
 	 * actionPerformedLog laufen, geht hier nicht wegen Rueckgabewert.
-	 * 
+	 *
 	 * @return PropertyVetoException
 	 * @throws Throwable
 	 */
@@ -2353,7 +2471,7 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 	 * evtvet: Event "Vetoable Window close"; wird null zurueckgegeben, so wird
 	 * das Modul via dicard beendet, wird ein PropertyVetoException
 	 * zurueckgegeben, bleibt das Modul "erhalten".
-	 * 
+	 *
 	 * @return PropertyVetoException
 	 * @throws Throwable
 	 */
@@ -2366,7 +2484,7 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 		if (iLockstate == LOCK_IS_LOCKED_BY_ME || iLockstate == LOCK_FOR_NEW) {
 			Object am[] = { LPMain.getTextRespectUISPr("lp.speichern"),
 					LPMain.getTextRespectUISPr("lp.verwerfen_ohne_frage"), };
-			int iOption = DialogFactory.showModalDialog(getInternalFrame(),
+			int iOption = DialogFactory.showModalDialogDesktopMitte(
 					LPMain.getTextRespectUISPr("lp.warning.speichern"), "", am,
 					IISPEICHERN);
 
@@ -2382,34 +2500,51 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 				pve = new PropertyVetoException("", null);
 			}
 		}
-		// CK Fehlmengen drucken, wenn welche aufgeloest worden sind
-		if (FehlmengenAufloesen.getAufgeloesteFehlmengen().size() > 0) {
-			boolean bOption = DialogFactory
-					.showModalJaNeinDialog(
-							getInternalFrame(),
-							LPMain.getTextRespectUISPr("lp.frage.fehlmengenaufloesendrucken"),
-							LPMain.getTextRespectUISPr("lp.hint"));
-			if (bOption) {
-				getInternalFrame()
-						.showReportKriterien(
-								new ReportAufgeloestefehlmengen(
-										getInternalFrame(), FehlmengenAufloesen
-												.getAufgeloesteFehlmengen()));
-				pve = new PropertyVetoException("", null);
-			}
-			FehlmengenAufloesen.loescheAufgeloesteFehlmengen();
-		}
-		/*
-		 * AD if (pve == null) { for (int i=0; i<this.getComponentCount(); i++)
-		 * { if (this.getComponent(i) instanceof PanelQuery) {
-		 * ((PanelQuery)this.getComponent(i)).cleanup(); } } }
-		 */
+
 		return pve;
+
 	}
 
 	public void finalize() throws Throwable {
-		getHmOfButtons().clear() ;
+		getHmOfButtons().clear();
+		alleLPEditorAufNullSetzen(this.getComponents());
 		super.finalize();
+	}
+
+	private void alleLPEditorAufNullSetzen(java.awt.Component[] components) {
+		for (int i = 0; i < components.length; ++i) {
+			if (components[i] instanceof WrapperEditorField) {
+
+				WrapperEditorField wef = ((WrapperEditorField) components[i]);
+				wef.lpEditor.cleanup();
+				wef.lpEditor = null;
+				wef.jspScrollPane.setViewport(null);
+				wef.setToolBar(null);
+				components[i] = null;
+			} else if (components[i] instanceof WrapperBildField) {
+				WrapperBildField wef = ((WrapperBildField) components[i]);
+				wef.setToolBar(null);
+				components[i] = null;
+			} else if (components[i] instanceof WrapperDateField) {
+				WrapperDateField wef = ((WrapperDateField) components[i]);
+				wef.cleanup();
+				components[i] = null;
+			} else if (components[i] instanceof WrapperMediaControl) {
+				WrapperMediaControl wef = ((WrapperMediaControl) components[i]);
+				wef.cleanup();
+				wef.setToolBar(null);
+				components[i] = null;
+			} else if (components[i] instanceof WrapperMediaControlTexteingabe) {
+				WrapperMediaControlTexteingabe wef = ((WrapperMediaControlTexteingabe) components[i]);
+				wef.setToolBar(null);
+				components[i] = null;
+			} else {
+				if (components[i] instanceof Container) {
+					alleLPEditorAufNullSetzen(((Container) components[i])
+							.getComponents());
+				}
+			}
+		}
 	}
 
 	public void focusGained(FocusEvent e) {
@@ -2427,8 +2562,6 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 	/**
 	 * Initialierungen fuer die Komponenten. Muss zu einem Zeitpunkt aufgerufen
 	 * werden, wenn die Komponenten nicht mehr null sind.
-	 * 
-	 * @throws Throwable
 	 */
 	protected final void initComponents() {
 		// fuer neue Namensgebung
@@ -2447,9 +2580,9 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 	 * Alle Member-Variablen der Panels vom Typ java.awt.Component erhalten als
 	 * Name den Variablennamen (damit Abbot auch bei Veraenderungen am Layout
 	 * noch richtig funktioniert)
-	 * 
+	 *
 	 * Wird noch solange gebraucht, bis alle alten qftests migriert sind.
-	 * 
+	 *
 	 * @throws Throwable
 	 * @param bGenerateUniqueNames
 	 *            boolean
@@ -2491,12 +2624,11 @@ public abstract class PanelBasis extends JPanel implements KeyListener,
 							// Den Klassennamen anhaengen, damit eindeutige
 							// Namen vergeben werden.
 							if (bGenerateUniqueNames) {
-								sName = this.getClass().getSimpleName()
-										+ "." + sName;
+								sName = this.getClass().getSimpleName() + "."
+										+ sName;
 							}
 							// setName(ausfuehren)
-							method.invoke(oComponent,
-									new Object[] { sName });
+							method.invoke(oComponent, new Object[] { sName });
 						} else if (oComponent instanceof WrapperIdentField) {
 							((WrapperIdentField) oComponent)
 									.setComponentNames(fields[i].getName());

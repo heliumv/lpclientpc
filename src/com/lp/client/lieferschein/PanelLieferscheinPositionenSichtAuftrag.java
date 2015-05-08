@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -109,6 +109,7 @@ public class PanelLieferscheinPositionenSichtAuftrag extends
 	private boolean bZusaetzlicheChargenposition = false;
 
 	private boolean bBezeichnungEinfrieren = false;
+	private boolean bReihenfolgeAusAuftrag = false;
 
 	/**
 	 * Konstruktor.
@@ -143,6 +144,18 @@ public class PanelLieferscheinPositionenSichtAuftrag extends
 			bBezeichnungEinfrieren = true;
 		}
 
+		parameter = (ParametermandantDto) DelegateFactory
+				.getInstance()
+				.getParameterDelegate()
+				.getParametermandant(
+						ParameterFac.PARAMETER_POSITIONSREIHENFOLGE_AUS_AUFTRAG_ERHALTEN,
+						ParameterFac.KATEGORIE_LIEFERSCHEIN,
+						LPMain.getTheClient().getMandant());
+
+		if (parameter.getCWert() != null && !parameter.getCWert().equals("0")) {
+			bReihenfolgeAusAuftrag = true;
+		}
+
 		jbInit();
 		initComponents();
 	}
@@ -169,7 +182,7 @@ public class PanelLieferscheinPositionenSichtAuftrag extends
 				ACTION_SPECIAL_ZUSAETZLICHE_CHARGEN,
 				RechteFac.RECHT_LS_LIEFERSCHEIN_CUD);
 
-		this.createAndSaveAndShowButton("/com/lp/client/res/check2.png",
+		this.createAndSaveAndShowButton("/com/lp/client/res/box_preferences.png",
 				LPMain.getTextRespectUISPr("ls.sichtauftrag.keinlieferrrest"),
 				ACTION_SPECIAL_KEIN_LIEFERREST,
 				RechteFac.RECHT_LS_LIEFERSCHEIN_CUD);
@@ -234,8 +247,12 @@ public class PanelLieferscheinPositionenSichtAuftrag extends
 					.getAuftragDelegate()
 					.auftragFindByPrimaryKey(oAuftragpositionDto.getBelegIId());
 
-			if (auftragDto.getAuftragstatusCNr().equals(
-					AuftragServiceFac.AUFTRAGSTATUS_ERLEDIGT)) {
+			if (auftragDto.getStatusCNr().equals(
+					AuftragServiceFac.AUFTRAGSTATUS_ERLEDIGT)
+					//SP3393 Texteingaben koennen auch bei erledigtem Auftrag in den LS
+					//uebernommen werden
+					&& !AuftragServiceFac.AUFTRAGPOSITIONART_TEXTEINGABE.equalsIgnoreCase(
+							oAuftragpositionDto.getPositionsartCNr())) {
 				DialogFactory
 						.showModalDialog(
 								LPMain.getTextRespectUISPr("lp.hint"),
@@ -337,8 +354,7 @@ public class PanelLieferscheinPositionenSichtAuftrag extends
 						panelArtikel.wnfMenge
 								.setBigDecimal(lieferscheinpositionAusAuftragpositionDto
 										.getNMenge());
-						panelArtikel.wbuLager
-								.setEnabled(false);
+						panelArtikel.wbuLager.setEnabled(false);
 					}
 				} else if (oAuftragpositionDto.getPositionsartCNr().equals(
 						LocaleFac.POSITIONSART_HANDEINGABE)) {
@@ -360,6 +376,9 @@ public class PanelLieferscheinPositionenSichtAuftrag extends
 								.setBigDecimal(lieferscheinpositionAusAuftragpositionDto
 										.getNMenge());
 					}
+				} else if(AuftragServiceFac.AUFTRAGPOSITIONART_TEXTEINGABE.equalsIgnoreCase(
+							oAuftragpositionDto.getPositionsartCNr())) {
+					panelTexteingabe.setEditable(false);
 				}
 
 			}
@@ -884,6 +903,13 @@ public class PanelLieferscheinPositionenSichtAuftrag extends
 						.setFZusatzrabattsatz(oAuftragpositionDto
 								.getFZusatzrabattsatz());
 
+				oLieferscheinpositionDto
+						.setNMaterialzuschlagKurs(oAuftragpositionDto
+								.getNMaterialzuschlagKurs());
+				oLieferscheinpositionDto
+						.setTMaterialzuschlagDatum(oAuftragpositionDto
+								.getTMaterialzuschlagDatum());
+
 				oLieferscheinpositionDto.setLieferscheinIId(tpLieferschein
 						.getLieferscheinDto().getIId());
 				oLieferscheinpositionDto.setMwstsatzIId(oAuftragpositionDto
@@ -900,7 +926,8 @@ public class PanelLieferscheinPositionenSichtAuftrag extends
 						.setNEinzelpreis(panelArtikel.wnfEinzelpreis
 								.getBigDecimal());
 
-				oLieferscheinpositionDto.setLagerIId(panelArtikel.selectedlagerIId);
+				oLieferscheinpositionDto
+						.setLagerIId(panelArtikel.selectedlagerIId);
 
 				if (panelArtikel.wnfMaterialzuschlag != null) {
 					oLieferscheinpositionDto
@@ -948,6 +975,15 @@ public class PanelLieferscheinPositionenSichtAuftrag extends
 							.getLieferscheinpositionDelegate()
 							.createLieferscheinposition(
 									oLieferscheinpositionDto, snrs, true);
+					if (bReihenfolgeAusAuftrag) {
+						DelegateFactory
+								.getInstance()
+								.getLieferscheinpositionDelegate()
+								.positionenAnhandAuftragsreihenfolgeAnordnen(
+										tpLieferschein.getLieferscheinDto()
+												.getIId());
+					}
+
 				}
 
 				if (bDiePositionSpeichern) {
@@ -1142,6 +1178,13 @@ public class PanelLieferscheinPositionenSichtAuftrag extends
 				oLieferscheinpositionDto
 						.setBRabattsatzuebersteuert(oAuftragpositionDto
 								.getBRabattsatzuebersteuert());
+				oLieferscheinpositionDto
+						.setNMaterialzuschlagKurs(oAuftragpositionDto
+								.getNMaterialzuschlagKurs());
+				oLieferscheinpositionDto
+						.setTMaterialzuschlagDatum(oAuftragpositionDto
+								.getTMaterialzuschlagDatum());
+
 				oLieferscheinpositionDto.setCBez(oAuftragpositionDto.getCBez());
 				oLieferscheinpositionDto.setCZusatzbez(oAuftragpositionDto
 						.getCZusatzbez());
@@ -1168,7 +1211,8 @@ public class PanelLieferscheinPositionenSichtAuftrag extends
 				oLieferscheinpositionDto
 						.setNEinzelpreis(panelArtikel.wnfEinzelpreis
 								.getBigDecimal());
-				oLieferscheinpositionDto.setLagerIId(panelArtikel.selectedlagerIId);
+				oLieferscheinpositionDto
+						.setLagerIId(panelArtikel.selectedlagerIId);
 
 				if (panelArtikel.wnfMaterialzuschlag != null) {
 					oLieferscheinpositionDto
@@ -1196,6 +1240,16 @@ public class PanelLieferscheinPositionenSichtAuftrag extends
 						.getLieferscheinpositionDelegate()
 						.createLieferscheinposition(oLieferscheinpositionDto,
 								false);
+
+				if (bReihenfolgeAusAuftrag) {
+					DelegateFactory
+							.getInstance()
+							.getLieferscheinpositionDelegate()
+							.positionenAnhandAuftragsreihenfolgeAnordnen(
+									tpLieferschein.getLieferscheinDto()
+											.getIId());
+				}
+
 			}
 
 			// es gibt in diesem Lieferschein bereits eine Lieferscheinposition

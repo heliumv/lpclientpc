@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -43,6 +43,8 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.border.Border;
 
+import com.lp.client.artikel.PanelArtikelgruppen;
+import com.lp.client.finanz.FinanzFilterFactory;
 import com.lp.client.frame.HelperClient;
 import com.lp.client.frame.component.DialogQuery;
 import com.lp.client.frame.component.ISourceEvent;
@@ -57,7 +59,12 @@ import com.lp.client.frame.component.WrapperSelectField;
 import com.lp.client.frame.component.WrapperTextField;
 import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.pc.LPMain;
+import com.lp.server.auftrag.service.AuftragFac;
+import com.lp.server.auftrag.service.AuftragServiceFac;
 import com.lp.server.system.service.DokumentenlinkDto;
+import com.lp.server.system.service.LocaleFac;
+import com.lp.server.util.fastlanereader.service.query.FilterKriterium;
+import com.lp.server.util.fastlanereader.service.query.QueryParameters;
 
 @SuppressWarnings("static-access")
 public class PanelDokumentenlink extends PanelBasis {
@@ -82,8 +89,12 @@ public class PanelDokumentenlink extends PanelBasis {
 	private WrapperCheckBox wcbPfadabsolut = new WrapperCheckBox();
 	private WrapperCheckBox wcbUrl = new WrapperCheckBox();
 
-	private WrapperSelectField wsfBelegart = new WrapperSelectField(
-			WrapperSelectField.BELEGART, getInternalFrame(), false);
+	private String ACTION_SPECIAL_FLR_BELEGART = "ACTION_SPECIAL_FLR_BELEGART";
+
+	private PanelQueryFLR panelQueryFLRBelegart = null;
+
+	private WrapperButton wbuBelegart = new WrapperButton();
+	private WrapperTextField wtfBelegart = new WrapperTextField();
 
 	public PanelDokumentenlink(InternalFrame internalFrame, String add2TitleI,
 			Object pk) throws Throwable {
@@ -113,7 +124,40 @@ public class PanelDokumentenlink extends PanelBasis {
 	}
 
 	protected void eventActionSpecial(ActionEvent e) throws Throwable {
+		if (e.getActionCommand().equals(ACTION_SPECIAL_FLR_BELEGART)) {
 
+			FilterKriterium[] kriterien = new FilterKriterium[1];
+
+			FilterKriterium krit1 = new FilterKriterium("c_nr", true, "('"
+					+ LocaleFac.BELEGART_ARTIKEL + "','"
+					+ LocaleFac.BELEGART_BESTELLUNG + "','"
+					+ LocaleFac.BELEGART_STUECKLISTE + "','"
+					+ LocaleFac.BELEGART_AUFTRAG + "','"
+					+ LocaleFac.BELEGART_ANGEBOT + "','"
+					+ LocaleFac.BELEGART_ANFRAGE + "','"
+					+ LocaleFac.BELEGART_LOS + "','"
+					+ LocaleFac.BELEGART_EINGANGSRECHNUNG + "','"
+					+ LocaleFac.BELEGART_ZUSATZKOSTEN + "','"
+					+ LocaleFac.BELEGART_REKLAMATION + "','"
+					+ LocaleFac.BELEGART_PARTNER + "','"
+					+ LocaleFac.BELEGART_LIEFERANT + "','"
+					+ LocaleFac.BELEGART_PROJEKT + "','"
+					+ LocaleFac.BELEGART_KUNDE + "','"
+					+ LocaleFac.BELEGART_LIEFERANT+ "')",
+					FilterKriterium.OPERATOR_IN, false);
+
+			kriterien[0] = krit1;
+
+			panelQueryFLRBelegart = new PanelQueryFLR(null, kriterien,
+					QueryParameters.UC_ID_BELEGART, null, getInternalFrame(),
+					LPMain.getTextRespectUISPr("lp.belegart"));
+			if (dokumentenlinkDto.getBelegartCNr() != null) {
+				panelQueryFLRBelegart.setSelectedId(dokumentenlinkDto
+						.getBelegartCNr());
+			}
+
+			new DialogQuery(panelQueryFLRBelegart);
+		}
 	}
 
 	protected void eventActionDelete(ActionEvent e,
@@ -134,7 +178,7 @@ public class PanelDokumentenlink extends PanelBasis {
 		dokumentenlinkDto.setBUrl(wcbUrl.getShort());
 		dokumentenlinkDto.setMandantCNr(internalFramePersonal.getMandantDto()
 				.getCNr());
-		dokumentenlinkDto.setBelegartCNr((String) wsfBelegart.getOKey());
+		dokumentenlinkDto.setBelegartCNr(wtfBelegart.getText());
 
 	}
 
@@ -142,9 +186,15 @@ public class PanelDokumentenlink extends PanelBasis {
 		wtfBasispfad.setText(dokumentenlinkDto.getCBasispfad());
 		wtfMenuetext.setText(dokumentenlinkDto.getCMenuetext());
 		wtfOrdner.setText(dokumentenlinkDto.getCOrdner());
-		wsfBelegart.setKey(dokumentenlinkDto.getBelegartCNr());
+		wtfBelegart.setText(dokumentenlinkDto.getBelegartCNr());
 		wcbPfadabsolut.setShort(dokumentenlinkDto.getBPfadabsolut());
 		wcbUrl.setShort(dokumentenlinkDto.getBUrl());
+		if (dokumentenlinkDto.getBelegartCNr().equals(
+				LocaleFac.BELEGART_ARTIKEL)) {
+			wcbPfadabsolut.setVisible(true);
+		} else {
+			wcbPfadabsolut.setVisible(false);
+		}
 
 	}
 
@@ -176,6 +226,17 @@ public class PanelDokumentenlink extends PanelBasis {
 		ItemChangedEvent e = (ItemChangedEvent) eI;
 		if (e.getID() == ItemChangedEvent.GOTO_DETAIL_PANEL) {
 
+			if (e.getSource() == panelQueryFLRBelegart) {
+				Object key = ((ISourceEvent) e.getSource()).getIdSelected();
+				wtfBelegart.setText((String) key);
+				
+				if(wtfBelegart.getText().equals(LocaleFac.BELEGART_ARTIKEL)){
+					wcbPfadabsolut.setVisible(true);
+					} else {
+						wcbPfadabsolut.setVisible(false);
+					}
+				
+			}
 		}
 	}
 
@@ -193,10 +254,9 @@ public class PanelDokumentenlink extends PanelBasis {
 
 		wcbPfadabsolut.setText(LPMain.getInstance().getTextRespectUISPr(
 				"lp.dokumentenlink.pfadabsolut"));
-		
+
 		wcbUrl.setText(LPMain.getInstance().getTextRespectUISPr(
 				"lp.dokumentenlink.weblink"));
-		
 
 		wlaBasispfad.setText(LPMain.getInstance().getTextRespectUISPr(
 				"system.dokumentenlink.basispfad"));
@@ -211,9 +271,16 @@ public class PanelDokumentenlink extends PanelBasis {
 		wlaOrdner.setText(LPMain.getInstance().getTextRespectUISPr(
 				"system.dokumentenlink.ordner"));
 		wtfOrdner.setColumnsMax(80);
+
+		wbuBelegart.setText(LPMain.getInstance().getTextRespectUISPr(
+				"system.dokumentenlink.belegart"));
+		wbuBelegart.setActionCommand(ACTION_SPECIAL_FLR_BELEGART);
+		wbuBelegart.addActionListener(this);
+
 		getInternalFrame().addItemChangedListener(this);
 
-		wsfBelegart.setMandatoryField(true);
+		wtfBelegart.setMandatoryField(true);
+		wtfBelegart.setActivatable(false);
 		this.add(jpaButtonAction, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(0,
 						0, 0, 0), 0, 0));
@@ -248,15 +315,13 @@ public class PanelDokumentenlink extends PanelBasis {
 
 		iZeile++;
 
-		jpaWorkingOn.add(wsfBelegart, new GridBagConstraints(0, iZeile, 1, 1,
+		jpaWorkingOn.add(wbuBelegart, new GridBagConstraints(0, iZeile, 1, 1,
 				0.0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
 
-		jpaWorkingOn.add(wsfBelegart.getWrapperTextField(),
-				new GridBagConstraints(1, iZeile, 2, 1, 0.0, 0.0,
-						GridBagConstraints.CENTER,
-						GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2),
-						0, 0));
+		jpaWorkingOn.add(wtfBelegart, new GridBagConstraints(1, iZeile, 2, 1,
+				0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
 		iZeile++;
 		jpaWorkingOn.add(wlaMenuetext, new GridBagConstraints(0, iZeile, 1, 1,
 				0.0, 0.0, GridBagConstraints.CENTER,
@@ -268,9 +333,9 @@ public class PanelDokumentenlink extends PanelBasis {
 		jpaWorkingOn.add(wcbPfadabsolut, new GridBagConstraints(1, iZeile, 1,
 				1, 0.0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 100, 0));
-		jpaWorkingOn.add(wcbUrl, new GridBagConstraints(2, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wcbUrl, new GridBagConstraints(2, iZeile, 1, 1, 0.0,
+				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+				new Insets(2, 2, 2, 2), 0, 0));
 
 		String[] aWhichButtonIUse = { ACTION_UPDATE, ACTION_SAVE,
 				ACTION_DELETE, ACTION_DISCARD, };
@@ -288,6 +353,8 @@ public class PanelDokumentenlink extends PanelBasis {
 
 		super.eventYouAreSelected(false);
 
+		wcbPfadabsolut.setVisible(false);
+		
 		Object key = getKeyWhenDetailPanel();
 
 		if (key == null || (key.equals(LPMain.getLockMeForNew()))) {

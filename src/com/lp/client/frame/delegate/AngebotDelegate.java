@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -41,11 +41,14 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 
 import com.lp.client.frame.ExceptionLP;
+import com.lp.client.frame.component.InternalFrame;
+import com.lp.client.frame.dialog.DialogFactory;
 import com.lp.client.pc.LPMain;
 import com.lp.server.angebot.service.AngebotDto;
 import com.lp.server.angebot.service.AngebotFac;
 import com.lp.server.auftrag.service.AuftragDto;
 import com.lp.server.lieferschein.service.LieferscheinDto;
+import com.lp.server.system.service.BelegPruefungDto;
 import com.lp.server.system.service.LocaleFac;
 
 /**
@@ -271,37 +274,47 @@ public class AngebotDelegate extends Delegate {
 		return null;
 	}
 
-	
-	public void aktiviereBelegControlled(Integer iid, Timestamp t) throws ExceptionLP {
+	public void aktiviereBelegControlled(Integer iid, Timestamp t)
+			throws ExceptionLP {
 		try {
-			angebotFac.aktiviereBelegControlled(iid, t, LPMain.getTheClient());
+			BelegPruefungDto pruefungDto = angebotFac.aktiviereBelegControlled(iid, t, LPMain.getTheClient());
+			dialogBelegpruefung(pruefungDto);			
 			// SP1881
-			DelegateFactory
-					.getInstance()
-					.getSystemDelegate()
-					.enthaeltEinVKBelegUmsatzsteuerObwohlKundeSteuerfrei(
-							LocaleFac.BELEGART_ANGEBOT, iid);
+//			DelegateFactory
+//					.getInstance()
+//					.getSystemDelegate()
+//					.enthaeltEinVKBelegUmsatzsteuerObwohlKundeSteuerfrei(
+//							LocaleFac.BELEGART_ANGEBOT, iid);
 		} catch (Throwable t1) {
 			handleThrowable(t1);
 		}
 	}
-	
+
 	public Timestamp berechneBelegControlled(Integer iid) throws ExceptionLP {
 		try {
-			Timestamp t = angebotFac.berechneBelegControlled(iid, LPMain.getTheClient());
-			// SP1881
-			DelegateFactory
-					.getInstance()
-					.getSystemDelegate()
-					.enthaeltEinVKBelegUmsatzsteuerObwohlKundeSteuerfrei(
-							LocaleFac.BELEGART_ANGEBOT, iid);
-			return t;
+			BelegPruefungDto pruefungDto = angebotFac.berechneBelegControlled(iid,
+					LPMain.getTheClient());
+			dialogBelegpruefung(pruefungDto) ;
+			return pruefungDto.getBerechnungsZeitpunkt() ;
 		} catch (Throwable t1) {
 			handleThrowable(t1);
 		}
 		return null;
 	}
 
+
+	public Timestamp berechneAktiviereBelegControlled(Integer iid) throws ExceptionLP {
+		try {
+			BelegPruefungDto pruefungDto = angebotFac.berechneAktiviereBelegControlled(iid,
+					LPMain.getTheClient());
+			dialogBelegpruefung(pruefungDto) ;
+			return pruefungDto.getBerechnungsZeitpunkt() ;
+		} catch (Throwable t1) {
+			handleThrowable(t1);
+		}
+		return null;
+	}
+	
 	/**
 	 * Berechne den Gesamtwert eines bestimmten Angebots in der
 	 * Angebotswaehrung. <br>
@@ -338,8 +351,8 @@ public class AngebotDelegate extends Delegate {
 	 * @throws ExceptionLP
 	 *             Ausnahme
 	 */
-	public Integer erzeugeAngebotAusAngebot(Integer iIdAngebotI)
-			throws ExceptionLP {
+	public Integer erzeugeAngebotAusAngebot(Integer iIdAngebotI,
+			InternalFrame interalFrame) throws ExceptionLP {
 		Integer iIdAngebot = null;
 
 		try {
@@ -348,8 +361,11 @@ public class AngebotDelegate extends Delegate {
 
 			if (iIdAngebot != null) {
 				AngebotDto agDto = angebotFindByPrimaryKey(iIdAngebot);
-				DelegateFactory.getInstance().getKundeDelegate()
-						.pruefeKunde(agDto.getKundeIIdAngebotsadresse());
+				DelegateFactory
+						.getInstance()
+						.getKundeDelegate()
+						.pruefeKunde(agDto.getKundeIIdAngebotsadresse(),
+								LocaleFac.BELEGART_ANGEBOT, interalFrame);
 			}
 
 		} catch (Throwable t) {
@@ -370,12 +386,13 @@ public class AngebotDelegate extends Delegate {
 	 *             Ausnahme
 	 */
 	public Integer erzeugeAuftragAusAngebot(Integer iIdAngebotI,
-			boolean bMitZeitDaten) throws ExceptionLP {
+			boolean bMitZeitDaten, boolean bRahmenauftrag,
+			InternalFrame interalFrame) throws ExceptionLP {
 		Integer iIdAuftrag = null;
 
 		try {
 			iIdAuftrag = angebotFac.erzeugeAuftragAusAngebot(iIdAngebotI,
-					bMitZeitDaten, LPMain.getTheClient());
+					bMitZeitDaten, bRahmenauftrag, LPMain.getTheClient());
 
 			if (iIdAuftrag != null) {
 
@@ -400,8 +417,11 @@ public class AngebotDelegate extends Delegate {
 				Iterator<Integer> it = hmKunden.keySet().iterator();
 
 				while (it.hasNext()) {
-					DelegateFactory.getInstance().getKundeDelegate()
-							.pruefeKunde(it.next());
+					DelegateFactory
+							.getInstance()
+							.getKundeDelegate()
+							.pruefeKunde(it.next(), LocaleFac.BELEGART_AUFTRAG,
+									interalFrame);
 				}
 
 			}
@@ -422,8 +442,8 @@ public class AngebotDelegate extends Delegate {
 	 * @throws ExceptionLP
 	 *             Ausnahme
 	 */
-	public Integer erzeugeLieferscheinAusAngebot(Integer iIdAngebotI)
-			throws ExceptionLP {
+	public Integer erzeugeLieferscheinAusAngebot(Integer iIdAngebotI,
+			InternalFrame interalFrame) throws ExceptionLP {
 		Integer lieferscheinIId = null;
 
 		try {
@@ -449,8 +469,12 @@ public class AngebotDelegate extends Delegate {
 				Iterator<Integer> it = hmKunden.keySet().iterator();
 
 				while (it.hasNext()) {
-					DelegateFactory.getInstance().getKundeDelegate()
-							.pruefeKunde(it.next());
+					DelegateFactory
+							.getInstance()
+							.getKundeDelegate()
+							.pruefeKunde(it.next(),
+									LocaleFac.BELEGART_LIEFERSCHEIN,
+									interalFrame);
 				}
 
 			}
@@ -476,6 +500,26 @@ public class AngebotDelegate extends Delegate {
 		try {
 			angebotFac.updateAngebotKonditionen(iIdAngebotI,
 					LPMain.getTheClient());
+		} catch (Throwable t) {
+			handleThrowable(t);
+		}
+	}
+
+	public void korrekturbetragZuruecknehmen(Integer iIdAngebotI)
+			throws ExceptionLP {
+		try {
+
+			AngebotDto agDto = angebotFindByPrimaryKey(iIdAngebotI);
+
+			if (agDto.getNKorrekturbetrag() != null
+					&& agDto.getNKorrekturbetrag().doubleValue() != 0) {
+				DialogFactory
+						.showModalDialog(
+								LPMain.getTextRespectUISPr("lp.hinweis"),
+								LPMain.getTextRespectUISPr("lp.korrekturbetragzurueckgenommen"));
+			}
+
+			angebotFac.korrekturbetragZuruecknehmen(iIdAngebotI);
 		} catch (Throwable t) {
 			handleThrowable(t);
 		}

@@ -1,33 +1,33 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published 
- * by the Free Software Foundation, either version 3 of theLicense, or 
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of theLicense, or
  * (at your option) any later version.
- * 
- * According to sec. 7 of the GNU Affero General Public License, version 3, 
+ *
+ * According to sec. 7 of the GNU Affero General Public License, version 3,
  * the terms of the AGPL are supplemented with the following terms:
- * 
- * "HELIUM V" and "HELIUM 5" are registered trademarks of 
- * HELIUM V IT-Solutions GmbH. The licensing of the program under the 
+ *
+ * "HELIUM V" and "HELIUM 5" are registered trademarks of
+ * HELIUM V IT-Solutions GmbH. The licensing of the program under the
  * AGPL does not imply a trademark license. Therefore any rights, title and
  * interest in our trademarks remain entirely with us. If you want to propagate
  * modified versions of the Program under the name "HELIUM V" or "HELIUM 5",
- * you may only do so if you have a written permission by HELIUM V IT-Solutions 
+ * you may only do so if you have a written permission by HELIUM V IT-Solutions
  * GmbH (to acquire a permission please contact HELIUM V IT-Solutions
  * at trademark@heliumv.com).
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Affero General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Contact: developers@heliumv.com
  ******************************************************************************/
 /*
@@ -73,28 +73,26 @@ import javax.swing.JPanel;
 import javax.swing.LookAndFeel;
 
 import com.lp.client.frame.component.calendar.components.UTF8ResourceBundle;
+// import com.lp.client.pc.LPMain;
 import com.lp.client.pc.LPMain;
 
 /**
  * JCalendar is a bean for entering a date by choosing the year, month and day.
- * 
+ *
  * @author Kai Toedter
  * @version $LastChangedRevision: 159 $
  * @version $LastChangedDate: 2011-06-22 21:07:24 +0200 (Mi, 22 Jun 2011) $
  */
-public class JCalendar extends JPanel implements PropertyChangeListener, ActionListener {
+public class JCalendar extends JPanel implements PropertyChangeListener {
 	private static final long serialVersionUID = 8913369762644440133L;
 
-	public static String AC_WEEKUP = "weekup";
-	public static String AC_WEEKDOWN = "weekdown";
-	
 	private Calendar calendar;
 	private boolean initialized = false;
 	private final JPanel monthYearPanel;
 	private final JPanel specialButtonPanel;
 	private boolean isTodayButtonVisible;
 	private boolean isYesterdayButtonVisible;
-	
+
 	private boolean isNullDateButtonVisible;
 	private final String defaultTodayButtonText = LPMain.getTextRespectUISPr("lp.heute");
 	private final String defaultYesterdayButtonText = LPMain.getTextRespectUISPr("lp.gestern");
@@ -119,7 +117,7 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 	protected JYearChooser yearChooser;
 
 	private final JButton todayButton;
-	
+
 	private final JButton yesterdayButton;
 
 	private final JButton nullDateButton;
@@ -133,7 +131,7 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 
 	/**
 	 * JCalendar constructor which allows the initial date to be set.
-	 * 
+	 *
 	 * @param date
 	 *            the date
 	 */
@@ -143,7 +141,7 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 
 	/**
 	 * JCalendar constructor which allows the initial calendar to be set.
-	 * 
+	 *
 	 * @param calendar
 	 *            the calendar
 	 */
@@ -154,7 +152,7 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 
 	/**
 	 * JCalendar constructor allowing the initial locale to be set.
-	 * 
+	 *
 	 * @param locale
 	 *            the new locale
 	 */
@@ -164,7 +162,7 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 
 	/**
 	 * JCalendar constructor specifying both the initial date and locale.
-	 * 
+	 *
 	 * @param date
 	 *            the date
 	 * @param locale
@@ -177,7 +175,7 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 	/**
 	 * JCalendar constructor specifying both the initial date and the month
 	 * spinner type.
-	 * 
+	 *
 	 * @param date
 	 *            the date
 	 * @param monthSpinner
@@ -189,7 +187,7 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 
 	/**
 	 * JCalendar constructor specifying both the locale and the month spinner.
-	 * 
+	 *
 	 * @param locale
 	 *            the locale
 	 * @param monthSpinner
@@ -201,7 +199,7 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 
 	/**
 	 * JCalendar constructor specifying the month spinner type.
-	 * 
+	 *
 	 * @param monthSpinner
 	 *            false, if no month spinner should be used
 	 */
@@ -211,7 +209,7 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 
 	/**
 	 * JCalendar constructor with month spinner parameter.
-	 * 
+	 *
 	 * @param date
 	 *            the date
 	 * @param locale
@@ -237,9 +235,9 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 		} else {
 			this.locale = locale;
 		}
-		
+
 		LookAndFeel actualLookAndFeel=javax.swing.UIManager.getLookAndFeel();
-		
+
 		try {
 			javax.swing.UIManager
 					.setLookAndFeel("com.incors.plaf.kunststoff.KunststoffLookAndFeel");
@@ -266,9 +264,6 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 		dayChooser = new JDayChooser(weekOfYearVisible);
 		dayChooser.addPropertyChangeListener(this);
 		dayChooser.setLocale(this.locale);
-
-		dayChooser.getButtonWeekDown().addActionListener(this);
-		dayChooser.getButtonWeekUp().addActionListener(this);
 
 		monthChooser.setDayChooser(dayChooser);
 		monthChooser.addPropertyChangeListener(this);
@@ -313,8 +308,8 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 		initialized = true;
 
 		setCalendar(calendar);
-		
-		
+
+
 		//PJ 14586
 		try {
 			javax.swing.UIManager
@@ -323,12 +318,12 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 
 			LPMain.getInstance().exitClientNowErrorDlg(exc);
 		}
-		
+
 	}
 
 	/**
 	 * Creates a JFrame with a JCalendar inside and can be used for testing.
-	 * 
+	 *
 	 * @param s
 	 *            The command line arguments
 	 */
@@ -343,7 +338,7 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 
 	/**
 	 * Returns the calendar property.
-	 * 
+	 *
 	 * @return the value of the calendar property.
 	 */
 	public Calendar getCalendar() {
@@ -352,7 +347,7 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 
 	/**
 	 * Gets the dayChooser attribute of the JCalendar object
-	 * 
+	 *
 	 * @return the dayChooser value
 	 */
 	public JDayChooser getDayChooser() {
@@ -361,9 +356,9 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 
 	/**
 	 * Returns the locale.
-	 * 
+	 *
 	 * @return the value of the locale property.
-	 * 
+	 *
 	 * @see #setLocale
 	 */
 	public Locale getLocale() {
@@ -372,7 +367,7 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 
 	/**
 	 * Gets the monthChooser attribute of the JCalendar object
-	 * 
+	 *
 	 * @return the monthChooser value
 	 */
 	public JMonthChooser getMonthChooser() {
@@ -381,7 +376,7 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 
 	/**
 	 * Gets the yearChooser attribute of the JCalendar object
-	 * 
+	 *
 	 * @return the yearChooser value
 	 */
 	public JYearChooser getYearChooser() {
@@ -390,7 +385,7 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 
 	/**
 	 * Indicates if the weeks of year are visible..
-	 * 
+	 *
 	 * @return boolean true, if weeks of year are visible
 	 */
 	public boolean isWeekOfYearVisible() {
@@ -400,7 +395,7 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 	/**
 	 * JCalendar is a PropertyChangeListener, for its day, month and year
 	 * chooser.
-	 * 
+	 *
 	 * @param evt
 	 *            the property change event
 	 */
@@ -427,7 +422,7 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 
 	/**
 	 * Sets the background color.
-	 * 
+	 *
 	 * @param bg
 	 *            the new background
 	 */
@@ -441,7 +436,7 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 
 	/**
 	 * Sets the calendar property. This is a bound property.
-	 * 
+	 *
 	 * @param c
 	 *            the new calendar
 	 * @throws NullPointerException
@@ -454,7 +449,7 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 
 	/**
 	 * Sets the calendar attribute of the JCalendar object
-	 * 
+	 *
 	 * @param c
 	 *            the new calendar value
 	 * @param update
@@ -481,7 +476,7 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 
 	/**
 	 * Enable or disable the JCalendar.
-	 * 
+	 *
 	 * @param enabled
 	 *            the new enabled value
 	 */
@@ -497,7 +492,7 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 
 	/**
 	 * Returns true, if enabled.
-	 * 
+	 *
 	 * @return true, if enabled.
 	 */
 	public boolean isEnabled() {
@@ -506,7 +501,7 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 
 	/**
 	 * Sets the font property.
-	 * 
+	 *
 	 * @param font
 	 *            the new font
 	 */
@@ -522,7 +517,7 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 
 	/**
 	 * Sets the foreground color.
-	 * 
+	 *
 	 * @param fg
 	 *            the new foreground
 	 */
@@ -538,10 +533,10 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 
 	/**
 	 * Sets the locale property. This is a bound property.
-	 * 
+	 *
 	 * @param l
 	 *            the new locale value
-	 * 
+	 *
 	 * @see #getLocale
 	 */
 	public void setLocale(Locale l) {
@@ -559,7 +554,7 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 
 	/**
 	 * Sets the week of year visible.
-	 * 
+	 *
 	 * @param weekOfYearVisible
 	 *            true, if weeks of year shall be visible
 	 */
@@ -570,7 +565,7 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 
 	/**
 	 * Gets the visibility of the decoration background.
-	 * 
+	 *
 	 * @return true, if the decoration background is visible.
 	 */
 	public boolean isDecorationBackgroundVisible() {
@@ -579,7 +574,7 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 
 	/**
 	 * Sets the decoration background visible.
-	 * 
+	 *
 	 * @param decorationBackgroundVisible
 	 *            true, if the decoration background should be visible.
 	 */
@@ -591,7 +586,7 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 
 	/**
 	 * Gets the visibility of the decoration border.
-	 * 
+	 *
 	 * @return true, if the decoration border is visible.
 	 */
 	public boolean isDecorationBordersVisible() {
@@ -600,7 +595,7 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 
 	/**
 	 * Sets the decoration borders visible.
-	 * 
+	 *
 	 * @param decorationBordersVisible
 	 *            true, if the decoration borders should be visible.
 	 */
@@ -611,7 +606,7 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 
 	/**
 	 * Returns the color of the decoration (day names and weeks).
-	 * 
+	 *
 	 * @return the color of the decoration (day names and weeks).
 	 */
 	public Color getDecorationBackgroundColor() {
@@ -620,7 +615,7 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 
 	/**
 	 * Sets the background of days and weeks of year buttons.
-	 * 
+	 *
 	 * @param decorationBackgroundColor
 	 *            the background color
 	 */
@@ -630,7 +625,7 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 
 	/**
 	 * Returns the Sunday foreground.
-	 * 
+	 *
 	 * @return Color the Sunday foreground.
 	 */
 	public Color getSundayForeground() {
@@ -639,7 +634,7 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 
 	/**
 	 * Returns the weekday foreground.
-	 * 
+	 *
 	 * @return Color the weekday foreground.
 	 */
 	public Color getWeekdayForeground() {
@@ -648,7 +643,7 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 
 	/**
 	 * Sets the Sunday foreground.
-	 * 
+	 *
 	 * @param sundayForeground
 	 *            the sundayForeground to set
 	 */
@@ -658,7 +653,7 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 
 	/**
 	 * Sets the weekday foreground.
-	 * 
+	 *
 	 * @param weekdayForeground
 	 *            the weekdayForeground to set
 	 */
@@ -668,7 +663,7 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 
 	/**
 	 * Returns a Date object.
-	 * 
+	 *
 	 * @return a date object constructed from the calendar property.
 	 */
 	public Date getDate() {
@@ -677,7 +672,7 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 
 	/**
 	 * Sets the date. Fires the property change "date".
-	 * 
+	 *
 	 * @param date
 	 *            the new date.
 	 * @throws NullPointerException
@@ -701,7 +696,7 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 	/**
 	 * Sets a valid date range for selectable dates. If max is before min, the
 	 * default range with no limitation is set.
-	 * 
+	 *
 	 * @param min
 	 *            the minimum selectable date or null (then the minimum date is
 	 *            set to 01\01\0001)
@@ -715,7 +710,7 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 
 	/**
 	 * Gets the minimum selectable date.
-	 * 
+	 *
 	 * @return the minimum selectable date
 	 */
 	public Date getMaxSelectableDate() {
@@ -724,7 +719,7 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 
 	/**
 	 * Gets the maximum selectable date.
-	 * 
+	 *
 	 * @return the maximum selectable date
 	 */
 	public Date getMinSelectableDate() {
@@ -733,7 +728,7 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 
 	/**
 	 * Sets the maximum selectable date.
-	 * 
+	 *
 	 * @param max
 	 *            maximum selectable date
 	 */
@@ -743,7 +738,7 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 
 	/**
 	 * Sets the minimum selectable date.
-	 * 
+	 *
 	 * @param min
 	 *            minimum selectable date
 	 */
@@ -754,7 +749,7 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 	/**
 	 * Gets the maximum number of characters of a day name or 0. If 0 is
 	 * returned, dateFormatSymbols.getShortWeekdays() will be used.
-	 * 
+	 *
 	 * @return the maximum number of characters of a day name or 0.
 	 */
 	public int getMaxDayCharacters() {
@@ -766,7 +761,7 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 	 * values are 0-4. If set to 0, dateFormatSymbols.getShortWeekdays() will be
 	 * used, otherwise theses strings will be reduced to the maximum number of
 	 * characters.
-	 * 
+	 *
 	 * @param maxDayCharacters
 	 *            the maximum number of characters of a day name.
 	 */
@@ -776,7 +771,7 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 
 	/**
 	 * Sets the Today button visible.
-	 * 
+	 *
 	 * @param isTodayButtonVisible
 	 *            true, is the today button shall be visible.
 	 */
@@ -784,10 +779,10 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 		this.isTodayButtonVisible = isTodayButtonVisible;
 		relayoutSpecialButtonPanel();
 	}
-	
+
 	/**
 	 * Sets the Yesterday button visible.
-	 * 
+	 *
 	 * @param isTodayButtonVisible
 	 *            true, is the today button shall be visible.
 	 */
@@ -813,7 +808,7 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 
 	/**
 	 * Sets the Null Date button visible.
-	 * 
+	 *
 	 * @param isNullDateButtonVisible
 	 *            true, is the Null Date button shall be visible.
 	 */
@@ -922,7 +917,7 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 
 	/**
 	 * Sets the Today button text.
-	 * 
+	 *
 	 * @param todayButtonText
 	 *            the new text
 	 */
@@ -934,10 +929,10 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 		}
 		relayoutSpecialButtonPanel();
 	}
-	
+
 	/**
 	 * Sets the Yesterday button text.
-	 * 
+	 *
 	 * @param todayButtonText
 	 *            the new text
 	 */
@@ -959,13 +954,13 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 
 	/**
 	 * Sets the Null Date button text.
-	 * 
+	 *
 	 * @param nullDateButtonText
 	 *            the new text
 	 */
 	public void setNullDateButtonText(String nullDateButtonText) {
 		if (nullDateButtonText != null
-				& nullDateButtonText.trim().length() == 0) {
+				&& nullDateButtonText.trim().length() == 0) {
 			this.nullDateButtonText = null;
 		} else {
 			this.nullDateButtonText = nullDateButtonText;
@@ -973,17 +968,4 @@ public class JCalendar extends JPanel implements PropertyChangeListener, ActionL
 		relayoutSpecialButtonPanel();
 	}
 
-	@Override
-	public void actionPerformed(ActionEvent e) {
-		if (AC_WEEKUP.equals(e.getActionCommand()) || AC_WEEKDOWN.equals(e.getActionCommand())) {
-			Calendar c= Calendar.getInstance();
-			c.setTimeInMillis(calendar.getTime().getTime());
-			c.add(Calendar.DAY_OF_YEAR, AC_WEEKUP.equals(e.getActionCommand())?-7:7);
-			getDayChooser().setAlwaysFireDayProperty(false);
-			getYearChooser().setYear(c.get(Calendar.YEAR));
-			getMonthChooser().setMonth(c.get(Calendar.MONTH));
-			getDayChooser().setDay(c.get(Calendar.DAY_OF_MONTH));
-			getDayChooser().setAlwaysFireDayProperty(true);
-		}
-	}
 }

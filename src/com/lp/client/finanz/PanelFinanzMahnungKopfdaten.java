@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -77,11 +77,13 @@ public class PanelFinanzMahnungKopfdaten extends PanelBasis {
 	private MahnungDto mahnungDto = null;
 
 	private Border border1 = null;
-	private WrapperLabel wlaDatum = null;
+	private WrapperLabel wlaMahnDatum = null;
+	private WrapperLabel wlaReDatum = null;
 	private WrapperLabel wlaMahnstufe = null;
 	private WrapperLabel wlaLetztesMahndatum = null;
 	private WrapperLabel wlaLetzteMahnstufe = null;
-	private WrapperDateField wdfDatum = null;
+	private WrapperDateField wdfMahnDatum = null;
+	private WrapperDateField wdfReDatum = null;
 	private WrapperDateField wdfLetztesMahndatum = null;
 	private WrapperNumberField wnfLetzteMahnstufe = null;
 	private GridBagLayout gridBagLayout1 = null;
@@ -130,11 +132,11 @@ public class PanelFinanzMahnungKopfdaten extends PanelBasis {
 	 */
 	private void jbInit() throws Throwable {
 		border1 = BorderFactory.createEmptyBorder(10, 10, 10, 10);
-		wlaDatum = new WrapperLabel();
+		wlaMahnDatum = new WrapperLabel();
 		wlaMahnstufe = new WrapperLabel();
 		wlaLetztesMahndatum = new WrapperLabel();
 		wlaLetzteMahnstufe = new WrapperLabel();
-		wdfDatum = new WrapperDateField();
+		wdfMahnDatum = new WrapperDateField();
 		wdfLetztesMahndatum = new WrapperDateField();
 		wnfLetzteMahnstufe = new WrapperNumberField();
 		gridBagLayout1 = new GridBagLayout();
@@ -149,6 +151,8 @@ public class PanelFinanzMahnungKopfdaten extends PanelBasis {
 		wlaWaehrung2 = new WrapperLabel();
 		wnfOffenKunde = new WrapperNumberField();
 		wlaKunde = new WrapperLabel();
+		wdfReDatum = new WrapperDateField();
+		wlaReDatum = new WrapperLabel();
 
 		this.setLayout(gridBagLayout1);
 		this.setBorder(BorderFactory.createEtchedBorder());
@@ -168,9 +172,9 @@ public class PanelFinanzMahnungKopfdaten extends PanelBasis {
 		jPanelWorkingOn.setBorder(border1);
 		jPanelWorkingOn.setOpaque(true);
 		jPanelWorkingOn.setLayout(gridBagLayout3);
-		wlaDatum.setMinimumSize(new Dimension(100, Defaults.getInstance()
+		wlaMahnDatum.setMinimumSize(new Dimension(100, Defaults.getInstance()
 				.getControlHeight()));
-		wlaDatum.setPreferredSize(new Dimension(100, Defaults.getInstance()
+		wlaMahnDatum.setPreferredSize(new Dimension(100, Defaults.getInstance()
 				.getControlHeight()));
 		wlaLetztesMahndatum.setMinimumSize(new Dimension(100, Defaults
 				.getInstance().getControlHeight()));
@@ -188,7 +192,8 @@ public class PanelFinanzMahnungKopfdaten extends PanelBasis {
 		wlaZieldatum.setText(LPMain.getInstance().getTextRespectUISPr(
 				"label.faelligam"));
 
-		wlaDatum.setText(LPMain.getInstance().getTextRespectUISPr("lp.datum"));
+		wlaMahnDatum.setText(LPMain.getInstance().getTextRespectUISPr("fb.mahnung.mahndatum"));
+		wlaReDatum.setText(LPMain.getInstance().getTextRespectUISPr("fb.mahnung.redatum"));
 		wlaLetztesMahndatum.setText(LPMain.getInstance().getTextRespectUISPr(
 				"lp.letztesmahndatum"));
 		wlaMahnstufe.setText(LPMain.getInstance().getTextRespectUISPr(
@@ -196,13 +201,14 @@ public class PanelFinanzMahnungKopfdaten extends PanelBasis {
 		wlaLetzteMahnstufe.setText(LPMain.getInstance().getTextRespectUISPr(
 				"lp.letztemahnstufe"));
 		wcoMahnstufe.setMandatoryFieldDB(true);
-		wdfDatum.setMandatoryFieldDB(true);
+		wdfMahnDatum.setMandatoryFieldDB(true);
 		wnfLetzteMahnstufe.setActivatable(false);
 		wnfLetzteMahnstufe.setFractionDigits(0);
 		wdfLetztesMahndatum.setActivatable(false);
 		wnfOffen.setActivatable(false);
 		wnfOffenKunde.setActivatable(false);
 		wdfZieldatum.setActivatable(false);
+		wdfReDatum.setActivatable(false);
 
 		this.add(panelButtonAction, new GridBagConstraints(0, 0, 1, 1, 0.0,
 				0.0, GridBagConstraints.NORTHWEST, GridBagConstraints.NONE,
@@ -213,10 +219,17 @@ public class PanelFinanzMahnungKopfdaten extends PanelBasis {
 		this.add(getPanelStatusbar(), new GridBagConstraints(0, 2, 1, 1, 1.0,
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(0, 0, 0, 0), 0, 0));
-		jPanelWorkingOn.add(wlaDatum, new GridBagConstraints(0, iZeile, 1, 1,
+		jPanelWorkingOn.add(wlaReDatum, new GridBagConstraints(2,
+				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+		jPanelWorkingOn.add(wdfReDatum, new GridBagConstraints(3,
+				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+		iZeile++;
+		jPanelWorkingOn.add(wlaMahnDatum, new GridBagConstraints(0, iZeile, 1, 1,
 				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.NONE,
 				new Insets(0, 0, 0, 0), 0, 0));
-		jPanelWorkingOn.add(wdfDatum, new GridBagConstraints(1, iZeile, 1, 1,
+		jPanelWorkingOn.add(wdfMahnDatum, new GridBagConstraints(1, iZeile, 1, 1,
 				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(2, 2, 2, 2), 0, 0));
 		jPanelWorkingOn.add(wlaLetztesMahndatum, new GridBagConstraints(2,
@@ -272,12 +285,13 @@ public class PanelFinanzMahnungKopfdaten extends PanelBasis {
 
 	private void dto2Components() throws Throwable {
 		if (mahnungDto != null) {
-			wdfDatum.setDate(mahnungDto.getTMahndatum());
+			wdfMahnDatum.setDate(mahnungDto.getTMahndatum());
 			wcoMahnstufe.setKeyOfSelectedItem(mahnungDto.getMahnstufeIId());
 			RechnungDto rechnungDto = DelegateFactory.getInstance()
 					.getRechnungDelegate().rechnungFindByPrimaryKey(
 							mahnungDto.getRechnungIId());
 			wdfLetztesMahndatum.setDate(mahnungDto.getTLetztesmahndatum());
+			wdfReDatum.setTimestamp(rechnungDto.getTBelegdatum());
 			wnfLetzteMahnstufe.setInteger(mahnungDto
 					.getMahnstufeIIdLetztemahnstufe());
 
@@ -361,7 +375,7 @@ public class PanelFinanzMahnungKopfdaten extends PanelBasis {
 					.getMahnwesenDelegate().getSummeEinesKundenImMahnlauf(
 							mahnungDto.getMahnlaufIId(), kundeDto.getIId()));
 		} else {
-			wdfDatum.setDate(null);
+			wdfMahnDatum.setDate(null);
 			wdfZieldatum.setDate(null);
 			wnfOffen.setBigDecimal(null);
 			wnfOffenKunde.setBigDecimal(null);
@@ -370,7 +384,7 @@ public class PanelFinanzMahnungKopfdaten extends PanelBasis {
 	}
 
 	private void components2Dto() {
-		mahnungDto.setTMahndatum(wdfDatum.getDate());
+		mahnungDto.setTMahndatum(wdfMahnDatum.getDate());
 		mahnungDto.setMahnstufeIId((Integer) wcoMahnstufe
 				.getKeyOfSelectedItem());
 	}
@@ -510,6 +524,6 @@ public class PanelFinanzMahnungKopfdaten extends PanelBasis {
 	}
 
 	protected JComponent getFirstFocusableComponent() throws Exception {
-		return wdfDatum;
+		return wdfMahnDatum;
 	}
 }

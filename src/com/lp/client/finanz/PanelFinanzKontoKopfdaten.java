@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -43,10 +43,12 @@ import java.util.EventObject;
 import java.util.Map;
 import java.util.TreeMap;
 
+import javax.swing.ButtonGroup;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
-import javax.swing.border.Border;
+
+import net.miginfocom.swing.MigLayout;
 
 import com.lp.client.frame.Defaults;
 import com.lp.client.frame.ExceptionLP;
@@ -65,6 +67,7 @@ import com.lp.client.frame.component.WrapperDateField;
 import com.lp.client.frame.component.WrapperEditorField;
 import com.lp.client.frame.component.WrapperGotoButton;
 import com.lp.client.frame.component.WrapperLabel;
+import com.lp.client.frame.component.WrapperRadioButton;
 import com.lp.client.frame.component.WrapperTextField;
 import com.lp.client.frame.component.WrapperTextNumberField;
 import com.lp.client.frame.delegate.DelegateFactory;
@@ -175,8 +178,6 @@ public class PanelFinanzKontoKopfdaten extends PanelBasis {
 	private WrapperButton wbuUstKonto = new WrapperButton();
 	private WrapperTextField wtfSkontoKontoBezeichnung = new WrapperTextField();
 	private WrapperTextField wtfSkontoKontoNummer = new WrapperTextField();
-	private JPanel jPanelWorkingOn = new JPanel();
-	private GridBagLayout gridBagLayout2 = new GridBagLayout();
 	private WrapperButton wbuKontoart = new WrapperButton();
 	private WrapperLabel wlaGueltigBis = new WrapperLabel();
 	private WrapperTextNumberField wtfKontoNummer = null;
@@ -191,8 +192,6 @@ public class PanelFinanzKontoKopfdaten extends PanelBasis {
 	private WrapperDateField wdfGueltigVon = new WrapperDateField();
 	private WrapperDateField wdfGueltigBis = new WrapperDateField();
 	private WrapperLabel wlaAbstand = new WrapperLabel();
-	private Border border1;
-	private WrapperLabel wlaAbstand1 = new WrapperLabel();
 	private WrapperLabel wlaBankInfo = new WrapperLabel();
 
 	private WrapperButton wbuBilanzgruppe = new WrapperButton();
@@ -204,8 +203,6 @@ public class PanelFinanzKontoKopfdaten extends PanelBasis {
 	private WrapperComboBox wcoRechenregelUST = new WrapperComboBox();
 	private WrapperComboBox wcoRechenregelSkonto = new WrapperComboBox();
 	private WrapperComboBox wcoRechenregelBilanz = new WrapperComboBox();
-	private WrapperLabel wrapperLabel1 = new WrapperLabel();
-	private WrapperLabel wrapperLabel2 = new WrapperLabel();
 	private WrapperLabel wlaStellen = new WrapperLabel();
 	private WrapperButton wbuErgebnisgruppe = new WrapperButton();
 	private WrapperTextField wtfErgebnisgruppe = new WrapperTextField();
@@ -228,6 +225,11 @@ public class PanelFinanzKontoKopfdaten extends PanelBasis {
 
 	private WrapperTextField wtfEBGeschaeftsjahr = new WrapperTextField();
 	private WrapperTextField wtfEBTAnlegen = new WrapperTextField();
+	
+	private WrapperRadioButton wrbSteuerartUst;
+	private WrapperRadioButton wrbSteuerartVst;
+
+	private JPanel jPanelWorkingOn;
 
 	public PanelFinanzKontoKopfdaten(InternalFrame internalFrame,
 			String add2TitleI, Object key, TabbedPaneKonten tabbedPaneKonten)
@@ -276,14 +278,8 @@ public class PanelFinanzKontoKopfdaten extends PanelBasis {
 		gridBagLayoutAll = new GridBagLayout();
 		this.setLayout(gridBagLayoutAll);
 
-		// Actionpanel von Oberklasse holen und anhaengen.
-		jPanelWorkingOn = new JPanel();
 		JPanel panelButtonAction = getToolsPanel();
 
-		jPanelWorkingOn.setBorder(border1);
-		wlaAbstand1.setMinimumSize(new Dimension(130, 23));
-		wlaAbstand1.setPreferredSize(new Dimension(130, 23));
-		wlaAbstand1.setText("");
 		wdfGueltigVon.setActivatable(true);
 		wdfGueltigVon.setMandatoryField(true);
 		wtfKontoNummer = new WrapperTextNumberField();
@@ -291,11 +287,6 @@ public class PanelFinanzKontoKopfdaten extends PanelBasis {
 		wtfKontoart.setActivatable(false);
 		wtfKontoart.setMandatoryField(true);
 		wtfUVAArt.setMandatoryField(true);
-		wrapperLabel1.setMinimumSize(new Dimension(120, 23));
-		wrapperLabel1.setPreferredSize(new Dimension(120, 23));
-		wrapperLabel1.setText("");
-		wrapperLabel2.setMinimumSize(new Dimension(100, 23));
-		wrapperLabel2.setPreferredSize(new Dimension(100, 23));
 		wtfUstKontoNummer.setMandatoryField(false);
 		// ... bis hier ist's immer gleich
 		// wegen dialogFLR
@@ -367,7 +358,6 @@ public class PanelFinanzKontoKopfdaten extends PanelBasis {
 		wbuUstKonto.setActionCommand(ACTION_SPECIAL_USTKONTO);
 		wtfSkontoKontoBezeichnung.setActivatable(false);
 		wtfSkontoKontoNummer.setActivatable(false);
-		jPanelWorkingOn.setLayout(gridBagLayout2);
 		wbuKontoart.setText(LPMain.getInstance().getTextRespectUISPr(
 				"button.kontoart"));
 		wbuKontoart.setToolTipText(LPMain.getInstance().getTextRespectUISPr(
@@ -432,9 +422,30 @@ public class PanelFinanzKontoKopfdaten extends PanelBasis {
 		wcoWaehrung.addActionListener(this);
 		wcoWaehrung.setActionCommand(ACTION_SPECIAL_WAEHRUNGDRUCK);
 
+		wrbSteuerartUst = new WrapperRadioButton(LPMain.getTextRespectUISPr("fb.label.ust"));
+		wrbSteuerartVst = new WrapperRadioButton(LPMain.getTextRespectUISPr("fb.label.vst"));
+		
+		wtfSteuerkategorie.setActivatable(false);
+		wtfSteuerkategorieReverse.setActivatable(false);
+		
+		ButtonGroup steuerart = new ButtonGroup();
+		steuerart.add(wrbSteuerartUst);
+		steuerart.add(wrbSteuerartVst);
+		
 		wtfEBGeschaeftsjahr.setActivatable(false);
 		wtfEBTAnlegen.setActivatable(false);
+		if (getTabbedPaneKonten().getKontotyp().equals(
+				FinanzServiceFac.KONTOTYP_DEBITOR)) {
+			wbuPartner = new WrapperGotoButton(
+					WrapperGotoButton.GOTO_KUNDE_AUSWAHL);
 
+		} else if (getTabbedPaneKonten().getKontotyp().equals(
+				FinanzServiceFac.KONTOTYP_KREDITOR)) {
+			wbuPartner = new WrapperGotoButton(
+					WrapperGotoButton.GOTO_LIEFERANT_AUSWAHL);
+		}
+
+		jPanelWorkingOn = new JPanel(new MigLayout("wrap 4, hidemode 3", "[25%,fill|25%,fill|30%,fill|20%,fill]"));
 		this.add(panelButtonAction, new GridBagConstraints(0, 0, 1, 1, 0.0,
 				0.0, GridBagConstraints.NORTHWEST, GridBagConstraints.NONE,
 				new Insets(0, 0, 0, 0), 0, 0));
@@ -445,262 +456,97 @@ public class PanelFinanzKontoKopfdaten extends PanelBasis {
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(0, 0, 0, 0), 0, 0)); // sonstige
 
-		jPanelWorkingOn.add(wlaKontoNummer, new GridBagConstraints(0, iZeile,
-				1, 1, 1.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-
-		jPanelWorkingOn.add(wtfKontoNummer, new GridBagConstraints(1, iZeile,
-				1, 1, 3.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-
-		jPanelWorkingOn.add(wlaStellen, new GridBagConstraints(2, iZeile, 1, 1,
-				2.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-
-		jPanelWorkingOn.add(wtfEBGeschaeftsjahr, new GridBagConstraints(3,
-				iZeile, 1, 1, 2.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-
-		// jPanelWorkingOn.add(wtfEBTAnlegen, new GridBagConstraints(4, iZeile,
-		// 1, 1,
-		// 2.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-		// new Insets(2, 2, 2, 2), 0, 0));
-
-		iZeile++;
-		jPanelWorkingOn.add(wlaKontoBezeichnung, new GridBagConstraints(0,
-				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 30), 0, 0));
-
-		if (getTabbedPaneKonten().getKontotyp().equals(
-				FinanzServiceFac.KONTOTYP_DEBITOR)) {
-			wbuPartner = new WrapperGotoButton(
-					WrapperGotoButton.GOTO_KUNDE_AUSWAHL);
-			jPanelWorkingOn.add(wlaKontoBezeichnung, new GridBagConstraints(0,
-					iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-					GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 30), 0,
-					0));
-			jPanelWorkingOn.add(wbuPartner.getWrapperButtonGoTo(),
-					new GridBagConstraints(0, iZeile, 1, 1, 1.0, 0.0,
-							GridBagConstraints.EAST, GridBagConstraints.NONE,
-							new Insets(2, 2, 2, 2), 15, 0));
-
-		} else if (getTabbedPaneKonten().getKontotyp().equals(
-				FinanzServiceFac.KONTOTYP_KREDITOR)) {
-			wbuPartner = new WrapperGotoButton(
-					WrapperGotoButton.GOTO_LIEFERANT_AUSWAHL);
-			jPanelWorkingOn.add(wlaKontoBezeichnung, new GridBagConstraints(0,
-					iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-					GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 30), 0,
-					0));
-			jPanelWorkingOn.add(wbuPartner.getWrapperButtonGoTo(),
-					new GridBagConstraints(0, iZeile, 1, 1, 1.0, 0.0,
-							GridBagConstraints.EAST, GridBagConstraints.NONE,
-							new Insets(2, 2, 2, 2), 15, 0));
+		jPanelWorkingOn.add(wlaKontoNummer);
+		jPanelWorkingOn.add(wtfKontoNummer);
+		jPanelWorkingOn.add(wlaStellen);
+		jPanelWorkingOn.add(wtfEBGeschaeftsjahr);
+		
+		if(wbuPartner == null) {
+			jPanelWorkingOn.add(wlaKontoBezeichnung);
 		} else {
-			jPanelWorkingOn.add(wlaKontoBezeichnung,
-					new GridBagConstraints(0, iZeile, 1, 1, 0.0, 0.0,
-							GridBagConstraints.CENTER,
-							GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2,
-									2), 0, 0));
+			jPanelWorkingOn.add(wlaKontoBezeichnung, "split 2, grow");
+			jPanelWorkingOn.add(wbuPartner.getWrapperButtonGoTo(), "grow 10");
 		}
+		jPanelWorkingOn.add(wtfKontoBezeichnung, "span 2");
+		jPanelWorkingOn.add(wlaBankInfo, "wrap");
+		
+		jPanelWorkingOn.add(wbuKontoart);
+		jPanelWorkingOn.add(wtfKontoart, "span");
 
-		jPanelWorkingOn.add(wtfKontoBezeichnung, new GridBagConstraints(1,
-				iZeile, 2, 1, 0.0, 0.0, GridBagConstraints.NORTHEAST,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wlaBankInfo, new GridBagConstraints(3, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.NORTHEAST,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jPanelWorkingOn.add(wbuKostenstelle);
+		jPanelWorkingOn.add(wtfKostenstelleNummer);
+		jPanelWorkingOn.add(wtfKostenstelleBezeichnung, "span");
+		
+		jPanelWorkingOn.add(wbuUstKonto);
+		jPanelWorkingOn.add(wtfUstKontoNummer);
+		jPanelWorkingOn.add(wtfUstKontoBezeichnung);
+		jPanelWorkingOn.add(wcoRechenregelUST);
+		
+		jPanelWorkingOn.add(wbuSkontoKonto);
+		jPanelWorkingOn.add(wtfSkontoKontoNummer);
+		jPanelWorkingOn.add(wtfSkontoKontoBezeichnung);
+		jPanelWorkingOn.add(wcoRechenregelSkonto);
 
-		iZeile++;
+		jPanelWorkingOn.add(wbuErgebnisgruppe);
+		jPanelWorkingOn.add(wtfErgebnisgruppe, "span");
+		
+		jPanelWorkingOn.add(wbuBilanzgruppe);
+		jPanelWorkingOn.add(wtfBilanzgruppe);
+		jPanelWorkingOn.add(wbuBilanzgruppeNegativ);
+		jPanelWorkingOn.add(wtfBilanzgruppeNegativ);
 
-		jPanelWorkingOn.add(wbuKontoart, new GridBagConstraints(0, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-
-		jPanelWorkingOn.add(wtfKontoart, new GridBagConstraints(1, iZeile, 3,
-				1, 0.1, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		iZeile++;
-
-		jPanelWorkingOn.add(wbuKostenstelle, new GridBagConstraints(0, iZeile,
-				1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wtfKostenstelleNummer, new GridBagConstraints(1,
-				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wtfKostenstelleBezeichnung, new GridBagConstraints(
-				2, iZeile, 2, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		iZeile++;
-		jPanelWorkingOn.add(wbuUstKonto, new GridBagConstraints(0, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wtfUstKontoNummer, new GridBagConstraints(1,
-				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wtfUstKontoBezeichnung, new GridBagConstraints(2,
-				iZeile, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wcoRechenregelUST, new GridBagConstraints(3,
-				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		iZeile++;
-		jPanelWorkingOn.add(wbuSkontoKonto, new GridBagConstraints(0, iZeile,
-				1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wtfSkontoKontoNummer, new GridBagConstraints(1,
-				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wtfSkontoKontoBezeichnung, new GridBagConstraints(
-				2, iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wcoRechenregelSkonto, new GridBagConstraints(3,
-				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		iZeile++;
-
-		jPanelWorkingOn.add(wbuErgebnisgruppe, new GridBagConstraints(0,
-				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wtfErgebnisgruppe, new GridBagConstraints(1,
-				iZeile, 3, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		iZeile++;
-		jPanelWorkingOn.add(wbuBilanzgruppe, new GridBagConstraints(0, iZeile,
-				1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wtfBilanzgruppe, new GridBagConstraints(1, iZeile,
-				1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-
-		jPanelWorkingOn.add(wbuBilanzgruppeNegativ, new GridBagConstraints(2,
-				iZeile, 1, 1, 2.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-
-		jPanelWorkingOn.add(wtfBilanzgruppeNegativ, new GridBagConstraints(3,
-				iZeile, 1, 1, 2.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-
-		iZeile++;
 		KontoDto kontoDto = getTabbedPaneKonten().getKontoDto();
-		if (kontoDto != null) {
-			if (kontoDto.getKontotypCNr().equals(
+		if (kontoDto != null && (kontoDto.getKontotypCNr().equals(
 					FinanzServiceFac.KONTOTYP_DEBITOR)
 					|| kontoDto.getKontotypCNr().equals(
-							FinanzServiceFac.KONTOTYP_KREDITOR)) {
+							FinanzServiceFac.KONTOTYP_KREDITOR))) {
+			wlaUIDNr.setHorizontalAlignment(SwingConstants.LEFT);
 
-				wlaUIDNr.setHorizontalAlignment(SwingConstants.LEFT);
+			jPanelWorkingOn.add(wlaPlzOrt);
+			jPanelWorkingOn.add(wlaUIDNr);
 
-				jPanelWorkingOn.add(wlaPlzOrt, new GridBagConstraints(0,
-						iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-						GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-				jPanelWorkingOn
-						.add(wlaUIDNr, new GridBagConstraints(1, iZeile, 1, 1,
-								0.0, 0.0, GridBagConstraints.CENTER,
-								GridBagConstraints.BOTH,
-								new Insets(2, 2, 2, 2), 70, 0));
-
-				wcbReverseCharge.setText(LPMain.getInstance()
-						.getTextRespectUISPr("lp.reversecharge"));
-				wcbReverseCharge.setActivatable(false);
-				jPanelWorkingOn.add(wcbReverseCharge, new GridBagConstraints(2,
-						iZeile, 2, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-						GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-				iZeile++;
-			}
+			wcbReverseCharge.setText(LPMain.getInstance()
+					.getTextRespectUISPr("lp.reversecharge"));
+			wcbReverseCharge.setActivatable(false);
+			jPanelWorkingOn.add(wcbReverseCharge, "span");
 		}
 
-		jPanelWorkingOn.add(wbuFinanzamt, new GridBagConstraints(0, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wtfFinanzamt, new GridBagConstraints(1, iZeile, 3,
-				1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+		jPanelWorkingOn.add(wbuFinanzamt);
+		jPanelWorkingOn.add(wtfFinanzamt, "span");
 
-		iZeile++;
-		jPanelWorkingOn.add(wbuUVAArt, new GridBagConstraints(0, iZeile, 1, 1,
-				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wtfUVAArt, new GridBagConstraints(1, iZeile, 3, 1,
-				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
+		jPanelWorkingOn.add(wbuUVAArt);
+		jPanelWorkingOn.add(wtfUVAArt, "span");
 
-		jPanelWorkingOn.add(wbuSteuerkategorie, new GridBagConstraints(0,
-				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wtfSteuerkategorie, new GridBagConstraints(1,
-				iZeile, 3, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		iZeile++;
-		jPanelWorkingOn.add(wbuSteuerkategorieReverse, new GridBagConstraints(
-				0, iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wtfSteuerkategorieReverse, new GridBagConstraints(
-				1, iZeile, 3, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		iZeile++;
-		jPanelWorkingOn.add(wlaGueltigVon, new GridBagConstraints(0, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wdfGueltigVon, new GridBagConstraints(1, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wcbAutomatikEroeffnung, new GridBagConstraints(2,
-				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.WEST,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wcbohneUst, new GridBagConstraints(3, iZeile, 1, 1,
-				0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
+		jPanelWorkingOn.add(wbuSteuerkategorie);
+		jPanelWorkingOn.add(wtfSteuerkategorie, "span, split");
+		
+//		jPanelWorkingOn.add(wlaBesteuerung, "skip, split");
+		jPanelWorkingOn.add(wrbSteuerartVst);
+		jPanelWorkingOn.add(wrbSteuerartUst, "wrap");
+		
+		jPanelWorkingOn.add(wbuSteuerkategorieReverse, "newline");
+		jPanelWorkingOn.add(wtfSteuerkategorieReverse, "span");
 
-		iZeile++;
-		jPanelWorkingOn.add(wlaGueltigBis, new GridBagConstraints(0, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.NORTH,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wdfGueltigBis, new GridBagConstraints(1, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.NORTH,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		
+		jPanelWorkingOn.add(wlaGueltigVon, "newline");
+		jPanelWorkingOn.add(wdfGueltigVon);
+		jPanelWorkingOn.add(wcbAutomatikEroeffnung);
+		jPanelWorkingOn.add(wcbohneUst);
 
-		jPanelWorkingOn.add(wcbAllgemeinSichtbar, new GridBagConstraints(2,
-				iZeile, 2, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		iZeile++;
-		jPanelWorkingOn.add(wlaSortierung, new GridBagConstraints(0, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.NORTH,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wcoSortierung, new GridBagConstraints(1, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.NORTH,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wcbManuellbebuchbar, new GridBagConstraints(2,
-				iZeile, 2, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wlaAbstand1, new GridBagConstraints(0, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.NONE, new Insets(0, 0, 0, 0), 0, 0));
+		jPanelWorkingOn.add(wlaGueltigBis, "newline");
+		jPanelWorkingOn.add(wdfGueltigBis);
+		jPanelWorkingOn.add(wcbAllgemeinSichtbar, "span");
+		
+		jPanelWorkingOn.add(wlaSortierung);
+		jPanelWorkingOn.add(wcoSortierung);
+		jPanelWorkingOn.add(wcbManuellbebuchbar, "span");
 
-		jPanelWorkingOn.add(wrapperLabel1, new GridBagConstraints(1, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.NONE, new Insets(0, 0, 0, 0), 0, 0));
-		jPanelWorkingOn.add(wrapperLabel2, new GridBagConstraints(3, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.NONE, new Insets(0, 0, 0, 0), 0, 0));
-		iZeile++;
-		jPanelWorkingOn.add(wlaWaehrung, new GridBagConstraints(0, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wcoWaehrung, new GridBagConstraints(1, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wcbVersteckt, new GridBagConstraints(2, iZeile, 2,
-				1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+		jPanelWorkingOn.add(wlaWaehrung);
+		jPanelWorkingOn.add(wcoWaehrung);
+		jPanelWorkingOn.add(wcbVersteckt, "span, wrap");
 
-		iZeile++;
-		jPanelWorkingOn.add(wlaBemerkung, new GridBagConstraints(0, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.NORTH,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wefBemerkung, new GridBagConstraints(1, iZeile, 3,
-				1, 1, 1, GridBagConstraints.NORTH, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
+		jPanelWorkingOn.add(wlaBemerkung, "top");
+		jPanelWorkingOn.add(wefBemerkung, "span, pushy");
 
 	}
 
@@ -846,9 +692,18 @@ public class PanelFinanzKontoKopfdaten extends PanelBasis {
 	private void dto2ComponentsSteuerkategorie() throws Throwable {
 		if (steuerkategorieDto != null) {
 			wtfSteuerkategorie.setText(steuerkategorieDto.getCBez());
+			boolean showSteuerart = FinanzServiceFac.KONTOTYP_SACHKONTO
+					.equals(getTabbedPaneKonten().getKontoDto().getKontotypCNr());
+			setVisibleBesteuerung(showSteuerart);
 		} else {
 			wtfSteuerkategorie.setText(null);
+			setVisibleBesteuerung(false);
 		}
+	}
+	
+	private void setVisibleBesteuerung(boolean visible) {
+		wrbSteuerartUst.setVisible(visible);
+		wrbSteuerartVst.setVisible(visible);
 	}
 
 	private void dto2ComponentsSteuerkategorieReverse() throws Throwable {
@@ -932,7 +787,7 @@ public class PanelFinanzKontoKopfdaten extends PanelBasis {
 						.getKontoDto().getFinanzamtIId() != null)
 						|| (finanzamtDto != null && getTabbedPaneKonten()
 								.getKontoDto().getFinanzamtIId() == null)
-						|| (finanzamtDto.getPartnerIId().compareTo(
+						|| (finanzamtDto != null && finanzamtDto.getPartnerIId().compareTo(
 								getTabbedPaneKonten().getKontoDto()
 										.getFinanzamtIId()) != 0);
 				if (finanzamtGeaendert) {
@@ -957,7 +812,7 @@ public class PanelFinanzKontoKopfdaten extends PanelBasis {
 							.getKontoDto().getSteuerkategorieIId() != null)
 							|| (steuerkategorieDto != null && getTabbedPaneKonten()
 									.getKontoDto().getSteuerkategorieIId() == null)
-							|| (steuerkategorieDto.getIId().compareTo(
+							|| (steuerkategorieDto != null && steuerkategorieDto.getIId().compareTo(
 									getTabbedPaneKonten().getKontoDto()
 											.getSteuerkategorieIId()) != 0);
 
@@ -968,7 +823,7 @@ public class PanelFinanzKontoKopfdaten extends PanelBasis {
 							|| (steuerkategorieReverseDto != null && getTabbedPaneKonten()
 									.getKontoDto()
 									.getSteuerkategorieIIdReverse() == null)
-							|| (steuerkategorieReverseDto.getIId().compareTo(
+							|| (steuerkategorieReverseDto != null && steuerkategorieReverseDto.getIId().compareTo(
 									getTabbedPaneKonten().getKontoDto()
 											.getSteuerkategorieIIdReverse()) != 0);
 					steuerkategorieReverseGeaendert = getTabbedPaneKonten()
@@ -1088,8 +943,10 @@ public class PanelFinanzKontoKopfdaten extends PanelBasis {
 			kontoDto.setSteuerkategorieIIdReverse(null);
 		}
 		if (steuerkategorieDto != null) {
+			kontoDto.setcSteuerart(wrbSteuerartUst.isVisible() ? (wrbSteuerartUst.isSelected() ? FinanzServiceFac.STEUERART_UST : FinanzServiceFac.STEUERART_VST) : null);
 			kontoDto.setSteuerkategorieIId(steuerkategorieDto.getIId());
 		} else {
+			kontoDto.setcSteuerart(null);
 			kontoDto.setSteuerkategorieIId(null);
 		}
 		kontoDto.setRechenregelCNrWeiterfuehrendBilanz((String) wcoRechenregelBilanz
@@ -1440,7 +1297,7 @@ public class PanelFinanzKontoKopfdaten extends PanelBasis {
 
 	void dialogQuerySteuerkategorie(ActionEvent e, boolean reverseCharge)
 			throws Throwable {
-		String[] aWhichButtonIUse = { PanelBasis.ACTION_REFRESH, };
+		String[] aWhichButtonIUse = { PanelBasis.ACTION_REFRESH,  PanelBasis.ACTION_LEEREN};
 		QueryType[] qt = null;
 
 		FilterKriterium[] fkneu = new FilterKriterium[2];
@@ -1495,15 +1352,8 @@ public class PanelFinanzKontoKopfdaten extends PanelBasis {
 		FilterKriterium[] filters = FinanzFilterFactory.getInstance()
 				.createFKErgebnisgruppe(bBilanzgruppe);
 
-		String title = null;
-
-		if (bBilanzgruppe = true) {
-			title = LPMain.getInstance().getTextRespectUISPr(
-					"finanz.liste.bilanzgruppen");
-		} else {
-			title = LPMain.getInstance().getTextRespectUISPr(
-					"finanz.liste.ergebnisgruppen");
-		}
+		String title = LPMain.getInstance().getTextRespectUISPr(
+				bBilanzgruppe ? "finanz.liste.bilanzgruppen" : "finanz.liste.ergebnisgruppen");
 
 		panelQueryFLRErgebnisgruppe = new PanelQueryFLR(qt, filters,
 				QueryParameters.UC_ID_ERGEBNISGRUPPE, aWhichButtonIUse,
@@ -1697,6 +1547,9 @@ public class PanelFinanzKontoKopfdaten extends PanelBasis {
 			} else if (e.getSource() == panelQueryFLRErgebnisgruppe) {
 				ergebnisgruppeDto = null;
 				dto2ComponentsErgebnisgruppe();
+			} else if (e.getSource() == panelQueryFLRSteuerkategorie) {
+				steuerkategorieDto = null;
+				dto2ComponentsSteuerkategorie();
 			}
 		}
 	}
@@ -1833,6 +1686,10 @@ public class PanelFinanzKontoKopfdaten extends PanelBasis {
 			}
 			dto2ComponentsKostenstelle();
 
+			boolean isUst = FinanzServiceFac.STEUERART_UST.equals(getTabbedPaneKonten().getKontoDto().getcSteuerart());
+			if(isUst) wrbSteuerartUst.setSelected(true);
+			else wrbSteuerartVst.setSelected(true);
+			
 			if (kontoDto.getKontotypCNr().equals(
 					FinanzServiceFac.KONTOTYP_DEBITOR)) {
 				KundeDto kundeDto[] = DelegateFactory.getInstance()
@@ -2039,6 +1896,7 @@ public class PanelFinanzKontoKopfdaten extends PanelBasis {
 			wcoRechenregelUST.setKeyOfSelectedItem(kontoDto
 					.getRechenregelCNrWeiterfuehrendUst());
 			setStatusbarModification(kontoDto);
+			
 
 			if (kontoDto.getKontotypCNr().equals(
 					FinanzServiceFac.KONTOTYP_DEBITOR)
@@ -2067,11 +1925,10 @@ public class PanelFinanzKontoKopfdaten extends PanelBasis {
 				wtfBilanzgruppe.setVisible(false);
 
 				wbuBilanzgruppeNegativ.setVisible(false);
-				wbuBilanzgruppeNegativ.setVisible(false);
+				wtfBilanzgruppeNegativ.setVisible(false);
 
 				wtfErgebnisgruppe.setVisible(false);
 				wtfSteuerkategorie.setMandatoryField(true);
-				wbuSteuerkategorieReverse.setVisible(true);
 				wtfSteuerkategorieReverse.setMandatoryField(true);
 				wtfSteuerkategorieReverse.setVisible(true);
 				wtfUVAArt.setMandatoryField(false);
@@ -2080,9 +1937,7 @@ public class PanelFinanzKontoKopfdaten extends PanelBasis {
 				wbuKontoart.setVisible(false);
 				wcbohneUst.setVisible(false);
 			} else {
-				wbuSteuerkategorie.setVisible(false);
 				wbuSteuerkategorieReverse.setVisible(false);
-				wtfSteuerkategorie.setVisible(false);
 				wtfSteuerkategorieReverse.setVisible(false);
 				wtfKontoart.setVisible(true);
 				wtfKontoart.setMandatoryField(true);

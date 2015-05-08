@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -34,18 +34,17 @@ package com.lp.client.partner;
 
 import java.awt.HeadlessException;
 import java.awt.event.ActionEvent;
-import java.awt.event.KeyEvent;
+import java.awt.event.InputEvent;
 import java.io.File;
 import java.io.FileReader;
 import java.util.ArrayList;
 
-import javax.swing.JFileChooser;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JSeparator;
+import javax.swing.KeyStroke;
 import javax.swing.event.ChangeEvent;
-import javax.swing.filechooser.FileFilter;
 
 import com.lp.client.frame.ExceptionLP;
 import com.lp.client.frame.HelperClient;
@@ -54,6 +53,7 @@ import com.lp.client.frame.component.DialogQuery;
 import com.lp.client.frame.component.ISourceEvent;
 import com.lp.client.frame.component.InternalFrame;
 import com.lp.client.frame.component.ItemChangedEvent;
+import com.lp.client.frame.component.ItemChangedEventDrop;
 import com.lp.client.frame.component.PanelBasis;
 import com.lp.client.frame.component.PanelDialogKriterien;
 import com.lp.client.frame.component.PanelQuery;
@@ -64,19 +64,16 @@ import com.lp.client.frame.component.PanelTabelle;
 import com.lp.client.frame.component.TabbedPane;
 import com.lp.client.frame.component.WrapperMenu;
 import com.lp.client.frame.component.WrapperMenuBar;
-import com.lp.util.csv.LPCSVReader;
 import com.lp.client.frame.delegate.DelegateFactory;
-import com.lp.client.frame.delegate.LieferantDelegate;
 import com.lp.client.frame.dialog.DialogFactory;
-import com.lp.client.frame.dokumentablage.PanelBelegartdokument;
+import com.lp.client.media.DropPanelSplit;
 import com.lp.client.pc.LPMain;
-import com.lp.client.system.SystemFilterFactory;
 import com.lp.client.util.fastlanereader.gui.QueryType;
 import com.lp.server.benutzer.service.RechteFac;
+import com.lp.server.media.service.MediaEmailMetaDto;
 import com.lp.server.partner.fastlanereader.generated.service.FLRLFLiefergruppePK;
 import com.lp.server.partner.service.LieferantDto;
 import com.lp.server.partner.service.PartnerDto;
-import com.lp.server.system.jms.service.LPMessage;
 import com.lp.server.system.service.LocaleFac;
 import com.lp.server.system.service.MandantFac;
 import com.lp.server.system.service.ParameterFac;
@@ -84,6 +81,7 @@ import com.lp.server.system.service.ParametermandantDto;
 import com.lp.server.util.fastlanereader.service.query.FilterKriterium;
 import com.lp.server.util.fastlanereader.service.query.QueryParameters;
 import com.lp.util.EJBExceptionLP;
+import com.lp.util.csv.LPCSVReader;
 
 @SuppressWarnings("static-access")
 /*
@@ -117,6 +115,7 @@ public class TabbedPaneLieferant extends TabbedPane {
 	// public static final int IDX_PANE_UMSATZSTATISTIK_QP6 = 5;
 	// ich bin immer der letzte!
 	public static int IDX_PANE_MONATSATATISTIK_PT_LAST = -1;
+	public static int IDX_PANE_KOMMENTAR = -1;
 
 	private String rechtModulweit = null;
 
@@ -156,7 +155,7 @@ public class TabbedPaneLieferant extends TabbedPane {
 	private PanelLieferantLiefergruppe panelLiefergruppeBottomD6 = null;
 
 	private PanelQuery panelQueryKurzbrief = null;
-	private PanelBasis panelDetailKurzbrief = null;
+	private PanelPartnerKurzbrief panelDetailKurzbrief = null;
 	private PanelSplit panelSplitKurzbrief = null;
 
 	private PanelQuery panelBankTopQP = null;
@@ -167,9 +166,15 @@ public class TabbedPaneLieferant extends TabbedPane {
 	private PanelBasis panelDetailLieferantbeurteilung = null;
 	private PanelSplit panelSplitLieferantbeurteilung = null;
 
+	private PanelQuery panelKommentarTopQP = null;
+	private PanelKundeLieferantKommentar panelKommentarBottomD = null;
+	private PanelSplit panelKommentarSP = null;
+
 	private static final String ACTION_SPECIAL_SCAN = "action_special_scan";
 	private final String BUTTON_SCAN = PanelBasis.ACTION_MY_OWN_NEW
 			+ ACTION_SPECIAL_SCAN;
+	private static final String ACTION_SPECIAL_NEW_EMAIL = "action_special_"
+			+ PanelBasis.ALWAYSENABLED + "new_email_entry";
 
 	public TabbedPaneLieferant(InternalFrame internalFrameI) throws Throwable {
 
@@ -267,6 +272,12 @@ public class TabbedPaneLieferant extends TabbedPane {
 				null, null,
 				LPMain.getInstance().getTextRespectUISPr("lp.beurteilung"),
 				IDX_PANE_LIEFERANTBEURTEILUNG);
+		tabIndex++;
+		IDX_PANE_KOMMENTAR = tabIndex;
+		insertTab(LPMain.getInstance().getTextRespectUISPr("part.kommentar"),
+				null, null,
+				LPMain.getInstance().getTextRespectUISPr("part.kommentar"),
+				IDX_PANE_KOMMENTAR);
 		// 6 tab oben; Statistik
 		/** kommt bald ;-) */
 		// insertTab(
@@ -301,6 +312,36 @@ public class TabbedPaneLieferant extends TabbedPane {
 				LPMain.getInstance().getTextRespectUISPr("label.lieferant"));
 	}
 
+	private void refreshKommentar(Integer iIdPartnerI) throws Throwable {
+
+		if (panelKommentarTopQP == null) {
+			String[] aWhichStandardButtonIUse = { PanelBasis.ACTION_NEW };
+
+			QueryType[] querytypes = null;
+			FilterKriterium[] filters = PartnerFilterFactory.getInstance()
+					.createFKPartnerkommentar(iIdPartnerI, false);
+
+			panelKommentarTopQP = new PanelQuery(querytypes, filters,
+					QueryParameters.UC_ID_PARTNERKOMMENTAR,
+					aWhichStandardButtonIUse, getInternalFrame(), LPMain
+							.getInstance()
+							.getTextRespectUISPr("part.kommentar"), true);
+
+			panelKommentarBottomD = new PanelKundeLieferantKommentar(
+					getInternalFrame(), LPMain.getInstance()
+							.getTextRespectUISPr("part.kommentar"), null, false);
+
+			panelKommentarSP = new PanelSplit(getInternalFrame(),
+					panelKommentarBottomD, panelKommentarTopQP, 160);
+			setComponentAt(IDX_PANE_KOMMENTAR, panelKommentarSP);
+		} else {
+			// filter refreshen.
+			panelKommentarTopQP
+					.setDefaultFilter(PartnerFilterFactory.getInstance()
+							.createFKPartnerkommentar(iIdPartnerI, false));
+		}
+	}
+
 	private void refreshKurzbrief(Integer iIdPartnerI) throws Throwable {
 
 		if (panelSplitKurzbrief == null) {
@@ -310,17 +351,36 @@ public class TabbedPaneLieferant extends TabbedPane {
 					.createFKKurzbriefpartner(iIdPartnerI,
 							LocaleFac.BELEGART_LIEFERANT);
 
+			if (LPMain
+					.getInstance()
+					.getDesktop()
+					.darfAnwenderAufZusatzfunktionZugreifen(
+							MandantFac.ZUSATZFUNKTION_EMAIL_CLIENT)) {
+				aWhichStandardButtonIUse = new String[] {
+						PanelBasis.ACTION_NEW, ACTION_SPECIAL_NEW_EMAIL };
+			}
+
 			panelQueryKurzbrief = new PanelQuery(null, filters,
 					QueryParameters.UC_ID_PARTNERKURZBRIEF,
 					aWhichStandardButtonIUse, getInternalFrame(), LPMain
 							.getInstance().getTextRespectUISPr("lp.kurzbrief"),
 					true);
 
+			if (aWhichStandardButtonIUse.length > 1) {
+				panelQueryKurzbrief.createAndSaveAndShowButton(
+						"/com/lp/client/res/documentHtml.png", LPMain
+								.getInstance()
+								.getTextRespectUISPr("lp.newHtml"),
+						ACTION_SPECIAL_NEW_EMAIL, KeyStroke.getKeyStroke('N',
+								InputEvent.CTRL_MASK + InputEvent.SHIFT_MASK),
+						null);
+			}
+
 			panelDetailKurzbrief = new PanelPartnerKurzbrief(
 					getInternalFrame(), LPMain.getInstance()
 							.getTextRespectUISPr("lp.kurzbrief"), null);
 
-			panelSplitKurzbrief = new PanelSplit(getInternalFrame(),
+			panelSplitKurzbrief = new DropPanelSplit(getInternalFrame(),
 					panelDetailKurzbrief, panelQueryKurzbrief, 150);
 
 			setComponentAt(IDX_PANE_KURZBRIEF, panelSplitKurzbrief);
@@ -449,7 +509,7 @@ public class TabbedPaneLieferant extends TabbedPane {
 								.showModalJaNeinDialog(
 										getInternalFrame(),
 										"Keine Fehler in der Import-Datei vorhanden. Wollen Sie die Daten nun importieren?");
-						
+
 						if (b == true) {
 							DelegateFactory
 									.getInstance()
@@ -522,16 +582,18 @@ public class TabbedPaneLieferant extends TabbedPane {
 					.getInstance().createFKLieferantMandantPartner(),
 					QueryParameters.UC_ID_LIEFERANTEN, aWhichButtonIUse,
 					getInternalFrame(), LPMain.getInstance()
-							.getTextRespectUISPr("lp.auswahl"), true); // refqp:
-																		// 1
-																		// hier
-																		// auf
-																		// refresh
-																		// when
-																		// you
-																		// are
-																		// selected
-																		// stellen
+							.getTextRespectUISPr("lp.auswahl"), true,
+					PartnerFilterFactory.getInstance().createFKVLieferant(),
+					null); // refqp:
+							// 1
+							// hier
+							// auf
+							// refresh
+							// when
+							// you
+							// are
+							// selected
+							// stellen
 
 			// Hier den zusaetzlichen Button aufs Panel bringen
 			panelLieferantenQP1.createAndSaveAndShowButton(
@@ -540,14 +602,11 @@ public class TabbedPaneLieferant extends TabbedPane {
 							"part.tooltip.new_lieferant_from_partner"),
 					PanelBasis.ACTION_MY_OWN_NEW + EXTRA_NEU_AUS_PARTNER, null);
 
-			panelLieferantenQP1
-					.befuellePanelFilterkriterienDirektUndVersteckte(
-							PartnerFilterFactory.getInstance()
-									.createFKDLieferantPartnerName(),
-							PartnerFilterFactory.getInstance()
-									.createFKDLieferantPartnerOrt(),
-							PartnerFilterFactory.getInstance()
-									.createFKVLieferant());
+			panelLieferantenQP1.befuellePanelFilterkriterienDirekt(
+					PartnerFilterFactory.getInstance()
+							.createFKDLieferantPartnerName(),
+					PartnerFilterFactory.getInstance()
+							.createFKDLieferantPartnerOrt());
 
 			panelLieferantenQP1.addDirektFilter(PartnerFilterFactory
 					.getInstance().createFKDPartnerErweiterteSuche());
@@ -669,6 +728,15 @@ public class TabbedPaneLieferant extends TabbedPane {
 
 			// im QP die Buttons setzen.
 			panelLiefergruppeTopQP6.updateButtons(panelLiefergruppeBottomD6
+					.getLockedstateDetailMainKey());
+		} else if (selectedCur == IDX_PANE_KOMMENTAR) {
+
+			refreshKommentar(getInternalFrameLieferant().getLieferantDto()
+					.getPartnerIId());
+			panelKommentarSP.eventYouAreSelected(false);
+
+			// im QP die Buttons setzen.
+			panelKommentarTopQP.updateButtons(panelKommentarBottomD
 					.getLockedstateDetailMainKey());
 		} else if (selectedCur == IDX_PANE_KURZBRIEF) {
 
@@ -836,6 +904,11 @@ public class TabbedPaneLieferant extends TabbedPane {
 				panelDetailLieferantbeurteilung.setKeyWhenDetailPanel(iId);
 				panelDetailLieferantbeurteilung.eventYouAreSelected(false);
 				panelQueryLieferantbeurteilung.updateButtons();
+			} else if (eI.getSource() == panelKommentarTopQP) {
+				Object key = panelKommentarTopQP.getSelectedId();
+				panelKommentarBottomD.setKeyWhenDetailPanel(key);
+				panelKommentarBottomD.eventYouAreSelected(false);
+				panelKommentarTopQP.updateButtons();
 			}
 		}
 
@@ -857,7 +930,7 @@ public class TabbedPaneLieferant extends TabbedPane {
 			} else if (eI.getSource() == panelDetailKurzbrief) {
 				panelQueryKurzbrief.updateButtons(new LockStateValue(
 						PanelBasis.LOCK_FOR_NEW));
-
+				panelDetailKurzbrief.beEditMode(true);
 			} else if (eI.getSource() == panelDetailLieferantbeurteilung) {
 				panelQueryLieferantbeurteilung
 						.updateButtons(new LockStateValue(
@@ -870,6 +943,10 @@ public class TabbedPaneLieferant extends TabbedPane {
 				panelLieferantenQP1.setSelectedId(iIdLieferant);
 				refreshLieferantenKopfdatenD2(iIdLieferant);
 				panelLieferantenKopfdatenD2.eventYouAreSelected(false);
+			} else if (eI.getSource() == panelKommentarBottomD) {
+				// im QP die Buttons in den Zustand neu setzen.
+				panelKommentarTopQP.updateButtons(new LockStateValue(
+						PanelBasis.LOCK_FOR_NEW));
 			}
 
 		}
@@ -891,6 +968,8 @@ public class TabbedPaneLieferant extends TabbedPane {
 				panelSplitLieferantbeurteilung.eventYouAreSelected(false);
 			} else if (eI.getSource() == panelBankBottomD) {
 				panelBankSP.eventYouAreSelected(false);
+			} else if (eI.getSource() == panelKommentarBottomD) {
+				panelKommentarSP.eventYouAreSelected(false);
 			}
 		}
 
@@ -945,6 +1024,11 @@ public class TabbedPaneLieferant extends TabbedPane {
 				panelBankTopQP.eventYouAreSelected(false);
 				panelBankTopQP.setSelectedId(oKey);
 				panelBankSP.eventYouAreSelected(false);
+			} else if (eI.getSource() == panelKommentarBottomD) {
+				Object oKey = panelKommentarBottomD.getKeyWhenDetailPanel();
+				panelKommentarTopQP.eventYouAreSelected(false);
+				panelKommentarTopQP.setSelectedId(oKey);
+				panelKommentarSP.eventYouAreSelected(false);
 			}
 
 		}
@@ -1045,6 +1129,13 @@ public class TabbedPaneLieferant extends TabbedPane {
 				refreshLieferantbeurteilung(iIdLieferant);
 				getInternalFrame().setKeyWasForLockMe(iIdLieferant + "");
 				panelSplitLieferantbeurteilung.eventYouAreSelected(false);
+			} else if (eI.getSource() == panelKommentarBottomD) {
+				// ...SP4 refreshen; zb. nach save, loeschen.
+				Object key = panelKommentarTopQP.getSelectedId();
+				refreshKommentar(getInternalFrameLieferant().getLieferantDto()
+						.getPartnerIId());
+				getInternalFrame().setKeyWasForLockMe(key + "");
+				panelKommentarSP.eventYouAreSelected(false);
 			}
 		}
 
@@ -1128,17 +1219,15 @@ public class TabbedPaneLieferant extends TabbedPane {
 			} else if (eI.getSource() == panelQueryKurzbrief) {
 				panelDetailKurzbrief.eventActionNew(eI, true, false);
 				panelDetailKurzbrief.eventYouAreSelected(false);
-				this.setSelectedComponent(panelSplitKurzbrief);
+				setSelectedComponent(panelSplitKurzbrief);
 			} else if (eI.getSource() == panelQueryLieferantbeurteilung) {
 				panelDetailLieferantbeurteilung.eventActionNew(eI, true, false);
 				panelDetailLieferantbeurteilung.eventYouAreSelected(false);
-				this.setSelectedComponent(panelSplitLieferantbeurteilung);
-			}
-
-			if (eI.getID() == ItemChangedEvent.ACTION_MY_OWN_NEW) {
-				String sAspectInfo = ((ISourceEvent) eI.getSource())
-						.getAspect();
-
+				setSelectedComponent(panelSplitLieferantbeurteilung);
+			} else if (eI.getSource() == panelKommentarTopQP) {
+				panelKommentarBottomD.eventActionNew(eI, true, false);
+				panelKommentarBottomD.eventYouAreSelected(false);
+				setSelectedComponent(panelKommentarSP);
 			}
 		} else if (eI.getID() == ItemChangedEvent.ACTION_KRITERIEN_HAVE_BEEN_SELECTED) {
 			if (eI.getSource() == getPanelDKUmsatz()) {
@@ -1253,9 +1342,35 @@ public class TabbedPaneLieferant extends TabbedPane {
 				panelLieferantAnsprechpartnerBottomD5
 						.eventYouAreSelected(false); // Buttons schalten
 			}
-
+		} else if (eI.getID() == ItemChangedEvent.ACTION_SPECIAL_BUTTON) {
+			if (eI.getSource() instanceof PanelQuery) {
+				PanelQuery pq = (PanelQuery) eI.getSource();
+				if (pq.getAspect().equals(ACTION_SPECIAL_NEW_EMAIL)) {
+					// panelDetailKurzbrief.beHtml();
+					panelDetailKurzbrief.eventActionNew(eI, true, false);
+					panelDetailKurzbrief.eventYouAreSelected(false);
+					setSelectedComponent(panelSplitKurzbrief);
+					panelDetailKurzbrief.beHtml();
+					panelDetailKurzbrief.beEditMode(true);
+				}
+			}
+		} else if (eI.getID() == ItemChangedEvent.ACTION_DROP) {
+			myLogger.info("Drop Changed on " + eI.getSource());
+			if (eI.getSource() == panelDetailKurzbrief) {
+				if (eI instanceof ItemChangedEventDrop) {
+					ItemChangedEventDrop dropEvent = (ItemChangedEventDrop) eI;
+					Integer kbId = DelegateFactory
+							.getInstance()
+							.getEmailMediaDelegate()
+							.createKurzbriefFromEmail(
+									getLieferantDto().getPartnerDto().getIId(),
+									LocaleFac.BELEGART_LIEFERANT,
+									(MediaEmailMetaDto) dropEvent.getDropData());
+					panelQueryKurzbrief.setSelectedId(kbId);
+					panelSplitKurzbrief.eventYouAreSelected(false);
+				}
+			}
 		}
-
 	}
 
 	private void refreshLieferantenKopfdatenD2(Object key) throws Throwable {

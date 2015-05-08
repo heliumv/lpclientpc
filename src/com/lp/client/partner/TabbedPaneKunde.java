@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -33,10 +33,12 @@
 package com.lp.client.partner;
 
 import java.awt.event.ActionEvent;
+import java.awt.event.InputEvent;
 
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JSeparator;
+import javax.swing.KeyStroke;
 import javax.swing.event.ChangeEvent;
 
 import com.lp.client.frame.Defaults;
@@ -47,6 +49,7 @@ import com.lp.client.frame.component.DialogQuery;
 import com.lp.client.frame.component.ISourceEvent;
 import com.lp.client.frame.component.InternalFrame;
 import com.lp.client.frame.component.ItemChangedEvent;
+import com.lp.client.frame.component.ItemChangedEventDrop;
 import com.lp.client.frame.component.PanelBasis;
 import com.lp.client.frame.component.PanelDialogKriterien;
 import com.lp.client.frame.component.PanelQuery;
@@ -60,19 +63,22 @@ import com.lp.client.frame.component.WrapperMenuItem;
 import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.frame.dialog.DialogFactory;
 import com.lp.client.frame.dynamisch.PanelDynamisch;
+import com.lp.client.media.DropPanelSplit;
 import com.lp.client.pc.LPMain;
 import com.lp.client.util.fastlanereader.gui.QueryType;
 import com.lp.server.benutzer.service.RechteFac;
+import com.lp.server.media.service.MediaEmailMetaDto;
 import com.lp.server.partner.fastlanereader.generated.service.FLRPASelektionPK;
 import com.lp.server.partner.service.KundeDto;
 import com.lp.server.partner.service.PartnerDto;
 import com.lp.server.system.service.LocaleFac;
 import com.lp.server.system.service.MandantFac;
 import com.lp.server.system.service.PanelFac;
-import com.lp.server.system.service.PanelbeschreibungDto;
 import com.lp.server.system.service.ParameterFac;
 import com.lp.server.system.service.ParametermandantDto;
+import com.lp.server.util.Facade;
 import com.lp.server.util.fastlanereader.service.query.FilterKriterium;
+import com.lp.server.util.fastlanereader.service.query.FilterKriteriumDirekt;
 import com.lp.server.util.fastlanereader.service.query.QueryParameters;
 import com.lp.util.EJBExceptionLP;
 
@@ -108,6 +114,7 @@ public class TabbedPaneKunde extends TabbedPane {
 	public static int IDX_PANEL_KUNDENEIGENSCHAFTEN = -1;
 	public static int IDX_PANEL_KONTAKT = -1;
 	public static int IDX_PANEL_SELEKTION = -1;
+	public static int IDX_PANEL_KOMMENTAR = -1;
 
 	private String rechtModulweit = null;
 
@@ -137,7 +144,7 @@ public class TabbedPaneKunde extends TabbedPane {
 	private PanelSplit panelKundesokomengenstaffelSP11 = null; // FLR 1:n Liste
 
 	private PanelQuery panelQueryKurzbrief = null;
-	private PanelBasis panelDetailKurzbrief = null;
+	private PanelPartnerKurzbrief panelDetailKurzbrief = null;
 	private PanelSplit panelSplitKurzbrief = null;
 
 	private PanelQuery panelBankTopQP = null;
@@ -154,6 +161,10 @@ public class TabbedPaneKunde extends TabbedPane {
 	private PanelPASelektionKunde panelSelektionBottomD = null;
 	private PanelSplit panelSelektionSP = null;
 
+	private PanelQuery panelKommentarTopQP = null;
+	private PanelKundeLieferantKommentar panelKommentarBottomD = null;
+	private PanelSplit panelKommentarSP = null;
+
 	// das sind die extra Neu Buttons auf den QueryPanels dieses TabbedPane
 	private final static String EXTRA_NEU_AUS_PARTNER = "neu_aus_partner";
 
@@ -169,6 +180,9 @@ public class TabbedPaneKunde extends TabbedPane {
 
 	private WrapperMenuBar menu = null;
 
+	private static final String ACTION_SPECIAL_NEW_EMAIL = "action_special_"
+			+ PanelBasis.ALWAYSENABLED + "new_email_entry";
+	
 	public TabbedPaneKunde(InternalFrame internalFrameI) throws Throwable {
 
 		super(internalFrameI, LPMain.getInstance().getTextRespectUISPr(
@@ -338,6 +352,12 @@ public class TabbedPaneKunde extends TabbedPane {
 				null, null,
 				LPMain.getInstance().getTextRespectUISPr("lp.selektion"),
 				IDX_PANEL_SELEKTION);
+		tabIndex++;
+		IDX_PANEL_KOMMENTAR = tabIndex;
+		insertTab(LPMain.getInstance().getTextRespectUISPr("part.kommentar"),
+				null, null,
+				LPMain.getInstance().getTextRespectUISPr("part.kommentar"),
+				IDX_PANEL_KOMMENTAR);
 
 		// QP1 ist default.
 		setSelectedComponent(panelKundeQP1);
@@ -587,6 +607,16 @@ public class TabbedPaneKunde extends TabbedPane {
 					.getLockedstateDetailMainKey();
 			panelSelektionTopQP.updateButtons(d);
 		}
+		else if (selectedCur == IDX_PANEL_KOMMENTAR) {
+			// gehe zu SP6
+			Integer iIdPartner = getKundeDto().getPartnerIId();
+			refreshKommentar(iIdPartner);
+			panelKommentarSP.eventYouAreSelected(false);
+			// im QP die Buttons setzen.
+			LockStateValue d = panelKommentarBottomD
+					.getLockedstateDetailMainKey();
+			panelKommentarTopQP.updateButtons(d);
+		}
 
 		else if (selectedCur == IDX_PANE_KUNDESOKO) {
 			// gehe zu SP9
@@ -785,6 +815,14 @@ public class TabbedPaneKunde extends TabbedPane {
 				refreshSachbearbeiterSP4(iIdKunde);
 				getInternalFrame().setKeyWasForLockMe(iIdKunde + "");
 				panelSachbearbeiterSP4.eventYouAreSelected(false);
+			} else if (eI.getSource() == panelKommentarBottomD) {
+				// ...SP4 refreshen; zb. nach save, loeschen.
+				Object key=  panelKommentarTopQP
+						.getSelectedId();
+				refreshKommentar(getInternalFrameKunde()
+						.getKundeDto().getPartnerIId());
+				getInternalFrame().setKeyWasForLockMe(key + "");
+				panelKommentarSP.eventYouAreSelected(false);
 			} else if (eI.getSource() == panelREadresseBottomD6) {
 				refreshKonditionenD3((Integer) panelKundeQP1.getSelectedId());
 				panelREadresseBottomD6.setKeyWhenDetailPanel(panelKundeQP1
@@ -831,10 +869,12 @@ public class TabbedPaneKunde extends TabbedPane {
 								+ "");
 				panelKundesokomengenstaffelSP11.eventYouAreSelected(false);
 			} else if (eI.getSource() == panelDetailKurzbrief) {
+				Integer kundeIId = (Integer) panelQueryKurzbrief.getSelectedId() ;
 				refreshKurzbrief(getInternalFrameKunde().getKundeDto()
 						.getPartnerIId());
-				getInternalFrame().setKeyWasForLockMe(
-						panelDetailKurzbrief.getKeyWhenDetailPanel() + "");
+//				getInternalFrame().setKeyWasForLockMe(
+//						panelDetailKurzbrief.getKeyWhenDetailPanel() + "");
+				getInternalFrame().setKeyWasForLockMe(kundeIId + "") ;
 				panelSplitKurzbrief.eventYouAreSelected(false);
 
 			} else if (eI.getSource() == panelDetailKontakt) {
@@ -871,6 +911,10 @@ public class TabbedPaneKunde extends TabbedPane {
 				// im QP die Buttons in den Zustand neu setzen.
 				panelSelektionTopQP.updateButtons(new LockStateValue(
 						PanelBasis.LOCK_FOR_NEW));
+			}  else if (eI.getSource() == panelKommentarBottomD) {
+				// im QP die Buttons in den Zustand neu setzen.
+				panelKommentarTopQP.updateButtons(new LockStateValue(
+						PanelBasis.LOCK_FOR_NEW));
 			} else if (eI.getSource() == panelKundesokomengenstaffelD11) {
 				panelKundesokomengenstaffelQP11
 						.updateButtons(new LockStateValue(
@@ -879,7 +923,7 @@ public class TabbedPaneKunde extends TabbedPane {
 			} else if (eI.getSource() == panelDetailKurzbrief) {
 				panelQueryKurzbrief.updateButtons(new LockStateValue(
 						PanelBasis.LOCK_FOR_NEW));
-				;
+				panelDetailKurzbrief.beEditMode(true);
 			} else if (eI.getSource() == panelDetailKontakt) {
 				panelQueryKontakt.updateButtons(new LockStateValue(
 						PanelBasis.LOCK_FOR_NEW));
@@ -917,6 +961,11 @@ public class TabbedPaneKunde extends TabbedPane {
 				panelSelektionTopQP.eventYouAreSelected(false);
 				panelSelektionTopQP.setSelectedId(oKey);
 				panelSelektionSP.eventYouAreSelected(false);
+			} else if (eI.getSource() == panelKommentarBottomD) {
+				Object oKey = panelKommentarBottomD.getKeyWhenDetailPanel();
+				panelKommentarTopQP.eventYouAreSelected(false);
+				panelKommentarTopQP.setSelectedId(oKey);
+				panelKommentarSP.eventYouAreSelected(false);
 			} else if (eI.getSource() == panelKundesokomengenstaffelD11) {
 				Object oKey = panelKundesokomengenstaffelD11
 						.getKeyWhenDetailPanel();
@@ -982,6 +1031,8 @@ public class TabbedPaneKunde extends TabbedPane {
 				panelSelektionSP.eventYouAreSelected(false); // refresh auf das
 				// gesamte 1:n
 				// panel
+			} else if (eI.getSource() == panelKommentarBottomD) {
+				panelKommentarSP.eventYouAreSelected(false);
 			}
 
 		}
@@ -1042,6 +1093,11 @@ public class TabbedPaneKunde extends TabbedPane {
 				panelSelektionBottomD.setKeyWhenDetailPanel(pASelektionPK);
 				panelSelektionBottomD.eventYouAreSelected(false);
 				panelSelektionTopQP.updateButtons();
+			}  else if (eI.getSource() == panelKommentarTopQP) {
+				Object key = panelKommentarTopQP.getSelectedId();
+				panelKommentarBottomD.setKeyWhenDetailPanel(key);
+				panelKommentarBottomD.eventYouAreSelected(false);
+				panelKommentarTopQP.updateButtons();
 			} else if (eI.getSource() == panelAnsprechpartnerTopQP5) {
 				getInternalFrameKunde().setKundeDto(
 						DelegateFactory
@@ -1188,6 +1244,10 @@ public class TabbedPaneKunde extends TabbedPane {
 				panelSelektionBottomD.eventActionNew(eI, true, false);
 				panelSelektionBottomD.eventYouAreSelected(false);
 				setSelectedComponent(panelSelektionSP);
+			} else if (eI.getSource() == panelKommentarTopQP) {
+				panelKommentarBottomD.eventActionNew(eI, true, false);
+				panelKommentarBottomD.eventYouAreSelected(false);
+				setSelectedComponent(panelKommentarSP);
 			} else if (eI.getSource() == panelBankTopQP) {
 				// im QP5 auf new gedrueckt.
 				// jetzt in's richtige panel mit new.
@@ -1212,11 +1272,6 @@ public class TabbedPaneKunde extends TabbedPane {
 				panelDetailKontakt.eventActionNew(eI, true, false);
 				panelDetailKontakt.eventYouAreSelected(false);
 				setSelectedComponent(panelSplitKontakt);
-			}
-			if (eI.getID() == ItemChangedEvent.ACTION_MY_OWN_NEW) {
-				String sAspectInfo = ((ISourceEvent) eI.getSource())
-						.getAspect();
-
 			}
 		}
 
@@ -1313,6 +1368,30 @@ public class TabbedPaneKunde extends TabbedPane {
 				panelAnsprechpartnerBottomD5.eventYouAreSelected(false); // Buttons
 				// schalten
 			}
+		} else if(eI.getID() == ItemChangedEvent.ACTION_SPECIAL_BUTTON) {
+			if(eI.getSource() instanceof PanelQuery) {
+				PanelQuery pq = (PanelQuery) eI.getSource() ;
+				if(pq.getAspect().equals(ACTION_SPECIAL_NEW_EMAIL)) {
+//					panelDetailKurzbrief.beHtml(); 
+					panelDetailKurzbrief.eventActionNew(eI, true, false);
+					panelDetailKurzbrief.eventYouAreSelected(false);
+					setSelectedComponent(panelSplitKurzbrief);					
+					panelDetailKurzbrief.beHtml(); 
+					panelDetailKurzbrief.beEditMode(true) ;
+				}
+			}
+		} else if(eI.getID() == ItemChangedEvent.ACTION_DROP){
+			myLogger.info("Drop Changed on " + eI.getSource()) ;
+			if(eI.getSource() == panelDetailKurzbrief) {
+				if(eI instanceof ItemChangedEventDrop) {
+					ItemChangedEventDrop dropEvent = (ItemChangedEventDrop) eI ;	
+					Integer kbId = DelegateFactory.getInstance().getEmailMediaDelegate()
+						.createKurzbriefFromEmail(getKundeDto().getPartnerDto().getIId(), LocaleFac.BELEGART_KUNDE, 
+								(MediaEmailMetaDto) dropEvent.getDropData());
+					panelQueryKurzbrief.setSelectedId(kbId); 
+					panelSplitKurzbrief.eventYouAreSelected(false);
+				}
+			}			
 		}
 	}
 
@@ -1326,17 +1405,30 @@ public class TabbedPaneKunde extends TabbedPane {
 					.createFKKurzbriefpartner(iIdPartnerI,
 							LocaleFac.BELEGART_KUNDE);
 
+			if(LPMain.getInstance().getDesktop()
+					.darfAnwenderAufZusatzfunktionZugreifen(
+							MandantFac.ZUSATZFUNKTION_EMAIL_CLIENT)) {				
+				aWhichStandardButtonIUse = new String[] { PanelBasis.ACTION_NEW, ACTION_SPECIAL_NEW_EMAIL } ;
+			}	
+					
 			panelQueryKurzbrief = new PanelQuery(querytypes, filters,
 					QueryParameters.UC_ID_PARTNERKURZBRIEF,
 					aWhichStandardButtonIUse, getInternalFrame(), LPMain
 							.getInstance().getTextRespectUISPr("lp.kurzbrief"),
 					true);
 
+			if(aWhichStandardButtonIUse.length > 1) {				
+				panelQueryKurzbrief.createAndSaveAndShowButton(
+						"/com/lp/client/res/documentHtml.png", LPMain
+						.getInstance().getTextRespectUISPr("lp.newHtml"),
+						ACTION_SPECIAL_NEW_EMAIL, KeyStroke.getKeyStroke('N', InputEvent.CTRL_MASK + InputEvent.SHIFT_MASK),  null);
+			}
+			
 			panelDetailKurzbrief = new PanelPartnerKurzbrief(
 					getInternalFrame(), LPMain.getInstance()
 							.getTextRespectUISPr("lp.kurzbrief"), null);
 
-			panelSplitKurzbrief = new PanelSplit(getInternalFrame(),
+			panelSplitKurzbrief = new DropPanelSplit(getInternalFrame(),
 					panelDetailKurzbrief, panelQueryKurzbrief, 150);
 
 			setComponentAt(IDX_PANE_KURZBRIEF, panelSplitKurzbrief);
@@ -1458,6 +1550,34 @@ public class TabbedPaneKunde extends TabbedPane {
 			// filter refreshen.
 			panelSelektionTopQP.setDefaultFilter(PartnerFilterFactory
 					.getInstance().createFKPASelektion(iIdPartnerI));
+		}
+	}
+	private void refreshKommentar(Integer iIdPartnerI) throws Throwable {
+
+		if (panelKommentarTopQP == null) {
+			String[] aWhichStandardButtonIUse = { PanelBasis.ACTION_NEW };
+
+			QueryType[] querytypes = null;
+			FilterKriterium[] filters = PartnerFilterFactory.getInstance()
+					.createFKPartnerkommentar(iIdPartnerI,true);
+
+			panelKommentarTopQP = new PanelQuery(querytypes, filters,
+					QueryParameters.UC_ID_PARTNERKOMMENTAR,
+					aWhichStandardButtonIUse, getInternalFrame(), LPMain
+							.getInstance().getTextRespectUISPr(
+									"part.kommentar"), true);
+
+			panelKommentarBottomD = new PanelKundeLieferantKommentar(
+					getInternalFrame(), LPMain.getInstance()
+							.getTextRespectUISPr("part.kommentar"), null, true);
+
+			panelKommentarSP = new PanelSplit(getInternalFrame(),
+					panelKommentarBottomD, panelKommentarTopQP, 160);
+			setComponentAt(IDX_PANEL_KOMMENTAR, panelKommentarSP);
+		} else {
+			// filter refreshen.
+			panelKommentarTopQP.setDefaultFilter(PartnerFilterFactory
+					.getInstance().createFKPartnerkommentar(iIdPartnerI,true));
 		}
 	}
 
@@ -1692,6 +1812,26 @@ public class TabbedPaneKunde extends TabbedPane {
 
 			panelKundesokoSP10 = new PanelSplit(getInternalFrame(),
 					panelKundesokoD10, panelKundesokoQP10, 140);
+			
+			
+			panelKundesokoQP10.befuellePanelFilterkriterienDirekt(
+							new FilterKriteriumDirekt("flrartikel.c_nr", "",
+									FilterKriterium.OPERATOR_LIKE, LPMain.getInstance()
+											.getTextRespectUISPr(
+													"artikel.artikelnummer"),
+									FilterKriteriumDirekt.PROZENT_TRAILING, // Auswertung
+																			// als '%XX'
+									true, // wrapWithSingleQuotes
+									true, Facade.MAX_UNBESCHRAENKT),
+									new FilterKriteriumDirekt("c_kundeartikelnummer", "",
+											FilterKriterium.OPERATOR_LIKE, LPMain.getInstance()
+													.getTextRespectUISPr(
+															"kunde.soko.kundeartikelnummer"),
+											FilterKriteriumDirekt.PROZENT_TRAILING, // Auswertung
+																					// als '%XX'
+											true, // wrapWithSingleQuotes
+											true, Facade.MAX_UNBESCHRAENKT));
+			
 
 			setComponentAt(IDX_PANE_KUNDESOKO, panelKundesokoSP10);
 		} else {

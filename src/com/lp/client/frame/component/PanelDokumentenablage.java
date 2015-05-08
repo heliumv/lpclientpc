@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -91,6 +91,7 @@ import com.lp.server.system.jcr.service.DokumentbelegartDto;
 import com.lp.server.system.jcr.service.DokumentgruppierungDto;
 import com.lp.server.system.jcr.service.JCRDocDto;
 import com.lp.server.system.jcr.service.JCRDocFac;
+import com.lp.server.system.jcr.service.JCRRepoInfo;
 import com.lp.server.system.jcr.service.docnode.DocNodeBase;
 import com.lp.server.system.jcr.service.docnode.DocNodeFile;
 import com.lp.server.system.jcr.service.docnode.DocNodeJCR;
@@ -1031,6 +1032,7 @@ public class PanelDokumentenablage extends PanelDialog implements
 			enableAllComponents(this, true);
 			tree.setEnabled(false);
 			wcbVersteckteAnzeigen.setEnabled(false);
+			wbuSaveDoc.setEnabled(false);
 		}
 
 	}
@@ -1110,8 +1112,14 @@ public class PanelDokumentenablage extends PanelDialog implements
 					components2Dto();
 					if (bNewNode) {
 						// Neuer Knoten
-						if (DelegateFactory.getInstance().getJCRDocDelegate()
-								.checkIfNodeExists(jcrDocDto.getDocPath())) {
+						JCRRepoInfo info = DelegateFactory.getInstance()
+								.getJCRDocDelegate().checkIfNodeExists(jcrDocDto.getDocPath()) ;
+						if(!info.isOnline()) {
+							throw new ExceptionLP(
+									EJBExceptionLP.FEHLER_JCR_ROOT_EXISTIERT_NICHT,
+									null);							
+						}
+						if (info.isExists()) {
 							throw new ExceptionLP(
 									EJBExceptionLP.FEHLER_JCR_KNOTEN_EXISTIERT_BEREITS,
 									null);
@@ -1266,7 +1274,7 @@ public class PanelDokumentenablage extends PanelDialog implements
 		createTempFile();
 		File newFile = lastSaveDir != null ? new File(lastSaveDir.getParentFile(), jcrDocDto.getsFilename()) :
 			new File(jcrDocDto.getsFilename());
-		newFile = HelperClient.showSaveFileDialog(file, newFile, this, null, jcrDocDto.getsMIME());
+		newFile = HelperClient.showSaveFileDialog(file, newFile, this, jcrDocDto.getsMIME());
 		if(newFile != null) lastSaveDir = newFile;
 	}
 	

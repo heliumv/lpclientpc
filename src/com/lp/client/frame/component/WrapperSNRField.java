@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -45,6 +45,10 @@ import javax.swing.text.PlainDocument;
 
 import com.lp.client.frame.Defaults;
 import com.lp.client.frame.HelperClient;
+import com.lp.client.frame.delegate.DelegateFactory;
+import com.lp.client.pc.LPMain;
+import com.lp.server.system.service.ParameterFac;
+import com.lp.server.system.service.ParametermandantDto;
 import com.lp.util.Helper;
 
 /**
@@ -80,7 +84,7 @@ public class WrapperSNRField extends JTextField implements IControl,
 
 	private CornerInfoButton cib = null;
 
-	public WrapperSNRField() {
+	public WrapperSNRField() throws Throwable {
 		HelperClient.setDefaultsToComponent(this);
 		this.setMask();
 		cib = new CornerInfoButton(this);
@@ -88,18 +92,15 @@ public class WrapperSNRField extends JTextField implements IControl,
 
 	}
 
-	protected void setMask() {
-		String sLeer = "[ ]{0,}";
-		String regEinzeln = "[A-Za-z0-9.-/_]{1,}" + sLeer;
-		String regVonBis = regEinzeln + "-" + sLeer + "(" + regEinzeln + sLeer
-				+ "){0,1}";
-		String regSNR = "(" + regEinzeln + "|" + regVonBis + ")";
-		String regExp = sLeer + "|" + regSNR + "((,{0,1})(" + regSNR
-				+ "){0,}){0,}";
-		this.regPattern = Pattern.compile(regExp);
-		// HelperClient.setDefaultsToComponent(this);
+	public void setMask() throws Throwable {
 
-		// !!! SIEHE AUC Helper.istSerienChargennummerGueltig() !!!!!!
+		this.regPattern = Pattern.compile("^[a-zA-Z_0-9\\.\\-/,]*$");
+
+	}
+
+	public void setMaskNumerisch() throws Throwable {
+		this.regPattern = Pattern.compile("^[0-9-,]*$");
+
 	}
 
 	protected Document createDefaultModel() {
@@ -203,11 +204,11 @@ public class WrapperSNRField extends JTextField implements IControl,
 	 *            boolean
 	 */
 	public void setActivatable(boolean isActivatable) {
-//		this.isActivatable = isActivatable;
-//		this.setFocusable(isActivatable);
-		this.isActivatable = isActivatable;		
-		if(!isActivatable) {
-			setEditable(false) ;
+		// this.isActivatable = isActivatable;
+		// this.setFocusable(isActivatable);
+		this.isActivatable = isActivatable;
+		if (!isActivatable) {
+			setEditable(false);
 		}
 	}
 
@@ -215,7 +216,7 @@ public class WrapperSNRField extends JTextField implements IControl,
 		return dependenceField;
 	}
 
-	public void setDependenceField(boolean dependenceField) {
+	public void setDependenceField(boolean dependenceField) throws Throwable {
 		this.dependenceField = dependenceField;
 		if (dependenceField) {
 			this.setBackground(HelperClient.getDependenceFieldBackgroundColor());
@@ -259,7 +260,11 @@ public class WrapperSNRField extends JTextField implements IControl,
 				throws BadLocationException {
 			// PJ 09/0014037
 			// str=str.toUpperCase();
+			str = str.replaceAll("\n", "").replaceAll("\r", "");
+			//PJ18922
+			str=str.trim();
 			StringBuffer strInsert = new StringBuffer(str);
+
 			if (strInsert.length() > 0) {
 				if (regPattern != null) {
 					StringBuffer stringBuffer = new StringBuffer("");
@@ -341,12 +346,12 @@ public class WrapperSNRField extends JTextField implements IControl,
 	public void removeCib() {
 		cib = null;
 	}
-	
+
 	@Override
 	public String getToken() {
 		return cib.getToolTipToken();
 	}
-	
+
 	@Override
 	public boolean hasContent() throws Throwable {
 		return getText() != null && !getText().trim().isEmpty();

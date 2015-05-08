@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -44,11 +44,14 @@ import com.lp.server.artikel.service.ArtikelDto;
 import com.lp.server.artikel.service.ArtikelfehlmengeDto;
 import com.lp.server.artikel.service.LagerDto;
 import com.lp.server.artikel.service.SeriennrChargennrMitMengeDto;
+import com.lp.server.auftrag.service.AuftragDto;
 import com.lp.server.benutzer.service.RechteFac;
 import com.lp.server.fertigung.service.LosDto;
 import com.lp.server.fertigung.service.LosistmaterialDto;
 import com.lp.server.fertigung.service.LossollmaterialDto;
+import com.lp.server.lieferschein.service.LieferscheinDto;
 import com.lp.server.system.service.LocaleFac;
+import com.lp.server.system.service.MandantFac;
 import com.lp.util.AufgeloesteFehlmengenDto;
 import com.lp.util.Helper;
 
@@ -106,6 +109,39 @@ public class FehlmengenAufloesen {
 		}
 	}
 
+	private static boolean dialogAnzeigen(Integer artikelIId) throws Throwable {
+
+		BigDecimal bdfehlmenge = DelegateFactory.getInstance()
+				.getFehlmengeDelegate()
+				.getAnzahlderPositivenFehlmengenEinesArtikels(artikelIId);
+
+		if (bdfehlmenge.doubleValue() > 0) {
+			return true;
+		} else {
+
+			if (LPMain
+					.getInstance()
+					.getDesktop()
+					.darfAnwenderAufZusatzfunktionZugreifen(
+							MandantFac.ZUSATZFUNKTION_RESERVIERUNGEN_AUFLOESEN)) {
+
+				BigDecimal bdreservierungen = DelegateFactory.getInstance()
+						.getReservierungDelegate()
+						.getAnzahlReservierungen(artikelIId);
+				if (bdreservierungen.doubleValue() > 0) {
+					return true;
+				} else {
+					return false;
+				}
+
+			} else {
+				return false;
+			}
+
+		}
+
+	}
+
 	public static void fehlmengenAufloesen(InternalFrame internalframe,
 			Integer artikelIId, Integer lagerIId,
 			List<SeriennrChargennrMitMengeDto> alSeriennrChargennrMitMenge,
@@ -124,13 +160,7 @@ public class FehlmengenAufloesen {
 				bdVerfuegbaremenge = new BigDecimal(
 						alSeriennrChargennrMitMenge.size());
 
-				BigDecimal bdfehlmenge = DelegateFactory
-						.getInstance()
-						.getFehlmengeDelegate()
-						.getAnzahlderPositivenFehlmengenEinesArtikels(
-								artikelIId);
-
-				if (bdfehlmenge.doubleValue() > 0) {
+				if (dialogAnzeigen(artikelIId)) {
 					DialogFehlmengen d = new DialogFehlmengen(
 							artikelDto,
 							lagerIId,
@@ -145,13 +175,7 @@ public class FehlmengenAufloesen {
 			} else if (Helper.short2boolean(artikelDto.getBChargennrtragend())) {
 				bdVerfuegbaremenge = bdZugebuchteMenge;
 
-				BigDecimal bdfehlmenge = DelegateFactory
-						.getInstance()
-						.getFehlmengeDelegate()
-						.getAnzahlderPositivenFehlmengenEinesArtikels(
-								artikelIId);
-
-				if (bdfehlmenge.doubleValue() > 0) {
+				if (dialogAnzeigen(artikelIId)) {
 
 					for (int i = 0; i < alSeriennrChargennrMitMenge.size(); i++) {
 
@@ -168,13 +192,7 @@ public class FehlmengenAufloesen {
 				}
 
 			} else {
-				BigDecimal bdfehlmenge = DelegateFactory
-						.getInstance()
-						.getFehlmengeDelegate()
-						.getAnzahlderPositivenFehlmengenEinesArtikels(
-								artikelIId);
-
-				if (bdfehlmenge.doubleValue() > 0) {
+				if (dialogAnzeigen(artikelIId)) {
 					DialogFehlmengen d = new DialogFehlmengen(artikelDto,
 							lagerIId, null, bdVerfuegbaremenge, internalframe);
 					LPMain.getInstance().getDesktop()
@@ -265,21 +283,49 @@ public class FehlmengenAufloesen {
 		aufgeloesteFehlmengenDto.setArtikelCNr(artikelDto.getCNr());
 		aufgeloesteFehlmengenDto.setLagerDto(lagerDto);
 		aufgeloesteFehlmengenDto.setLagerCNr(lagerDto.getCNr());
-		aufgeloesteFehlmengenDto.setLosDto(losDto);
-		aufgeloesteFehlmengenDto.setLosCNr(losDto.getCNr());
 		aufgeloesteFehlmengenDto.setAufgeloesteMenge(aufgeloesteMenge);
 		aufgeloesteFehlmengenDto.setSSeriennrChnr(sSeriennrChnr);
-		aufgeloesteFehlmengenDto.setLosDto(losDto);
 
-		if (tmAufgeloesteFehlmengen.containsKey(losDto.getCNr())) {
+		aufgeloesteFehlmengenDto.setLosDto(losDto);
+		aufgeloesteFehlmengenDto.setLosCNr(losDto.getCNr());
+
+		if (tmAufgeloesteFehlmengen.containsKey("L" + losDto.getCNr())) {
 			ArrayList<AufgeloesteFehlmengenDto> al = (ArrayList<AufgeloesteFehlmengenDto>) tmAufgeloesteFehlmengen
-					.get(losDto.getCNr());
+					.get("L" + losDto.getCNr());
 			al.add(aufgeloesteFehlmengenDto);
-			tmAufgeloesteFehlmengen.put(losDto.getCNr(), al);
+			tmAufgeloesteFehlmengen.put("L" + losDto.getCNr(), al);
 		} else {
 			ArrayList<AufgeloesteFehlmengenDto> al = new ArrayList<AufgeloesteFehlmengenDto>();
 			al.add(aufgeloesteFehlmengenDto);
-			tmAufgeloesteFehlmengen.put(losDto.getCNr(), al);
+			tmAufgeloesteFehlmengen.put("L" + losDto.getCNr(), al);
+		}
+
+	}
+
+	public static void addAufgeloesteReservierung(ArtikelDto artikelDto,
+			LagerDto lagerDto, String[] sSeriennrChnr, AuftragDto auftragDto, LieferscheinDto lieferscheinDto,
+			BigDecimal aufgeloesteMenge) throws Throwable {
+
+		AufgeloesteFehlmengenDto aufgeloesteFehlmengenDto = new AufgeloesteFehlmengenDto();
+		aufgeloesteFehlmengenDto.setArtikelDto(artikelDto);
+		aufgeloesteFehlmengenDto.setArtikelCNr(artikelDto.getCNr());
+		aufgeloesteFehlmengenDto.setLagerDto(lagerDto);
+		aufgeloesteFehlmengenDto.setLagerCNr(lagerDto.getCNr());
+		aufgeloesteFehlmengenDto.setAufgeloesteMenge(aufgeloesteMenge);
+		aufgeloesteFehlmengenDto.setSSeriennrChnr(sSeriennrChnr);
+
+		aufgeloesteFehlmengenDto.setAuftagDto(auftragDto);
+		aufgeloesteFehlmengenDto.setLieferscheinDto(lieferscheinDto);
+
+		if (tmAufgeloesteFehlmengen.containsKey("A" + auftragDto.getCNr())) {
+			ArrayList<AufgeloesteFehlmengenDto> al = (ArrayList<AufgeloesteFehlmengenDto>) tmAufgeloesteFehlmengen
+					.get("A" + auftragDto.getCNr());
+			al.add(aufgeloesteFehlmengenDto);
+			tmAufgeloesteFehlmengen.put("A" + auftragDto.getCNr(), al);
+		} else {
+			ArrayList<AufgeloesteFehlmengenDto> al = new ArrayList<AufgeloesteFehlmengenDto>();
+			al.add(aufgeloesteFehlmengenDto);
+			tmAufgeloesteFehlmengen.put("A" + auftragDto.getCNr(), al);
 		}
 
 	}

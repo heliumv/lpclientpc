@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -50,6 +50,8 @@ import com.lp.client.frame.component.InternalFrame;
 import com.lp.client.frame.component.ItemChangedEvent;
 import com.lp.client.frame.component.PanelBasis;
 import com.lp.client.frame.component.WrapperCheckBox;
+import com.lp.client.frame.component.WrapperEditorField;
+import com.lp.client.frame.component.WrapperEditorFieldKommentar;
 import com.lp.client.frame.component.WrapperLabel;
 import com.lp.client.frame.component.WrapperMediaControl;
 import com.lp.client.frame.component.WrapperMediaControlKommentar;
@@ -58,6 +60,7 @@ import com.lp.client.frame.component.WrapperSelectField;
 import com.lp.client.frame.component.WrapperTextField;
 import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.frame.dialog.DialogFactory;
+import com.lp.client.pc.LPButtonAction;
 import com.lp.client.pc.LPMain;
 import com.lp.server.artikel.service.ArtikelFac;
 import com.lp.server.artikel.service.ArtikelkommentarDto;
@@ -105,6 +108,8 @@ public class PanelArtikelkommentar extends PanelBasis {
 	private WrapperRadioButton wrbMitzudrucken = new WrapperRadioButton();
 	private WrapperRadioButton wrbAnhang = new WrapperRadioButton();
 
+	public WrapperEditorField wefText = null;
+
 	private ButtonGroup bg = new ButtonGroup();
 
 	private WrapperMediaControl wmcBild = new WrapperMediaControlKommentar(
@@ -121,11 +126,33 @@ public class PanelArtikelkommentar extends PanelBasis {
 	}
 
 	protected void setDefaults() {
-
+		wefText.getLpEditor().setText(null);
 	}
 
 	protected JComponent getFirstFocusableComponent() throws Exception {
 		return wsfKommentarart;
+	}
+
+	public void eventActionText(ActionEvent e) throws Throwable {
+
+		if (!wmcBild.getMimeType().startsWith("image")) {
+			DialogFactory
+					.showModalDialog(
+							LPMain.getTextRespectUISPr("lp.error"),
+							LPMain.getTextRespectUISPr("artikel.texteingabezuartikelbild.error"));
+			return;
+		}
+
+		super.eventActionText(e);
+		if (getLockedstateDetailMainKey().getIState() == PanelBasis.LOCK_IS_LOCKED_BY_ME) {
+			// Editor auf Read Only schalten
+
+		}
+
+		getInternalFrame().showPanelEditor(wefText, this.getAdd2Title(),
+				wefText.getLpEditor().getText(),
+				getLockedstateDetailMainKey().getIState());
+
 	}
 
 	public void eventActionNew(EventObject eventObject, boolean bLockMeI,
@@ -135,6 +162,7 @@ public class PanelArtikelkommentar extends PanelBasis {
 
 		wmcBild.setOMediaImage(null);
 		wmcBild.setDateiname(null);
+		wefText.getLpEditor().setText(null);
 
 		artikelkommentarDto = new ArtikelkommentarDto();
 		artikelkommentarDto
@@ -145,7 +173,7 @@ public class PanelArtikelkommentar extends PanelBasis {
 
 		this.setStatusbarPersonalIIdAendern(null);
 		this.setStatusbarTAendern(null);
-
+		wefText.getLpEditor().setText(null);
 		wcbAnfrage.setSelected(false);
 		wcbAngebot.setSelected(false);
 		wcbAuftrag.setSelected(false);
@@ -188,6 +216,11 @@ public class PanelArtikelkommentar extends PanelBasis {
 							.getArtikelkommentarsprDto().getCDateiname());
 					wmcBild.setDefaultbildFeld(artikelkommentarDto
 							.getBDefaultbild());
+
+					wefText.getLpEditor().setText(
+							artikelkommentarDto.getArtikelkommentarsprDto()
+									.getXKommentar());
+
 				} else {
 					wmcBild.setOMediaImage(null);
 					wmcBild.setDateiname(null);
@@ -277,6 +310,8 @@ public class PanelArtikelkommentar extends PanelBasis {
 					wmcBild.getOMediaImage());
 			artikelkommentarDto.getArtikelkommentarsprDto().setCDateiname(
 					wmcBild.getDateiname());
+			artikelkommentarDto.getArtikelkommentarsprDto().setXKommentar(
+					wefText.getText());
 
 		}
 
@@ -379,6 +414,10 @@ public class PanelArtikelkommentar extends PanelBasis {
 
 		wlaLagerplatz.setText(LPMain.getInstance().getTextRespectUISPr(
 				"lp.lagerplatz"));
+
+		wefText = new WrapperEditorFieldKommentar(getInternalFrame(),
+				LPMain.getTextRespectUISPr("label.text"));
+
 		/*
 		 * wbuLagerplatz.setActionCommand(this.
 		 * ACTION_SPECIAL_LAGERPLATZ_FROM_LISTE);
@@ -499,9 +538,15 @@ public class PanelArtikelkommentar extends PanelBasis {
 						2, 2, 2, 2), 0, 0));
 
 		String[] aWhichButtonIUse = { ACTION_UPDATE, ACTION_SAVE,
-				ACTION_DELETE, ACTION_DISCARD, };
+				ACTION_DELETE, ACTION_DISCARD, ACTION_TEXT };
 
 		enableToolsPanelButtons(aWhichButtonIUse);
+
+		// PJ18549
+		LPButtonAction lpba = getHmOfButtons().get(ACTION_TEXT);
+		lpba.getButton().setToolTipText(
+				LPMain.getInstance().getTextRespectUISPr(
+						"artikel.texteingabezuartikelbild"));
 
 	}
 
@@ -588,8 +633,7 @@ public class PanelArtikelkommentar extends PanelBasis {
 		if (allMandatoryFieldsSetDlg()) {
 			components2Dto();
 
-			
-			//PJ 17092
+			// PJ 17092
 			if (wrbMitzudrucken.isSelected() || wrbHinweis.isSelected()) {
 				if (artikelkommentarDto.getDatenformatCNr().equals(
 						MediaFac.DATENFORMAT_MIMETYPE_TEXT_HTML)
@@ -604,22 +648,38 @@ public class PanelArtikelkommentar extends PanelBasis {
 
 					// IST OK
 				} else {
-					DialogFactory
-							.showModalDialog(
-									LPMain.getInstance().getTextRespectUISPr(
-											"lp.hinweis"),
-									LPMain.getInstance()
-											.getTextRespectUISPr(
-													"artikel.aritkelkommentar.mitzudruckenbei.falschertyp"));
-					return;
+
+					if (wrbMitzudrucken.isSelected()
+							&& artikelkommentarDto
+									.getArtikelkommentardruckDto().length == 1
+							&& artikelkommentarDto
+									.getArtikelkommentardruckDto()[0]
+									.getBelegartCNr().equals(
+											LocaleFac.BELEGART_LOS)
+							&& artikelkommentarDto.getDatenformatCNr().equals(
+									MediaFac.DATENFORMAT_MIMETYPE_APP_PDF)) {
+
+						// SEIT PJ18377 darf bei Fertigung PDF verwendet werden
+					} else {
+
+						DialogFactory
+								.showModalDialog(
+										LPMain.getInstance()
+												.getTextRespectUISPr(
+														"lp.hinweis"),
+										LPMain.getInstance()
+												.getTextRespectUISPr(
+														"artikel.aritkelkommentar.mitzudruckenbei.falschertyp"));
+						return;
+					}
 				}
 			}
 
 			/*
 			 * PJ 15045
 			 * 
-			 * // Wenn Hinweis, dann darf nur TEXT/HTML ausgew&auml;hlt werden if
-			 * (wrbHinweis.isSelected() &&
+			 * // Wenn Hinweis, dann darf nur TEXT/HTML ausgew&auml;hlt werden
+			 * if (wrbHinweis.isSelected() &&
 			 * !artikelkommentarDto.getDatenformatCNr().equals(
 			 * MediaFac.DATENFORMAT_MIMETYPE_TEXT_HTML)) {
 			 * com.lp.client.frame.dialog.DialogFactory.showModalDialog(LPMain

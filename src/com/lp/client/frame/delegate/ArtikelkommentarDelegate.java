@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -224,6 +224,21 @@ public class ArtikelkommentarDelegate extends Delegate {
 			return null;
 		}
 	}
+	
+	public ArrayList<byte[]> getArtikelbilderFindByArtikelIIdBelegartCNr(
+			Integer artikelIId, String belegartCNr, String localeCNr)
+			throws ExceptionLP {
+		try {
+			return artikelkommentarFac
+					.getArtikelbilderFindByArtikelIIdBelegartCNr(
+							artikelIId, belegartCNr, localeCNr, LPMain
+									.getInstance().getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
+	
 
 	public ArtikelkommentarDto artikelkommentarFindByPrimaryKeyUndLocale(
 			Integer iId, String localeCNr, TheClientDto theClientDto)
@@ -566,5 +581,17 @@ public class ArtikelkommentarDelegate extends Delegate {
 			return null;
 		}
 	}
-
+	public boolean sindTexteOderPDFsVorhanden(
+			Integer artikelIId) throws ExceptionLP {
+		try {
+			return artikelkommentarFac.sindTexteOderPDFsVorhanden(artikelIId,
+					LPMain.getInstance().getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return false;
+		}
+	}
+	
+	
+	
 }

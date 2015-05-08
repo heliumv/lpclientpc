@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -40,6 +40,7 @@ import com.lp.client.pc.LPMain;
 import com.lp.server.anfrage.service.AnfrageDto;
 import com.lp.server.anfrage.service.AnfragepositionDto;
 import com.lp.server.angebot.service.AngebotpositionDto;
+import com.lp.server.angebotstkl.service.AgstklarbeitsplanDto;
 import com.lp.server.angebotstkl.service.AgstklpositionDto;
 import com.lp.server.angebotstkl.service.EinkaufsangebotpositionDto;
 import com.lp.server.auftrag.service.AuftragpositionDto;
@@ -210,6 +211,18 @@ public class BelegpostionkonvertierungDelegate extends Delegate {
 		try {
 			return belegpositionkonvertierungFac
 					.konvertiereNachStklarbeitsplanDto(belegpositionDto,
+							LPMain.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+
+	}
+	public AgstklarbeitsplanDto[] konvertiereNachAgstklarbeitsplanDto(
+			BelegpositionDto[] belegpositionDto) throws Throwable {
+		try {
+			return belegpositionkonvertierungFac
+					.konvertiereNachAgstklarbeitsplanDto(belegpositionDto,
 							LPMain.getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);

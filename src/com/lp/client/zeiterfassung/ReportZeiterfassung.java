@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -35,6 +35,7 @@ package com.lp.client.zeiterfassung;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.event.ActionEvent;
 
 import javax.swing.ButtonGroup;
 import javax.swing.JComponent;
@@ -78,7 +79,7 @@ public abstract class ReportZeiterfassung extends PanelBasis implements
 	private JRadioButton wrbAllepersonen = new JRadioButton();
 	private JRadioButton wrbMeineAbteilung = new JRadioButton();
 	private PersonalDto personalDto = null;
-	
+
 	protected ButtonGroup buttonGroupSortierung = new ButtonGroup();
 	protected WrapperLabel wlaSortierung = new WrapperLabel();
 	protected JRadioButton wrbSortPersonalnummer = new JRadioButton();
@@ -86,7 +87,7 @@ public abstract class ReportZeiterfassung extends PanelBasis implements
 	protected JRadioButton wrbSortAbteilungNameVorname = new JRadioButton();
 	protected JRadioButton wrbSortKostenstelleNameVorname = new JRadioButton();
 	protected JRadioButton wrbSortAbteilungKostenstelleNameVorname = new JRadioButton();
-	
+
 	protected WrapperLabel wlaZeitraum;
 	protected WrapperLabel wlaVon;
 	protected WrapperDateField wdfVon;
@@ -95,6 +96,7 @@ public abstract class ReportZeiterfassung extends PanelBasis implements
 	protected WrapperDateRangeController wdrBereich = null;
 
 	private WrapperCheckBox wcbPlusVersteckte = new WrapperCheckBox();
+	private WrapperCheckBox wcbNurAnwesende = new WrapperCheckBox();
 
 	public ReportZeiterfassung(InternalFrame internalFrame,
 			Integer personalIId, String add2Title) throws Throwable {
@@ -102,17 +104,16 @@ public abstract class ReportZeiterfassung extends PanelBasis implements
 		this.personalIId = personalIId;
 		if (personalIId != null) {
 
-			personalDto= DelegateFactory.getInstance()
-					.getPersonalDelegate()
+			personalDto = DelegateFactory.getInstance().getPersonalDelegate()
 					.personalFindByPrimaryKey(personalIId);
 
 			wtfPersonal.setText(personalDto.formatAnrede());
 		}
 		jbInit();
 		initComponents();
-		
+
 	}
-	
+
 	protected boolean showSorting() {
 		return true;
 	}
@@ -123,6 +124,10 @@ public abstract class ReportZeiterfassung extends PanelBasis implements
 
 	public boolean mitVersteckten() {
 		return wcbPlusVersteckte.isSelected();
+	}
+
+	public boolean nurAnwesende() {
+		return wcbNurAnwesende.isSelected();
 	}
 
 	public Integer getPersonAuswahl() {
@@ -145,7 +150,7 @@ public abstract class ReportZeiterfassung extends PanelBasis implements
 	}
 
 	protected abstract JComponent getFirstFocusableComponent() throws Exception;
-	
+
 	private void jbInit() throws Throwable {
 		this.setLayout(new GridBagLayout());
 		wlaPersonal
@@ -167,6 +172,8 @@ public abstract class ReportZeiterfassung extends PanelBasis implements
 		wrbAllepersonen.setText(LPMain
 				.getTextRespectUISPr("zeiterfassung.report.allepersonen"));
 		wcbPlusVersteckte.setText(LPMain.getTextRespectUISPr("lp.versteckte"));
+		wcbNurAnwesende.setText(LPMain
+				.getTextRespectUISPr("pers.zeiterfassung.report.nuranwesende"));
 		wrbMeineAbteilung.setText(LPMain
 				.getTextRespectUISPr("zeiterfassung.report.meineabteilung"));
 
@@ -175,7 +182,7 @@ public abstract class ReportZeiterfassung extends PanelBasis implements
 		buttonGroupAuswertung.add(wrbAllearbeiter);
 		buttonGroupAuswertung.add(wrbAlleangestellte);
 		buttonGroupAuswertung.add(wrbMeineAbteilung);
-		
+
 		wlaSortierung.setText(LPMain.getTextRespectUISPr("label.sortierung"));
 		wlaSortierung.setHorizontalAlignment(SwingConstants.LEFT);
 		wrbSortAbteilungNameVorname
@@ -199,7 +206,7 @@ public abstract class ReportZeiterfassung extends PanelBasis implements
 		buttonGroupSortierung.add(wrbSortPersonalnummer);
 		buttonGroupSortierung.add(wrbSortKostenstelleNameVorname);
 		buttonGroupSortierung.add(wrbSortAbteilungKostenstelleNameVorname);
-		
+
 		wrbSortAbteilungNameVorname.setVisible(showSorting());
 		wrbSortNameVorname.setVisible(showSorting());
 		wrbSortPersonalnummer.setVisible(showSorting());
@@ -208,29 +215,34 @@ public abstract class ReportZeiterfassung extends PanelBasis implements
 		wlaSortierung.setVisible(showSorting());
 		wrbSortPersonalnummer.setSelected(true);
 
-		boolean sichtbarkeitAlle = DelegateFactory.getInstance().getTheJudgeDelegate()
+		boolean sichtbarkeitAlle = DelegateFactory.getInstance()
+				.getTheJudgeDelegate()
 				.hatRecht(RechteFac.RECHT_PERS_SICHTBARKEIT_ALLE);
-		
-		jpaWorkingOn = new JPanel(new MigLayout("wrap 4, hidemode 2", "[25%,fill|25%,fill|20%,fill]5%[30%,fill]"));
+
+		jpaWorkingOn = new JPanel(new MigLayout("wrap 4, hidemode 2",
+				"[25%,fill|25%,fill|20%,fill]5%[30%,fill]"));
 		this.add(jpaWorkingOn, new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
 				GridBagConstraints.WEST, GridBagConstraints.BOTH, new Insets(0,
 						0, 0, 0), 0, 0));
-		
+
 		jpaWorkingOn.add(wlaPersonal);
 		jpaWorkingOn.add(wtfPersonal, "span 2");
 		jpaWorkingOn.add(wlaSortierung);
 
 		jpaWorkingOn.add(wrbSelektierteperson, "newline, skip");
-		if (sichtbarkeitAlle || DelegateFactory.getInstance().getTheJudgeDelegate()
+		if (sichtbarkeitAlle
+				|| DelegateFactory.getInstance().getTheJudgeDelegate()
 						.hatRecht(RechteFac.RECHT_PERS_SICHTBARKEIT_ABTEILUNG)) {
 			jpaWorkingOn.add(wrbMeineAbteilung);
-			if(personalDto==null || personalDto.getKostenstelleIIdAbteilung()==null){
+			if (personalDto == null
+					|| personalDto.getKostenstelleIIdAbteilung() == null) {
 				wrbMeineAbteilung.setEnabled(false);
 			}
 		}
 		jpaWorkingOn.add(wrbSortPersonalnummer, "cell 3 1");
 
-		if (sichtbarkeitAlle) jpaWorkingOn.add(wrbAllepersonen, "newline, skip");
+		if (sichtbarkeitAlle)
+			jpaWorkingOn.add(wrbAllepersonen, "newline, skip");
 		jpaWorkingOn.add(wrbSortNameVorname, "cell 3 2");
 
 		if (sichtbarkeitAlle) {
@@ -238,14 +250,30 @@ public abstract class ReportZeiterfassung extends PanelBasis implements
 			jpaWorkingOn.add(wrbAlleangestellte);
 		}
 		jpaWorkingOn.add(wrbSortAbteilungNameVorname, "cell 3 3");
-		
+
 		if (DelegateFactory.getInstance().getTheJudgeDelegate()
 				.hatRecht(RechteFac.RECHT_LP_DARF_VERSTECKTE_SEHEN)) {
 			jpaWorkingOn.add(wcbPlusVersteckte, "newline, skip");
+			jpaWorkingOn.add(wcbNurAnwesende);
+			
+			wcbNurAnwesende.addActionListener(this);
 
+		} else {
+			jpaWorkingOn.add(wcbNurAnwesende, "newline, skip");
 		}
 		jpaWorkingOn.add(wrbSortKostenstelleNameVorname, "cell 3 4");
-		jpaWorkingOn.add(wrbSortAbteilungKostenstelleNameVorname, "cell 3 5, wrap");
+		jpaWorkingOn.add(wrbSortAbteilungKostenstelleNameVorname,
+				"cell 3 5, wrap");
+	}
+
+	protected void eventActionSpecial(ActionEvent e) throws Throwable {
+		if(wcbNurAnwesende.isSelected()){
+			wcbPlusVersteckte.setSelected(true);
+			wcbPlusVersteckte.setEnabled(false);
+		
+		} else {
+			wcbPlusVersteckte.setEnabled(true);
+		}
 	}
 	
 	protected void addZeitraumAuswahl() {
@@ -255,14 +283,14 @@ public abstract class ReportZeiterfassung extends PanelBasis implements
 		wdfVon = new WrapperDateField();
 		wlaBis = new WrapperLabel();
 		wdfBis = new WrapperDateField();
-		
-	    wlaZeitraum.setText(LPMain.getTextRespectUISPr("lp.zeitraum") + ":");
-	    wlaVon.setText(LPMain.getTextRespectUISPr("lp.von"));
-	    wlaBis.setText(LPMain.getTextRespectUISPr("lp.bis"));
-	    wdfVon.setMandatoryField(true);
-	    wdfBis.setMandatoryField(true);
-	    wdrBereich = new WrapperDateRangeController(wdfVon, wdfBis);
-	    
+
+		wlaZeitraum.setText(LPMain.getTextRespectUISPr("lp.zeitraum") + ":");
+		wlaVon.setText(LPMain.getTextRespectUISPr("lp.von"));
+		wlaBis.setText(LPMain.getTextRespectUISPr("lp.bis"));
+		wdfVon.setMandatoryField(true);
+		wdfBis.setMandatoryField(true);
+		wdrBereich = new WrapperDateRangeController(wdfVon, wdfBis);
+
 		jpaWorkingOn.add(wlaZeitraum, "newline");
 		jpaWorkingOn.add(wlaVon, "span, split, growx 30");
 		jpaWorkingOn.add(wdfVon, "growx");

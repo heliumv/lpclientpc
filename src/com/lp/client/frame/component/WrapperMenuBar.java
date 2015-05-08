@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -47,6 +47,9 @@ import com.lp.client.anfrage.InternalFrameAnfrage;
 import com.lp.client.angebot.InternalFrameAngebot;
 import com.lp.client.artikel.InternalFrameArtikel;
 import com.lp.client.auftrag.InternalFrameAuftrag;
+import com.lp.client.bestellung.InternalFrameBestellung;
+import com.lp.client.eingangsrechnung.InternalFrameEingangsrechnung;
+import com.lp.client.eingangsrechnung.TabbedPaneEingangsrechnung;
 import com.lp.client.fertigung.InternalFrameFertigung;
 import com.lp.client.frame.Defaults;
 import com.lp.client.frame.HelperClient;
@@ -56,6 +59,7 @@ import com.lp.client.partner.InternalFrameKunde;
 import com.lp.client.partner.InternalFrameLieferant;
 import com.lp.client.partner.InternalFramePartner;
 import com.lp.client.pc.LPMain;
+import com.lp.client.projekt.InternalFrameProjekt;
 import com.lp.client.reklamation.InternalFrameReklamation;
 import com.lp.client.stueckliste.InternalFrameStueckliste;
 import com.lp.client.system.DialogExtraliste;
@@ -63,6 +67,7 @@ import com.lp.client.system.ReportExtraliste;
 import com.lp.client.util.logger.LpLogger;
 import com.lp.server.system.service.DokumentenlinkDto;
 import com.lp.server.system.service.ExtralisteDto;
+import com.lp.server.system.service.LocaleFac;
 import com.lp.util.Helper;
 
 public class WrapperMenuBar extends JMenuBar implements ActionListener {
@@ -107,13 +112,23 @@ public class WrapperMenuBar extends JMenuBar implements ActionListener {
 
 		if (tabbedPane.getInternalFrame().getTabbedPaneRoot()
 				.getSelectedIndex() == 0) {
+
+			String belegartCNr = tabbedPane.getInternalFrame().getBelegartCNr();
+
+			if (tp instanceof TabbedPaneEingangsrechnung) {
+				boolean bZusatzkosten = ((TabbedPaneEingangsrechnung) tp)
+						.isBZusatzkosten();
+				if (bZusatzkosten == true) {
+					belegartCNr = LocaleFac.BELEGART_ZUSATZKOSTEN;
+				}
+			}
+
 			// Dokumentenlinks
 			DokumentenlinkDto[] dokumentenlinkDtos = DelegateFactory
 					.getInstance()
 					.getMandantDelegate()
 					.dokumentenlinkFindByBelegartCNrMandantCNrBPfadabsolut(
-							tabbedPane.getInternalFrame().getBelegartCNr(),
-							false);
+							belegartCNr, false);
 
 			if (dokumentenlinkDtos.length > 0) {
 				JMenu menueDokumentenlink = new JMenu(
@@ -135,7 +150,47 @@ public class WrapperMenuBar extends JMenuBar implements ActionListener {
 
 			}
 		}
+		//PJ18822
+		if (tabbedPane.getInternalFrame().getTabbedPaneRoot()
+				.getSelectedIndex() == 1) {
 
+			if (tp instanceof TabbedPaneEingangsrechnung) {
+				boolean bZusatzkosten = ((TabbedPaneEingangsrechnung) tp)
+						.isBZusatzkosten();
+				if (bZusatzkosten == true) {
+					// Dokumentenlinks
+					DokumentenlinkDto[] dokumentenlinkDtos = DelegateFactory
+							.getInstance()
+							.getMandantDelegate()
+							.dokumentenlinkFindByBelegartCNrMandantCNrBPfadabsolut(
+									LocaleFac.BELEGART_ZUSATZKOSTEN, false);
+
+					if (dokumentenlinkDtos.length > 0) {
+						JMenu menueDokumentenlink = new JMenu(
+								LPMain.getTextRespectUISPr("system.dokumentenlink"));
+						menueDokumentenlink.setToolTipText(LPMain
+								.getTextRespectUISPr("system.dokumentenlink"));
+						menuModul.add(menueDokumentenlink, 0);
+
+						for (int i = 0; i < dokumentenlinkDtos.length; i++) {
+							JMenuItem menueItemLink = new JMenuItem(
+									dokumentenlinkDtos[i].getCMenuetext());
+							menueItemLink
+									.setActionCommand(DOKUMENTENLINK_ACTION
+											+ dokumentenlinkDtos[i].getIId());
+							menueItemLink.setToolTipText(dokumentenlinkDtos[i]
+									.getCMenuetext());
+							menueItemLink.addActionListener(this);
+							menueDokumentenlink.add(menueItemLink, i);
+						}
+
+					}
+
+				}
+
+			}
+
+		}
 		add(menuBearbeiten);
 		add(menuJournal);
 
@@ -196,6 +251,14 @@ public class WrapperMenuBar extends JMenuBar implements ActionListener {
 							.getInternalFrame()).getTabbedPaneAuftrag()
 							.getAuftragDto().getCNr();
 				}
+				if (tp.getInternalFrame() instanceof InternalFrameEingangsrechnung) {
+
+					if (tp instanceof TabbedPaneEingangsrechnung) {
+
+						modulPlatzhalter = ((TabbedPaneEingangsrechnung) tp)
+								.getEingangsrechnungDto().getCNr();
+					}
+				}
 
 				if (tp.getInternalFrame() instanceof InternalFrameAngebot) {
 					modulPlatzhalter = ((InternalFrameAngebot) tp
@@ -232,10 +295,26 @@ public class WrapperMenuBar extends JMenuBar implements ActionListener {
 							.getInternalFrame()).getLieferantDto()
 							.getPartnerDto().getCKbez();
 				}
+				if (tp.getInternalFrame() instanceof InternalFrameProjekt) {
+					if (((InternalFrameProjekt) tp.getInternalFrame())
+							.getTabbedPaneProjekt() != null) {
+						modulPlatzhalter = ((InternalFrameProjekt) tp
+								.getInternalFrame()).getTabbedPaneProjekt()
+								.getProjektDto().getCNr();
+					}
+				}
+				if (tp.getInternalFrame() instanceof InternalFrameReklamation) {
+					modulPlatzhalter = ((InternalFrameReklamation) tp
+							.getInternalFrame()).getReklamationDto().getCNr();
+				}
+				if (tp.getInternalFrame() instanceof InternalFrameBestellung) {
+					modulPlatzhalter = ((InternalFrameBestellung) tp
+							.getInternalFrame()).getTabbedPaneBestellung().getBesDto().getCNr();
+				}
 
 				if (modulPlatzhalter != null) {
-					String[] charFrom = new String[] { "\u00E4", "\u00C4", "\u00F6", "\u00D6", "\u00FC",
-							"\u00DC", "\u00DF" };
+					String[] charFrom = new String[] { "\u00E4", "\u00C4",
+							"\u00F6", "\u00D6", "\u00FC", "\u00DC", "\u00DF" };
 					String[] charTo = new String[] { "ae", "Ae", "oe", "Oe",
 							"ue", "Ue", "ss" };
 
@@ -253,7 +332,35 @@ public class WrapperMenuBar extends JMenuBar implements ActionListener {
 							.getInstance().getMandantDelegate()
 							.dokumentenlinkFindByPrimaryKey(dokumentenlinkIId);
 					String pfad = dokumentenlinkDto.getCBasispfad();
-					pfad = pfad + modulPlatzhalter;
+
+					// SP2648 Bereich des PJ hinzufuegen
+					if (tp.getInternalFrame() instanceof InternalFrameProjekt) {
+						if (((InternalFrameProjekt) tp.getInternalFrame())
+								.getTabbedPaneProjekt() != null) {
+
+							Integer bereichIId = ((InternalFrameProjekt) tp
+									.getInternalFrame()).getTabbedPaneProjekt()
+									.getProjektDto().getBereichIId();
+
+							pfad += DelegateFactory.getInstance()
+									.getProjektServiceDelegate()
+									.bereichFindByPrimaryKey(bereichIId)
+									.getCBez()
+									.replaceAll("[^a-zA-Z0-9-.]", "_");
+
+							// SP2838
+							if (Helper.short2boolean(dokumentenlinkDto
+									.getBUrl())) {
+								pfad += "_";
+							} else {
+								pfad += System.getProperty("file.separator");
+							}
+
+						}
+					}
+
+					pfad += modulPlatzhalter;
+
 					if (dokumentenlinkDto.getCOrdner() != null) {
 						pfad += dokumentenlinkDto.getCOrdner();
 					}
@@ -265,9 +372,11 @@ public class WrapperMenuBar extends JMenuBar implements ActionListener {
 									+ pfad.trim());
 							java.awt.Desktop.getDesktop().browse(uri);
 						} catch (URISyntaxException ex1) {
-							DialogFactory.showModalDialog(LPMain
-									.getTextRespectUISPr("lp.error"), LPMain
-									.getTextRespectUISPr("lp.fehlerhafteurl"));
+							DialogFactory
+									.showModalDialog(
+											LPMain.getTextRespectUISPr("lp.error"),
+											LPMain.getTextRespectUISPr("lp.fehlerhafteurl")
+													+ ": " + pfad);
 						} catch (IOException ex1) {
 							DialogFactory.showModalDialog(
 									LPMain.getTextRespectUISPr("lp.error"),
@@ -298,14 +407,15 @@ public class WrapperMenuBar extends JMenuBar implements ActionListener {
 
 				}
 			} else if (e.getActionCommand().startsWith(EXTRALISTE_ACTION)) {
-				Integer extralisteIId=new Integer(e
-						.getActionCommand().replaceAll(EXTRALISTE_ACTION, ""));
+				Integer extralisteIId = new Integer(e.getActionCommand()
+						.replaceAll(EXTRALISTE_ACTION, ""));
 				DialogExtraliste d = new DialogExtraliste(extralisteIId);
 
 				if (d.bPrint == true) {
 					tp.getInternalFrame().showReportKriterien(
 							new ReportExtraliste(tp.getInternalFrame(), "",
-									d.extralisteRueckgabeTabelleDto,extralisteIId));
+									d.extralisteRueckgabeTabelleDto,
+									extralisteIId));
 				}
 			}
 

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -33,10 +33,8 @@
 package com.lp.client.frame;
 
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Frame;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
@@ -46,6 +44,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Locale;
 
+import javax.swing.BorderFactory;
 import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -55,6 +54,9 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JToggleButton;
+import javax.swing.ScrollPaneConstants;
+
+import net.miginfocom.swing.MigLayout;
 
 import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.pc.LPMain;
@@ -81,23 +83,28 @@ public class DialogError extends JDialog {
 	 */
 	private static final long serialVersionUID = 1L;
 
-	private JPanel jpaOben = null;
+	JDialog dialogDetail = null;
+	
+	Dimension dimension = null;
+	
+//	private JPanel jpaOben = null;
 	private JTextArea wlaMessage = null;
 	private JToggleButton jtbuDetails = null;
 	private JButton jbuSchliessen = null;
 	private JButton jbuKopieren = null;
 
-	private JPanel jpaUnten = null;
-	private JScrollPane jspScrollPane = null;
+//	private JPanel jpaUnten = null;
+//	private JScrollPane jspScrollPane = null;
 	private JTextArea wtaInfo = null;
 	private JLabel jlaIcon = null;
 
-	private final static int HEIGHT_WITHOUT_DETAIL = 105;
-	private final static int HEIGHT_WITH_DETAIL = 470;
-	private final static int WIDTH = 650;
+//	private final static int HEIGHT_WITHOUT_DETAIL = 200;
+//	private final static int HEIGHT_WITH_DETAIL = 450;
+//	private final static int WIDTH = 450;
 
 	private final static String ACTION_DETAIL_MESSAGE = "action_detail_message";
 	private final static String ACTION_CLOSE = "action_close";
+	private final static String ACTION_CLOSE_DIALOG_DETAIL = "action_close_dialog_detail";
 	private final static String ACTION_COPY_TO_CLIPBOARD = "action_copy_to_clipboard";
 
 	public final static int TYPE_ERROR = JOptionPane.ERROR_MESSAGE;
@@ -141,11 +148,14 @@ public class DialogError extends JDialog {
 	}
 
 	private void setDefaults() {
-		this.setResizable(false);
-		this.setSize(new Dimension(Defaults.getInstance().bySizeFactor(WIDTH), Defaults.getInstance().bySizeFactor(HEIGHT_WITHOUT_DETAIL)));
+		this.setResizable(true);
+//		this.setSize(new Dimension(Defaults.getInstance().bySizeFactor(WIDTH), Defaults.getInstance().bySizeFactor(HEIGHT_WITHOUT_DETAIL)));
+//		this.setResizable(true);
 		// in die Mitte des Frames plazieren
 		LPMain.getInstance().getDesktop()
 				.platziereDialogInDerMitteDesFensters(this);
+		
+		dimension = LPMain.getInstance().getDesktop().getSize();
 
 		String sText = null;
 		try {
@@ -163,6 +173,7 @@ public class DialogError extends JDialog {
 		} catch (Exception ex) {
 		}
 		wlaMessage.setText(sText);
+		wlaMessage.setCaretPosition(0);
 		wtaInfo.setText(buildDetailMessage());
 		wtaInfo.setCaretPosition(0);
 	}
@@ -216,8 +227,11 @@ public class DialogError extends JDialog {
 		sb.append('\n');
 		// Benutzerkennung
 		try {
-			sb.append("User: "
+			sb.append("User-Id: "
 					+ LPMain.getInstance().getTheClient().getIDUser());
+			sb.append('\n');
+			sb.append("User: "
+					+ LPMain.getInstance().getTheClient().getBenutzername());
 			sb.append('\n');
 		} catch (Throwable ex1) {
 			// nix hier. wenn ich das nicht krieg, ist sowieso alles kaputt.
@@ -228,19 +242,19 @@ public class DialogError extends JDialog {
 			sb.append("Zusatzinformation: ");
 			for (Iterator<?> iter = aMsg.iterator(); iter.hasNext();) {
 				Object item = (Object) iter.next();
-				sb.append(item.toString() + "\n");
+				sb.append(item == null ? "null" : item.toString() + "\n") ;
+//				sb.append(item.toString() + "\n");
 			}
 		}
 		sb.append("\n");
-		sb.append("==Client Java and OS info==\n");		
+		JavaAndOsInfoFormatter javaInfoFormatter = new JavaAndOsInfoFormatter() ;
 		ServerJavaAndOSInfo clientInfo = new ServerJavaAndOSInfo();
 		clientInfo.initProperties();
-		sb.append(clientInfo.formatString() + "\n");
+		sb.append(javaInfoFormatter.format("Client-Java: ", clientInfo)) ;
 		
 		try {
-			sb.append("==Server Java and OS info==\n");
 			ServerJavaAndOSInfo serverInfo = DelegateFactory.getInstance().getSystemDelegate().getJavaAndOSInfo();
-			sb.append(serverInfo.formatString());
+			sb.append(javaInfoFormatter.format("Server-Java: ", serverInfo)) ;
 		} catch (Throwable e) {
 			sb.append("Serverinfo not available\n");
 		}
@@ -332,6 +346,9 @@ public class DialogError extends JDialog {
 	}
 
 	private void jbInit() throws Throwable {
+		
+		getContentPane().setLayout(new MigLayout("width 400:400:1024, height 120:120:400, gap 10 10 10 10"));
+		
 		wlaMessage = new JTextArea();
 		// Fabe anpassen, damits wie ein label aussieht
 		wlaMessage.setEditable(false);
@@ -340,90 +357,118 @@ public class DialogError extends JDialog {
 		wlaMessage.setForeground(new JLabel().getForeground());
 		wlaMessage.setBackground(new JLabel().getBackground());
 		// wlaMessage.setHorizontalAlignment(SwingConstants.CENTER);
-		jtbuDetails = new JToggleButton();
-
+		
 		wtaInfo = new JTextArea();
 		wtaInfo.setEditable(false);
-		jtbuDetails.setText(LPMain.getInstance().getTextRespectUISPr(
-				"lp.detail"));
-		jtbuDetails.setMinimumSize(new Dimension(100, Defaults.getInstance()
-				.getControlHeight()));
-		jtbuDetails.setPreferredSize(new Dimension(100, Defaults.getInstance()
-				.getControlHeight()));
+		wtaInfo.setFont(Font.decode(Font.MONOSPACED));
+
+		jtbuDetails = new JToggleButton();
 		jtbuDetails.setActionCommand(ACTION_DETAIL_MESSAGE);
 		jtbuDetails.addActionListener(new DialogError_actionAdapter(this));
+		jtbuDetails.setText(LPMain.getInstance().getTextRespectUISPr(
+				"lp.detail"));
+		
 		jbuSchliessen = new JButton();
 		jbuSchliessen.setActionCommand(ACTION_CLOSE);
 		jbuSchliessen.addActionListener(new DialogError_actionAdapter(this));
 		jbuSchliessen.setText(LPMain.getInstance().getTextRespectUISPr("OK"));
+		
+		JPanel panelButton = new JPanel();
+		panelButton.add(jbuSchliessen);
+		panelButton.add(jtbuDetails);
+		
 		jbuKopieren = new JButton();
 		jbuKopieren.setActionCommand(ACTION_COPY_TO_CLIPBOARD);
 		jbuKopieren.addActionListener(new DialogError_actionAdapter(this));
 		jbuKopieren.setText(LPMain.getInstance().getTextRespectUISPr(
 				"lp.inzwischenablagekopieren"));
+		
 		jlaIcon = new JLabel();
-		jlaIcon.setMinimumSize(new Dimension(30, 30));
-		jlaIcon.setPreferredSize(new Dimension(30, 30));
+		jlaIcon.setMinimumSize(new Dimension(32, 32));
+		jlaIcon.setPreferredSize(new Dimension(32, 32));
 		Icon icon = HelperClient.getIconForType(iType);
 		if (icon != null) {
 			jlaIcon.setIcon(icon);
 		}
-		// oberes Panel
-		jpaOben = new JPanel(new GridBagLayout());
-		jpaOben.add(jlaIcon, new GridBagConstraints(0, 0, 1, 2, 0.0, 0.0,
-				GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(
-						0, 0, 0, 0), 0, 0));
-		jpaOben.add(wlaMessage, new GridBagConstraints(1, 0, 1, 2, 1.0, 0.0,
-				GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(
-						3, 20, 3, 20), 0, 0));
-		jpaOben.add(jbuSchliessen, new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
-				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
-				new Insets(2, 2, 2, 2), 0, 0));
-		jpaOben.add(jtbuDetails, new GridBagConstraints(2, 1, 1, 1, 0.0, 0.0,
-				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
-				new Insets(2, 2, 2, 2), 0, 0));
-
-		getContentPane().setLayout(new GridBagLayout());
-		getContentPane().add(
-				jpaOben,
-				new GridBagConstraints(0, 0, 1, 1, 1.0, 0.0,
-						GridBagConstraints.NORTH,
-						GridBagConstraints.HORIZONTAL, new Insets(10, 10, 10,
-								10), 0, 0));
-		// unteres Panel
-		jpaUnten = new JPanel(new GridBagLayout());
-		getContentPane().add(
-				jpaUnten,
-				new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0,
-						GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-						new Insets(0, 10, 10, 10), 0, 0));
-		jspScrollPane = new JScrollPane(
-				JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-				JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-		jspScrollPane.getViewport().add(wtaInfo, null);
-		jpaUnten.add(jspScrollPane, new GridBagConstraints(0, 1, 1, 1, 1.0,
-				1.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(0, 0, 0, 0), 0, 0));
-		jpaUnten.add(jbuKopieren, new GridBagConstraints(0, 2, 1, 1, 1.0, 0.0,
-				GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(
-						0, 0, 0, 0), 0, 0));
-		jspScrollPane.setVisible(false);
+		
+		JScrollPane scrollPane =  new JScrollPane(wlaMessage,
+                ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
+                ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
+                );
+            scrollPane.setBorder(BorderFactory.createEmptyBorder(0,0,0,0));
+		
+		
+		getContentPane().add(jlaIcon, "left, top");
+		getContentPane().add(scrollPane, "w 100%, h 100%, wrap");
+		getContentPane().add(panelButton, "span, center");
+		
+		pack();
+		
 	}
+	
+private void jbDetail() {
+	
+	StringBuffer sb = new StringBuffer();
 
+	sb.append("Fehlercode: " + exceptionLP.getICode());
+	sb.append('\n');
+	
+	sb.append(" - " + wlaMessage.getText());
+	sb.append('\n');
+	
+	int maxWidth = (int) (dimension.width * 0.8);
+	int maxHeigth = (int) (dimension.height * 0.8);
+	
+	dialogDetail = new JDialog(this);
+	dialogDetail.setModal(false);
+	dialogDetail.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+	dialogDetail.setTitle(sb.toString());
+	dialogDetail.setLayout(new MigLayout("width " + maxWidth + ", height " + maxHeigth + ", gap 10 10 10 10"));
+	
+
+	JScrollPane scrollPane =  new JScrollPane(wtaInfo,
+            ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
+            ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED
+            );
+    scrollPane.setBorder(BorderFactory.createEmptyBorder(0,0,0,0));
+	
+	dialogDetail.add(scrollPane,"w 100%, h 100%, wrap");
+	
+	
+	jbuKopieren = new JButton();
+	jbuKopieren.setActionCommand(ACTION_COPY_TO_CLIPBOARD);
+	jbuKopieren.addActionListener(new DialogError_actionAdapter(this));
+	jbuKopieren.setText(LPMain.getInstance().getTextRespectUISPr(
+			"lp.inzwischenablagekopieren"));
+	
+	jbuSchliessen = new JButton();
+	jbuSchliessen.setActionCommand(ACTION_CLOSE_DIALOG_DETAIL);
+	jbuSchliessen.addActionListener(new DialogError_actionAdapter(this));
+	jbuSchliessen.setText(LPMain.getInstance().getTextRespectUISPr("OK"));
+	
+	JPanel panelButton = new JPanel();
+	panelButton.add(jbuSchliessen);
+	panelButton.add(jbuKopieren);
+	
+	dialogDetail.add(panelButton, "center");
+	
+	dialogDetail.pack();
+	dialogDetail.setLocationRelativeTo(this);
+	dialogDetail.setVisible(true);
+}
+
+	
 	protected void actionPerformed(ActionEvent e) {
 		if (e.getActionCommand().equals(ACTION_CLOSE)) {
 			dispose();
 		} else if (e.getActionCommand().equals(ACTION_DETAIL_MESSAGE)) {
-			boolean bVisible = jtbuDetails.isSelected();
-			this.setSize(new Dimension(Defaults.getInstance().bySizeFactor(WIDTH), Defaults.getInstance().bySizeFactor(bVisible ? HEIGHT_WITH_DETAIL : HEIGHT_WITHOUT_DETAIL)));
-			jspScrollPane.setVisible(bVisible);
-			wtaInfo.validate();
-			jspScrollPane.validate();
-			validate();
+			jbDetail();
 		} else if (e.getActionCommand().equals(ACTION_COPY_TO_CLIPBOARD)) {
 			final Clipboard clipboard = Toolkit.getDefaultToolkit()
 					.getSystemClipboard();
 			clipboard.setContents(new StringSelection(wtaInfo.getText()), null);
+		} else if (e.getActionCommand().equals(ACTION_CLOSE_DIALOG_DETAIL)){
+			dialogDetail.setVisible(false);
 		}
 	}
 }

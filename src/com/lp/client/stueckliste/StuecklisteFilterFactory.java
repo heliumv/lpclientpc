@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -41,9 +41,12 @@ import com.lp.client.frame.component.PanelQueryFLR;
 import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.pc.LPMain;
 import com.lp.client.util.fastlanereader.gui.QueryType;
+import com.lp.server.angebot.service.AngebotFac;
 import com.lp.server.artikel.service.ArtikelFac;
 import com.lp.server.benutzer.service.BenutzerFac;
 import com.lp.server.fertigung.service.FertigungFac;
+import com.lp.server.partner.service.KundeFac;
+import com.lp.server.partner.service.PartnerFac;
 import com.lp.server.stueckliste.service.StuecklisteFac;
 import com.lp.server.system.service.ParameterFac;
 import com.lp.server.system.service.ParametermandantDto;
@@ -105,6 +108,44 @@ public class StuecklisteFilterFactory {
 				FilterKriterium.OPERATOR_EQUAL, false);
 		return kriterien;
 	}
+	
+	public FilterKriteriumDirekt createFKDKundeName() throws Throwable {
+
+		ParametermandantDto parameter = (ParametermandantDto) DelegateFactory
+				.getInstance()
+				.getParameterDelegate()
+				.getParametermandant(
+						ParameterFac.PARAMETER_PARTNERSUCHE_WILDCARD_BEIDSEITIG,
+						ParameterFac.KATEGORIE_PARTNER,
+						LPMain.getInstance().getTheClient().getMandant());
+		if (((Boolean) parameter.getCWertAsObject() == true)) {
+			FilterKriteriumDirekt fkDirekt1 = new FilterKriteriumDirekt(
+					KundeFac.FLR_PARTNER + "."
+							+ PartnerFac.FLR_PARTNER_NAME1NACHNAMEFIRMAZEILE1,
+					"", FilterKriterium.OPERATOR_LIKE, LPMain.getInstance()
+							.getTextRespectUISPr("lp.kunde.modulname"),
+					FilterKriteriumDirekt.PROZENT_BOTH, // Auswertung als
+															// 'XX%'
+					true, // wrapWithSingleQuotes
+					true, Facade.MAX_UNBESCHRAENKT); // ignore case
+
+			return fkDirekt1;
+		} else {
+			FilterKriteriumDirekt fkDirekt1 = new FilterKriteriumDirekt(
+					KundeFac.FLR_PARTNER + "."
+							+ PartnerFac.FLR_PARTNER_NAME1NACHNAMEFIRMAZEILE1,
+					"", FilterKriterium.OPERATOR_LIKE, LPMain.getInstance()
+							.getTextRespectUISPr("lp.kunde.modulname"),
+					FilterKriteriumDirekt.PROZENT_TRAILING, // Auswertung als
+															// 'XX%'
+					true, // wrapWithSingleQuotes
+					true, Facade.MAX_UNBESCHRAENKT); // ignore case
+
+			return fkDirekt1;
+		}
+
+	}
+
 
 	public PanelQueryFLR createPanelFLRMontageart(InternalFrame internalFrameI,
 			Integer selectedId) throws Throwable {
@@ -208,6 +249,17 @@ public class StuecklisteFilterFactory {
 		FilterKriterium[] kriterien = new FilterKriterium[1];
 		FilterKriterium krit1 = new FilterKriterium(
 				StuecklisteFac.FLR_STUECKLISTEPOSITION_FLRSTUECKLISTE + ".i_id",
+				true, stuecklisteIIid + "", FilterKriterium.OPERATOR_EQUAL,
+				false);
+		kriterien[0] = krit1;
+		return kriterien;
+
+	}
+	public FilterKriterium[] createFKStuecklisteAbbuchungslager(Integer stuecklisteIIid) {
+
+		FilterKriterium[] kriterien = new FilterKriterium[1];
+		FilterKriterium krit1 = new FilterKriterium(
+				"stueckliste_i_id",
 				true, stuecklisteIIid + "", FilterKriterium.OPERATOR_EQUAL,
 				false);
 		kriterien[0] = krit1;
@@ -404,6 +456,8 @@ public class StuecklisteFilterFactory {
 						createFKVStuecklisteArtikel());
 		panelQueryFLRStueckliste.addDirektFilter(StuecklisteFilterFactory
 				.getInstance().createFKDErweiterteTextsuche());
+		panelQueryFLRStueckliste.addDirektFilter(StuecklisteFilterFactory
+				.getInstance().createFKDKundeName());
 		return panelQueryFLRStueckliste;
 	}
 

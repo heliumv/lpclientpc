@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -32,7 +32,6 @@
  ******************************************************************************/
 package com.lp.client.system;
 
-
 import java.awt.event.ActionEvent;
 
 import javax.swing.event.ChangeEvent;
@@ -49,6 +48,9 @@ import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.pc.LPMain;
 import com.lp.server.system.fastlanereader.generated.service.FLRParameteranwenderPK;
 import com.lp.server.system.fastlanereader.generated.service.FLRParametermandantPK;
+import com.lp.server.system.fastlanereader.generated.service.FLRParametermandantgueltigabPK;
+import com.lp.server.system.service.ParameterFac;
+import com.lp.server.util.fastlanereader.service.query.FilterKriterium;
 import com.lp.server.util.fastlanereader.service.query.QueryParameters;
 
 @SuppressWarnings("static-access")
@@ -62,293 +64,401 @@ import com.lp.server.util.fastlanereader.service.query.QueryParameters;
  * @author  Uli Walch
  * @version $Revision: 1.3 $
  */
-public class TabbedPaneParameter
-    extends TabbedPane
-{
-  /**
+public class TabbedPaneParameter extends TabbedPane {
+	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-private PanelSplit panelSplitParametermandant = null;
-  private PanelQuery panelQueryParametermandant = null;
-  private PanelParameterMandant panelBottomParametermandant = null;
+	private PanelSplit panelSplitParametermandant = null;
+	private PanelQuery panelQueryParametermandant = null;
 
-  private PanelSplit panelSplitParameteranwender = null;
-  private PanelQuery panelQueryParameteranwender = null;
-  private PanelParameterAnwender panelBottomParameteranwender = null;
+	public PanelQuery getPanelQueryParametermandant() {
+		return panelQueryParametermandant;
+	}
 
-  //Reihenfolge der Panels
-  private static final int IDX_PANEL_PARAMETERMANDANT = 0;
-  private static final int IDX_PANEL_PARAMETERANWENDER = 1;
+	private PanelParameterMandant panelBottomParametermandant = null;
 
-  public TabbedPaneParameter(InternalFrame internalFrameI)
-      throws Throwable {
-    super(internalFrameI, LPMain.getInstance().getTextRespectUISPr("lp.parameter"));
-    jbInit();
-    initComponents();
-  }
+	private PanelSplit panelSplitParametermandantgueltigab = null;
+	private PanelQuery panelQueryParametermandantgueltigab = null;
+	private PanelParametermandantGueltigab panelBottomParametermandantgueltigab = null;
 
+	private PanelSplit panelSplitParameteranwender = null;
+	private PanelQuery panelQueryParameteranwender = null;
+	private PanelParameterAnwender panelBottomParameteranwender = null;
 
-  private void jbInit()
-      throws Throwable {
-    insertTab(
-        LPMain.getInstance().getTextRespectUISPr("lp.parametermandant"),
-        null,
-        null,
-        LPMain.getInstance().getTextRespectUISPr("lp.parametermandant"),
-        IDX_PANEL_PARAMETERMANDANT);
+	// Reihenfolge der Panels
+	public static final int IDX_PANEL_PARAMETERMANDANT = 0;
+	public static final int IDX_PANEL_PARAMETERMANDANTGUELTIGAB = 1;
+	public static final int IDX_PANEL_PARAMETERANWENDER = 2;
 
-    insertTab(
-        LPMain.getInstance().getTextRespectUISPr("lp.parameteranwender"),
-        null,
-        null,
-        LPMain.getInstance().getTextRespectUISPr("lp.parameteranwender"),
-        IDX_PANEL_PARAMETERANWENDER);
+	public TabbedPaneParameter(InternalFrame internalFrameI) throws Throwable {
+		super(internalFrameI, LPMain.getInstance().getTextRespectUISPr(
+				"lp.parameter"));
+		jbInit();
+		initComponents();
+	}
 
-    refreshPanelParametermandant();
-    setSelectedComponent(panelSplitParametermandant);
-    panelQueryParametermandant.eventYouAreSelected(false);
+	public void disableParametermandantgueltigab() {
 
-    // wenn es keine Parametermandant gibt, die fix verdrahteten Werte fuer den aktuellen Mandanten anlegen
-    if (panelQueryParametermandant.getSelectedId() == null) {
-      DelegateFactory.getInstance().getParameterDelegate().createFixverdrahteteParametermandant();
+		setEnabledAt(IDX_PANEL_PARAMETERMANDANTGUELTIGAB, false);
 
-      panelQueryParametermandant.eventYouAreSelected(false);
-    }
+		FLRParametermandantPK pk = (FLRParametermandantPK) panelQueryParametermandant
+				.getSelectedId();
+		if (pk != null) {
+			if (pk.getC_nr()
+					.equals(ParameterFac.ENTWICKLUNGSGEMEINKOSTENFAKTOR)
+					|| pk.getC_nr().equals(
+							ParameterFac.FERTIGUNGSGEMEINKOSTENFAKTOR)
+					|| pk.getC_nr().equals(
+							ParameterFac.MATERIALGEMEINKOSTENFAKTOR)
+					|| pk.getC_nr().equals(
+							ParameterFac.VERTRIEBSGEMEINKOSTENFAKTOR)
+					|| pk.getC_nr().equals(
+							ParameterFac.VERWALTUNGSGEMEINKOSTENFAKTOR)
+					|| pk.getC_nr().equals(
+							ParameterFac.PARAMETER_GEMEINKOSTENFAKTOR)) {
+				setEnabledAt(IDX_PANEL_PARAMETERMANDANTGUELTIGAB, true);
+			}
+		}
 
-    addChangeListener(this);
-    getInternalFrame().addItemChangedListener(this);
-  }
+	}
 
-  protected void lPActionEvent(ActionEvent e) {
-    // nothing here.
-  }
+	private void jbInit() throws Throwable {
+		insertTab(
+				LPMain.getInstance().getTextRespectUISPr("lp.parametermandant"),
+				null,
+				null,
+				LPMain.getInstance().getTextRespectUISPr("lp.parametermandant"),
+				IDX_PANEL_PARAMETERMANDANT);
+		insertTab(
+				LPMain.getInstance().getTextRespectUISPr(
+						"lp.parametermandant.zumzeitpunkt"),
+				null,
+				null,
+				LPMain.getInstance().getTextRespectUISPr(
+						"lp.parametermandant.zumzeitpunkt"),
+				IDX_PANEL_PARAMETERMANDANTGUELTIGAB);
 
+		insertTab(
+				LPMain.getInstance()
+						.getTextRespectUISPr("lp.parameteranwender"), null,
+				null,
+				LPMain.getInstance()
+						.getTextRespectUISPr("lp.parameteranwender"),
+				IDX_PANEL_PARAMETERANWENDER);
 
-  /**
-   * changed: hier wird alles durchlaufen und abgefragt zb. save event, discard
-   * event, wenn ein panel refresht werden soll...
-   *
-   * @param eI ItemChangedEvent
-   * @throws Throwable
-   */
-  public void lPEventItemChanged(ItemChangedEvent eI)
-      throws Throwable {
+		refreshPanelParametermandant();
+		setSelectedComponent(panelSplitParametermandant);
+		panelQueryParametermandant.eventYouAreSelected(false);
 
-    ItemChangedEvent e = (ItemChangedEvent) eI;
+		// wenn es keine Parametermandant gibt, die fix verdrahteten Werte fuer
+		// den aktuellen Mandanten anlegen
+		if (panelQueryParametermandant.getSelectedId() == null) {
+			DelegateFactory.getInstance().getParameterDelegate()
+					.createFixverdrahteteParametermandant();
 
-    if (e.getID() == ItemChangedEvent.ITEM_CHANGED) {
-      if (e.getSource() == panelQueryParametermandant) {
-        FLRParametermandantPK pk = (FLRParametermandantPK) panelQueryParametermandant.
-            getSelectedId();
+			panelQueryParametermandant.eventYouAreSelected(false);
+		}
 
-        if (pk != null) {
-          getInternalFrame().setKeyWasForLockMe(pk.getC_nr() + pk.getC_kategorie());
-        }
+		addChangeListener(this);
+		getInternalFrame().addItemChangedListener(this);
+	}
 
-        panelBottomParametermandant.setKeyWhenDetailPanel(pk);
-        panelBottomParametermandant.eventYouAreSelected(false);
+	protected void lPActionEvent(ActionEvent e) {
+		// nothing here.
+	}
 
-        //im QP die Buttons in den Zustand nolocking/save setzen.
-        this.panelQueryParametermandant.updateButtons(
-            panelBottomParametermandant.getLockedstateDetailMainKey());
+	/**
+	 * changed: hier wird alles durchlaufen und abgefragt zb. save event,
+	 * discard event, wenn ein panel refresht werden soll...
+	 * 
+	 * @param eI
+	 *            ItemChangedEvent
+	 * @throws Throwable
+	 */
+	public void lPEventItemChanged(ItemChangedEvent eI) throws Throwable {
 
-      }
-      else if (e.getSource() == panelQueryParameteranwender) {
-        FLRParameteranwenderPK pk = (FLRParameteranwenderPK) panelQueryParameteranwender.
-            getSelectedId();
+		ItemChangedEvent e = (ItemChangedEvent) eI;
 
-        if (pk != null) {
-          getInternalFrame().setKeyWasForLockMe(pk.getC_nr() + pk.getC_kategorie());
-        }
+		if (e.getID() == ItemChangedEvent.ITEM_CHANGED) {
+			if (e.getSource() == panelQueryParametermandant) {
+				FLRParametermandantPK pk = (FLRParametermandantPK) panelQueryParametermandant
+						.getSelectedId();
 
-        panelBottomParameteranwender.setKeyWhenDetailPanel(pk);
-        panelBottomParameteranwender.eventYouAreSelected(false);
+				if (pk != null) {
+					getInternalFrame().setKeyWasForLockMe(
+							pk.getC_nr() + pk.getC_kategorie());
+				}
 
-        //im QP die Buttons in den Zustand nolocking/save setzen.
-        this.panelQueryParameteranwender.updateButtons(
-            panelBottomParameteranwender.getLockedstateDetailMainKey());
+				panelBottomParametermandant.setKeyWhenDetailPanel(pk);
+				panelBottomParametermandant.eventYouAreSelected(false);
 
-      }
-    }
+				// im QP die Buttons in den Zustand nolocking/save setzen.
+				this.panelQueryParametermandant
+						.updateButtons(panelBottomParametermandant
+								.getLockedstateDetailMainKey());
 
-    else if (eI.getID() == ItemChangedEvent.ACTION_UPDATE) {
-      // hier kommt man nach upd im D bei einem 1:n hin.
-      if (eI.getSource() == this.panelBottomParametermandant) {
-        //im QP die Buttons in den Zustand neu setzen.
-        this.panelQueryParametermandant.updateButtons(new LockStateValue(PanelBasis.
-            LOCK_FOR_NEW));
-      }
-      // hier kommt man nach upd im D bei einem 1:n hin.
-      else if (eI.getSource() == this.panelBottomParameteranwender) {
-        //im QP die Buttons in den Zustand neu setzen.
-        this.panelQueryParameteranwender.updateButtons(new LockStateValue(PanelBasis.
-            LOCK_FOR_NEW));
-      }
-    }
+			} else if (e.getSource() == panelQueryParametermandantgueltigab) {
+				FLRParametermandantgueltigabPK pk = (FLRParametermandantgueltigabPK) panelQueryParametermandantgueltigab
+						.getSelectedId();
 
-    else if (e.getID() == ItemChangedEvent.ACTION_DISCARD) {
-      // wir landen hier bei der Abfolge Button Aendern -> xx -> Button Discard
-      if (e.getSource() == panelBottomParametermandant) {
-        panelSplitParametermandant.eventYouAreSelected(false);
-      }
-      else if (e.getSource() == panelBottomParameteranwender) {
-        panelSplitParameteranwender.eventYouAreSelected(false);
-      }
-    }
+				if (pk != null) {
+					getInternalFrame().setKeyWasForLockMe(
+							pk.getC_nr() + pk.getC_kategorie());
+				}
 
-    //selektiert nach save: 0 Wir landen hier nach Button Save
-    else if (e.getID() == ItemChangedEvent.ACTION_SAVE) {
-      if (e.getSource() == panelBottomParametermandant) {
-        Object oKey = panelBottomParametermandant.getKeyWhenDetailPanel();
-        panelQueryParametermandant.eventYouAreSelected(false);
-        panelQueryParametermandant.setSelectedId(oKey);
-        panelSplitParametermandant.eventYouAreSelected(false);
-      }
-      else if (e.getSource() == panelBottomParameteranwender) {
-        Object oKey = panelBottomParameteranwender.getKeyWhenDetailPanel();
-        panelQueryParameteranwender.eventYouAreSelected(false);
-        panelQueryParameteranwender.setSelectedId(oKey);
-        panelSplitParameteranwender.eventYouAreSelected(false);
-      }
-    }
+				panelBottomParametermandantgueltigab.setKeyWhenDetailPanel(pk);
+				panelBottomParametermandantgueltigab.eventYouAreSelected(false);
 
-    // wir landen hier nach der Abfolge Button Neu -> xx -> Button Discard
-    else if (e.getID() == ItemChangedEvent.ACTION_GOTO_MY_DEFAULT_QP) {
-      if (e.getSource() == panelBottomParametermandant) {
-        panelSplitParametermandant.eventYouAreSelected(false);
-      }
-      else if (e.getSource() == panelBottomParameteranwender) {
-        panelSplitParameteranwender.eventYouAreSelected(false);
-      }
-    }
+				// im QP die Buttons in den Zustand nolocking/save setzen.
+				this.panelQueryParametermandantgueltigab
+						.updateButtons(panelBottomParametermandantgueltigab
+								.getLockedstateDetailMainKey());
 
-    else if (eI.getID() == ItemChangedEvent.ACTION_NEW) {
-      if (eI.getSource() == panelQueryParametermandant) {
-        if (panelQueryParametermandant.getSelectedId() == null) {
-          getInternalFrame().enableAllPanelsExcept(true);
-        }
-        panelBottomParametermandant.eventActionNew(eI, true, false);
-        panelBottomParametermandant.eventYouAreSelected(false);
-        setSelectedComponent(panelSplitParametermandant);
-      }
-      else if (eI.getSource() == panelQueryParameteranwender) {
-        if (panelQueryParameteranwender.getSelectedId() == null) {
-          getInternalFrame().enableAllPanelsExcept(true);
-        }
-        panelBottomParameteranwender.eventActionNew(eI, true, false);
-        panelBottomParameteranwender.eventYouAreSelected(false);
-        setSelectedComponent(panelSplitParameteranwender);
-      }
-    }
-  }
+			} else if (e.getSource() == panelQueryParameteranwender) {
+				FLRParameteranwenderPK pk = (FLRParameteranwenderPK) panelQueryParameteranwender
+						.getSelectedId();
 
-  public void lPEventObjectChanged(ChangeEvent e)
-      throws Throwable {
-    super.lPEventObjectChanged(e);
-    int selectedIndex = this.getSelectedIndex();
+				if (pk != null) {
+					getInternalFrame().setKeyWasForLockMe(
+							pk.getC_nr() + pk.getC_kategorie());
+				}
 
-    switch (selectedIndex) {
-      case IDX_PANEL_PARAMETERMANDANT:
-        refreshPanelParametermandant();
-        panelQueryParametermandant.eventYouAreSelected(false);
+				panelBottomParameteranwender.setKeyWhenDetailPanel(pk);
+				panelBottomParameteranwender.eventYouAreSelected(false);
 
-        //im QP die Buttons setzen.
-        panelQueryParametermandant.updateButtons();
+				// im QP die Buttons in den Zustand nolocking/save setzen.
+				this.panelQueryParameteranwender
+						.updateButtons(panelBottomParameteranwender
+								.getLockedstateDetailMainKey());
 
-        // wenn es fuer das tabbed pane noch keinen Eintrag gibt,
-        //   die restlichen oberen Laschen deaktivieren, ausser ...
-        if (panelQueryParametermandant.getSelectedId() == null) {
-          getInternalFrame().enableAllOberePanelsExceptMe(this,
-              IDX_PANEL_PARAMETERMANDANT, false);
-        }
-        break;
+			}
+		}
 
-      case IDX_PANEL_PARAMETERANWENDER:
-        refreshPanelParameteranwender();
-        panelQueryParameteranwender.eventYouAreSelected(false);
+		else if (eI.getID() == ItemChangedEvent.ACTION_UPDATE) {
+			// hier kommt man nach upd im D bei einem 1:n hin.
+			if (eI.getSource() == this.panelBottomParametermandant) {
+				// im QP die Buttons in den Zustand neu setzen.
+				this.panelQueryParametermandant
+						.updateButtons(new LockStateValue(
+								PanelBasis.LOCK_FOR_NEW));
+			} else if (eI.getSource() == this.panelBottomParametermandantgueltigab) {
+				// im QP die Buttons in den Zustand neu setzen.
+				this.panelQueryParametermandantgueltigab
+						.updateButtons(new LockStateValue(
+								PanelBasis.LOCK_FOR_NEW));
+			}
+			// hier kommt man nach upd im D bei einem 1:n hin.
+			else if (eI.getSource() == this.panelBottomParameteranwender) {
+				// im QP die Buttons in den Zustand neu setzen.
+				this.panelQueryParameteranwender
+						.updateButtons(new LockStateValue(
+								PanelBasis.LOCK_FOR_NEW));
+			}
+		}
 
-        //im QP die Buttons setzen.
-        panelQueryParameteranwender.updateButtons();
+		else if (e.getID() == ItemChangedEvent.ACTION_DISCARD) {
+			// wir landen hier bei der Abfolge Button Aendern -> xx -> Button
+			// Discard
+			if (e.getSource() == panelBottomParametermandant) {
+				panelSplitParametermandant.eventYouAreSelected(false);
+			} else if (e.getSource() == panelBottomParameteranwender) {
+				panelSplitParameteranwender.eventYouAreSelected(false);
+			} else if (e.getSource() == panelBottomParametermandantgueltigab) {
+				panelSplitParametermandantgueltigab.eventYouAreSelected(false);
+			}
+		}
 
-        // wenn es fuer das tabbed pane noch keinen Eintrag gibt,
-        //   die restlichen oberen Laschen deaktivieren, ausser ...
-              panelBottomParameteranwender.validate();
-        panelBottomParameteranwender.repaint();
-        break;
-    }
-  }
+		// selektiert nach save: 0 Wir landen hier nach Button Save
+		else if (e.getID() == ItemChangedEvent.ACTION_SAVE) {
+			if (e.getSource() == panelBottomParametermandant) {
+				Object oKey = panelBottomParametermandant
+						.getKeyWhenDetailPanel();
+				panelQueryParametermandant.eventYouAreSelected(false);
+				panelQueryParametermandant.setSelectedId(oKey);
+				panelSplitParametermandant.eventYouAreSelected(false);
+			} else if (e.getSource() == panelBottomParametermandantgueltigab) {
+				Object oKey = panelBottomParametermandantgueltigab
+						.getKeyWhenDetailPanel();
+				panelQueryParametermandantgueltigab.eventYouAreSelected(false);
+				panelQueryParametermandantgueltigab.setSelectedId(oKey);
+				panelSplitParametermandantgueltigab.eventYouAreSelected(false);
+			} else if (e.getSource() == panelBottomParameteranwender) {
+				Object oKey = panelBottomParameteranwender
+						.getKeyWhenDetailPanel();
+				panelQueryParameteranwender.eventYouAreSelected(false);
+				panelQueryParameteranwender.setSelectedId(oKey);
+				panelSplitParameteranwender.eventYouAreSelected(false);
+			}
+		}
 
+		// wir landen hier nach der Abfolge Button Neu -> xx -> Button Discard
+		else if (e.getID() == ItemChangedEvent.ACTION_GOTO_MY_DEFAULT_QP) {
+			if (e.getSource() == panelBottomParametermandant) {
+				panelSplitParametermandant.eventYouAreSelected(false);
+			} else if (e.getSource() == panelBottomParametermandantgueltigab) {
+				panelSplitParametermandantgueltigab.eventYouAreSelected(false);
+			} else if (e.getSource() == panelBottomParameteranwender) {
+				panelSplitParameteranwender.eventYouAreSelected(false);
+			}
+		}
 
-  private void refreshPanelParametermandant()
-      throws Throwable {
+		else if (eI.getID() == ItemChangedEvent.ACTION_NEW) {
+			if (eI.getSource() == panelQueryParametermandant) {
+				if (panelQueryParametermandant.getSelectedId() == null) {
+					getInternalFrame().enableAllPanelsExcept(true);
+				}
+				panelBottomParametermandant.eventActionNew(eI, true, false);
+				panelBottomParametermandant.eventYouAreSelected(false);
+				setSelectedComponent(panelSplitParametermandant);
+			} else if (eI.getSource() == panelQueryParametermandantgueltigab) {
 
-    if (panelSplitParametermandant == null) {
-      String[] aWhichStandardButtonIUse = null;
+				panelBottomParametermandantgueltigab.eventActionNew(eI, true,
+						false);
+				panelBottomParametermandantgueltigab.eventYouAreSelected(false);
+				setSelectedComponent(panelSplitParametermandantgueltigab);
+			} else if (eI.getSource() == panelQueryParameteranwender) {
+				if (panelQueryParameteranwender.getSelectedId() == null) {
+					getInternalFrame().enableAllPanelsExcept(true);
+				}
+				panelBottomParameteranwender.eventActionNew(eI, true, false);
+				panelBottomParameteranwender.eventYouAreSelected(false);
+				setSelectedComponent(panelSplitParameteranwender);
+			}
+		}
+	}
 
-      panelQueryParametermandant = new PanelQuery(
-          null,
-          SystemFilterFactory.getInstance().createFKIdCompMandantcnr(),
-          QueryParameters.UC_ID_PARAMETERMANDANT,
-          aWhichStandardButtonIUse,
-          getInternalFrame(),
-          LPMain.getInstance().getTextRespectUISPr("lp.parametermandant"),
-          true);
+	public void lPEventObjectChanged(ChangeEvent e) throws Throwable {
+		super.lPEventObjectChanged(e);
+		int selectedIndex = this.getSelectedIndex();
 
-      panelQueryParametermandant.befuellePanelFilterkriterienDirekt(
-          SystemFilterFactory.getInstance().createFKDIdCompCNr(),
-          SystemFilterFactory.getInstance().createFKDIdCompCKategorie());
+		switch (selectedIndex) {
+		case IDX_PANEL_PARAMETERMANDANT:
+			refreshPanelParametermandant();
+			panelQueryParametermandant.eventYouAreSelected(false);
 
-      panelBottomParametermandant = new PanelParameterMandant(
-          getInternalFrame(),
-          LPMain.getInstance().getTextRespectUISPr("lp.parametermandant"),
-          null);
+			// im QP die Buttons setzen.
+			panelQueryParametermandant.updateButtons();
 
-      panelSplitParametermandant = new PanelSplit(
-          getInternalFrame(),
-          panelBottomParametermandant,
-          panelQueryParametermandant,
-          260);
+			// wenn es fuer das tabbed pane noch keinen Eintrag gibt,
+			// die restlichen oberen Laschen deaktivieren, ausser ...
+			if (panelQueryParametermandant.getSelectedId() == null) {
+				getInternalFrame().enableAllOberePanelsExceptMe(this,
+						IDX_PANEL_PARAMETERMANDANT, false);
+			}
+			break;
 
-      setComponentAt(IDX_PANEL_PARAMETERMANDANT, panelSplitParametermandant);
-    }
-  }
+		case IDX_PANEL_PARAMETERMANDANTGUELTIGAB:
+			refreshPanelParametermandantgueltigab();
+			panelQueryParametermandantgueltigab.eventYouAreSelected(false);
+			panelQueryParametermandantgueltigab.updateButtons();
+			break;
 
+		case IDX_PANEL_PARAMETERANWENDER:
+			refreshPanelParameteranwender();
+			panelQueryParameteranwender.eventYouAreSelected(false);
 
-  private void refreshPanelParameteranwender()
-      throws Throwable {
+			// im QP die Buttons setzen.
+			panelQueryParameteranwender.updateButtons();
 
-    if (panelSplitParameteranwender == null) {
-      String[] aWhichStandardButtonIUse = null;
+			// wenn es fuer das tabbed pane noch keinen Eintrag gibt,
+			// die restlichen oberen Laschen deaktivieren, ausser ...
+			panelBottomParameteranwender.validate();
+			panelBottomParameteranwender.repaint();
+			break;
+		}
+	}
 
-      panelQueryParameteranwender = new PanelQuery(
-          null,
-          null,
-          QueryParameters.UC_ID_PARAMETERANWENDER,
-          aWhichStandardButtonIUse,
-          getInternalFrame(),
-          LPMain.getInstance().getTextRespectUISPr("lp.parameteranwender"),
-          true);
+	private void refreshPanelParametermandant() throws Throwable {
 
-      panelBottomParameteranwender = new PanelParameterAnwender(
-          getInternalFrame(),
-          LPMain.getInstance().getTextRespectUISPr("lp.parameteranwender"),
-          null);
+		if (panelSplitParametermandant == null) {
+			String[] aWhichStandardButtonIUse = null;
 
-      panelSplitParameteranwender = new PanelSplit(
-          getInternalFrame(),
-          panelBottomParameteranwender,
-          panelQueryParameteranwender,
-          260);
+			panelQueryParametermandant = new PanelQuery(null,
+					SystemFilterFactory.getInstance()
+							.createFKIdCompMandantcnr(),
+					QueryParameters.UC_ID_PARAMETERMANDANT,
+					aWhichStandardButtonIUse, getInternalFrame(), LPMain
+							.getInstance().getTextRespectUISPr(
+									"lp.parametermandant"), true);
 
-      setComponentAt(IDX_PANEL_PARAMETERANWENDER, panelSplitParameteranwender);
-    }
-  }
+			panelQueryParametermandant.befuellePanelFilterkriterienDirekt(
+					SystemFilterFactory.getInstance().createFKDIdCompCNr(),
+					SystemFilterFactory.getInstance()
+							.createFKDIdCompCKategorie());
 
+			panelBottomParametermandant = new PanelParameterMandant(
+					getInternalFrame(), LPMain.getInstance()
+							.getTextRespectUISPr("lp.parametermandant"), null);
 
-  protected javax.swing.JMenuBar getJMenuBar()
-      throws Throwable {
-    return new WrapperMenuBar(this);
-  }
+			panelSplitParametermandant = new PanelSplit(getInternalFrame(),
+					panelBottomParametermandant, panelQueryParametermandant,
+					260);
 
+			setComponentAt(IDX_PANEL_PARAMETERMANDANT,
+					panelSplitParametermandant);
+		}
+	}
+
+	private void refreshPanelParametermandantgueltigab() throws Throwable {
+
+		FLRParametermandantPK pk = (FLRParametermandantPK) panelQueryParametermandant
+				.getSelectedId();
+		FilterKriterium[] defaultFilter = SystemFilterFactory.getInstance()
+				.createFKParametermandantgueltigab(pk.getC_nr());
+
+		if (panelSplitParametermandantgueltigab == null) {
+			String[] aWhichStandardButtonIUse = new String[] { PanelBasis.ACTION_NEW };
+
+			panelQueryParametermandantgueltigab = new PanelQuery(null,
+					defaultFilter,
+					QueryParameters.UC_ID_PARAMETERMANDANTGUELTIGAB,
+					aWhichStandardButtonIUse, getInternalFrame(), LPMain
+							.getInstance().getTextRespectUISPr(
+									"lp.parametermandant.zumzeitpunkt"), true);
+
+			panelBottomParametermandantgueltigab = new PanelParametermandantGueltigab(
+					getInternalFrame(), LPMain.getInstance()
+							.getTextRespectUISPr(
+									"lp.parametermandant.zumzeitpunkt"), null);
+
+			panelSplitParametermandantgueltigab = new PanelSplit(
+					getInternalFrame(), panelBottomParametermandantgueltigab,
+					panelQueryParametermandantgueltigab, 260);
+
+			setComponentAt(IDX_PANEL_PARAMETERMANDANTGUELTIGAB,
+					panelSplitParametermandantgueltigab);
+		}
+
+		panelQueryParametermandantgueltigab.setDefaultFilter(defaultFilter);
+
+	}
+
+	private void refreshPanelParameteranwender() throws Throwable {
+
+		if (panelSplitParameteranwender == null) {
+			String[] aWhichStandardButtonIUse = null;
+
+			panelQueryParameteranwender = new PanelQuery(null, null,
+					QueryParameters.UC_ID_PARAMETERANWENDER,
+					aWhichStandardButtonIUse, getInternalFrame(), LPMain
+							.getInstance().getTextRespectUISPr(
+									"lp.parameteranwender"), true);
+
+			panelBottomParameteranwender = new PanelParameterAnwender(
+					getInternalFrame(), LPMain.getInstance()
+							.getTextRespectUISPr("lp.parameteranwender"), null);
+
+			panelSplitParameteranwender = new PanelSplit(getInternalFrame(),
+					panelBottomParameteranwender, panelQueryParameteranwender,
+					260);
+
+			setComponentAt(IDX_PANEL_PARAMETERANWENDER,
+					panelSplitParameteranwender);
+		}
+	}
+
+	protected javax.swing.JMenuBar getJMenuBar() throws Throwable {
+		return new WrapperMenuBar(this);
+	}
 }

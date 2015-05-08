@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -137,6 +137,10 @@ public class PanelAnsprechpartnerFuerPanelQueryFLR extends PanelBasis {
 	protected WrapperDateField wdfGebDatum = null;
 	private WrapperLabel wlaFremdsystem = null;
 	private WrapperTextField wtfFremdsystem = null;
+	
+
+	private WrapperLabel wlaAbteilung = null;
+	private WrapperTextField wtfAbteilung = null;
 
 	static final public String ACTION_SPECIAL_FLR_ANSPRECHPARTNER_FUNKTION = "action_special_flr_ansprechpartner_funktion";
 	static final public String ACTION_SPECIAL_FLR_ANSPRECHPARTNER = "action_special_flr_ansprechpartner";
@@ -211,6 +215,11 @@ public class PanelAnsprechpartnerFuerPanelQueryFLR extends PanelBasis {
 		wtfTitel = new WrapperTextField();
 		wtfNtitel = new WrapperTextField();
 
+		wlaAbteilung = new WrapperLabel(
+				LPMain.getTextRespectUISPr("lp.abteilung"));
+		wtfAbteilung = new WrapperTextField();
+
+		
 		wtfAnsprechpartnerfunktion = new WrapperTextField();
 		wtfAnsprechpartnerfunktion.setActivatable(false);
 		wtfAnsprechpartnerfunktion.setMandatoryFieldDB(true);
@@ -291,20 +300,29 @@ public class PanelAnsprechpartnerFuerPanelQueryFLR extends PanelBasis {
 		iZeile++;
 		jpaWorkingOn.add(wbuAnsprechpartner, new GridBagConstraints(0, iZeile,
 				1, 1, 0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 160, 0));
+				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 130, 0));
 		jpaWorkingOn.add(wcoAnrede, new GridBagConstraints(1, iZeile, 1, 1, 0,
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
+				new Insets(2, 2, 2, 2), -50, 0));
 
 		jpaWorkingOn.add(wtfAnsprechpartner, new GridBagConstraints(2, iZeile,
 				1, 1, 1, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 130, 0));
 		jpaWorkingOn.add(wlaGebDatum, new GridBagConstraints(3, iZeile, 1, 1,
 				0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 80, 0));
+				new Insets(2, 2, 2, 2), 70, 0));
 		jpaWorkingOn.add(wdfGebDatum, new GridBagConstraints(4, iZeile, 1, 1,
 				0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
+				new Insets(2, 2, 2, 2), 50, 0));
+		
+		
+		jpaWorkingOn.add(wlaGueltigAb, new GridBagConstraints(5, iZeile, 1, 1,
+				0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
+				new Insets(2, 2, 2, 2), 40, 0));
+		jpaWorkingOn.add(wdfGueltigAb, new GridBagConstraints(6, iZeile, 1, 1,
+				0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(2, 2, 2, 2), 0, 0));
+		
 		// Zeile
 		iZeile++;
 		jpaWorkingOn.add(wlaVorname, new GridBagConstraints(1, iZeile, 1, 1, 0,
@@ -313,20 +331,19 @@ public class PanelAnsprechpartnerFuerPanelQueryFLR extends PanelBasis {
 		jpaWorkingOn.add(wtfVorname, new GridBagConstraints(2, iZeile, 1, 1, 0,
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(2, 2, 2, 2), 0, 0));
-		wlaTitel.setHorizontalAlignment(SwingConstants.LEFT);
+		
 		jpaWorkingOn.add(wlaTitel, new GridBagConstraints(3, iZeile, 1, 1, 0,
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wtfTitel, new GridBagConstraints(3, iZeile, 1, 1, 0,
-				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 30, 2, 2), 0, 0));
-		wlaNtitel.setHorizontalAlignment(SwingConstants.LEFT);
-		jpaWorkingOn.add(wlaNtitel, new GridBagConstraints(4, iZeile, 1, 1, 0,
+		jpaWorkingOn.add(wtfTitel, new GridBagConstraints(4, iZeile, 1, 1, 0,
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wtfNtitel, new GridBagConstraints(4, iZeile, 1, 1, 0,
+		jpaWorkingOn.add(wlaNtitel, new GridBagConstraints(5, iZeile, 1, 1, 0,
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 60, 2, 2), 0, 0));
+				new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wtfNtitel, new GridBagConstraints(6, iZeile, 1, 1, 0,
+				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
+				new Insets(2, 2, 2, 2), 0, 0));
 		// Zeile
 		iZeile++;
 		jpaWorkingOn.add(wbuAnsprechpartnerfunktion, new GridBagConstraints(0,
@@ -335,23 +352,14 @@ public class PanelAnsprechpartnerFuerPanelQueryFLR extends PanelBasis {
 		jpaWorkingOn.add(wtfAnsprechpartnerfunktion, new GridBagConstraints(1,
 				iZeile, 2, 1, 0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wlaGueltigAb, new GridBagConstraints(3, iZeile, 1, 1,
+		jpaWorkingOn.add(wlaAbteilung, new GridBagConstraints(3, iZeile, 1, 1,
 				0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wdfGueltigAb, new GridBagConstraints(4, iZeile, 1, 1,
+		jpaWorkingOn.add(wtfAbteilung, new GridBagConstraints(4, iZeile, 3, 1,
 				0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(2, 2, 2, 2), 0, 0));
 
-		/*
-		 * //Zeile iZeile++; jpaWorkingOn.add(wlaGueltigAb, new
-		 * GridBagConstraints(0, iZeile, 1, 1, 0, 0.0 ,
-		 * GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2, 2,
-		 * 2, 2), 0, 0)); jpaWorkingOn.add(wdfGueltigAb, new
-		 * GridBagConstraints(1, iZeile, 1, 1, 0, 0.0 ,
-		 * GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2, 2,
-		 * 2, 2), 0, 0));
-		 */
-		// Zeile
+	
 		iZeile++;
 		jpaWorkingOn.add(wlaBemerkung, new GridBagConstraints(0, iZeile, 1, 1,
 				0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
@@ -360,7 +368,7 @@ public class PanelAnsprechpartnerFuerPanelQueryFLR extends PanelBasis {
 		JScrollPane scrollPane = new JScrollPane();
 		scrollPane.getViewport().setView(wefBemerkung);
 
-		jpaWorkingOn.add(scrollPane, new GridBagConstraints(1, iZeile, 4, 2,
+		jpaWorkingOn.add(scrollPane, new GridBagConstraints(1, iZeile, 6, 2,
 				0.0, 1.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(2, 2, 2, 2), 0, 0));
 		// Zeile
@@ -371,10 +379,10 @@ public class PanelAnsprechpartnerFuerPanelQueryFLR extends PanelBasis {
 		jpaWorkingOn.add(wtfDurchwahl, new GridBagConstraints(1, iZeile, 1, 1,
 				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wlaEmail, new GridBagConstraints(2, iZeile, 1, 1, 0.0,
+		jpaWorkingOn.add(wlaEmail, new GridBagConstraints(3, iZeile, 1, 1, 0.0,
 				0.0, GridBagConstraints.NORTH, GridBagConstraints.BOTH,
 				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wtfEmail, new GridBagConstraints(3, iZeile, 2, 1, 1.0,
+		jpaWorkingOn.add(wtfEmail, new GridBagConstraints(4, iZeile, 2, 1, 1.0,
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(2, 2, 2, 2), 0, 0));
 		// Zeile
@@ -385,10 +393,10 @@ public class PanelAnsprechpartnerFuerPanelQueryFLR extends PanelBasis {
 		jpaWorkingOn.add(wtfFaxdurchwahl, new GridBagConstraints(1, iZeile, 1,
 				1, 0.0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wlaHandy, new GridBagConstraints(2, iZeile, 1, 1, 0.0,
+		jpaWorkingOn.add(wlaHandy, new GridBagConstraints(3, iZeile, 1, 1, 0.0,
 				0.0, GridBagConstraints.NORTH, GridBagConstraints.BOTH,
 				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wtfHandy, new GridBagConstraints(3, iZeile, 2, 1, 0.0,
+		jpaWorkingOn.add(wtfHandy, new GridBagConstraints(4, iZeile, 2, 1, 0.0,
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(2, 2, 2, 2), 0, 0));
 		// Zeile
@@ -399,10 +407,10 @@ public class PanelAnsprechpartnerFuerPanelQueryFLR extends PanelBasis {
 		jpaWorkingOn.add(wtfDirektfax, new GridBagConstraints(1, iZeile, 1, 1,
 				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wlaFremdsystem, new GridBagConstraints(2, iZeile, 1,
+		jpaWorkingOn.add(wlaFremdsystem, new GridBagConstraints(3, iZeile, 1,
 				1, 0.0, 0.0, GridBagConstraints.NORTH, GridBagConstraints.BOTH,
 				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wtfFremdsystem, new GridBagConstraints(3, iZeile, 2,
+		jpaWorkingOn.add(wtfFremdsystem, new GridBagConstraints(4, iZeile, 2,
 				1, 0.0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
 		// Zeile
@@ -624,6 +632,7 @@ public class PanelAnsprechpartnerFuerPanelQueryFLR extends PanelBasis {
 		ansprechpartnerDto.setCFax(wtfFaxdurchwahl.getText());
 
 		ansprechpartnerDto.setCHandy(wtfHandy.getText());
+		ansprechpartnerDto.setCAbteilung(wtfAbteilung.getText());
 
 	}
 

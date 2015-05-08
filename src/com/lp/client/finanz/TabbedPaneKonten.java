@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -33,17 +33,19 @@
 package com.lp.client.finanz;
 
 import java.awt.Color;
-import java.awt.Dimension;
+import java.awt.Component;
+import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JOptionPane;
+import javax.swing.KeyStroke;
 import javax.swing.event.ChangeEvent;
 
 import com.lowagie.text.Font;
-import com.lp.client.frame.Defaults;
 import com.lp.client.frame.ExceptionLP;
 import com.lp.client.frame.HelperClient;
 import com.lp.client.frame.component.ISourceEvent;
@@ -53,7 +55,6 @@ import com.lp.client.frame.component.PanelBasis;
 import com.lp.client.frame.component.PanelQuery;
 import com.lp.client.frame.component.PanelSplit;
 import com.lp.client.frame.component.TabbedPane;
-import com.lp.client.frame.component.WrapperLabel;
 import com.lp.client.frame.component.WrapperMenu;
 import com.lp.client.frame.component.WrapperMenuBar;
 import com.lp.client.frame.component.WrapperMenuItem;
@@ -75,6 +76,7 @@ import com.lp.server.util.fastlanereader.service.query.FilterKriterium;
 import com.lp.server.util.fastlanereader.service.query.FilterKriteriumDirekt;
 import com.lp.server.util.fastlanereader.service.query.QueryParameters;
 import com.lp.util.Helper;
+import com.sun.glass.events.KeyEvent;
 
 /**
  * <p>
@@ -126,6 +128,7 @@ public abstract class TabbedPaneKonten extends TabbedPane {
 
 	protected final static String MENU_ACTION_FINANZAMTSBUCHUNGEN = "MENU_ACTION_FINANZAMTSBUCHUNGEN";
 	protected final static String MENU_ACTION_UVA = "MENU_ACTION_UVA";
+	protected final static String MENU_ACTION_USTVERPROBUNG = "MENU_ACTION_STEUERNACHWEIS";
 	protected final static String MENU_ACTION_UVA_ZURUECKNEHMEN = "MENU_ACTION_UVA_ZURUECKNEHMEN";
 	protected final static String MENU_ACTION_BEARBEITEN_STORNIEREN = "MENU_ACTION_BEARBEITEN_STORNIEREN";
 	protected final static String MENU_ACTION_BEARBEITEN_BELEGUEBERNAHME = "MENU_ACTION_BEARBEITEN_BELEGUEBERNAHME";
@@ -137,8 +140,10 @@ public abstract class TabbedPaneKonten extends TabbedPane {
 	protected final static String MENU_ACTION_OFFENPOSTEN = "menu_action_offeneposten";
 	private static final String ACTION_SPECIAL_AUSZIFFERN_NEU = "action_special_ausziffern_neu";
 	private static final String ACTION_SPECIAL_AUSZIFFERN_LOESCHEN = "action_special_ausziffern_loeschen";
-	private static final String ACTION_SPECIAL_NEUE_SPLITTBUCHUNG = "action_special_neue_splittbuchung";
+	protected static final String ACTION_SPECIAL_NEUE_SPLITTBUCHUNG = "action_special_neue_splittbuchung";
 	protected static final String ACTION_SPECIAL_UMBUCHUNG_AENDERN = "action_special_umbuchung_aendern";
+
+	protected final static String MENU_INFO_AENDERUNGEN_KONTO = "MENU_INFO_AENDERUNGEN_KONTO";
 
 	WrapperMenuItem menueItemStorno = null;
 
@@ -163,11 +168,10 @@ public abstract class TabbedPaneKonten extends TabbedPane {
 	private IGeschaeftsjahrViewController geschaeftsjahrViewController = null;
 	private ICsvKontoImportController csvKontoImportController = null;
 
-
 	private WrapperMenuItem[] menuItemUVAZuruecknehmenFa;
 
-	private WrapperLabel kontoSaldo;
-	private WrapperLabel wlbGeschaeftsjahrGesperrt = null;
+	private JLabel kontoSaldo;
+	private JLabel wlbGeschaeftsjahrGesperrt = null;
 	private Boolean geschaeftsjahrGesperrt;
 
 	/**
@@ -477,7 +481,7 @@ public abstract class TabbedPaneKonten extends TabbedPane {
 				String sAspectInfo = ((ISourceEvent) e.getSource()).getAspect();
 				if (sAspectInfo.contains(ACTION_SPECIAL_UMBUCHUNG_AENDERN)) {
 					buchungAendern();
-				} else if (sAspectInfo.contains(ACTION_SPECIAL_AUSZIFFERN_NEU)) { 
+				} else if (sAspectInfo.contains(ACTION_SPECIAL_AUSZIFFERN_NEU)) {
 					Object[] ids = panelQueryBuchungen.getSelectedIds();
 					if (ids != null && ids.length > 0) {
 						Integer[] iIds = new Integer[ids.length];
@@ -487,7 +491,7 @@ public abstract class TabbedPaneKonten extends TabbedPane {
 								.createAuszifferung(iIds);
 						panelQueryBuchungen.eventActionRefresh(null, false);
 					}
-					
+
 				} else if (sAspectInfo
 						.contains(ACTION_SPECIAL_AUSZIFFERN_LOESCHEN)) {
 					Object[] ids = panelQueryBuchungen.getSelectedIds();
@@ -690,14 +694,14 @@ public abstract class TabbedPaneKonten extends TabbedPane {
 			panelQueryBuchungen.createAndSaveAndShowButton(
 					"/com/lp/client/res/link_add.png",
 					LPMain.getTextRespectUISPr("fb.ausziffern.neu"),
-					PanelBasis.ALWAYSENABLED
-							+ ACTION_SPECIAL_AUSZIFFERN_NEU, null, null);
+					PanelBasis.ALWAYSENABLED + ACTION_SPECIAL_AUSZIFFERN_NEU,
+					null, null);
 
-//			panelQueryBuchungen.createAndSaveAndShowButton(
-//					"/com/lp/client/res/link.png",
-//					LPMain.getTextRespectUISPr("fb.ausziffern.hinzu"),
-//					PanelBasis.ALWAYSENABLED + ACTION_SPECIAL_AUSZIFFERN_HINZU,
-//					null, null);
+			// panelQueryBuchungen.createAndSaveAndShowButton(
+			// "/com/lp/client/res/link.png",
+			// LPMain.getTextRespectUISPr("fb.ausziffern.hinzu"),
+			// PanelBasis.ALWAYSENABLED + ACTION_SPECIAL_AUSZIFFERN_HINZU,
+			// null, null);
 
 			panelQueryBuchungen.createAndSaveAndShowButton(
 					"/com/lp/client/res/link_delete.png",
@@ -708,7 +712,7 @@ public abstract class TabbedPaneKonten extends TabbedPane {
 					.createAndSaveAndShowButton(
 							"/com/lp/client/res/note_new.png",
 							LPMain.getTextRespectUISPr("finanz.neueSplittbuchungAusBuchung"),
-							PanelBasis.ALWAYSENABLED
+							PanelBasis.LEAVEALONE
 									+ ACTION_SPECIAL_NEUE_SPLITTBUCHUNG, null,
 							null);
 			panelQueryBuchungen.updateButtons();
@@ -717,22 +721,21 @@ public abstract class TabbedPaneKonten extends TabbedPane {
 			panelQueryBuchungen
 					.befuellePanelFilterkriterienDirektUndVersteckte(
 							FinanzFilterFactory.getInstance()
-									.createFKDBelegnummer(), null,
+									.createFKDBelegnummer(),
 							FinanzFilterFactory.getInstance()
-									.createFKVBuchungStorno(), LPMain
-									.getTextRespectUISPr("lp.plusstornierte"));
+									.createFKDTextsuche(), FinanzFilterFactory
+									.getInstance().createFKVBuchungStorno(),
+							LPMain.getTextRespectUISPr("lp.plusstornierte"));
 			if (showNurOffeneInBuchungen())
 				panelQueryBuchungen
 						.befuelleFilterkriteriumSchnellansicht(FinanzFilterFactory
 								.getInstance().createFKSchnellansicht());
 
-			kontoSaldo = new WrapperLabel();
-			wlbGeschaeftsjahrGesperrt = new WrapperLabel();
+			kontoSaldo = new JLabel();
+			wlbGeschaeftsjahrGesperrt = new JLabel();
 
-			kontoSaldo.setPreferredSize(new Dimension(Defaults.getInstance()
-					.bySizeFactor(150), 0));
-			wlbGeschaeftsjahrGesperrt.setPreferredSize(new Dimension(Defaults
-					.getInstance().bySizeFactor(250), 0));
+			// wlbGeschaeftsjahrGesperrt.setPreferredSize(new Dimension(Defaults
+			// .getInstance().bySizeFactor(250), 0));
 			wlbGeschaeftsjahrGesperrt.setForeground(Color.RED);
 			wlbGeschaeftsjahrGesperrt.setFont(wlbGeschaeftsjahrGesperrt
 					.getFont().deriveFont(Font.BOLD));
@@ -911,247 +914,264 @@ public abstract class TabbedPaneKonten extends TabbedPane {
 	}
 
 	protected final javax.swing.JMenuBar getJMenuBar() throws Throwable {
-		WrapperMenuBar wmbKonten = ((InternalFrameFinanz) getInternalFrame()).wmbKonten;
+		WrapperMenuBar wmbKonten = new WrapperMenuBar(this);
+		JMenu jmDatei = (JMenu) wmbKonten
+				.getComponent(WrapperMenuBar.MENU_MODUL);
+		JMenu jmBearbeiten = (JMenu) wmbKonten
+				.getComponent(WrapperMenuBar.MENU_BEARBEITEN);
+		JMenu jmJournal = (JMenu) wmbKonten
+				.getComponent(WrapperMenuBar.MENU_JOURNAL);
+		if (bVollversion) {
+			// Menu Datei
+			/*
+			 * JMenu menuDrucken = new WrapperMenu("lp.menu.drucken", this);
+			 * jmDatei.add(new JSeparator(), 0); jmDatei.add(menuDrucken, 0); //
+			 * Kontoblatt WrapperMenuItem menueItemKontoblatt = null;
+			 * menueItemKontoblatt = new WrapperMenuItem("Kontoblatt", null);
+			 * menueItemKontoblatt.addActionListener(this); menueItemKontoblatt
+			 * .setActionCommand(MENU_ACTION_DATEI_DRUCKEN_KONTOBLATT);
+			 * menuDrucken.add(menueItemKontoblatt);
+			 */
+			// Menu Bearbeiten
+			// JMenu menuePeriode = new
+			// WrapperMenu("fb.menu.geschaeftsjahr",
+			// this);
+			// Map<?, ?> mapGJ = DelegateFactory.getInstance()
+			// .getSystemDelegate().getAllGeschaeftsjahr();
+			// ButtonGroup bgGJ = new ButtonGroup();
+			// for (Iterator<?> iter = mapGJ.keySet().iterator(); iter
+			// .hasNext();) {
+			// Integer item = (Integer) iter.next();
+			// JRadioButtonMenuItem menueItem = new JRadioButtonMenuItem(
+			// item.toString());
+			// menueItem.addActionListener(this);
+			// menueItem
+			// .setActionCommand(TabbedPaneKonten.MENU_ACTION_GESCHAEFTSJAHR_AENDERUNG
+			// + item.toString());
+			// if (iter.hasNext() == false) {
+			// menueItem.setSelected(true);
+			// ((InternalFrameFinanz)
+			// getInternalFrame()).setAktuellesGeschaeftsjahr(item
+			// .toString());
+			// }
+			// menuePeriode.add(menueItem, 0);
+			// bgGJ.add(menueItem);
+			// }
 
-		if (wmbKonten == null) {
-			wmbKonten = new WrapperMenuBar(this);
-			JMenu jmDatei = (JMenu) wmbKonten
-					.getComponent(WrapperMenuBar.MENU_MODUL);
-			JMenu jmBearbeiten = (JMenu) wmbKonten
-					.getComponent(WrapperMenuBar.MENU_BEARBEITEN);
-			JMenu jmJournal = (JMenu) wmbKonten
-					.getComponent(WrapperMenuBar.MENU_JOURNAL);
-			if (bVollversion) {
-				// Menu Datei
-				/*
-				 * JMenu menuDrucken = new WrapperMenu("lp.menu.drucken", this);
-				 * jmDatei.add(new JSeparator(), 0); jmDatei.add(menuDrucken,
-				 * 0); // Kontoblatt WrapperMenuItem menueItemKontoblatt = null;
-				 * menueItemKontoblatt = new WrapperMenuItem("Kontoblatt",
-				 * null); menueItemKontoblatt.addActionListener(this);
-				 * menueItemKontoblatt
-				 * .setActionCommand(MENU_ACTION_DATEI_DRUCKEN_KONTOBLATT);
-				 * menuDrucken.add(menueItemKontoblatt);
-				 */
-				// Menu Bearbeiten
-				// JMenu menuePeriode = new
-				// WrapperMenu("fb.menu.geschaeftsjahr",
-				// this);
-				// Map<?, ?> mapGJ = DelegateFactory.getInstance()
-				// .getSystemDelegate().getAllGeschaeftsjahr();
-				// ButtonGroup bgGJ = new ButtonGroup();
-				// for (Iterator<?> iter = mapGJ.keySet().iterator(); iter
-				// .hasNext();) {
-				// Integer item = (Integer) iter.next();
-				// JRadioButtonMenuItem menueItem = new JRadioButtonMenuItem(
-				// item.toString());
-				// menueItem.addActionListener(this);
-				// menueItem
-				// .setActionCommand(TabbedPaneKonten.MENU_ACTION_GESCHAEFTSJAHR_AENDERUNG
-				// + item.toString());
-				// if (iter.hasNext() == false) {
-				// menueItem.setSelected(true);
-				// ((InternalFrameFinanz)
-				// getInternalFrame()).setAktuellesGeschaeftsjahr(item
-				// .toString());
-				// }
-				// menuePeriode.add(menueItem, 0);
-				// bgGJ.add(menueItem);
-				// }
+			addImportMenuItem(jmDatei);
 
-				addImportMenuItem(jmDatei);
+			JMenu menuePeriode = geschaeftsjahrViewController
+					.getGeschaeftsJahreMenue(this, this);
+			jmBearbeiten.add(menuePeriode);
 
-				JMenu menuePeriode = geschaeftsjahrViewController
-						.getGeschaeftsJahreMenue(this, this);
-				jmBearbeiten.add(menuePeriode);
+			WrapperMenuItem menueItemManuelleBuchung = null;
+			menueItemManuelleBuchung = new WrapperMenuItem(
+					LPMain.getTextRespectUISPr("fb.menu.manuellebuchung"),
+					RechteFac.RECHT_FB_FINANZ_CUD);
+			menueItemManuelleBuchung.addActionListener(this);
+			menueItemManuelleBuchung
+					.setActionCommand(MENU_ACTION_MANUELLE_BUCHUNG);
+			menueItemManuelleBuchung.setAccelerator(KeyStroke.getKeyStroke(
+					KeyEvent.VK_M, ActionEvent.CTRL_MASK));
+			jmBearbeiten.add(menueItemManuelleBuchung);
 
-				WrapperMenuItem menueItemManuelleBuchung = null;
-				menueItemManuelleBuchung = new WrapperMenuItem(
-						LPMain.getTextRespectUISPr("fb.menu.manuellebuchung"),
-						RechteFac.RECHT_FB_FINANZ_CUD);
-				menueItemManuelleBuchung.addActionListener(this);
-				menueItemManuelleBuchung
-						.setActionCommand(MENU_ACTION_MANUELLE_BUCHUNG);
-				jmBearbeiten.add(menueItemManuelleBuchung);
+			WrapperMenuItem menueItemSplittbuchung = null;
+			menueItemSplittbuchung = new WrapperMenuItem(
+					LPMain.getTextRespectUISPr("fb.menu.splittbuchung"),
+					RechteFac.RECHT_FB_FINANZ_CUD);
+			menueItemSplittbuchung.addActionListener(this);
+			menueItemSplittbuchung.setActionCommand(MENU_ACTION_SPLITTBUCHUNG);
+			menueItemSplittbuchung.setAccelerator(KeyStroke.getKeyStroke(
+					KeyEvent.VK_T, ActionEvent.CTRL_MASK));
+			jmBearbeiten.add(menueItemSplittbuchung);
 
-				WrapperMenuItem menueItemSplittbuchung = null;
-				menueItemSplittbuchung = new WrapperMenuItem(
-						LPMain.getTextRespectUISPr("fb.menu.splittbuchung"),
-						RechteFac.RECHT_FB_FINANZ_CUD);
-				menueItemSplittbuchung.addActionListener(this);
-				menueItemSplittbuchung
-						.setActionCommand(MENU_ACTION_SPLITTBUCHUNG);
-				jmBearbeiten.add(menueItemSplittbuchung);
+			menueItemStorno = new WrapperMenuItem(
+					LPMain.getTextRespectUISPr("finanz.buchungstornieren"),
+					RechteFac.RECHT_FB_FINANZ_CUD);
+			menueItemStorno.addActionListener(this);
+			menueItemStorno.setActionCommand(MENU_ACTION_BEARBEITEN_STORNIEREN);
+			jmBearbeiten.add(menueItemStorno);
 
-				menueItemStorno = new WrapperMenuItem(
-						LPMain.getTextRespectUISPr("finanz.buchungstornieren"),
-						RechteFac.RECHT_FB_FINANZ_CUD);
-				menueItemStorno.addActionListener(this);
-				menueItemStorno
-						.setActionCommand(MENU_ACTION_BEARBEITEN_STORNIEREN);
-				jmBearbeiten.add(menueItemStorno);
+			WrapperMenuItem menueItemBeleguebernahme = null;
+			menueItemBeleguebernahme = new WrapperMenuItem(
+					LPMain.getTextRespectUISPr("finanz.beleguebernahme"),
+					RechteFac.RECHT_FB_CHEFBUCHHALTER);
+			menueItemBeleguebernahme.addActionListener(this);
+			menueItemBeleguebernahme
+					.setActionCommand(MENU_ACTION_BEARBEITEN_BELEGUEBERNAHME);
+			jmBearbeiten.add(menueItemBeleguebernahme);
 
-				WrapperMenuItem menueItemBeleguebernahme = null;
-				menueItemBeleguebernahme = new WrapperMenuItem(
-						LPMain.getTextRespectUISPr("finanz.beleguebernahme"),
+			finanzamtDtos = DelegateFactory.getInstance().getFinanzDelegate()
+					.finanzamtFindAllByMandantCNr(LPMain.getTheClient());
+			JMenu menuItemUVAZuruecknehmen = null;
+			menuItemUVAZuruecknehmen = new JMenu(
+					LPMain.getTextRespectUISPr("fb.menu.uvazuruecknehmen"));
+
+			menuItemUVAZuruecknehmenFa = new WrapperMenuItem[finanzamtDtos.length];
+			for (int i = 0; i < finanzamtDtos.length; i++) {
+				menuItemUVAZuruecknehmenFa[i] = new WrapperMenuItem(
+						finanzamtDtos[i].getPartnerDto().formatName(),
 						RechteFac.RECHT_FB_CHEFBUCHHALTER);
-				menueItemBeleguebernahme.addActionListener(this);
-				menueItemBeleguebernahme
-						.setActionCommand(MENU_ACTION_BEARBEITEN_BELEGUEBERNAHME);
-				jmBearbeiten.add(menueItemBeleguebernahme);
-
-				finanzamtDtos = DelegateFactory.getInstance()
-						.getFinanzDelegate()
-						.finanzamtFindAllByMandantCNr(LPMain.getTheClient());
-				JMenu menuItemUVAZuruecknehmen = null;
-				menuItemUVAZuruecknehmen = new JMenu(
-						LPMain.getTextRespectUISPr("fb.menu.uvazuruecknehmen"));
-
-				menuItemUVAZuruecknehmenFa = new WrapperMenuItem[finanzamtDtos.length];
-				for (int i = 0; i < finanzamtDtos.length; i++) {
-					menuItemUVAZuruecknehmenFa[i] = new WrapperMenuItem(
-							finanzamtDtos[i].getPartnerDto().formatName(),
-							RechteFac.RECHT_FB_CHEFBUCHHALTER);
-					menuItemUVAZuruecknehmenFa[i].addActionListener(this);
-					menuItemUVAZuruecknehmenFa[i]
-							.setActionCommand(MENU_ACTION_UVA_ZURUECKNEHMEN
-									+ "|" + i);
-					menuItemUVAZuruecknehmen.add(menuItemUVAZuruecknehmenFa[i],
-							0);
-				}
-				updateUvaMenus(); // letzte Verprobung im Menutext eintragen
-				jmBearbeiten.add(menuItemUVAZuruecknehmen);
-
-				WrapperMenuItem menuItemGeschaeftsjahrSperre = new WrapperMenuItem(
-						LPMain.getTextRespectUISPr("fb.geschaftsjahrsperre"),
-						RechteFac.RECHT_FB_CHEFBUCHHALTER);
-				menuItemGeschaeftsjahrSperre.addActionListener(this);
-				menuItemGeschaeftsjahrSperre
-						.setActionCommand(MENU_ACTION_GESCHAEFTSJAHR_SPERRE);
-				jmBearbeiten.add(menuItemGeschaeftsjahrSperre);
-
-				WrapperMenuItem menuItemPeriodenuebernahme = new WrapperMenuItem(
-						LPMain.getTextRespectUISPr("finanz.periodenuebernahme"),
-						RechteFac.RECHT_FB_CHEFBUCHHALTER);
-				menuItemPeriodenuebernahme.addActionListener(this);
-				menuItemPeriodenuebernahme
-						.setActionCommand(MENU_ACTION_BEARBEITEN_PERIODENUEBERNAHME);
-				jmBearbeiten.add(menuItemPeriodenuebernahme);
-
-				// Finananzamtsbuchungen
-				WrapperMenuItem menuItemTagesabschluss = null;
-				menuItemTagesabschluss = new WrapperMenuItem(
-						LPMain.getTextRespectUISPr("fb.menu.finanzamtsbuchungen"),
-						RechteFac.RECHT_FB_FINANZ_CUD);
-				menuItemTagesabschluss.addActionListener(this);
-				menuItemTagesabschluss
-						.setActionCommand(MENU_ACTION_FINANZAMTSBUCHUNGEN);
-				jmBearbeiten.add(menuItemTagesabschluss);
-
-				// Menu Journal
-				WrapperMenuItem menueItemKonten = null;
-				menueItemKonten = new WrapperMenuItem(
-						LPMain.getTextRespectUISPr("finanz.konten"), null);
-				menueItemKonten.addActionListener(this);
-				if (kontotyp.equals(FinanzServiceFac.KONTOTYP_SACHKONTO)) {
-					menueItemKonten
-							.setActionCommand(MENU_ACTION_JOURNAL_KONTEN);
-				} else if (kontotyp.equals(FinanzServiceFac.KONTOTYP_DEBITOR)) {
-					menueItemKonten
-							.setActionCommand(MENU_ACTION_JOURNAL_KONTEN_DEBI);
-				} else {
-					menueItemKonten
-							.setActionCommand(MENU_ACTION_JOURNAL_KONTEN_KREDI);
-				}
-				jmJournal.add(menueItemKonten);
-
-				WrapperMenuItem menueItemSaldenliste = null;
-				menueItemSaldenliste = new WrapperMenuItem(
-						LPMain.getTextRespectUISPr("fb.menu.saldenliste"), null);
-				menueItemSaldenliste.addActionListener(this);
-				menueItemSaldenliste.setActionCommand(MENU_ACTION_SALDENLISTE);
-				jmJournal.add(menueItemSaldenliste);
-
-				WrapperMenuItem menueItemBilanz = null;
-				menueItemBilanz = new WrapperMenuItem(
-						LPMain.getTextRespectUISPr("fb.menu.bilanz"),
-						RechteFac.RECHT_LP_FINANCIAL_INFO_TYP_1);
-				menueItemBilanz.addActionListener(this);
-				menueItemBilanz.setActionCommand(MENU_ACTION_BILANZ);
-				jmJournal.add(menueItemBilanz);
-				WrapperMenuItem menueItemErfolgsrechnung = null;
-				menueItemErfolgsrechnung = new WrapperMenuItem(
-						LPMain.getTextRespectUISPr("fb.menu.erfolgsrechnung"),
-						RechteFac.RECHT_LP_FINANCIAL_INFO_TYP_1);
-				menueItemErfolgsrechnung.addActionListener(this);
-				menueItemErfolgsrechnung
-						.setActionCommand(MENU_ACTION_ERFOLGSRECHNUNG);
-				jmJournal.add(menueItemErfolgsrechnung);
-
-				WrapperMenuItem menuItemUVA = null;
-				menuItemUVA = new WrapperMenuItem(
-						LPMain.getTextRespectUISPr("fb.menu.uva"),
-						RechteFac.RECHT_FB_FINANZ_CUD);
-				menuItemUVA.addActionListener(this);
-				menuItemUVA.setActionCommand(MENU_ACTION_UVA);
-				jmJournal.add(menuItemUVA);
-
-				if (LPMain
-						.getInstance()
-						.getDesktop()
-						.darfAnwenderAufZusatzfunktionZugreifen(
-								MandantFac.ZUSATZFUNKTION_LIQUIDITAETSVORSCHAU)) {
-					// PJ16999
-					WrapperMenuItem menuItemLiqu = null;
-					menuItemLiqu = new WrapperMenuItem(
-							LPMain.getTextRespectUISPr("fb.report.liquiditaetsvorschau"),
-							RechteFac.RECHT_FB_FINANZ_CUD);
-					menuItemLiqu.addActionListener(this);
-					menuItemLiqu
-							.setActionCommand(MENU_ACTION_LIQUIDITAETSVORSCHAU);
-					jmJournal.add(menuItemLiqu);
-				}
-
-				JMenu menuInfo = new WrapperMenu("lp.info", this);
-				WrapperMenuItem menueItemKontoblaetter = null;
-				menueItemKontoblaetter = new WrapperMenuItem(
-						LPMain.getTextRespectUISPr("fb.report.kontoblaetter"),
-						null);
-				menueItemKontoblaetter.addActionListener(this);
-				menueItemKontoblaetter
-						.setActionCommand(MENU_ACTION_KONTOBLAETTER);
-				menuInfo.add(menueItemKontoblaetter);
-				wmbKonten.addJMenuItem(menuInfo);
-
-				WrapperMenuItem menuItemOffenePosten = null;
-				menuItemOffenePosten = new WrapperMenuItem(
-						LPMain.getTextRespectUISPr("fb.report.offeneposten"),
-						null);
-				menuItemOffenePosten.addActionListener(this);
-				menuItemOffenePosten.setActionCommand(MENU_ACTION_OFFENPOSTEN);
-				menuInfo.add(menuItemOffenePosten);
-
-			} else {
-				if (LPMain
-						.getInstance()
-						.getDesktop()
-						.darfAnwenderAufZusatzfunktionZugreifen(
-								MandantFac.ZUSATZFUNKTION_LIQUIDITAETSVORSCHAU)) {
-					// PJ16999
-					WrapperMenuItem menuItemLiqu = null;
-					menuItemLiqu = new WrapperMenuItem(
-							LPMain.getTextRespectUISPr("fb.report.liquiditaetsvorschau"),
-							RechteFac.RECHT_FB_FINANZ_CUD);
-					menuItemLiqu.addActionListener(this);
-					menuItemLiqu
-							.setActionCommand(MENU_ACTION_LIQUIDITAETSVORSCHAU);
-					jmJournal.add(menuItemLiqu);
-				}
-
+				menuItemUVAZuruecknehmenFa[i].addActionListener(this);
+				menuItemUVAZuruecknehmenFa[i]
+						.setActionCommand(MENU_ACTION_UVA_ZURUECKNEHMEN + "|"
+								+ i);
+				menuItemUVAZuruecknehmen.add(menuItemUVAZuruecknehmenFa[i], 0);
 			}
-			((InternalFrameFinanz) getInternalFrame()).wmbKonten = wmbKonten;
+			updateUvaMenus(); // letzte Verprobung im Menutext eintragen
+			jmBearbeiten.add(menuItemUVAZuruecknehmen);
+
+			WrapperMenuItem menuItemGeschaeftsjahrSperre = new WrapperMenuItem(
+					LPMain.getTextRespectUISPr("fb.geschaftsjahrsperre"),
+					RechteFac.RECHT_FB_CHEFBUCHHALTER);
+			menuItemGeschaeftsjahrSperre.addActionListener(this);
+			menuItemGeschaeftsjahrSperre
+					.setActionCommand(MENU_ACTION_GESCHAEFTSJAHR_SPERRE);
+			jmBearbeiten.add(menuItemGeschaeftsjahrSperre);
+
+			WrapperMenuItem menuItemPeriodenuebernahme = new WrapperMenuItem(
+					LPMain.getTextRespectUISPr("finanz.periodenuebernahme"),
+					RechteFac.RECHT_FB_CHEFBUCHHALTER);
+			menuItemPeriodenuebernahme.addActionListener(this);
+			menuItemPeriodenuebernahme
+					.setActionCommand(MENU_ACTION_BEARBEITEN_PERIODENUEBERNAHME);
+			jmBearbeiten.add(menuItemPeriodenuebernahme);
+
+			// Finananzamtsbuchungen
+			WrapperMenuItem menuItemTagesabschluss = null;
+			menuItemTagesabschluss = new WrapperMenuItem(
+					LPMain.getTextRespectUISPr("fb.menu.finanzamtsbuchungen"),
+					RechteFac.RECHT_FB_FINANZ_CUD);
+			menuItemTagesabschluss.addActionListener(this);
+			menuItemTagesabschluss
+					.setActionCommand(MENU_ACTION_FINANZAMTSBUCHUNGEN);
+			jmBearbeiten.add(menuItemTagesabschluss);
+
+			// Menu Journal
+			WrapperMenuItem menueItemKonten = null;
+			menueItemKonten = new WrapperMenuItem(
+					LPMain.getTextRespectUISPr("finanz.konten"), null);
+			menueItemKonten.addActionListener(this);
+			if (kontotyp.equals(FinanzServiceFac.KONTOTYP_SACHKONTO)) {
+				menueItemKonten.setActionCommand(MENU_ACTION_JOURNAL_KONTEN);
+			} else if (kontotyp.equals(FinanzServiceFac.KONTOTYP_DEBITOR)) {
+				menueItemKonten
+						.setActionCommand(MENU_ACTION_JOURNAL_KONTEN_DEBI);
+			} else {
+				menueItemKonten
+						.setActionCommand(MENU_ACTION_JOURNAL_KONTEN_KREDI);
+			}
+			jmJournal.add(menueItemKonten);
+
+			WrapperMenuItem menueItemSaldenliste = null;
+			menueItemSaldenliste = new WrapperMenuItem(
+					LPMain.getTextRespectUISPr("fb.menu.saldenliste"), null);
+			menueItemSaldenliste.addActionListener(this);
+			menueItemSaldenliste.setActionCommand(MENU_ACTION_SALDENLISTE);
+			jmJournal.add(menueItemSaldenliste);
+
+			WrapperMenuItem menueItemBilanz = null;
+			menueItemBilanz = new WrapperMenuItem(
+					LPMain.getTextRespectUISPr("fb.menu.bilanz"),
+					RechteFac.RECHT_LP_FINANCIAL_INFO_TYP_1);
+			menueItemBilanz.addActionListener(this);
+			menueItemBilanz.setActionCommand(MENU_ACTION_BILANZ);
+			jmJournal.add(menueItemBilanz);
+			WrapperMenuItem menueItemErfolgsrechnung = null;
+			menueItemErfolgsrechnung = new WrapperMenuItem(
+					LPMain.getTextRespectUISPr("fb.menu.erfolgsrechnung"),
+					RechteFac.RECHT_LP_FINANCIAL_INFO_TYP_1);
+			menueItemErfolgsrechnung.addActionListener(this);
+			menueItemErfolgsrechnung
+					.setActionCommand(MENU_ACTION_ERFOLGSRECHNUNG);
+			jmJournal.add(menueItemErfolgsrechnung);
+
+			WrapperMenuItem menuItemUVA = null;
+			menuItemUVA = new WrapperMenuItem(
+					LPMain.getTextRespectUISPr("fb.menu.uva"),
+					RechteFac.RECHT_FB_FINANZ_CUD);
+			menuItemUVA.addActionListener(this);
+			menuItemUVA.setActionCommand(MENU_ACTION_UVA);
+			jmJournal.add(menuItemUVA);
+
+			WrapperMenuItem menuItemSteuernachweis = null;
+			menuItemSteuernachweis = new WrapperMenuItem(
+					LPMain.getTextRespectUISPr("fb.menu.ustverprobung"),
+					RechteFac.RECHT_FB_FINANZ_CUD);
+			menuItemSteuernachweis.addActionListener(this);
+			menuItemSteuernachweis.setActionCommand(MENU_ACTION_USTVERPROBUNG);
+			jmJournal.add(menuItemSteuernachweis);
+
+			if (LPMain
+					.getInstance()
+					.getDesktop()
+					.darfAnwenderAufZusatzfunktionZugreifen(
+							MandantFac.ZUSATZFUNKTION_LIQUIDITAETSVORSCHAU)) {
+				// PJ16999
+				WrapperMenuItem menuItemLiqu = null;
+				menuItemLiqu = new WrapperMenuItem(
+						LPMain.getTextRespectUISPr("fb.report.liquiditaetsvorschau"),
+						RechteFac.RECHT_FB_FINANZ_CUD);
+				menuItemLiqu.addActionListener(this);
+				menuItemLiqu.setActionCommand(MENU_ACTION_LIQUIDITAETSVORSCHAU);
+				jmJournal.add(menuItemLiqu);
+			}
+
+			JMenu menuInfo = new WrapperMenu("lp.info", this);
+			WrapperMenuItem menueItemKontoblaetter = null;
+			menueItemKontoblaetter = new WrapperMenuItem(
+					LPMain.getTextRespectUISPr("fb.report.kontoblaetter"), null);
+			menueItemKontoblaetter.addActionListener(this);
+			menueItemKontoblaetter.setActionCommand(MENU_ACTION_KONTOBLAETTER);
+			menuInfo.add(menueItemKontoblaetter);
+			wmbKonten.addJMenuItem(menuInfo);
+
+			WrapperMenuItem menuItemOffenePosten = null;
+			menuItemOffenePosten = new WrapperMenuItem(
+					LPMain.getTextRespectUISPr("fb.report.offeneposten"), null);
+			menuItemOffenePosten.addActionListener(this);
+			menuItemOffenePosten.setActionCommand(MENU_ACTION_OFFENPOSTEN);
+			menuInfo.add(menuItemOffenePosten);
+
+			WrapperMenuItem menuItemAenderungenKonto = null;
+			menuItemAenderungenKonto = new WrapperMenuItem(
+					LPMain.getTextRespectUISPr("lp.report.aenderungen"), null);
+			menuItemAenderungenKonto.addActionListener(this);
+			menuItemAenderungenKonto
+					.setActionCommand(MENU_INFO_AENDERUNGEN_KONTO);
+			menuInfo.add(menuItemAenderungenKonto);
+
+		} else {
+			if (LPMain
+					.getInstance()
+					.getDesktop()
+					.darfAnwenderAufZusatzfunktionZugreifen(
+							MandantFac.ZUSATZFUNKTION_LIQUIDITAETSVORSCHAU)) {
+				// PJ16999
+				WrapperMenuItem menuItemLiqu = null;
+				menuItemLiqu = new WrapperMenuItem(
+						LPMain.getTextRespectUISPr("fb.report.liquiditaetsvorschau"),
+						RechteFac.RECHT_FB_FINANZ_CUD);
+				menuItemLiqu.addActionListener(this);
+				menuItemLiqu.setActionCommand(MENU_ACTION_LIQUIDITAETSVORSCHAU);
+				jmJournal.add(menuItemLiqu);
+			}
+
 		}
+		((InternalFrameFinanz) getInternalFrame()).wmbKonten = wmbKonten;
 		return wmbKonten;
+	}
+
+	@Override
+	public void setSelectedComponent(Component c) {
+		// TODO Auto-generated method stub
+		super.setSelectedComponent(c);
+	}
+
+	@Override
+	public void setSelectedIndex(int index) {
+		// TODO Auto-generated method stub
+		super.setSelectedIndex(index);
 	}
 
 	protected void lPActionEvent(java.awt.event.ActionEvent e) throws Throwable {
@@ -1166,7 +1186,8 @@ public abstract class TabbedPaneKonten extends TabbedPane {
 				panelQueryBuchungen.updateButtons();
 				initPanelTop3QueryBuchungen();
 				panelQueryBuchungen.setDefaultFilter(buildFiltersBuchungen());
-				if (getSelectedComponent().equals(getPanelSplit3())) {
+				if (getInternalFrame().getSelectedTabbedPane() == this
+						&& getSelectedComponent() == getPanelSplit3()) {
 					setSelectedComponent(getPanelSplit3());
 					getPanelSplit3().eventYouAreSelected(false);
 				}
@@ -1251,6 +1272,13 @@ public abstract class TabbedPaneKonten extends TabbedPane {
 									getInternalFrameFinanz(),
 									kontoDto,
 									LPMain.getTextRespectUISPr("fb.report.offeneposten")));
+		} else if (e.getActionCommand().equals(MENU_INFO_AENDERUNGEN_KONTO)) {
+			getInternalFrame()
+					.showReportKriterien(
+							new ReportAenderungenKonto(
+									getInternalFrameFinanz(),
+									kontoDto.getIId(),
+									LPMain.getTextRespectUISPr("lp.report.aenderungen")));
 		} else if (e.getActionCommand().equals(MENU_ACTION_MANUELLE_BUCHUNG)) {
 			// modmod: 1 hier wird das Panel fuer den Dialog an das IF
 			// uebergeben
@@ -1269,6 +1297,12 @@ public abstract class TabbedPaneKonten extends TabbedPane {
 			printUva();
 			// alle uva-menus updaten
 			// updateUvaMenus(); wirkt hier nicht, da Dialog nicht modal!
+		} else if (e.getActionCommand().equals(MENU_ACTION_USTVERPROBUNG)) {
+			getInternalFrame().showReportKriterien(
+					new ReportUstVerprobung(getInternalFrame(), LPMain
+							.getTextRespectUISPr("fb.menu.ustverprobung"),
+							((InternalFrameFinanz) getInternalFrame())
+									.getAktuellesGeschaeftsjahr()));
 		} else if (e.getActionCommand().startsWith(
 				MENU_ACTION_UVA_ZURUECKNEHMEN)) {
 			int i = e.getActionCommand().indexOf("|");
@@ -1280,14 +1314,17 @@ public abstract class TabbedPaneKonten extends TabbedPane {
 		} else if (e.getActionCommand().equals(
 				MENU_ACTION_BEARBEITEN_BELEGUEBERNAHME)) {
 			belegUebernahme();
-			// TODO: 2012-06-02 Adi auskommentiert damit Version kompiliert
 		} else if (e.getActionCommand().equals(
 				MENU_ACTION_BEARBEITEN_PERIODENUEBERNAHME)) {
 			periodenUebernahme();
 		} else if (e.getActionCommand().equals(
 				MENU_ACTION_GESCHAEFTSJAHR_SPERRE)) {
-			String sMeldung = LPMain
-					.getTextRespectUISPr("fb.frage.geschaeftsjahrsperre1");
+			String sMeldung = LPMain.getMessageTextRespectUISPr(
+					"fb.frage.geschaeftsjahrsperre1",
+					new Object[] { getInternalFrameFinanz()
+							.getIAktuellesGeschaeftsjahr() });
+			// String sMeldung = LPMain
+			// .getTextRespectUISPr("fb.frage.geschaeftsjahrsperre1");
 			if (DialogFactory.showModalJaNeinDialog(getInternalFrame(),
 					sMeldung)) {
 				sMeldung = LPMain
@@ -1302,7 +1339,6 @@ public abstract class TabbedPaneKonten extends TabbedPane {
 											.getIAktuellesGeschaeftsjahr());
 			}
 		}
-
 	}
 
 	protected void updateUvaMenus() throws ExceptionLP, Throwable {
@@ -1502,7 +1538,7 @@ public abstract class TabbedPaneKonten extends TabbedPane {
 		return panelSplittbuchung;
 	}
 
-	public Object getInseratDto() {
+	public Object getDto() {
 		return kontoDto;
 	}
 

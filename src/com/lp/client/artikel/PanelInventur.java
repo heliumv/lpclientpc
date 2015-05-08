@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -162,6 +162,16 @@ public class PanelInventur extends PanelBasis {
 		}
 	}
 
+	protected void eventActionUpdate(ActionEvent aE, boolean bNeedNoUpdateI)
+			throws Throwable {
+		super.eventActionUpdate(aE, bNeedNoUpdateI);
+		if(Helper.short2boolean(internalFrameArtikel.getInventurDto().getBInventurdurchgefuehrt())){
+			wdfInventurdatum.setEnabled(false);
+			wcbNichtInventierteArtikelAufNullSetzen.setEnabled(false);
+		}
+		
+	}
+	
 	protected void eventItemchanged(EventObject eI) throws Throwable {
 
 		ItemChangedEvent e = (ItemChangedEvent) eI;
@@ -301,13 +311,14 @@ public class PanelInventur extends PanelBasis {
 		internalFrameArtikel.getInventurDto().setCBez(wtfBezeichnung.getText());
 		internalFrameArtikel.getInventurDto().setTInventurdatum(
 				wdfInventurdatum.getTimestamp());
+		internalFrameArtikel.getInventurDto().setBNichtinventierteartikelabbuchen(wcbNichtInventierteArtikelAufNullSetzen.getShort());
 	}
 
 	protected void dto2Components() throws Throwable {
 		wtfBezeichnung.setText(internalFrameArtikel.getInventurDto().getCBez());
 		wdfInventurdatum.setTimestamp(internalFrameArtikel.getInventurDto()
 				.getTInventurdatum());
-		wcbNichtInventierteArtikelAufNullSetzen.setSelected(false);
+		wcbNichtInventierteArtikelAufNullSetzen.setShort(internalFrameArtikel.getInventurDto().getBNichtinventierteartikelabbuchen());
 
 		if (internalFrameArtikel.getInventurDto().getLagerIId() != null) {
 			LagerDto lagerDto = DelegateFactory

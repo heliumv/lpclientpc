@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -159,7 +159,7 @@ public class ToolTipFileWriter {
 			for (String token : toolTipTexte.keySet()) {
 				writer.write(token + " = " + toolTipTexte.get(token) + "\n");
 			}
-			writer.close();
+
 			System.out.println("Created file " + file.getAbsolutePath());
 			return true;
 		} catch (FileNotFoundException e) {
@@ -169,7 +169,9 @@ public class ToolTipFileWriter {
 			e.printStackTrace();
 		} finally {
 			try {
-				writer.close();
+				if(writer != null) {
+					writer.close();					
+				}
 			} catch (IOException e) {
 				e.printStackTrace();
 			}

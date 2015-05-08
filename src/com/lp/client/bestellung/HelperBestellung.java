@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -121,8 +121,10 @@ public class HelperBestellung implements Comparator<Object> {
 			artlieferantDto = DelegateFactory
 					.getInstance()
 					.getArtikelDelegate()
-					.artikellieferantFindByArtikellIIdLieferantIIdOhneExc(
-							artikelDto.getIId(), lieferantDto.getIId());
+					.getArtikelEinkaufspreis(artikelDto.getIId(),
+							lieferantDto.getIId(), BigDecimal.ONE,
+							LPMain.getTheClient().getSMandantenwaehrung(),
+							new java.sql.Date(System.currentTimeMillis()));
 		}
 
 		// checked Verpackungseinheit
@@ -207,11 +209,11 @@ public class HelperBestellung implements Comparator<Object> {
 		// nachschauen ob es artikelieferant gibt fuer diesen artikel
 		ArtikellieferantDto artlieferantDto = null;
 		if (lieferantDto != null) {
+			
 			artlieferantDto = DelegateFactory
 					.getInstance()
-					.getArtikelDelegate()
-					.artikellieferantFindByArtikellIIdLieferantIIdOhneExc(
-							artikelDto.getIId(), lieferantDto.getIId());
+					.getArtikelDelegate().getArtikelEinkaufspreis(artikelDto.getIId(),lieferantDto.getIId(), BigDecimal.ONE,LPMain.getTheClient().getSMandantenwaehrung(),new java.sql.Date(System.currentTimeMillis()));
+
 		}
 
 		// nachschauen ob es Staffeln dazu gibt
@@ -642,9 +644,10 @@ public class HelperBestellung implements Comparator<Object> {
 		}
 
 		// setzen der werte
-		BigDecimal bdEinzelpreis= new BigDecimal(0);
+		BigDecimal bdEinzelpreis = new BigDecimal(0);
 		if (artlieferantDto.getNEinzelpreis() != null) {
-			bdEinzelpreis=artlieferantDto.getNEinzelpreis().multiply(wechselkursLieferantnachMandantWaehrung);
+			bdEinzelpreis = artlieferantDto.getNEinzelpreis().multiply(
+					wechselkursLieferantnachMandantWaehrung);
 		}
 
 		wnfNettopreis.setBigDecimal(artikellieferanStaffelDto.getNNettopreis()

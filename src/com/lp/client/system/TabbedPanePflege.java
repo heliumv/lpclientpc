@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -65,9 +65,11 @@ public class TabbedPanePflege extends TabbedPane {
 
 	private final static int IDX_PFLEGENEW = 1;
 	private final static int IDX_PFLEGE = 0;
+	private final static int IDX_PFLEGE_INTERN = 2;
 
 	private PanelPflegeNew panelPflegeNew = null;
 	private PanelPflege panelPflege = null;
+	private PanelPflegeIntern panelPflegeIntern = null;
 
 	public TabbedPanePflege(InternalFrame internalFrameI) throws Throwable {
 		super(internalFrameI, LPMain.getInstance().getTextRespectUISPr(
@@ -81,9 +83,20 @@ public class TabbedPanePflege extends TabbedPane {
 		insertTab(LPMain.getInstance().getTextRespectUISPr("lp.pflege"), null,
 				null, LPMain.getInstance().getTextRespectUISPr("lp.pflege"),
 				IDX_PFLEGE);
-		insertTab(LPMain.getInstance().getTextRespectUISPr("lp.pflege.neu"), null,
-				null, LPMain.getInstance().getTextRespectUISPr("lp.pflege.neu"),
+		insertTab(LPMain.getInstance().getTextRespectUISPr("lp.pflege.neu"),
+				null, null,
+				LPMain.getInstance().getTextRespectUISPr("lp.pflege.neu"),
 				IDX_PFLEGENEW);
+
+		if (LPMain.getInstance().isLPAdmin()) {
+			insertTab(
+					LPMain.getInstance()
+							.getTextRespectUISPr("lp.pflege.intern"), null,
+					null,
+					LPMain.getInstance()
+							.getTextRespectUISPr("lp.pflege.intern"),
+					IDX_PFLEGE_INTERN);
+		}
 		setSelectedComponent(getPanelQueryTheJudge());
 		// refresh
 		getPanelQueryTheJudge().eventYouAreSelected(false);
@@ -140,7 +153,15 @@ public class TabbedPanePflege extends TabbedPane {
 
 			break;
 		}
+		case IDX_PFLEGE_INTERN: {
+			refreshPanelPflegeIntern();
+			panelPflegeIntern.eventYouAreSelected(false);
 
+			// im QP die Buttons setzen.
+			panelPflegeIntern.updateButtons();
+
+			break;
+		}
 		}
 	}
 
@@ -167,6 +188,17 @@ public class TabbedPanePflege extends TabbedPane {
 
 			// liste soll sofort angezeigt werden
 			panelPflegeNew.eventYouAreSelected(true);
+		}
+	}
+
+	private void refreshPanelPflegeIntern() throws Throwable {
+		if (panelPflegeIntern == null) {
+			panelPflegeIntern = new PanelPflegeIntern(getInternalFrame(), LPMain
+					.getInstance().getTextRespectUISPr("lp.pflege.intern"));
+			setComponentAt(IDX_PFLEGE_INTERN, panelPflegeIntern);
+
+			// liste soll sofort angezeigt werden
+			panelPflegeIntern.eventYouAreSelected(true);
 		}
 	}
 

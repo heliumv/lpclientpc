@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -41,8 +41,10 @@ import javax.naming.InitialContext;
 import com.lp.client.frame.ExceptionLP;
 import com.lp.client.pc.LPMain;
 import com.lp.server.personal.service.MaschinenerfolgReportDto;
+import com.lp.server.personal.service.WochenabschlussReportDto;
 import com.lp.server.personal.service.ZeiterfassungReportFac;
 import com.lp.server.system.service.TheClientDto;
+import com.lp.server.util.DatumsfilterVonBis;
 import com.lp.server.util.report.JasperPrintLP;
 import com.lp.util.EJBExceptionLP;
 
@@ -65,6 +67,18 @@ public class ZeiterfassungReportDelegate extends Delegate {
 		try {
 			return zeiterfassungReportFac.printZestiftliste(LPMain
 					.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+
+	}
+
+	public JasperPrintLP printAbgeschlosseneZeitbuchungen(
+			boolean bMitVersteckten) throws ExceptionLP {
+		try {
+			return zeiterfassungReportFac.printAbgeschlosseneZeitbuchungen(
+					bMitVersteckten, LPMain.getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 			return null;
@@ -137,12 +151,12 @@ public class ZeiterfassungReportDelegate extends Delegate {
 
 	public JasperPrintLP printProduktivitaetstagesstatistik(
 			Integer personalIId, java.sql.Timestamp tVon,
-			java.sql.Timestamp tBis, Integer iOption, boolean bMitVersteckten,
+			java.sql.Timestamp tBis, Integer iOption, boolean bMitVersteckten, boolean bNurAnwesende,
 			boolean bMonatsbetrachtung, Integer personalgruppeIId)
 			throws ExceptionLP {
 		try {
 			return zeiterfassungReportFac.printProduktivitaetstagesstatistik(
-					personalIId, tVon, tBis, iOption, bMitVersteckten,
+					personalIId, tVon, tBis, iOption, bMitVersteckten, bNurAnwesende,
 					bMonatsbetrachtung, personalgruppeIId,
 					LPMain.getTheClient());
 		} catch (Throwable ex) {
@@ -155,11 +169,11 @@ public class ZeiterfassungReportDelegate extends Delegate {
 	public JasperPrintLP printMitarbeiteruebersicht(Integer personalIId,
 			Integer iJahrVon, Integer iMonatVon, Integer iJahrBis,
 			Integer iMonatBis, Integer iOption, Integer iOptionSortierung,
-			boolean bPlusversteckte) throws ExceptionLP {
+			boolean bPlusversteckte, boolean bNurAnwesende) throws ExceptionLP {
 		try {
 			return zeiterfassungReportFac.printMitarbeiteruebersicht(
 					personalIId, iJahrVon, iMonatVon, iJahrBis, iMonatBis,
-					iOption, iOptionSortierung, bPlusversteckte,
+					iOption, iOptionSortierung, bPlusversteckte, bNurAnwesende,
 					LPMain.getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
@@ -186,10 +200,25 @@ public class ZeiterfassungReportDelegate extends Delegate {
 
 	public JasperPrintLP printReisezeiten(Integer personalIId,
 			java.sql.Timestamp tVon, java.sql.Timestamp tBis,
-			boolean bPlusVersteckte, Integer iOption) throws ExceptionLP {
+			boolean bPlusVersteckte, boolean bNurAnwesende, Integer iOption)
+			throws ExceptionLP {
 		try {
 			return zeiterfassungReportFac.printReisezeiten(personalIId, tVon,
-					tBis, iOption, bPlusVersteckte, LPMain.getTheClient());
+					tBis, iOption, bPlusVersteckte, bNurAnwesende,
+					LPMain.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
+
+	public JasperPrintLP printAenderungen(Integer personalIId,
+			DatumsfilterVonBis datumsfilter, boolean mitInserts,
+			boolean mitUpdates, boolean mitDeletes) throws ExceptionLP {
+		try {
+			return zeiterfassungReportFac.printAenderungen(personalIId,
+					datumsfilter, mitInserts, mitUpdates, mitDeletes,
+					LPMain.getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 			return null;
@@ -197,7 +226,8 @@ public class ZeiterfassungReportDelegate extends Delegate {
 	}
 
 	public JasperPrintLP printFahrzeuge(Integer fahrzeugIId,
-			java.sql.Timestamp tVon, java.sql.Timestamp tBis) throws ExceptionLP {
+			java.sql.Timestamp tVon, java.sql.Timestamp tBis)
+			throws ExceptionLP {
 		try {
 			return zeiterfassungReportFac.printFahrzeuge(fahrzeugIId, tVon,
 					tBis, LPMain.getTheClient());
@@ -222,10 +252,12 @@ public class ZeiterfassungReportDelegate extends Delegate {
 
 	public JasperPrintLP printFahrtenbuch(Integer personalIId,
 			java.sql.Timestamp tVon, java.sql.Timestamp tBis,
-			boolean bPlusVersteckte, Integer iOption) throws ExceptionLP {
+			boolean bPlusVersteckte, boolean bNurAnwesende, Integer iOption)
+			throws ExceptionLP {
 		try {
 			return zeiterfassungReportFac.printFahrtenbuch(personalIId, tVon,
-					tBis, iOption, bPlusVersteckte, LPMain.getTheClient());
+					tBis, iOption, bPlusVersteckte, bNurAnwesende,
+					LPMain.getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 			return null;
@@ -268,4 +300,18 @@ public class ZeiterfassungReportDelegate extends Delegate {
 			return null;
 		}
 	}
+
+	public JasperPrintLP printUrlaubsantrag(Integer personalIId,
+			Integer[] integerIIds, boolean bGenehmigt, String cVorraussetzung)
+			throws ExceptionLP {
+		try {
+			return zeiterfassungReportFac.printUrlaubsantrag(personalIId,
+					integerIIds, bGenehmigt, cVorraussetzung,
+					LPMain.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
+
 }

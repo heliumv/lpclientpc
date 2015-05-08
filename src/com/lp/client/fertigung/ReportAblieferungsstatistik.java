@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -83,6 +83,7 @@ public class ReportAblieferungsstatistik extends PanelBasis implements
 	protected WrapperDateField wdfVon = null;
 	protected WrapperDateField wdfBis = null;
 	private WrapperCheckBox wcbNurEineIdent = null;
+	private WrapperCheckBox wcbNurKopfloseanhandStueckliste = null;
 	private Border border = null;
 	protected JPanel jpaWorkingOn = null;
 	private WrapperDateRangeController wdrBereich = null;
@@ -92,6 +93,7 @@ public class ReportAblieferungsstatistik extends PanelBasis implements
 	private ButtonGroup buttonGroupOption = new ButtonGroup();
 	private WrapperRadioButton wrbAblieferdatum = new WrapperRadioButton();
 	private WrapperRadioButton wrbArtikel = new WrapperRadioButton();
+	private WrapperRadioButton wrbAuftragsnummer = new WrapperRadioButton();
 
 	private StuecklisteDto stuecklisteDto = null;
 
@@ -118,6 +120,8 @@ public class ReportAblieferungsstatistik extends PanelBasis implements
 		wdfVon = new WrapperDateField();
 		wdfBis = new WrapperDateField();
 		wcbNurEineIdent = new WrapperCheckBox();
+		wcbNurKopfloseanhandStueckliste = new WrapperCheckBox(
+				LPMain.getTextRespectUISPr("fert.ablieferstatistik.nurkopflose"));
 		if (stuecklisteDto != null) {
 			StringBuffer sb = new StringBuffer();
 			sb.append(LPMain.getTextRespectUISPr("fert.nurartikel") + " ");
@@ -131,14 +135,17 @@ public class ReportAblieferungsstatistik extends PanelBasis implements
 		}
 		wdrBereich = new WrapperDateRangeController(wdfVon, wdfBis);
 
-		
 		wlaSortierung.setText(LPMain.getTextRespectUISPr("label.sortierung"));
-		wrbAblieferdatum.setText(LPMain.getTextRespectUISPr("fert.ablieferdatum"));
+		wrbAblieferdatum.setText(LPMain
+				.getTextRespectUISPr("fert.ablieferdatum"));
 		wrbArtikel.setText(LPMain.getTextRespectUISPr("lp.artikel"));
-		
-		
+		wrbAuftragsnummer
+				.setText(LPMain
+						.getTextRespectUISPr("fert.ablieferstatistik.sort.auftragsnummer"));
+
 		buttonGroupOption.add(wrbAblieferdatum);
 		buttonGroupOption.add(wrbArtikel);
+		buttonGroupOption.add(wrbAuftragsnummer);
 		wrbAblieferdatum.setSelected(true);
 
 		wlaVon.setMinimumSize(new Dimension(25, Defaults.getInstance()
@@ -175,7 +182,10 @@ public class ReportAblieferungsstatistik extends PanelBasis implements
 					4, 1, 0.0, 0.0, GridBagConstraints.WEST,
 					GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
 		}
-
+		iZeile++;
+		jpaWorkingOn.add(wcbNurKopfloseanhandStueckliste, new GridBagConstraints(0, iZeile,
+				4, 1, 0.0, 0.0, GridBagConstraints.WEST,
+				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
 		iZeile++;
 		jpaWorkingOn.add(wlaSortierung, new GridBagConstraints(1, iZeile, 1, 1,
 				0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
@@ -188,6 +198,11 @@ public class ReportAblieferungsstatistik extends PanelBasis implements
 		jpaWorkingOn.add(wrbArtikel, new GridBagConstraints(2, iZeile, 1, 1,
 				0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
 				new Insets(2, 2, 2, 2), 0, 0));
+		iZeile++;
+
+		jpaWorkingOn.add(wrbAuftragsnummer, new GridBagConstraints(2, iZeile,
+				1, 1, 0.0, 0.0, GridBagConstraints.WEST,
+				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
 
 	}
 
@@ -208,9 +223,21 @@ public class ReportAblieferungsstatistik extends PanelBasis implements
 		if (wcbNurEineIdent.isSelected()) {
 			artikelIId = stuecklisteDto.getArtikelDto().getIId();
 		}
-		return DelegateFactory.getInstance().getFertigungDelegate()
+
+		int iSort = FertigungReportFac.ABLIEFERSTATISTIK_OPTION_SORTIERUNG_ARTIKEL;
+
+		if (wrbAblieferdatum.isSelected()) {
+			iSort = FertigungReportFac.ABLIEFERSTATISTIK_OPTION_SORTIERUNG_ABLIEFERDATUM;
+		} else if (wrbAuftragsnummer.isSelected()) {
+			iSort = FertigungReportFac.ABLIEFERSTATISTIK_OPTION_SORTIERUNG_AUFTRAG;
+		}
+
+		return DelegateFactory
+				.getInstance()
+				.getFertigungDelegate()
 				.printAblieferungsstatistik(wdfVon.getDate(), wdfBis.getDate(),
-						artikelIId,wrbArtikel.isSelected(), false);
+						artikelIId, iSort, false,
+						wcbNurKopfloseanhandStueckliste.isSelected());
 	}
 
 	public MailtextDto getMailtextDto() throws Throwable {

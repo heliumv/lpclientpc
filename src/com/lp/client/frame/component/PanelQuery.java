@@ -1,33 +1,33 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
- * 
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
+ *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published 
- * by the Free Software Foundation, either version 3 of theLicense, or 
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of theLicense, or
  * (at your option) any later version.
- * 
- * According to sec. 7 of the GNU Affero General Public License, version 3, 
+ *
+ * According to sec. 7 of the GNU Affero General Public License, version 3,
  * the terms of the AGPL are supplemented with the following terms:
- * 
- * "HELIUM V" and "HELIUM 5" are registered trademarks of 
- * HELIUM V IT-Solutions GmbH. The licensing of the program under the 
+ *
+ * "HELIUM V" and "HELIUM 5" are registered trademarks of
+ * HELIUM V IT-Solutions GmbH. The licensing of the program under the
  * AGPL does not imply a trademark license. Therefore any rights, title and
  * interest in our trademarks remain entirely with us. If you want to propagate
  * modified versions of the Program under the name "HELIUM V" or "HELIUM 5",
- * you may only do so if you have a written permission by HELIUM V IT-Solutions 
+ * you may only do so if you have a written permission by HELIUM V IT-Solutions
  * GmbH (to acquire a permission please contact HELIUM V IT-Solutions
  * at trademark@heliumv.com).
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Affero General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Contact: developers@heliumv.com
  ******************************************************************************/
 package com.lp.client.frame.component;
@@ -91,6 +91,7 @@ import com.lp.client.util.dtable.DistributedTableModelImpl;
 import com.lp.client.util.fastlanereader.gui.QueryInputRow;
 import com.lp.client.util.fastlanereader.gui.QueryType;
 import com.lp.server.benutzer.service.RechteFac;
+import com.lp.server.system.jcr.service.JCRRepoInfo;
 import com.lp.server.system.jcr.service.PrintInfoDto;
 import com.lp.server.system.jcr.service.docnode.DocPath;
 import com.lp.server.system.service.ArbeitsplatzparameterDto;
@@ -115,19 +116,19 @@ import com.lp.util.Pair;
  * reverses sorting order. Clicking on a column while holding the CTRL key
  * pressed this column is added to the sorting and previous sorting is kept.
  * <p>
- * 
+ *
  * This view is completely configured through instances of type
  * {@link QueryType}. The first row of the view is composed of a label
  * ("Kriterium"), a combobox that lists the query types and a button that adds a
  * {@link QueryInputRow}of the selected query type to the view. <br>
  * If the user clicks on the refresh button, the entered filter will be
  * evaluated and the desired data shows in the table below.
- * 
+ *
  * @author werner
  */
 public class PanelQuery extends PanelBasis implements ISourceEvent {
 	/**
-	 * 
+	 *
 	 */
 
 	private static final ImageIcon DOKUMENTE = HelperClient
@@ -237,7 +238,7 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 	 * Es kann 0..2 dieser Filterkriterien geben. <br>
 	 * Die Filterkriterien sind jeweils vom Typ String. <br>
 	 * Das Ausloesen eines Roundtrip zur DB erfolgt dabei ueber ENTER.
-	 * 
+	 *
 	 * Ausserdem gibt es eine optionale CheckBox, die entscheidet, ob versteckte
 	 * Entitaeten in der Liste angezeigt werden oder nicht. <br>
 	 * Das Ausloesen eines Roundtrip zur DB erfolgt dabei ueber die Aenderung
@@ -246,6 +247,10 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 	 */
 	// private JPanel panelFilterkriterienDirekt = null;
 	private WrapperCheckBox wcbVersteckteFelderAnzeigen = null;
+	public WrapperCheckBox getWcbVersteckteFelderAnzeigen() {
+		return wcbVersteckteFelderAnzeigen;
+	}
+
 	private FilterKriterium fkVersteckteFelderNichtAnzeigen = null;
 	// --------------------------------------------------------------------------
 	// -
@@ -258,23 +263,40 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 
 	public void setFilterComboBox(Map<?, ?> m, FilterKriterium fk,
 			boolean bMandatory) {
-		setFilterComboBox(m, fk, bMandatory, null);
+		setFilterComboBox(m, fk, bMandatory, null, true);
+
+	}
+	public void setFilterComboBox(Map<?, ?> m, FilterKriterium fk,
+			boolean bMandatory, String beiLeer) {
+		setFilterComboBox(m, fk, bMandatory, beiLeer, true);
 
 	}
 
 	public void setFilterComboBox(Map<?, ?> m, FilterKriterium fk,
-			boolean bMandatory, String beiLeer) {
+			boolean bMandatory, String beiLeer, boolean bSortieren) {
 
 		if (beiLeer != null) {
 			wcoFilter.setEmptyEntry(beiLeer);
 		}
 		wcoFilter.setMandatoryField(bMandatory);
-		wcoFilter.setMap(m, true);
+		wcoFilter.setMap(m, bSortieren);
 		wcoFilter.addActionListener(this);
 
 		fkComboBox = fk;
+
+		wcoFilter.setMinimumSize(new Dimension(150, -1));
 		wcoFilter.setPreferredSize(new Dimension(150, -1));
-		getToolBar().getToolsPanelCenter().add(wcoFilter);
+
+		ComboBoxPopupMenuListener listener = new ComboBoxPopupMenuListener();
+		wcoFilter.addPopupMenuListener(listener);
+
+		getToolBar().getToolsPanelCenter().add(wcoFilter,
+				new GridBagConstraints(-1, -1, 1, 1, 1, 0.0,
+						GridBagConstraints.CENTER,
+						GridBagConstraints.HORIZONTAL,
+						new Insets(0, 0, 0, 0), 0, 0));
+
+//		getToolBar().getToolsPanelCenter().add(wcoFilter);
 
 		if (idUsecase == QueryParameters.UC_ID_ARTIKELLISTE
 				&& getInternalFrame() != null) {
@@ -302,7 +324,7 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 
 	/**
 	 * the SortierKriterium[] as initialized using
-	 * {@link com.lp.util.fastlanereader.query.TableInfo#getDataBaseColumnNames()
+	 * {@link TableInfo#getDataBaseColumnNames()
 	 * TableInfo#getDataBaseColumnNames()}. There is one SortierKriterium for
 	 * each data base column name.
 	 */
@@ -356,7 +378,7 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 				MY_OWN_NEW_EXTRA_ACTION_SPECIAL_OK, recht);
 	}
 
-	public PanelQuery(QueryType[] typesI, /** @todo saubaer PJ 5059 */
+	public PanelQuery(QueryType[] typesI, /* @todo saubaer PJ 5059 */
 	FilterKriterium[] filtersI, int idUsecaseI, String[] aWhichButtonIUseI,
 			InternalFrame internalFrameI, String add2TitleI) throws Throwable {
 		this(typesI, filtersI, idUsecaseI, aWhichButtonIUseI, internalFrameI,
@@ -387,15 +409,29 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 			int idUsecaseI, String[] aWhichButtonIUseI,
 			InternalFrame internalFrameI, String add2TitleI,
 			boolean refreshWhenYouAreSelectedI,
-			FilterKriterium kritVersteckteFelderNichtAnzeigenI)
-			throws Throwable {
+			FilterKriterium kritVersteckteFelderNichtAnzeigenI,
+			String labelTextVersteckte) throws Throwable{
+		this(typesI,filtersI,idUsecaseI,aWhichButtonIUseI,internalFrameI,add2TitleI,refreshWhenYouAreSelectedI,kritVersteckteFelderNichtAnzeigenI,labelTextVersteckte,null,null);
+	}
+
+	public PanelQuery(QueryType[] typesI, FilterKriterium[] filtersI,
+			int idUsecaseI, String[] aWhichButtonIUseI,
+			InternalFrame internalFrameI, String add2TitleI,
+			boolean refreshWhenYouAreSelectedI,
+			FilterKriterium kritVersteckteFelderNichtAnzeigenI,
+			String labelTextVersteckte, SortierKriterium sortierkriterium,
+			String textSortierkriterium) throws Throwable {
 
 		super(internalFrameI, add2TitleI);
 
+		if (labelTextVersteckte == null) {
+			labelTextVersteckte = LPMain.getTextRespectUISPr("lp.versteckte");
+		}
+
 		/*
-		 * Laut CK darf typesI durchaus null sein. Daher die Pr&uuml;fung entfernt
-		 * (ghp) if (typesI == null && isFilterIn(aWhichButtonIUseI)) { throw
-		 * new Throwable("typesI == null && isIn(aWhichButtonIUseI)"); }
+		 * Laut CK darf typesI durchaus null sein. Daher die Pr&uuml;fung
+		 * entfernt (ghp) if (typesI == null && isFilterIn(aWhichButtonIUseI)) {
+		 * throw new Throwable("typesI == null && isIn(aWhichButtonIUseI)"); }
 		 */
 
 		// filters = filtersI;
@@ -407,8 +443,43 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 
 		jbInit();
 
-		befuellePanelFilterkriterienDirektUndVersteckte(null, null,
-				kritVersteckteFelderNichtAnzeigenI);
+		if (kritVersteckteFelderNichtAnzeigenI != null) {
+			fkVersteckteFelderNichtAnzeigen = kritVersteckteFelderNichtAnzeigenI;
+
+			wcbVersteckteFelderAnzeigen = new WrapperCheckBox(
+					labelTextVersteckte);
+			wcbVersteckteFelderAnzeigen.addKeyListener(bildAufAbListener);
+			wcbVersteckteFelderAnzeigen.addMouseListener(this);
+			HelperClient
+					.setDefaultsToComponent(wcbVersteckteFelderAnzeigen, 40);
+
+			// filterkritversteckt: 2 hier wird ueber die Anzeige entschieden
+			if (DelegateFactory.getInstance().getTheJudgeDelegate()
+					.hatRecht(RechteFac.RECHT_LP_DARF_VERSTECKTE_SEHEN)) {
+				wcbVersteckteFelderAnzeigen
+						.setSelected(DelegateFactory
+								.getInstance()
+								.getParameterDelegate()
+								.getMandantparameter(
+										LPMain.getTheClient().getMandant(),
+										ParameterFac.KATEGORIE_ALLGEMEIN,
+										ParameterFac.PARAMETER_AUSWAHLLISTE_VERSTECKTE_ANZEIGEN_DEFAULT)
+								.asBoolean());
+				panelFilter.add(wcbVersteckteFelderAnzeigen,
+						new GridBagConstraints(8, iZeile, 1, 1, 0.1, 0.0,
+								GridBagConstraints.NORTH,
+								GridBagConstraints.BOTH,
+								new Insets(2, 2, 2, 2), 0, 0));
+
+			} else {
+				wcbVersteckteFelderAnzeigen.setSelected(false);
+			}
+
+		}
+
+		if (sortierkriterium != null) {
+			setzeErstesUebersteuerbaresSortierkriterium(textSortierkriterium,sortierkriterium);
+		}
 
 		initComponents();
 
@@ -428,9 +499,9 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 		super(internalFrameI, add2TitleI);
 
 		/*
-		 * Laut CK darf typesI durchaus null sein. Daher die Pr&uuml;fung entfernt
-		 * (ghp) if (typesI == null && isFilterIn(aWhichButtonIUseI)) { throw
-		 * new Throwable("typesI == null && isIn(aWhichButtonIUseI)"); }
+		 * Laut CK darf typesI durchaus null sein. Daher die Pr&uuml;fung
+		 * entfernt (ghp) if (typesI == null && isFilterIn(aWhichButtonIUseI)) {
+		 * throw new Throwable("typesI == null && isIn(aWhichButtonIUseI)"); }
 		 */
 
 		// filters = filtersI;
@@ -455,7 +526,7 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 	 * Konstruktor fuer eine FLR Liste, in der ein bestimmter Datensatz
 	 * selektiert ist. <br>
 	 * Der Key dieses Datensatzes wird als Parameter uebergeben.
-	 * 
+	 *
 	 * @param typesI
 	 *            die UI Filterkriterien fuer den Benutzer
 	 * @param filtersI
@@ -508,7 +579,7 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 
 	/**
 	 * isIn
-	 * 
+	 *
 	 * @param aWhichButtonIUseI
 	 *            String[]
 	 * @return boolean
@@ -529,7 +600,7 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 	/**
 	 * Setze alle Defaultwerte; hier koennen jetzt "schwerer" Methoden
 	 * aufgerufen werden. jbinit: 4
-	 * 
+	 *
 	 * @throws Throwable
 	 */
 	private void setDefaults() throws Throwable {
@@ -559,16 +630,23 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 		enableButtonAction(aWhichButtonIUse);
 
 		// @uw : initiale Markierung der ersten Zeile nach Listenaufbau
+		setRowSelection(0);
+	}
+
+	/**
+	 * Nach dem Listenaufbau wird die erste Zeile als Default markiert
+	 *
+	 */
+	protected void setRowSelection(int row) {
 		if (table.getModel().getRowCount() > 0) {
-			table.setRowSelectionInterval(0, 0);
+			table.setRowSelectionInterval(row, row);
 		}
 	}
 
 	/**
 	 * Initialisiere alle Komponenten; braucht der JBX-Designer; hier bitte
 	 * keine wilden Dinge wie zum Server gehen, etc. machen. jbinit: 3
-	 * 
-	 * @throws Exception
+	 * @return JPanel
 	 */
 
 	public JPanel getPanelButtons() {
@@ -715,7 +793,7 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 				kriterium = new SortierKriterium(dbColumnNames[i], true,
 						SortierKriterium.SORT_ASC);
 			}
-			sortierKriterien.put(columnNames[i].toString(), kriterium);
+			sortierKriterien.put(dbColumnNames[i], kriterium);
 		}
 
 		boolean clearKriterien = false;
@@ -738,7 +816,7 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 		tableModel = new DistributedTableModelImpl(this.dataSource);
 
 		// die Tabelle aufbauen
-		table = new WrapperTable(getInternalFrame(), tableModel);
+		table = createTable(getInternalFrame(), tableModel);
 		table.setLocale(LPMain.getInstance().getUISprLocale());
 		// per Default keine Mehrfachselektierung erlaubt
 		this.setMultipleRowSelectionEnabled(bMultipleRowSelectionEnabled);
@@ -781,6 +859,10 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 				1, 1, 1.0, 0.0, GridBagConstraints.SOUTH,
 				GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0));
 		hmDirektFilter = new LinkedHashMap<Integer, PanelFilterKriteriumDirekt>();
+	}
+
+	protected WrapperTable createTable(InternalFrame internalFrame, DistributedTableModelImpl tableModel) {
+		return new WrapperTable(internalFrame, tableModel);
 	}
 
 	private void sortTableModel() throws ExceptionLP {
@@ -975,7 +1057,7 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 	 * called whenever buttonAdd or buttonRefresh is clicked. Depending on the
 	 * clicked button either a new QueryInputRow is added to the view, or the
 	 * current query is executed and the result gets displayed in the table.
-	 * 
+	 *
 	 * @param e
 	 *            ActionEvent
 	 */
@@ -1033,7 +1115,7 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 	/**
 	 * called whenever the user clicks on a column's header. The sorting is
 	 * implemented here.
-	 * 
+	 *
 	 * @param e
 	 *            MouseEvent
 	 * @throws ExceptionLP
@@ -1059,10 +1141,8 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 					|| index == 0)
 				return;
 
-			String columnName = table.getColumnName(index);
-
 			SortierKriterium tmpSortierKriterium = sortierKriterien
-					.get(columnName);
+					.get(dbColumnNames[index]);
 
 			// @uw 2005-02-23 : Wir haben seit spaetestens Hibernate3 einen Bug,
 			// wenn
@@ -1121,6 +1201,7 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 
 			sortTableModel();
 			scrollAndSelect();
+			table.getTableHeader().repaint();
 			// }
 
 			// else {
@@ -1151,6 +1232,15 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 		}
 	}
 
+	public ArrayList<SortierKriterium> getCurrentSortierKriterien() {
+		return currentSortierKriterien;
+	}
+
+	public void setCurrentSortierKriterien(
+			ArrayList<SortierKriterium> currentSortierKriterien) {
+		this.currentSortierKriterien = currentSortierKriterien;
+	}
+
 	public Object holeKeyNaechsteZeile() throws Throwable {
 		int iZeileCursor = table.getSelectionModel().getAnchorSelectionIndex();
 		iZeileCursor++;
@@ -1168,14 +1258,14 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 	/**
 	 * gets the id of the row currently selected in the table (this is not the
 	 * row number!).
-	 * 
+	 *
 	 * MB 19.09.06 aufgrund der mehrfachselektierung ist es auch moeglich, dass
 	 * gar kein datensatz ausgewaehlt ist. in diesem fall zieht die zeile, in
 	 * der der cursor steht.
-	 * 
+	 *
 	 * sind mehrere zeilen selektiert, so soll die zuletzt markierte (cursor)
 	 * ziehen.
-	 * 
+	 *
 	 * @return the row's id.
 	 */
 	public Object getSelectedId() {
@@ -1183,38 +1273,14 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 		// ist mindestens eine zeile selektiert?
 		if (table.getSelectedRow() >= 0
 				&& table.getSelectedRow() < tableModel.getRowCount()) {
-			int iZeileCursor = table.getSelectionModel()
-					.getAnchorSelectionIndex();
-			int[] iZeilenSelektiert = table.getSelectedRows();
-			boolean bZeileMitCursorIstSelektiert = false;
-			for (int i = 0; i < iZeilenSelektiert.length; i++) {
-				if (iZeilenSelektiert[i] == iZeileCursor) {
-					bZeileMitCursorIstSelektiert = true;
-				}
-			}
-			if (bZeileMitCursorIstSelektiert) {
-				selectedId = table.getValueAt(iZeileCursor, 0);
-			}
-			// Zeile mit Cursor ist nicht selektiert. daher zieht die erste
-			// selektierte.
-			else {
-				selectedId = table.getValueAt(table.getSelectedRow(), 0);
-			}
+
+			selectedId = getSelectedIdIfSelectionExists();
 		}
 		// keine zeile selektiert
 		else {
 			// wenn die Tabelle aber nicht leer ist, dann gilt die zeile, in der
 			// der cursor steht als selektiert.
-			if (table.getRowCount() >= 1) {
-				int iZeileCursor = table.getSelectionModel()
-						.getAnchorSelectionIndex();
-				if (iZeileCursor == -1) { // nichts selektiert
-					selectedId = table.getValueAt(0, 0); // erste Zeile
-					// selektieren
-				} else {
-					selectedId = table.getValueAt(iZeileCursor, 0);
-				}
-			}
+			selectedId = getIdFromCursorPositionInTable();
 		}
 		// AD: System.out.println("UC: " + this.idUsecase + " Selected ID: " +
 		// selectedId);
@@ -1223,9 +1289,61 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 	}
 
 	/**
+	 * Liefert die Id der Zeile auf der sich der Cursor befindet.
+	 * Falls der Cursor im Table nicht gesetzt ist, so wird die Id der
+	 * ersten Zeile retourniert.
+	 *
+	 * @return Id der Cursor-Zeile
+	 */
+	protected Object getIdFromCursorPositionInTable() {
+		Object selectedId = null;
+		if (table.getRowCount() >= 1) {
+			int iZeileCursor = table.getSelectionModel()
+					.getAnchorSelectionIndex();
+			if (iZeileCursor == -1) { // nichts selektiert
+				selectedId = table.getValueAt(0, 0); // erste Zeile
+				// selektieren
+			} else {
+				selectedId = table.getValueAt(iZeileCursor, 0);
+			}
+		}
+		return selectedId;
+	}
+
+	/**
+	 * Liefert die Id der selektierten Zeile.
+	 * Liegt der Cursor im selektierten Bereich, wird diese Id retourniert.
+	 * Liegt der Cursor au&szlig;erhalb, so wird die Id der ersten selektierten
+	 * Zeile retourniert
+	 *
+	 * @return Id der selektierten Zeile
+	 */
+	protected Object getSelectedIdIfSelectionExists() {
+		Object selectedId = null;
+		int iZeileCursor = table.getSelectionModel()
+				.getAnchorSelectionIndex();
+		int[] iZeilenSelektiert = table.getSelectedRows();
+		boolean bZeileMitCursorIstSelektiert = false;
+		for (int i = 0; i < iZeilenSelektiert.length; i++) {
+			if (iZeilenSelektiert[i] == iZeileCursor) {
+				bZeileMitCursorIstSelektiert = true;
+			}
+		}
+		if (bZeileMitCursorIstSelektiert) {
+			selectedId = table.getValueAt(iZeileCursor, 0);
+		}
+		// Zeile mit Cursor ist nicht selektiert. daher zieht die erste
+		// selektierte.
+		else {
+			selectedId = table.getValueAt(table.getSelectedRow(), 0);
+		}
+		return selectedId;
+	}
+
+	/**
 	 * gets the id of the row currently selected in the table (this is not the
 	 * row number!).
-	 * 
+	 *
 	 * @return the row's id.
 	 */
 	public Object[] getSelectedIds() {
@@ -1260,7 +1378,7 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 	/**
 	 * gets the id of the row currently selected in the table (this is not the
 	 * row number!).
-	 * 
+	 *
 	 * @return the row's id.
 	 */
 	public Object getId2SelectAfterDelete() {
@@ -1355,8 +1473,7 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 			// Neuerliches Lesen nicht erforderlich, zerstoert die
 			// farbliche Markierung der Zeile, die zuvor gesetzt wurde!
 			this.table.clearSelection();
-			this.table.setRowSelectionInterval(indexOfSelectedRow,
-					indexOfSelectedRow);
+			setRowSelection(indexOfSelectedRow);
 			Rectangle rect = table.getCellRect(indexOfSelectedRow, 0, true);
 			table.scrollRectToVisible(rect);
 			// myLogger.debug("1 Index of selected row = " +
@@ -1538,7 +1655,7 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 
 	/**
 	 * Die Breite einer Spalte festlegen.
-	 * 
+	 *
 	 * @param iColumnIndex
 	 *            der Index der Spalte
 	 * @param iColumnWidth
@@ -1562,11 +1679,9 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 
 	/**
 	 * Die Spalte verstecken.
-	 * 
+	 *
 	 * @param iColumnIndex
 	 *            der Index der Spalte
-	 * @param iColumnWidth
-	 *            doe absolute Breite der Spalte
 	 */
 	private void setColumnWidthToZero(int iColumnIndex) {
 		TableColumn tc = table.getColumnModel().getColumn(iColumnIndex);
@@ -1582,7 +1697,7 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 
 	/**
 	 * eventActionFilter
-	 * 
+	 *
 	 * @param e
 	 *            ActionEvent
 	 * @throws Throwable
@@ -1613,7 +1728,7 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 	/**
 	 * Event Spezial wurde ausgeloest; das sind alle die du hier selbst
 	 * definierst; dh. du wirst aufgerufen.
-	 * 
+	 *
 	 * @param e
 	 *            ActionEvent
 	 * @throws Throwable
@@ -1793,12 +1908,6 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 	protected void eventKeyPressed(KeyEvent e) throws Throwable {
 	}
 
-	/**
-	 * 
-	 * @param e
-	 *            KeyEvent
-	 * @throws Throwable
-	 */
 	private class BildAufAbListener implements KeyListener, MouseListener {
 		public void keyPressed(KeyEvent e) {
 			try {
@@ -1888,12 +1997,12 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 							 * Table auf non-visible setzen. Hintergrund: Der
 							 * JTable repaint (scrollRectToVisible) Mechanismus
 							 * nutzt anscheinend manchmal die zuletzt
-							 * selektierte Zeile f&uuml;r den repaint. Das ist hier
-							 * aber fatal, da dann noch mal die Daten aus der
-							 * Datenbank gezogen werden. Deshalb als Workaround
-							 * auf non-visible setzen. Kann auch ein "Bug" von
-							 * sun/oracle sein. Keine Ahnung.
-							 * 
+							 * selektierte Zeile f&uuml;r den repaint. Das ist
+							 * hier aber fatal, da dann noch mal die Daten aus
+							 * der Datenbank gezogen werden. Deshalb als
+							 * Workaround auf non-visible setzen. Kann auch ein
+							 * "Bug" von sun/oracle sein. Keine Ahnung.
+							 *
 							 * Gerold, 6.12.2011
 							 */
 							boolean wasVisible = table.isVisible();
@@ -2049,9 +2158,9 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 
 		/**
 		 * getIdSelected
-		 * 
+		 *
 		 * @deprecated MB: use getSelectedId()
-		 * 
+		 *
 		 * @return Object
 		 */
 	}
@@ -2062,7 +2171,7 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 
 	/**
 	 * eventActionNew
-	 * 
+	 *
 	 * @param eventObject
 	 *            ActionEvent
 	 * @param bLockMeI
@@ -2091,7 +2200,7 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 
 	/**
 	 * eventActionPrint
-	 * 
+	 *
 	 * @param e
 	 *            ActionEvent
 	 * @throws Throwable
@@ -2110,7 +2219,7 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 
 	/**
 	 * getInternalFrameTitle
-	 * 
+	 *
 	 * @return String
 	 */
 	/*
@@ -2122,7 +2231,7 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param bNeedNoYouAreSelectedI
 	 *            boolean
 	 * @throws Throwable
@@ -2151,7 +2260,7 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 	}
 
 	/**
-	 * 
+	 *
 	 * @return LockStateValue
 	 * @throws Throwable
 	 */
@@ -2161,7 +2270,7 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 
 	/**
 	 * Hole den "Lock" fuer diese Panel.
-	 * 
+	 *
 	 * @return LockMeDto
 	 * @throws Exception
 	 */
@@ -2174,7 +2283,7 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 
 	/**
 	 * btnstate: 8 Hier werden die Buttons speziell fuer das PanelQuery gesetzt.
-	 * 
+	 *
 	 * @throws Throwable
 	 */
 	public void updateButtons() throws Throwable {
@@ -2185,10 +2294,10 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 
 	/**
 	 * btnstate: 9 Hier werden die Buttons speziell fuer das PanelQuery gesetzt.
-	 * 
-	 * @throws Exception
+	 *
 	 * @param lockstateValueI
 	 *            LockStateValue
+	 * @throws Exception
 	 */
 	public void updateButtons(LockStateValue lockstateValueI) throws Exception {
 
@@ -2595,7 +2704,7 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 	/**
 	 * Setzen von 0..2 direkten Filterkriterien und der CheckBox fuer die
 	 * versteckten Entitaeten.
-	 * 
+	 *
 	 * @param kritDirekt1I
 	 *            der erste Direktfilter, null erlaubt
 	 * @param kritDirekt2I
@@ -2604,6 +2713,7 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 	 *            FilterKriterium fuer die versteckten Entitaeten, null erlaubt
 	 * @throws Throwable
 	 *             Ausnahme
+	 * @deprecated VersteckteKriterien ueber Konstruktor befuellen
 	 */
 	public void befuellePanelFilterkriterienDirektUndVersteckte(
 			FilterKriteriumDirekt kritDirekt1I,
@@ -2618,7 +2728,7 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 	/**
 	 * Setzen von 0..2 direkten Filterkriterien und der CheckBox fuer die
 	 * versteckten Entitaeten.
-	 * 
+	 *
 	 * @param kritDirekt1I
 	 *            der erste Direktfilter, null erlaubt
 	 * @param kritDirekt2I
@@ -2629,6 +2739,7 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 	 *            String
 	 * @throws Throwable
 	 *             Ausnahme
+	 * @deprecated VersteckteKriterien ueber Konstruktor befuellen
 	 */
 	public void befuellePanelFilterkriterienDirektUndVersteckte(
 			FilterKriteriumDirekt kritDirekt1I,
@@ -2683,7 +2794,7 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 		}
 	}
 
-	public void setzeErstesUebersteuerbaresSortierkriterium(String text,
+	private void setzeErstesUebersteuerbaresSortierkriterium(String text,
 			SortierKriterium sortierkriterium) throws Throwable {
 		this.sortierkriteriumErsteSortierungUebersteuern = sortierkriterium;
 
@@ -2693,14 +2804,10 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 		HelperClient.setDefaultsToComponent(wcbErsteSortierungUebersteuern, 40);
 
 		panelFilter.add(wcbErsteSortierungUebersteuern, new GridBagConstraints(
-				8, iZeile, 1, 1, 0.1, 0.0, GridBagConstraints.NORTH,
+				8, iZeile+1, 1, 1, 0.1, 0.0, GridBagConstraints.NORTH,
 				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
 
 		wcbErsteSortierungUebersteuern.setSelected(false);
-		if (this instanceof PanelQueryFLR) {// CK: 2009-07-30 wg.
-			// performance
-			eventActionRefresh(null, false);
-		}
 
 	}
 
@@ -2749,7 +2856,7 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 
 	/**
 	 * Setzen von 0..2 direkten Filterkriterien.
-	 * 
+	 *
 	 * @param oKrit1
 	 *            das erste Kriterium
 	 * @param oKrit2
@@ -2781,14 +2888,14 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 
 	/**
 	 * mouseClicked.
-	 * 
+	 *
 	 * @param e
 	 *            MouseEvent
 	 */
 	final public void mouseReleased(MouseEvent e) {
 		try {
 			if (e.getSource() == table) {
-				fireItemChangedEvent_ITEM_CHANGED();
+				fireItemChangedEvent_ITEM_CHANGED(e);
 			}
 			// else if(e.getSource() == table.getTableHeader()) {
 			// saveSpaltenbreite();
@@ -2812,11 +2919,16 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 						idUsecase, widths);
 				ClientPerspectiveManager.getInstance().saveQueryColumnSorting(
 						idUsecase, currentSortierKriterien);
-				ClientPerspectiveManager.getInstance().saveInternalFrame(getInternalFrame().getBelegartCNr());
+				saveFramePosition();
 				return null;
 			}
 		};
 		worker.execute();
+	}
+
+	protected void saveFramePosition() {
+		ClientPerspectiveManager.getInstance().saveInternalFramePosition(
+				getInternalFrame().getBelegartCNr());
 	}
 
 	public void clearDirektFilter() {
@@ -2824,7 +2936,8 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 				.hasNext();) {
 			PanelFilterKriteriumDirekt panelFkd = hmDirektFilter.get(iter
 					.next());
-			panelFkd.wtfFkdirektValue1.setText(null);
+			panelFkd.clear(); 
+//			panelFkd.wtfFkdirektValue1.setText(null);
 		}
 	}
 
@@ -2851,7 +2964,7 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 
 	/**
 	 * Pruefen, ob in einen Filter etwas eingegeben wurde.
-	 * 
+	 *
 	 * @return boolean
 	 */
 	public boolean isFilterActive() {
@@ -2882,6 +2995,19 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 		if (fireItemChangedEventAfterChange) {
 			getInternalFrame().fireItemChanged(this,
 					ItemChangedEvent.ITEM_CHANGED);
+			/**
+			 * @todo MB->JO workaround fuers panelSplit, damit der focus im
+			 *       direktfilter bleibt PJ 5078 bitte beseitigen
+			 */
+			this.setFirstFocusableComponent();
+		}
+	}
+
+	protected void fireItemChangedEvent_ITEM_CHANGED(MouseEvent e) throws Throwable {
+		// Wenn gewuenscht wird ein ItemChangedEvent gefeuert
+		if (fireItemChangedEventAfterChange) {
+			getInternalFrame().fireItemChanged(this,
+					ItemChangedEvent.ITEM_CHANGED, e);
 			/**
 			 * @todo MB->JO workaround fuers panelSplit, damit der focus im
 			 *       direktfilter bleibt PJ 5078 bitte beseitigen
@@ -2996,90 +3122,106 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 	protected void eventItemchanged(EventObject eI) throws Throwable {
 		ItemChangedEvent e = (ItemChangedEvent) eI;
 
-		// wurde die Selektion in meiner tabelle veraendert?
-		if (e.getID() == ItemChangedEvent.ACTION_TABLE_SELECTION_CHANGED
-				&& e.getSource() == table) {
-			// Buttons updaten
-			updateButtons();
-		}
+		if (e.getSource().equals(this)) {
 
-		if (e.getID() == ItemChangedEvent.ACTION_SAVE
-				|| e.getID() == ItemChangedEvent.ACTION_DELETE
-				|| e.getID() == ItemChangedEvent.ACTION_GOTO_MY_DEFAULT_QP) {
-		}
-
-		if (e.getID() == ItemChangedEvent.ITEM_CHANGED) {
-			bShowDocButton = false;
-
-			PrintInfoDto values = null;
-
-			boolean online = false;
-			boolean hasFiles = false;
-
-			if (bBenutzeUebersteuerteId == true) {
-
-				if (getUebersteuerteId() != null) {
-					values = DelegateFactory
-							.getInstance()
-							.getJCRDocDelegate()
-							.getPathAndPartnerAndTable(getUebersteuerteId(),
-									idUsecase);
-				}
-			} else {
-				if (getSelectedId() != null) {
-					values = DelegateFactory
-							.getInstance()
-							.getJCRDocDelegate()
-							.getPathAndPartnerAndTable(getSelectedId(),
-									idUsecase);
-				}
+			// wurde die Selektion in meiner tabelle veraendert?
+			if (e.getID() == ItemChangedEvent.ACTION_TABLE_SELECTION_CHANGED
+					&& e.getSource() == table) {
+				// Buttons updaten
+				updateButtons();
 			}
 
-			if (values != null) {
-				if (values.getDocPath() != null) {
+			if (e.getID() == ItemChangedEvent.ACTION_SAVE
+					|| e.getID() == ItemChangedEvent.ACTION_DELETE
+					|| e.getID() == ItemChangedEvent.ACTION_GOTO_MY_DEFAULT_QP) {
+			}
+
+			if (e.getID() == ItemChangedEvent.ITEM_CHANGED) {
+				bShowDocButton = false;
+
+				PrintInfoDto values = null;
+
+//				boolean online = false;
+//				boolean hasFiles = false;
+
+				Object idToLoad = bBenutzeUebersteuerteId ?
+						getUebersteuerteId() : getSelectedId() ;
+				if(idToLoad != null) {
+					values = DelegateFactory.getInstance()
+							.getJCRDocDelegate()
+							.getPathAndPartnerAndTable(idToLoad, idUsecase) ;
+				}
+//				if (bBenutzeUebersteuerteId == true) {
+//
+//					if (getUebersteuerteId() != null) {
+//						values = DelegateFactory
+//								.getInstance()
+//								.getJCRDocDelegate()
+//								.getPathAndPartnerAndTable(
+//										getUebersteuerteId(), idUsecase);
+//					}
+//				} else {
+//					if (getSelectedId() != null) {
+//						values = DelegateFactory
+//								.getInstance()
+//								.getJCRDocDelegate()
+//								.getPathAndPartnerAndTable(getSelectedId(),
+//										idUsecase);
+//					}
+//				}
+
+				JCRRepoInfo repoInfo = new JCRRepoInfo() ;
+				if (values != null && values.getDocPath() != null) {
 					bShowDocButton = true;
-					online = DelegateFactory.getInstance()
-							.getJCRDocDelegate().isOnline();
-					if(online) {
-						hasFiles = DelegateFactory.getInstance()
-								.getJCRDocDelegate()
-								.checkIfNodeExists(values.getDocPath());
+					repoInfo = DelegateFactory.getInstance()
+							.getJCRDocDelegate().checkIfNodeExists(values.getDocPath()) ;
+//						online = info.isOnline() ;
+//						hasFiles = info.isExists() ;
+//						online = DelegateFactory.getInstance()
+//								.getJCRDocDelegate().isOnline();
+//						if (online) {
+//							hasFiles = DelegateFactory.getInstance()
+//									.getJCRDocDelegate()
+//									.checkIfNodeExists(values.getDocPath());
+//						}
+				}
+
+				if (bShowDocButton) {
+					jbDokumente.setIcon(repoInfo.isExists() ? DOKUMENTE : KEINE_DOKUMENTE);
+					jbDokumente.setVisible(true);
+					enableToolsPanelButtons(repoInfo.isOnline(), LEAVEALONE_DOKUMENTE);
+					if (!repoInfo.isOnline()) {
+						getHmOfButtons()
+								.get(LEAVEALONE_DOKUMENTE)
+								.getButton()
+								.setToolTipText(
+										LPMain.getTextRespectUISPr("lp.dokumente.offline"));
+					}
+				} else {
+					jbDokumente.setVisible(false);
+				}
+				if (getSelectedId() != null) {
+					jbDokumente.setEnabled(repoInfo.isOnline());
+				} else {
+					jbDokumente.setEnabled(false);
+				}
+				List<Object> iids = new ArrayList<Object>();
+				Object[] array = getSelectedIds();
+				if (array != null) {
+					for (Object iid : array) {
+						iids.add(iid);
 					}
 				}
-			}
-
-			if (bShowDocButton) {
-				jbDokumente.setIcon(hasFiles ? DOKUMENTE : KEINE_DOKUMENTE);
-				jbDokumente.setVisible(true);
-				enableToolsPanelButtons(online, LEAVEALONE_DOKUMENTE);
-				if(!online) {
-					getHmOfButtons().get(LEAVEALONE_DOKUMENTE).getButton().setToolTipText(LPMain.getTextRespectUISPr("lp.dokumente.offline"));
+				if (dataSource != null) {
+					setInfoPairList(dataSource.getInfoForSelectedIIds(iids));
 				}
-			} else {
-				jbDokumente.setVisible(false);
-			}
-			if (getSelectedId() != null) {
-				jbDokumente.setEnabled(online);
-			} else {
-				jbDokumente.setEnabled(false);
-			}
-			List<Object> iids = new ArrayList<Object>();
-			Object[] array = getSelectedIds();
-			if (array != null) {
-				for (Object iid : array) {
-					iids.add(iid);
-				}
-			}
-			if (dataSource != null) {
-				setInfoPairList(dataSource.getInfoForSelectedIIds(iids));
-			}
-		} else if (e.getID() == ItemChangedEvent.ACTION_MY_OWN_NEW) {
-
-			String sAspectInfo = ((ISourceEvent) e.getSource()).getAspect();
-			if (e.getSource() == this) {
-				if (sAspectInfo.equals(MY_OWN_NEW_EXTRA_ACTION_SPECIAL_OK)) {
-					if (getSelectedIds() != null) {
-						fireItemChangedEvent_GOTO_DETAIL_PANEL();
+			} else if (e.getID() == ItemChangedEvent.ACTION_MY_OWN_NEW) {
+				String sAspectInfo = ((ISourceEvent) e.getSource()).getAspect();
+				if (e.getSource() == this) {
+					if (sAspectInfo.equals(MY_OWN_NEW_EXTRA_ACTION_SPECIAL_OK)) {
+						if (getSelectedIds() != null) {
+							fireItemChangedEvent_GOTO_DETAIL_PANEL();
+						}
 					}
 				}
 			}
@@ -3168,8 +3310,7 @@ public class PanelQuery extends PanelBasis implements ISourceEvent {
 			if (value == null)
 				return null;
 
-			SortierKriterium krit = sortierKriterien.get(table
-					.getColumnName(column));
+			SortierKriterium krit = sortierKriterien.get(dbColumnNames[column]);
 			JLabel label;
 			if (value instanceof JLabel)
 				label = (JLabel) value;

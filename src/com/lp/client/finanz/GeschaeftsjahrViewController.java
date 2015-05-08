@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -53,6 +53,7 @@ public class GeschaeftsjahrViewController implements
 	private Map<?, ?> allGeschaeftsjahre ;
 	private InternalFrameFinanz internalFinanzFrame ;
 	private TheClientDto theClientDto ;
+	private JMenu menu;
 	
 	public GeschaeftsjahrViewController(InternalFrameFinanz finanzFrame, TheClientDto clientDto) {
 		internalFinanzFrame = finanzFrame ;
@@ -69,7 +70,15 @@ public class GeschaeftsjahrViewController implements
 	@Override
 	public JMenu getGeschaeftsJahreMenue(
 			TabbedPane tabbedPane, ActionListener actionListener) throws Throwable {
-	    JMenu menuePeriode = new WrapperMenu("fb.menu.geschaeftsjahr", tabbedPane);
+		if(menu != null) {
+			for(int i = 0; i < menu.getItemCount(); i++) {
+				//Damit er nicht mehrfach geadded wird vorher einen remove
+				menu.getItem(i).removeActionListener(actionListener);
+				menu.getItem(i).addActionListener(actionListener);
+			}
+			return menu;
+		}
+	   	menu = new WrapperMenu("fb.menu.geschaeftsjahr", tabbedPane);
 		Map<?, ?> mapGJ = getAllGeschaeftsJahre() ;
 		ButtonGroup bgGJ = new ButtonGroup();
 		for (Iterator<?> iter = mapGJ.keySet().iterator(); iter
@@ -85,11 +94,11 @@ public class GeschaeftsjahrViewController implements
 				geschaeftsJahrChanged(itemString) ;
 			}
 
-			menuePeriode.add(menueItem, 0);
+			menu.add(menueItem, 0);
 			bgGJ.add(menueItem);
 		}
 		
-		return menuePeriode ;
+		return menu ;
 	}
 
 	protected String buildCommand(String itemString) {

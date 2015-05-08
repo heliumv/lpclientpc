@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -64,6 +64,7 @@ import javax.swing.text.Segment;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledEditorKit;
 import javax.swing.text.TabExpander;
+import javax.swing.text.TabSet;
 import javax.swing.text.View;
 import javax.swing.text.ViewFactory;
 
@@ -94,12 +95,22 @@ public class LpStyledEditorKit extends StyledEditorKit {
 	 */
 	private static final long serialVersionUID = 1L;
 	private static Hashtable<Object, Action> actions;
-
+	private int tabsize ;
+	
 	public LpStyledEditorKit() {
 		super();
+		tabsize = 72 ; // Default Size Java
 		createActionsHashTable();
 	}
 
+	public int getTabsize() {
+		return tabsize ;
+	}
+	
+	public void setTabsize(int newTabsize) {
+		tabsize = newTabsize ;
+	}
+	
 	/**
 	 * Erzeugen einer Hashtable, um auf die Actions spaeter ueber den Namen
 	 * zugreifen zu koennen. Es werden aus dem uebergebenen
@@ -163,7 +174,8 @@ public class LpStyledEditorKit extends StyledEditorKit {
 				if (kind.equals(AbstractDocument.ContentElementName)){
 					return new ScaledLableView(elem);
 				} else if (kind.equals(AbstractDocument.ParagraphElementName)) {
-					return new ParagraphView(elem);
+//					return new ParagraphView(elem);
+					return new LpParagraphView(elem) ;
 				} else if (kind.equals(AbstractDocument.SectionElementName)) {
 					return new ScaledView(elem, View.Y_AXIS);
 				} else if (kind.equals(StyleConstants.ComponentElementName)) {
@@ -179,11 +191,22 @@ public class LpStyledEditorKit extends StyledEditorKit {
 
 	}
 	
-	
 
+	class LpParagraphView extends ParagraphView	{
+		public LpParagraphView(Element element) {
+			super(element) ;
+		}
+		
+		@Override
+		public float nextTabStop(float x, int tabOffset) {
+	        TabSet tabs = getTabSet();
+	        if(tabs == null) {
+	            return (float)(getTabBase() + (((int)x / getTabsize() + 1) * getTabsize()));
+	        }
 
-	
-
+	        return super.nextTabStop(x, tabOffset);
+		}
+	}
 }
 
 class ScaledView extends BoxView {

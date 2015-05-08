@@ -1,33 +1,33 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
- * 
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
+ *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published 
- * by the Free Software Foundation, either version 3 of theLicense, or 
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of theLicense, or
  * (at your option) any later version.
- * 
- * According to sec. 7 of the GNU Affero General Public License, version 3, 
+ *
+ * According to sec. 7 of the GNU Affero General Public License, version 3,
  * the terms of the AGPL are supplemented with the following terms:
- * 
- * "HELIUM V" and "HELIUM 5" are registered trademarks of 
- * HELIUM V IT-Solutions GmbH. The licensing of the program under the 
+ *
+ * "HELIUM V" and "HELIUM 5" are registered trademarks of
+ * HELIUM V IT-Solutions GmbH. The licensing of the program under the
  * AGPL does not imply a trademark license. Therefore any rights, title and
  * interest in our trademarks remain entirely with us. If you want to propagate
  * modified versions of the Program under the name "HELIUM V" or "HELIUM 5",
- * you may only do so if you have a written permission by HELIUM V IT-Solutions 
+ * you may only do so if you have a written permission by HELIUM V IT-Solutions
  * GmbH (to acquire a permission please contact HELIUM V IT-Solutions
  * at trademark@heliumv.com).
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Affero General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Contact: developers@heliumv.com
  ******************************************************************************/
 package com.lp.client.rechnung;
@@ -52,6 +52,7 @@ import com.lp.client.frame.component.InternalFrame;
 import com.lp.client.frame.component.ItemChangedEvent;
 import com.lp.client.frame.component.PanelBasis;
 import com.lp.client.frame.component.PanelQuery;
+import com.lp.client.frame.component.PanelQueryAuftraege;
 import com.lp.client.frame.component.PanelQueryFLR;
 import com.lp.client.frame.component.PanelSplit;
 import com.lp.client.frame.component.PanelTabelle;
@@ -70,6 +71,7 @@ import com.lp.server.benutzer.service.RechteFac;
 import com.lp.server.partner.service.KundeDto;
 import com.lp.server.rechnung.service.RechnungDto;
 import com.lp.server.rechnung.service.RechnungFac;
+import com.lp.server.rechnung.service.RechnungSichtAuftragDto;
 import com.lp.server.system.service.LocaleFac;
 import com.lp.server.system.service.ParameterFac;
 import com.lp.server.system.service.ParametermandantDto;
@@ -92,12 +94,12 @@ import com.lp.util.Helper;
  * </p>
  * <p>
  * </p>
- * 
+ *
  * @author Martin Bluehweis
  * @version $Revision: 1.36 $
  */
 public class TabbedPaneRechnung extends TabbedPaneRechnungAll {
-	
+
 	private static final long serialVersionUID = 1L;
 	// die folgenden Panels werden optional eingehaengt
 	private int iIDX_SICHTLIEFERSCHEIN = -1;
@@ -139,14 +141,14 @@ public class TabbedPaneRechnung extends TabbedPaneRechnungAll {
 
 	private PanelQueryFLR panelQueryFLREizelrechnungsexport = null;
 	private PanelQueryFLR panelQueryFLREizelrechnungsexportVerdichtet = null;
-	private PanelQuery lsAuftraege = null; // FLR 1:n Liste
+	private PanelQueryAuftraege lsAuftraege = null; // FLR 1:n Liste
 
 	private PanelQueryFLR panelQueryFLRKostenstelle = null;
 	private PanelQueryFLR panelQueryFLRAuftragauswahlZusatz = null;
 
 	private AuftragDto auftragDtoSichtAuftrag = new AuftragDto();
 
-	protected AuftragDto getAuftragDtoSichtAuftrag() throws Throwable {
+	protected AuftragDto getAuftragDtoSichtAuftrag() {
 		return auftragDtoSichtAuftrag;
 	}
 
@@ -351,6 +353,7 @@ public class TabbedPaneRechnung extends TabbedPaneRechnungAll {
 											getRechnungDto(),
 											getAuftragDtoSichtAuftrag()
 													.getIId()));
+					lsAuftraege.setAuftragSelectedOnTable(true);
 				}
 			}
 		} else if (e.getID() == ItemChangedEvent.ACTION_NEW) {
@@ -415,20 +418,36 @@ public class TabbedPaneRechnung extends TabbedPaneRechnungAll {
 					lsPositionenSichtAuftragTop.eventYouAreSelected(false);
 				}
 			}
+		} else if (e.getID() == ItemChangedEvent.ACTION_TABLE_SELECTION_CHANGED) {
+
+			if(bAuftragRechnung && e.getSource() == getPanelQueryAuftraege().getTable()) {
+				enableTabSichtAuftrag();
+			} else if(e.getSource() == getPanelQueryPositionen(true).getTable()) {
+				enableTabSichtLieferschein();
+			}
 		}
+
 	}
 
 	protected void holeRechnungDto(Object key) throws Throwable {
-		super.holeRechnungDto(key);
-		if (getRechnungDto() != null
-				&& getRechnungDto().getAuftragIId() != null) {
-			AuftragDto aDto = DelegateFactory.getInstance()
-					.getAuftragDelegate()
-					.auftragFindByPrimaryKey(getRechnungDto().getAuftragIId());
-			this.setAuftragDtoSichtAuftrag(aDto);
-		} else {
-			this.setAuftragDtoSichtAuftrag(new AuftragDto());
+//		super.holeRechnungDto(key);
+		RechnungSichtAuftragDto dto = DelegateFactory.getInstance()
+				.getRechnungServiceDelegate().rechnungFindByPrimaryKey((Integer) key) ;
+
+		if( bAuftragRechnung 
+				&& (getRechnungDto() == null || getRechnungDto().getIId() == null 
+				|| !getRechnungDto().getIId().equals(dto.getRechnungDto().getIId())) ) {
+			lsAuftraege.setAuftragSelectedOnTable(dto.getAuftragDto() != null && !dto.isMehrAlsHauptAuftrag());
 		}
+
+		setRechnungDto(dto.getRechnungDto());
+		setKeyInternalFrame(key) ;
+		setAuftragDtoSichtAuftrag(dto.getAuftragDto());
+
+		enableTabSichtLieferschein();
+		enableTabAuftraege();
+		enableTabSichtAuftrag();
+
 		if (bAuftragRechnung) {
 			// Filter auf die Auftraege
 			FilterKriterium[] filtersPos = RechnungFilterFactory.getInstance()
@@ -451,6 +470,8 @@ public class TabbedPaneRechnung extends TabbedPaneRechnungAll {
 					getRechnungDto().getIId());
 			getPanelDetailKonditionen(true).eventYouAreSelected(false);
 			// wenn ich aus dem umsatz komme, verlier ich den titel
+
+			//TODO ghp. was macht das?
 			this.setRechnungDto(this.getRechnungDto());
 		} else if (index == iIDX_ZAHLUNGEN) {
 			getPanelSplitZahlungen(true).eventYouAreSelected(false);
@@ -467,6 +488,8 @@ public class TabbedPaneRechnung extends TabbedPaneRechnungAll {
 		} else if (index == iIDX_SICHTLIEFERSCHEIN) {
 			// Es muss ein Lieferschein gewaehlt sein
 			if (pruefePositionIstEinLieferschein()) {
+				getInternalFrame().setLpTitle(
+						InternalFrame.TITLE_IDX_AS_I_LIKE, getSichtLieferscheinTitle());
 				getPanelSplitSichtLieferschein();
 				// filter aktualisieren
 				FilterKriterium[] filtersPositionen = LieferscheinFilterFactory
@@ -493,6 +516,9 @@ public class TabbedPaneRechnung extends TabbedPaneRechnungAll {
 						LPMain.getTextRespectUISPr("ls.auftragwaehlen"));
 				this.setSelectedComponent(getPanelQueryAuftraege());
 			} else {
+
+				getInternalFrame().setLpTitle(
+						InternalFrame.TITLE_IDX_AS_I_LIKE, getSichtAuftragTitle());
 				lsPositionenSichtAuftragTop
 						.setDefaultFilter(RechnungFilterFactory.getInstance()
 								.createFKRechnungSichtAuftrag(getRechnungDto(),
@@ -505,6 +531,8 @@ public class TabbedPaneRechnung extends TabbedPaneRechnungAll {
 								.getLockedstateDetailMainKey());
 			}
 		} else if (index == iIDX_RECHNUNGAUFTRAEGE) {
+			getInternalFrame().setLpTitle(
+					InternalFrame.TITLE_IDX_AS_I_LIKE, getTitle());
 			// Filter auf die Auftraege
 			FilterKriterium[] filtersPos = RechnungFilterFactory.getInstance()
 					.createFKAuftraegeEinerRechnung(getRechnungDto().getIId());
@@ -959,7 +987,7 @@ public class TabbedPaneRechnung extends TabbedPaneRechnungAll {
 
 	/**
 	 * Alle angelegten RE drucken.
-	 * 
+	 *
 	 * @param kostenstelleIId
 	 *            Einschraenkung auf eine Kostenstelle. wenn null, dann alle.
 	 * @throws Throwable
@@ -990,7 +1018,7 @@ public class TabbedPaneRechnung extends TabbedPaneRechnungAll {
 							.getKundeDelegate()
 							.kundeFindByPrimaryKey(reDto.getKundeIId());
 
-					if (bKundenMitMonatsrechnungBeruecksichtigen == false
+					if (bKundenMitMonatsrechnungBeruecksichtigen == true
 							&& Helper.short2boolean(kdDto.getBMonatsrechnung()) == true) {
 						continue;
 					}
@@ -1288,7 +1316,7 @@ public class TabbedPaneRechnung extends TabbedPaneRechnungAll {
 
 			String[] aWhichButtonIUse = { PanelBasis.ACTION_NEW };
 
-			lsAuftraege = new PanelQuery(null, filtersPos,
+			lsAuftraege = new PanelQueryAuftraege(null, filtersPos,
 					QueryParameters.UC_ID_AUFTRAEGE_EINER_RECHNUNG,
 					aWhichButtonIUse, getInternalFrame(),
 					LPMain.getTextRespectUISPr("ls.title.panel.auftraege"),
@@ -1384,6 +1412,78 @@ public class TabbedPaneRechnung extends TabbedPaneRechnungAll {
 			setComponentAt(iIDX_SICHT_AUFTRAG, lsPositionenSichtAuftrag);
 		}
 		return lsPositionenSichtAuftrag;
+	}
+
+	private String getSichtAuftragTitle() {
+		String titel = getTitle() + " | " + getAuftragDtoSichtAuftrag().getCNr() ;
+
+		String projekt = getAuftragDtoSichtAuftrag().getCBezProjektbezeichnung() ;
+		String bestellung  = getAuftragDtoSichtAuftrag().getCBestellnummer() ;
+
+		if(!Helper.isStringEmpty(projekt)) {
+			titel += " " + projekt ;
+		}
+		if(!Helper.isStringEmpty(bestellung)) {
+			if(!Helper.isStringEmpty(projekt)) {
+				titel += " ," ;
+			}
+			titel += " " + bestellung ;
+		}
+
+		return titel ;
+	}
+
+	private String getSichtLieferscheinTitle() {
+		String titel = getTitle() + " | " + getLieferscheinDto().getCNr();
+
+		return titel;
+	}
+
+	/**
+	 * Aktiviert das Tab Auftr&auml;ge, wenn der Hauptauftrag vorhanden ist
+	 *
+	 */
+	public void enableTabAuftraege() {
+
+		if(bAuftragRechnung) {
+			setEnabledAt(iIDX_RECHNUNGAUFTRAEGE, getRechnungDto().getAuftragIId() != null);
+		}
+	}
+
+	/**
+	 * Aktiviert das Tab Sicht Auftrag, wenn der Hauptauftrag vorhanden ist
+	 * Bei mehr Auftr&auml;gen muss zuerst einer vom User selektiert worden sein
+	 *
+	 * @throws Throwable
+	 */
+	public void enableTabSichtAuftrag() throws Throwable {
+
+		if(bAuftragRechnung) {
+			RechnungSichtAuftragDto dto = DelegateFactory.getInstance()
+					.getRechnungServiceDelegate().rechnungFindByPrimaryKey(getRechnungDto().getIId());
+
+			setEnabledAt(iIDX_SICHT_AUFTRAG, getRechnungDto().getAuftragIId() != null
+					&& (!dto.isMehrAlsHauptAuftrag()
+					|| getPanelQueryAuftraege().getTable().getSelectedRow() >= 0));
+		}
+	}
+
+	/**
+	 * Aktiviert das Tab Sicht Lieferschein, wenn unter Positionen ein Lieferschein
+	 * ausgew&auml;hlt wurde
+	 *
+	 * @throws Throwable
+	 */
+	public void enableTabSichtLieferschein() throws Throwable {
+
+		setEnabledAt(iIDX_SICHTLIEFERSCHEIN, pruefePositionIstEinLieferschein());
+	}
+
+	@Override
+	protected void panelDetailPositionenSelected(Object key) throws Throwable {
+		super.panelDetailPositionenSelected(key);
+
+		enableTabSichtLieferschein();
 	}
 
 }

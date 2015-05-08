@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -69,8 +69,10 @@ import com.lp.server.artikel.service.ArtikelFac;
 import com.lp.server.artikel.service.ArtikellagerDto;
 import com.lp.server.artikel.service.LagerDto;
 import com.lp.server.artikel.service.LagerFac;
+import com.lp.server.artikel.service.LagerbewegungDto;
 import com.lp.server.artikel.service.SeriennrChargennrAufLagerDto;
 import com.lp.server.benutzer.service.RechteFac;
+import com.lp.server.system.service.LocaleFac;
 import com.lp.util.Helper;
 
 @SuppressWarnings("static-access")
@@ -97,6 +99,11 @@ public class PanelArtikellager extends PanelBasis {
 	JScrollPane scrollPane = new JScrollPane();
 	static final public String ACTION_SPECIAL_LAGER_FROM_LISTE = "action_lager_from_liste";
 	private PanelQueryFLR panelQueryFLRLager = null;
+	private String[] colNames = new String[] {
+			LPMain.getInstance().getTextRespectUISPr(
+					"artikel.handlagerbewegung.seriennrchargennr"),
+			LPMain.getInstance().getTextRespectUISPr("lp.lagerstand"),
+			LPMain.getInstance().getTextRespectUISPr("artikel.lager.version") };
 
 	public PanelArtikellager(InternalFrame internalFrame, String add2TitleI,
 			Object pk) throws Throwable {
@@ -118,8 +125,10 @@ public class PanelArtikellager extends PanelBasis {
 
 	void dialogQueryLagerFromListe(ActionEvent e) throws Throwable {
 
-		ArtikelDto artikelDto = DelegateFactory.getInstance()
-				.getArtikelDelegate().artikelFindByPrimaryKey(
+		ArtikelDto artikelDto = DelegateFactory
+				.getInstance()
+				.getArtikelDelegate()
+				.artikelFindByPrimaryKey(
 						internalFrameArtikel.getArtikelDto().getIId());
 		if (Helper.short2boolean(artikelDto.getBLagerbewirtschaftet())) {
 			panelQueryFLRLager = ArtikelFilterFactory.getInstance()
@@ -151,59 +160,37 @@ public class PanelArtikellager extends PanelBasis {
 		wtfLager.setText(lagerDto.getCNr());
 		wnfPreis.setBigDecimal(artikellagerDto.getNGestehungspreis());
 
-		/*
-		 * SeriennrChargennrAufLagerDto[] snrchnrDtos=
-		 * DelegateFactory.getInstance
-		 * ().getLagerDelegate().getAllSerienChargennrAufLager
-		 * (artikellagerDto.getArtikelIId(), artikellagerDto.getLagerIId());
-		 * 
-		 * byte[] CRLFAscii = { 13, 10}; byte[] tab = { 9}; String s="";
-		 * if(snrchnrDtos!=null && snrchnrDtos.length>0){
-		 * 
-		 * s=LPMain.getInstance().getTextRespectUISPr(
-		 * "artikel.snrchnrlagernd")+new String(CRLFAscii);
-		 * 
-		 * 
-		 * for(int i=0;i<snrchnrDtos.length;i++){
-		 * 
-		 * 
-		 * s+=snrchnrDtos[i].getNMenge()+" "+internalFrameArtikel.getArtikelDto()
-		 * .getEinheitCNr()+new
-		 * String(tab)+snrchnrDtos[i].getCSeriennrChargennr()+new
-		 * String(CRLFAscii); }
-		 * 
-		 * }
-		 */
-		String[] colNames = new String[] {
-	            LPMain.getInstance().getTextRespectUISPr("artikel.handlagerbewegung.seriennrchargennr"),LPMain.getInstance().getTextRespectUISPr("lp.lagerstand")};
-	    
 		if (Helper.short2boolean(internalFrameArtikel.getArtikelDto()
 				.getBSeriennrtragend())
 				|| Helper.short2boolean(internalFrameArtikel.getArtikelDto()
 						.getBChargennrtragend())) {
-			SeriennrChargennrAufLagerDto[] s = DelegateFactory.getInstance().getLagerDelegate()
+			SeriennrChargennrAufLagerDto[] s = DelegateFactory
+					.getInstance()
+					.getLagerDelegate()
 					.getAllSerienChargennrAufLagerInfoDtos(
 							artikellagerDto.getArtikelIId(),
 							artikellagerDto.getLagerIId());
-			
-			
-			Object[][] data = new Object[s.length][2];
-		    for (int i = 0; i < s.length; i++) {
-		      if(s[i]!=null){
-		        data[i][0] = s[i].getCSeriennrChargennr();
-		        data[i][1] = s[i].getNMenge();
-		      }
-		    }
-		        jTableSnrChnrs = new JTable(data, colNames);
-		        jTableSnrChnrs.setDefaultRenderer(BigDecimal.class, HelperClient.getBigDecimalRenderer());
-				
-		        scrollPane.getViewport().add(jTableSnrChnrs);
-		       
+
+			Object[][] data = new Object[s.length][3];
+			for (int i = 0; i < s.length; i++) {
+				if (s[i] != null) {
+					data[i][0] = s[i].getCSeriennrChargennr();
+					data[i][1] = s[i].getNMenge();
+					data[i][2] = s[i].getCVersion();
+
+				}
+			}
+			jTableSnrChnrs = new JTable(data, colNames);
+			jTableSnrChnrs.setDefaultRenderer(BigDecimal.class,
+					HelperClient.getBigDecimalRenderer());
+
+			scrollPane.getViewport().add(jTableSnrChnrs);
+
 		} else {
 			Object[][] data = new Object[0][2];
-			   jTableSnrChnrs = new JTable(data, colNames);
+			jTableSnrChnrs = new JTable(data, colNames);
 		}
-		  scrollPane.getViewport().add(jTableSnrChnrs);
+		scrollPane.getViewport().add(jTableSnrChnrs);
 	}
 
 	protected void components2Dto() throws Throwable {
@@ -225,8 +212,10 @@ public class PanelArtikellager extends PanelBasis {
 						.lagerFindByPrimaryKey((Integer) key);
 
 				try {
-					ArtikellagerDto dtoTemp = DelegateFactory.getInstance()
-							.getLagerDelegate().artikellagerFindByPrimaryKey(
+					ArtikellagerDto dtoTemp = DelegateFactory
+							.getInstance()
+							.getLagerDelegate()
+							.artikellagerFindByPrimaryKey(
 									internalFrameArtikel.getArtikelDto()
 											.getIId(), lagerDto.getIId());
 					DialogFactory.showModalDialog("Fehler",
@@ -258,8 +247,7 @@ public class PanelArtikellager extends PanelBasis {
 
 		wbuLager.setText(LPMain.getInstance().getTextRespectUISPr(
 				"button.lager"));
-		wbuLager
-				.setActionCommand(PanelHandlagerbewegung.ACTION_SPECIAL_LAGER_FROM_LISTE);
+		wbuLager.setActionCommand(PanelHandlagerbewegung.ACTION_SPECIAL_LAGER_FROM_LISTE);
 		wbuLager.addActionListener(this);
 
 		wlaLager.setText(LPMain.getInstance()
@@ -267,7 +255,7 @@ public class PanelArtikellager extends PanelBasis {
 		wtfLager.setColumnsMax(ArtikelFac.MAX_KATALOG_KATALOG);
 		wtfLager.setMandatoryField(true);
 		wtfLager.setActivatable(false);
-		
+
 		getInternalFrame().addItemChangedListener(this);
 
 		wlaPreis.setText(LPMain.getInstance().getTextRespectUISPr(
@@ -308,27 +296,23 @@ public class PanelArtikellager extends PanelBasis {
 		jpaWorkingOn.add(scrollPane, new GridBagConstraints(0, 1, 4, 1, 0, 1.0,
 				GridBagConstraints.NORTH, GridBagConstraints.BOTH, new Insets(
 						2, 2, 2, 2), 0, 0));
-		
+
 		boolean bDarfGestpreiseaendern = false;
 		try {
 			bDarfGestpreiseaendern = DelegateFactory.getInstance()
-					.getTheJudgeDelegate().hatRecht(
-							RechteFac.RECHT_WW_ARTIKEL_GESTPREISE_CU);
+					.getTheJudgeDelegate()
+					.hatRecht(RechteFac.RECHT_WW_ARTIKEL_GESTPREISE_CU);
 		} catch (Throwable ex) {
 			handleException(ex, true);
 		}
-		
 
 		String[] aWhichButtonIUse = null;
-		if(bDarfGestpreiseaendern==true){
+		if (bDarfGestpreiseaendern == true) {
 			aWhichButtonIUse = new String[] { ACTION_UPDATE, ACTION_SAVE,
 					ACTION_DISCARD, };
 		} else {
-			aWhichButtonIUse =new String[] {};
+			aWhichButtonIUse = new String[] {};
 		}
-		
-		
-		
 
 		enableToolsPanelButtons(aWhichButtonIUse);
 
@@ -345,6 +329,13 @@ public class PanelArtikellager extends PanelBasis {
 		Object key = getKeyWhenDetailPanel();
 
 		if (key == null || (key.equals(LPMain.getLockMeForNew()))) {
+			Object[][] data = new Object[0][3];
+			jTableSnrChnrs = new JTable(data, colNames);
+			jTableSnrChnrs.setDefaultRenderer(BigDecimal.class,
+					HelperClient.getBigDecimalRenderer());
+
+			scrollPane.getViewport().add(jTableSnrChnrs);
+
 			leereAlleFelder(this);
 			clearStatusbar();
 
@@ -356,16 +347,17 @@ public class PanelArtikellager extends PanelBasis {
 						0, 0));
 				wbuLager.setEnabled(true);
 
-				
-				
-				if(Helper.short2boolean(internalFrameArtikel.getArtikelDto().getBLagerbewirtschaftet())){
+				if (Helper.short2boolean(internalFrameArtikel.getArtikelDto()
+						.getBLagerbewirtschaftet())) {
 					// CK Projekt 8688
 					LagerDto lagerDto = DelegateFactory.getInstance()
 							.getLagerDelegate().getHauptlagerDesMandanten();
 
 					try {
-						ArtikellagerDto dtoTemp = DelegateFactory.getInstance()
-								.getLagerDelegate().artikellagerFindByPrimaryKey(
+						ArtikellagerDto dtoTemp = DelegateFactory
+								.getInstance()
+								.getLagerDelegate()
+								.artikellagerFindByPrimaryKey(
 										internalFrameArtikel.getArtikelDto()
 												.getIId(), lagerDto.getIId());
 					} catch (ExceptionLP ex) {
@@ -373,17 +365,14 @@ public class PanelArtikellager extends PanelBasis {
 						artikellagerDto.setLagerIId(lagerDto.getIId());
 					}
 				} else {
-					LagerDto tempLager = DelegateFactory.getInstance()
-					.getLagerDelegate().lagerFindByCNrByMandantCNr(
-							LagerFac.LAGER_KEINLAGER);
+					LagerDto tempLager = DelegateFactory
+							.getInstance()
+							.getLagerDelegate()
+							.lagerFindByCNrByMandantCNr(
+									LagerFac.LAGER_KEINLAGER);
 					wtfLager.setText(tempLager.getCNr());
 					artikellagerDto.setLagerIId(tempLager.getIId());
 				}
-				
-					
-					
-					
-				
 
 			}
 
@@ -397,7 +386,9 @@ public class PanelArtikellager extends PanelBasis {
 
 			WwArtikellagerPK pk = (WwArtikellagerPK) key;
 
-			artikellagerDto = DelegateFactory.getInstance().getLagerDelegate()
+			artikellagerDto = DelegateFactory
+					.getInstance()
+					.getLagerDelegate()
 					.artikellagerFindByPrimaryKey(pk.getArtikel_i_id(),
 							pk.getLager_i_id());
 			dto2Components();
@@ -418,8 +409,9 @@ public class PanelArtikellager extends PanelBasis {
 			DelegateFactory.getInstance().getLagerDelegate()
 					.updateGestpreisArtikellager(artikellagerDto);
 
-			setKeyWhenDetailPanel(new WwArtikellagerPK(artikellagerDto
-					.getArtikelIId(), artikellagerDto.getLagerIId()));
+			setKeyWhenDetailPanel(new WwArtikellagerPK(
+					artikellagerDto.getArtikelIId(),
+					artikellagerDto.getLagerIId()));
 
 			super.eventActionSave(e, true);
 			if (getInternalFrame().getKeyWasForLockMe() == null) {

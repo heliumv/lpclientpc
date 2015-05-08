@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -90,14 +90,17 @@ public class AuftragReportDelegate extends Delegate {
 	 */
 	public JasperPrintLP printAuftragOffene(
 			ReportJournalKriterienDto reportJournalKriterienDtoI,
-			Date dStichtag, Boolean bInternenKommentarDrucken, Integer iArt)
-			throws ExceptionLP {
+			Date dStichtag, Boolean bInternenKommentarDrucken, Integer iArt,
+			Integer iArtUnverbindlich, boolean bMitAngelegten,
+			boolean bStichtagGreiftBeiLiefertermin) throws ExceptionLP {
 		JasperPrintLP oPrint = null;
 
 		try {
 			oPrint = auftragReportFac.printAuftragOffene(
 					reportJournalKriterienDtoI, dStichtag, new Boolean(false),
-					bInternenKommentarDrucken, iArt, LPMain.getTheClient());
+					bInternenKommentarDrucken, iArt, iArtUnverbindlich,
+					bMitAngelegten, bStichtagGreiftBeiLiefertermin,
+					LPMain.getTheClient());
 
 		} catch (Throwable t) {
 			handleThrowable(t);
@@ -124,14 +127,17 @@ public class AuftragReportDelegate extends Delegate {
 	public JasperPrintLP printAuftragOffeneOhneDetail(
 			ReportJournalKriterienDto reportJournalKriterienDtoI,
 			Date dStichtag, Boolean bSortierungNachLiefertermin,
-			Boolean bInternenKommentarDrucken, Integer iArt) throws ExceptionLP {
+			Boolean bInternenKommentarDrucken, Integer iArt,
+			Integer iArtUnverbindlich, boolean bMitAngelegten,
+			boolean bStichtagGreiftBeiLiefertermin) throws ExceptionLP {
 		JasperPrintLP oPrint = null;
 
 		try {
 			oPrint = auftragReportFac.printAuftragOffeneOhneDetail(
 					reportJournalKriterienDtoI, dStichtag,
 					bSortierungNachLiefertermin, bInternenKommentarDrucken,
-					iArt, LPMain.getTheClient());
+					iArt, iArtUnverbindlich, bMitAngelegten,
+					bStichtagGreiftBeiLiefertermin, LPMain.getTheClient());
 
 		} catch (Throwable t) {
 			handleThrowable(t);
@@ -256,7 +262,7 @@ public class AuftragReportDelegate extends Delegate {
 	 * @return JasperPrint der Druck
 	 */
 	public JasperPrintLP printAuftragOffenePositionen(
-			ReportJournalKriterienDto krit, Date dStichtag,
+			ReportJournalKriterienDto krit, Date dVon, Date dStichtagBzwBis,
 			Boolean bSortierungNachLiefertermin, Boolean bOhnePositionen,
 			Boolean bSortierungNachAbliefertermin,
 			Integer[] fertigungsgruppeIId, Integer iArt,
@@ -266,10 +272,26 @@ public class AuftragReportDelegate extends Delegate {
 		JasperPrintLP oPrint = null;
 
 		try {
-			oPrint = auftragReportFac.printAuftragOffenePositionen(krit,
-					dStichtag, bSortierungNachLiefertermin, bOhnePositionen,
-					bSortierungNachAbliefertermin, fertigungsgruppeIId, iArt,
-					bSortierungNurLiefertermin, sReportname,
+			oPrint = auftragReportFac.printAuftragOffenePositionen(krit, dVon,
+					dStichtagBzwBis, bSortierungNachLiefertermin,
+					bOhnePositionen, bSortierungNachAbliefertermin,
+					fertigungsgruppeIId, iArt, bSortierungNurLiefertermin,
+					sReportname, LPMain.getTheClient());
+
+		} catch (Throwable t) {
+			handleThrowable(t);
+		}
+
+		return oPrint;
+	}
+
+	public JasperPrintLP printAuftragsuebersicht(Integer auftragIId)
+
+	throws ExceptionLP {
+		JasperPrintLP oPrint = null;
+
+		try {
+			oPrint = auftragReportFac.printAuftragsuebersicht(auftragIId,
 					LPMain.getTheClient());
 
 		} catch (Throwable t) {
@@ -447,6 +469,20 @@ public class AuftragReportDelegate extends Delegate {
 		return oPrint;
 	}
 
+	public JasperPrintLP printProjektblatt(Integer auftragIId)
+			throws ExceptionLP {
+		JasperPrintLP oPrint = null;
+
+		try {
+			oPrint = auftragReportFac.printProjektblatt(auftragIId,
+					LPMain.getTheClient());
+		} catch (Throwable t) {
+			handleThrowable(t);
+		}
+
+		return oPrint;
+	}
+
 	/**
 	 * Die Vorkalkulation eines Auftrags drucken. <br>
 	 * Beruecksichtigt werden nur preisbehaftete Positionen.
@@ -481,11 +517,11 @@ public class AuftragReportDelegate extends Delegate {
 	 *             Ausnahme
 	 */
 	public JasperPrintLP printVerfuegbarkeitspruefung(Integer iIdAuftragI,
-			boolean bSortiertNachLieferant) throws ExceptionLP {
+			int iSortierung, Double dWBZWennNichtDefiniert) throws ExceptionLP {
 		JasperPrintLP oPrint = null;
 		try {
 			oPrint = auftragReportFac.printVerfuegbarkeitspruefung(iIdAuftragI,
-					bSortiertNachLieferant, LPMain.getTheClient());
+					iSortierung, dWBZWennNichtDefiniert, LPMain.getTheClient());
 		} catch (Throwable t) {
 			handleThrowable(t);
 		}

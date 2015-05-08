@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -32,13 +32,19 @@
  ******************************************************************************/
 package com.lp.client.frame.component.frameposition;
 
+import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Point;
+import java.awt.Toolkit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.lp.client.frame.HelperClient;
 import com.lp.client.frame.component.InternalFrame;
+import com.lp.client.frame.component.PanelQueryFLR;
+import com.lp.client.pc.LPMain;
 import com.lp.server.util.fastlanereader.service.query.SortierKriterium;
 
 /**
@@ -53,6 +59,10 @@ public class ClientPerspectiveLoaderAndSaver {
 	
 	private ClientPerspectiveSettings cpSettings;
 	private IClientPerspectiveIO clientPerspectiveIO;
+	private HashMap<String, String> properties = new HashMap<String, String>();
+
+	protected static final String COLOR_VISION = "COLOR_VISION";
+	protected static final String DIREKTHILFE = "DIREKTHILFE";
 	
 	public ClientPerspectiveLoaderAndSaver(IClientPerspectiveIO framePositionIO) {
 		this.clientPerspectiveIO = framePositionIO;
@@ -98,12 +108,69 @@ public class ClientPerspectiveLoaderAndSaver {
 
 	public void applyFramePosition(InternalFrame iFrame) throws Exception {
 		FramePositionData fpData = getFramePositionData(iFrame.getBelegartCNr());
-		if(fpData != null) fpData.applyto(iFrame);
+		fpData = fitSizeInto(fpData, LPMain.getInstance().getDesktop().getDesktopPaneSize());
+		if(fpData != null) fpData.applyTo(iFrame);
+	}
+	
+	public void applyFramePosition(PanelQueryFLR panelQuery) throws Exception {
+		FramePositionData fpData = getFramePositionData(Integer.toString(panelQuery.getIdUsecase()));
+		fpData = fitSizeInto(fpData, Toolkit.getDefaultToolkit().getScreenSize());
+		if(fpData != null) fpData.applyTo(panelQuery);
+	}
+
+	private FramePositionData fitSizeInto(FramePositionData fpData, Dimension maxSize) throws Exception {
+		
+		if(fpData==null) return null;
+		
+		Point loc = fpData.getLocation();
+		Dimension size = fpData.getSize();
+		Dimension defaultSize = HelperClient.getInternalFrameSize();
+		
+		if(defaultSize.width > maxSize.width)
+			defaultSize.width = maxSize.width;
+		if(defaultSize.height > maxSize.height)
+			defaultSize.height = maxSize.height;
+
+		if(loc.x > maxSize.width)
+			loc.x = maxSize.width-size.width;
+		if(loc.y > maxSize.height)
+			loc.y = maxSize.height-size.height;
+		
+		if(loc.x < 0) {
+			size.width = size.width+loc.x;
+			loc.x = 0;
+		}
+		if(loc.y < 0) {
+			size.height = size.height+loc.y;
+			loc.y = 0;
+		}
+
+		if(loc.x + size.width > maxSize.width)
+			size.width = maxSize.width - loc.x;
+		if(loc.y + size.height> maxSize.height)
+			size.height = maxSize.height - loc.y;
+
+//		if(size.width < defaultSize.width) {
+//			size.width = defaultSize.width;
+//			loc.x = maxSize.width - size.width;
+//		}
+//		if(size.height < defaultSize.height) {
+//			size.height = defaultSize.height;
+//			loc.y = maxSize.height - size.height;
+//		}
+		fpData.setLocation(loc);
+		fpData.setSize(size);
+		return fpData;
 	}
 	
 	public void updateFramePosition(InternalFrame iFrame) {
 		setFramePositionData(iFrame.getBelegartCNr(),
 				new FramePositionData(iFrame));
+	}
+	
+	public void updateFramePosition(PanelQueryFLR panel) {
+		setFramePositionData(Integer.toString(panel.getIdUsecase()).toString(),
+				new FramePositionData(panel.getDialog()));
 	}
 	
 	public FramePositionData getFramePositionData(String key) throws Exception {
@@ -151,5 +218,44 @@ public class ClientPerspectiveLoaderAndSaver {
 	
 	public void resetFont() throws Exception {
 		clientPerspectiveIO.resetClientFont();
+	}
+	
+	protected void savePropertiesMap() throws Exception {
+		clientPerspectiveIO.persistPropertyMap(properties);
+	}
+	
+	protected void readPropertiesMap() throws Exception {
+		try {
+			properties = clientPerspectiveIO.readPropertyMap();
+		} catch(Exception e) {}
+		if(properties == null) properties = new HashMap<String, String>();
+	}
+	
+	protected void setProperty(String key, String value) throws Exception {
+		readPropertiesMap();
+		properties.put(key, value);
+		savePropertiesMap();
+	}
+	
+	protected String getProperty(String key) throws Exception {
+		readPropertiesMap();
+		return properties.get(key);
+	}
+
+	public void saveColorVision(String colorVision) throws Exception {
+		setProperty(COLOR_VISION, colorVision);
+	}
+
+	public String readColorVision() throws Exception{
+		return getProperty(COLOR_VISION);
+	}
+	
+	public void saveDirekthilfeVisible(boolean b) throws Exception {
+		setProperty(DIREKTHILFE, Boolean.toString(b));
+	}
+	
+	public boolean readDirekthilfeVisible() throws Exception {
+		String b = getProperty(DIREKTHILFE);
+		return b == null ? true : new Boolean(b);
 	}
 }

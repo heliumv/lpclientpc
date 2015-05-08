@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -204,12 +204,17 @@ public abstract class PanelMengenstaffel extends PanelBasis {
 	}
 
 	protected void setDefaults() throws Throwable {
+		Object vorherselektiert = wcoArt.getKeyOfSelectedItem();
+
 		wcoArt.setKeyOfSelectedItem(ART_ARTIKEL);
 
 		leereAlleFelder(this);
 
 		panelArtikel.setDefaults();
 		panelArtgru.setDefaults();
+
+		wcoArt.setKeyOfSelectedItem(vorherselektiert);
+
 	}
 
 	protected JComponent getFirstFocusableComponent() throws Exception {
@@ -236,7 +241,9 @@ public abstract class PanelMengenstaffel extends PanelBasis {
 			wlaKundeartikelnummer.setVisible(true);
 			wtfKundeartikelnummer.setVisible(true);
 			panelArtikel.setWaehrungCNr(waehrungCNr);
-			panelArtikel.setKundenpreislisteIId(getInternalFrameKunde().getTpKunde().getKundeDto().getVkpfArtikelpreislisteIIdStdpreisliste());
+			panelArtikel.setKundenpreislisteIId(getInternalFrameKunde()
+					.getTpKunde().getKundeDto()
+					.getVkpfArtikelpreislisteIIdStdpreisliste());
 			panelArtikel.setLabels(waehrungCNr);
 		} else if (currentArt.equals(ART_ARTIKELGRUPPE)) {
 			panelArtikel.setVisible(false);
@@ -248,7 +255,9 @@ public abstract class PanelMengenstaffel extends PanelBasis {
 			wtfKundeartikelnummer.setVisible(false);
 			wtfKundeartikelnummer.setText(null);
 			panelArtgru.setWaehrungCNr(waehrungCNr);
-			panelArtgru.setKundenpreislisteIId(getInternalFrameKunde().getTpKunde().getKundeDto().getVkpfArtikelpreislisteIIdStdpreisliste());
+			panelArtgru.setKundenpreislisteIId(getInternalFrameKunde()
+					.getTpKunde().getKundeDto()
+					.getVkpfArtikelpreislisteIIdStdpreisliste());
 		}
 	}
 }

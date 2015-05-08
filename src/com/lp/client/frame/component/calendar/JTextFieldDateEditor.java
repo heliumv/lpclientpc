@@ -1,33 +1,33 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published 
- * by the Free Software Foundation, either version 3 of theLicense, or 
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of theLicense, or
  * (at your option) any later version.
- * 
- * According to sec. 7 of the GNU Affero General Public License, version 3, 
+ *
+ * According to sec. 7 of the GNU Affero General Public License, version 3,
  * the terms of the AGPL are supplemented with the following terms:
- * 
- * "HELIUM V" and "HELIUM 5" are registered trademarks of 
- * HELIUM V IT-Solutions GmbH. The licensing of the program under the 
+ *
+ * "HELIUM V" and "HELIUM 5" are registered trademarks of
+ * HELIUM V IT-Solutions GmbH. The licensing of the program under the
  * AGPL does not imply a trademark license. Therefore any rights, title and
  * interest in our trademarks remain entirely with us. If you want to propagate
  * modified versions of the Program under the name "HELIUM V" or "HELIUM 5",
- * you may only do so if you have a written permission by HELIUM V IT-Solutions 
+ * you may only do so if you have a written permission by HELIUM V IT-Solutions
  * GmbH (to acquire a permission please contact HELIUM V IT-Solutions
  * at trademark@heliumv.com).
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Affero General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Contact: developers@heliumv.com
  ******************************************************************************/
 /*
@@ -81,6 +81,7 @@ import javax.swing.text.MaskFormatter;
 import javax.swing.text.PlainDocument;
 
 import com.lp.client.frame.component.CornerInfoButton;
+import com.lp.client.frame.component.FocusHighlighter;
 import com.lp.client.frame.component.IDirektHilfe;
 import com.lp.client.frame.component.InfoButtonRelocator;
 
@@ -90,7 +91,7 @@ import com.lp.client.frame.component.InfoButtonRelocator;
  * red. The date format patten and mask can be set manually. If not set, the
  * MEDIUM pattern of a SimpleDateFormat with regards to the actual locale is
  * used.
- * 
+ *
  * @author Kai Toedter
  * @version $LastChangedRevision: 97 $
  * @version $LastChangedDate: 2006-05-24 17:30:41 +0200 (Mi, 24 Mai 2006) $
@@ -99,20 +100,20 @@ public class JTextFieldDateEditor extends JFormattedTextField implements
 		IDateEditor, CaretListener, FocusListener, ActionListener, IDirektHilfe {
 
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = 1L;
 
 	private static final String PATTERN_DE = "dd.MM.yyyy";
-	
+
 	private static final String PATTERN_EN = "MM/dd/yyyy";
-	
+
 	protected Date date;
 
 	protected Date oldDate;
-	
+
 	protected Date initDate;
-	
+
 	protected boolean dateInitialized;
 
 	protected SimpleDateFormat dateFormatter;
@@ -231,9 +232,10 @@ public class JTextFieldDateEditor extends JFormattedTextField implements
 
 		dateUtil = new DateUtil();
 
+		new FocusHighlighter(this);
 		cib = new CornerInfoButton(this);
 	}
-	
+
 	private boolean isNumber(String string) {
 		try {
 			Integer.parseInt(string);
@@ -242,13 +244,13 @@ public class JTextFieldDateEditor extends JFormattedTextField implements
 			return false;
 		}
 	}
-	
+
 	private String getSeperator() {
 		if(Locale.ENGLISH.getLanguage().equals(getLocale().getLanguage()))
 			return "/";
 		return ".";
 	}
-	
+
 	private String getSeperatorAsRegex() {
 		if(Locale.ENGLISH.getLanguage().equals(getLocale().getLanguage()))
 			return "/";
@@ -257,7 +259,7 @@ public class JTextFieldDateEditor extends JFormattedTextField implements
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see com.lp.client.frame.component.calendar.IDateEditor#getDate()
 	 */
 	public Date getDate() {
@@ -277,16 +279,16 @@ public class JTextFieldDateEditor extends JFormattedTextField implements
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see com.lp.client.frame.component.calendar.IDateEditor#setDate(java.util.Date)
 	 */
 	public void setDate(Date date) {
 		setDate(date, true);
 	}
-	
+
 	/**
 	 * Sets the date.
-	 * 
+	 *
 	 * @param date
 	 *            the date
 	 * @param firePropertyChange
@@ -328,7 +330,7 @@ public class JTextFieldDateEditor extends JFormattedTextField implements
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see
 	 * com.lp.client.frame.component.calendar.IDateEditor#setDateFormatString(java.lang.String)
 	 */
@@ -351,13 +353,13 @@ public class JTextFieldDateEditor extends JFormattedTextField implements
 
 	private String getPattern(Locale locale) {
 		if(locale == null) return PATTERN_DE;
-		
+
 		if(Locale.ENGLISH.getLanguage().equals(locale.getLanguage())) return PATTERN_EN;
 		return PATTERN_DE;
 	}
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see com.lp.client.frame.component.calendar.IDateEditor#getDateFormatString()
 	 */
 	public String getDateFormatString() {
@@ -366,7 +368,7 @@ public class JTextFieldDateEditor extends JFormattedTextField implements
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see com.lp.client.frame.component.calendar.IDateEditor#getUiComponent()
 	 */
 	public JComponent getUiComponent() {
@@ -376,7 +378,7 @@ public class JTextFieldDateEditor extends JFormattedTextField implements
 	/**
 	 * After any user input, the value of the textfield is proofed. Depending on
 	 * being a valid date, the value is colored green or red.
-	 * 
+	 *
 	 * @param event
 	 *            the caret event
 	 */
@@ -384,15 +386,15 @@ public class JTextFieldDateEditor extends JFormattedTextField implements
 		if(!hasFocus()) return;
 		updateColor();
 	}
-	
+
 	/**
-	 * 
+	 *
 	 * @return true wenn das Datum zwischen Minimum und Maximum Wert ist.
 	 */
 	public boolean checkDate() {
 		return dateUtil.checkDate(date);
 	}
-	
+
 	public void updateColor() {
 		try {
 			Date date = dateFormatter.parse(getText());
@@ -408,7 +410,7 @@ public class JTextFieldDateEditor extends JFormattedTextField implements
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.awt.event.FocusListener#focusLost(java.awt.event.FocusEvent)
 	 */
 	public void focusLost(FocusEvent focusEvent) {
@@ -467,7 +469,7 @@ public class JTextFieldDateEditor extends JFormattedTextField implements
 				setDate(new java.sql.Date(gcDatum.getTime().getTime()), true);
 			} else {
 
-				setDate(date, true);
+				setDate(date, false);
 			}
 			if (date.after(gcGrenzeOben.getTime())) {
 				Toolkit.getDefaultToolkit().beep();
@@ -481,7 +483,7 @@ public class JTextFieldDateEditor extends JFormattedTextField implements
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.awt.event.FocusListener#focusGained(java.awt.event.FocusEvent)
 	 */
 	public void focusGained(FocusEvent e) {
@@ -490,7 +492,7 @@ public class JTextFieldDateEditor extends JFormattedTextField implements
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.awt.Component#setLocale(java.util.Locale)
 	 */
 	public void setLocale(Locale locale) {
@@ -512,7 +514,7 @@ public class JTextFieldDateEditor extends JFormattedTextField implements
 	 * incomplete) implementation thet works only with numbers. A date pattern
 	 * of "MM/dd/yy" will result in the mask "##/##/##". Probably you want to
 	 * override this method if it does not fit your needs.
-	 * 
+	 *
 	 * @param datePattern
 	 *            the date pattern
 	 * @return the mask
@@ -539,7 +541,7 @@ public class JTextFieldDateEditor extends JFormattedTextField implements
 
 	/**
 	 * Returns true, if the mask is visible.
-	 * 
+	 *
 	 * @return true, if the mask is visible
 	 */
 	public boolean isMaskVisible() {
@@ -548,7 +550,7 @@ public class JTextFieldDateEditor extends JFormattedTextField implements
 
 	/**
 	 * Sets the mask visible.
-	 * 
+	 *
 	 * @param isMaskVisible
 	 *            true, if the mask should be visible
 	 */
@@ -601,7 +603,7 @@ public class JTextFieldDateEditor extends JFormattedTextField implements
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see com.lp.client.frame.component.calendar.IDateEditor#getMaxSelectableDate()
 	 */
 	public Date getMaxSelectableDate() {
@@ -610,7 +612,7 @@ public class JTextFieldDateEditor extends JFormattedTextField implements
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see com.lp.client.frame.component.calendar.IDateEditor#getMinSelectableDate()
 	 */
 	public Date getMinSelectableDate() {
@@ -619,7 +621,7 @@ public class JTextFieldDateEditor extends JFormattedTextField implements
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see
 	 * com.lp.client.frame.component.calendar.IDateEditor#setMaxSelectableDate(java.util.Date)
 	 */
@@ -630,7 +632,7 @@ public class JTextFieldDateEditor extends JFormattedTextField implements
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see
 	 * com.lp.client.frame.component.calendar.IDateEditor#setMinSelectableDate(java.util.Date)
 	 */
@@ -641,7 +643,7 @@ public class JTextFieldDateEditor extends JFormattedTextField implements
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see
 	 * com.lp.client.frame.component.calendar.IDateEditor#setSelectableDateRange(java.util.Date,
 	 * java.util.Date)
@@ -653,7 +655,7 @@ public class JTextFieldDateEditor extends JFormattedTextField implements
 
 	/**
 	 * Creates a JFrame with a JCalendar inside and can be used for testing.
-	 * 
+	 *
 	 * @param s
 	 *            The command line arguments
 	 */

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -75,6 +75,7 @@ import com.lp.server.artikel.service.ArtikelFac;
 import com.lp.server.partner.service.KundeDto;
 import com.lp.server.stueckliste.service.MontageartDto;
 import com.lp.server.stueckliste.service.StuecklisteDto;
+import com.lp.server.stueckliste.service.StuecklisteFac;
 import com.lp.server.stueckliste.service.StuecklistepositionDto;
 import com.lp.server.system.service.EinheitDto;
 import com.lp.server.system.service.LocaleFac;
@@ -153,6 +154,10 @@ public class PanelStuecklistepositionen extends PanelBasis {
 
 	public MontageartDto defaultMontageartDto = null;
 
+	
+	static final public String ACTION_SPECIAL_CALL_SCRIPT = "action_call_script" ;
+	private WrapperButton wbuScript = new WrapperButton() ;
+	
 	public PanelStuecklistepositionen(InternalFrame internalFrame,
 			String add2TitleI, Object pk) throws Throwable {
 		super(internalFrame, add2TitleI, pk);
@@ -217,10 +222,21 @@ public class PanelStuecklistepositionen extends PanelBasis {
 	protected void eventActionSpecial(ActionEvent e) throws Throwable {
 		if (e.getActionCommand().equals(ACTION_SPECIAL_MONTAGEART_FROM_LISTE)) {
 			dialogQueryMontageartFromListe(e);
+		} else if(e.getActionCommand().equals(ACTION_SPECIAL_CALL_SCRIPT)) {
+			actionScript() ;
 		}
-
 	}
 
+	protected void actionScript() throws ExceptionLP {	
+		StuecklisteScript script = new StuecklisteScript(internalFrameStueckliste
+				.getStuecklisteDto(), stuecklistepositionDto) ;
+		BigDecimal v = script.getValue() ;
+		System.out.println("Value = " + v + "<") ;
+		if(v != null) {
+			wnfMenge.setBigDecimal(v);
+		}		
+	}
+	
 	protected void eventActionDelete(ActionEvent e,
 			boolean bAdministrateLockKeyI, boolean bNeedNoDeleteI)
 			throws Throwable {
@@ -356,7 +372,7 @@ public class PanelStuecklistepositionen extends PanelBasis {
 
 		BigDecimal bdZielmenge = null;
 		try {
-			bdZielmenge = DelegateFactory.getInstance()
+			bdZielmenge =  DelegateFactory.getInstance()
 					.getStuecklisteDelegate()
 					.berechneZielmenge(stuecklistepositionDto.getIId());
 		}
@@ -440,7 +456,6 @@ public class PanelStuecklistepositionen extends PanelBasis {
 		this.setStatusbarPersonalIIdAnlegen(stuecklistepositionDto
 				.getPersonalIIdAnlegen());
 		this.setStatusbarTAnlegen(stuecklistepositionDto.getTAnlegen());
-
 	}
 
 	protected void eventActionDiscard(ActionEvent e) throws Throwable {
@@ -611,7 +626,7 @@ public class PanelStuecklistepositionen extends PanelBasis {
 		wlaMenge.setText(LPMain.getTextRespectUISPr("lp.menge"));
 		wlaPositionsart.setText(LPMain.getTextRespectUISPr("lp.positionsart"));
 
-		wtfKommentar.setColumnsMax(80);
+		wtfKommentar.setColumnsMax(StuecklisteFac.FieldLength.STUECKLISTEPOSITION_KOMMENTAR);
 
 		wnfMenge.setMandatoryField(true);
 
@@ -642,6 +657,10 @@ public class PanelStuecklistepositionen extends PanelBasis {
 		wbuMontageart.setActionCommand(ACTION_SPECIAL_MONTAGEART_FROM_LISTE);
 		wbuMontageart.addActionListener(this);
 
+		wbuScript.setText(LPMain.getTextRespectUISPr("lp.script.stk_positionen_01"));
+		wbuScript.setActionCommand(ACTION_SPECIAL_CALL_SCRIPT);
+		wbuScript.addActionListener(this);
+		
 		// jetzt meine felder
 		jpaWorkingOn = new JPanel();
 		gridBagLayoutWorkingPanel = new GridBagLayout();
@@ -789,6 +808,10 @@ public class PanelStuecklistepositionen extends PanelBasis {
 									2), 0, 0));
 		}
 
+		jpaWorkingOn.add(wbuScript, new GridBagConstraints(3, 0, 1, 1, 0.1,
+				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+				new Insets(2, 2, 2, 2), 0, 0));
+		
 		String[] aWhichButtonIUse = { ACTION_UPDATE, ACTION_SAVE,
 				ACTION_DELETE, ACTION_DISCARD, };
 

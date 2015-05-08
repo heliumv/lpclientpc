@@ -1,39 +1,38 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
- * 
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
+ *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published 
- * by the Free Software Foundation, either version 3 of theLicense, or 
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of theLicense, or
  * (at your option) any later version.
- * 
- * According to sec. 7 of the GNU Affero General Public License, version 3, 
+ *
+ * According to sec. 7 of the GNU Affero General Public License, version 3,
  * the terms of the AGPL are supplemented with the following terms:
- * 
- * "HELIUM V" and "HELIUM 5" are registered trademarks of 
- * HELIUM V IT-Solutions GmbH. The licensing of the program under the 
+ *
+ * "HELIUM V" and "HELIUM 5" are registered trademarks of
+ * HELIUM V IT-Solutions GmbH. The licensing of the program under the
  * AGPL does not imply a trademark license. Therefore any rights, title and
  * interest in our trademarks remain entirely with us. If you want to propagate
  * modified versions of the Program under the name "HELIUM V" or "HELIUM 5",
- * you may only do so if you have a written permission by HELIUM V IT-Solutions 
+ * you may only do so if you have a written permission by HELIUM V IT-Solutions
  * GmbH (to acquire a permission please contact HELIUM V IT-Solutions
  * at trademark@heliumv.com).
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Affero General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Contact: developers@heliumv.com
  ******************************************************************************/
 package com.lp.client.bestellung;
 
 import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -51,8 +50,6 @@ import java.util.EventObject;
 import java.util.Map;
 import java.util.TreeMap;
 
-import javassist.bytecode.Descriptor.Iterator;
-
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
@@ -66,6 +63,7 @@ import com.lp.client.frame.ExceptionLP;
 import com.lp.client.frame.HelperClient;
 import com.lp.client.frame.LockStateValue;
 import com.lp.client.frame.component.DialogQuery;
+import com.lp.client.frame.component.HvActionEvent;
 import com.lp.client.frame.component.ISourceEvent;
 import com.lp.client.frame.component.InternalFrame;
 import com.lp.client.frame.component.ItemChangedEvent;
@@ -108,29 +106,29 @@ import com.lp.util.EJBExceptionLP;
 import com.lp.util.Helper;
 
 /**
- * 
+ *
  * <p>
  * Diese Klasse kuemmert sich um BesPos.
  * </p>
- * 
+ *
  * <p>
  * Copyright Logistik Pur Software GmbH (c) 2004-2008
  * </p>
- * 
+ *
  * <p>
  * Erstellung: Josef Ornetsmueller; dd.mm.06
  * </p>
- * 
+ *
  * <p>
- * 
+ *
  * @author $Author: christian $
  *         </p>
- * 
+ *
  * @version not attributable Date $Date: 2013/02/05 09:15:20 $
  */
 public class PanelBestellungPositionen extends PanelPositionen2 {
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = 1L;
 	private final TabbedPaneBestellung tPBes;
@@ -169,6 +167,12 @@ public class PanelBestellungPositionen extends PanelPositionen2 {
 
 	private WrapperLabel wlaLieferantArtikelNummer = null;
 	public WrapperTextField wtfLieferantArtikelNummer = null;
+
+	private WrapperLabel wlaLieferantArtikelBezeichnungHandeingabe = null;
+	public WrapperTextField wtfLieferantArtikelBezeichnungHandeingabe = null;
+
+	private WrapperLabel wlaLieferantArtikelNummerHandeingabe = null;
+	public WrapperTextField wtfLieferantArtikelNummerHandeingabe = null;
 
 	private WrapperRadioButton wrbPreiseNichtNachpflegen = null;
 	private WrapperRadioButton wcbEinzelpreisNachpflegen = null;
@@ -261,11 +265,23 @@ public class PanelBestellungPositionen extends PanelPositionen2 {
 				LPMain.getTextRespectUISPr("bes.artikelbezeichnungbeimlieferanten"));
 		wlaLieferantArtikelNummer = new WrapperLabel(
 				LPMain.getTextRespectUISPr("bes.lieferantartikelnummer"));
+
+		wlaLieferantArtikelBezeichnungHandeingabe = new WrapperLabel(
+				LPMain.getTextRespectUISPr("bes.artikelbezeichnungbeimlieferanten"));
+		wlaLieferantArtikelNummerHandeingabe = new WrapperLabel(
+				LPMain.getTextRespectUISPr("bes.lieferantartikelnummer"));
+
 		wtfLieferantArtikelBezeichnung = new WrapperTextField();
 		wtfLieferantArtikelBezeichnung.setActivatable(true);
 		wtfLieferantArtikelBezeichnung.setColumnsMax(80);
 		wtfLieferantArtikelNummer = new WrapperTextField();
 		wtfLieferantArtikelNummer.setActivatable(true);
+
+		wtfLieferantArtikelBezeichnungHandeingabe = new WrapperTextField();
+		wtfLieferantArtikelBezeichnungHandeingabe.setActivatable(true);
+		wtfLieferantArtikelBezeichnungHandeingabe.setColumnsMax(80);
+		wtfLieferantArtikelNummerHandeingabe = new WrapperTextField();
+		wtfLieferantArtikelNummerHandeingabe.setActivatable(true);
 
 		wlaUebersteuerterLiefertermin = new WrapperLabel(
 				LPMain.getTextRespectUISPr("bes.bestellpositiontermin"));
@@ -321,7 +337,29 @@ public class PanelBestellungPositionen extends PanelPositionen2 {
 							panelHandeingabe.iZeileNettopreis, 3, 1, 0.0, 0.0,
 							GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 							new Insets(2, 2, 2, 2), 0, 0));
+
 		}
+
+		int iZeile = panelHandeingabe.iZeileNettopreis + 1;
+		panelHandeingabe.add(wlaLieferantArtikelNummerHandeingabe,
+				new GridBagConstraints(2, iZeile, 2, 1, 0.1, 0.0,
+						GridBagConstraints.WEST, GridBagConstraints.BOTH,
+						new Insets(1, 2, 1, 2), 0, 0));
+
+		panelHandeingabe.add(wtfLieferantArtikelNummerHandeingabe,
+				new GridBagConstraints(4, iZeile, 3, 1, 0.1, 0.0,
+						GridBagConstraints.EAST, GridBagConstraints.BOTH,
+						new Insets(1, 2, 1, 2), 0, 0));
+		iZeile++;
+		panelHandeingabe.add(wlaLieferantArtikelBezeichnungHandeingabe,
+				new GridBagConstraints(2, iZeile, 2, 1, 0.1, 0.0,
+						GridBagConstraints.WEST, GridBagConstraints.BOTH,
+						new Insets(1, 2, 1, 2), 0, 0));
+
+		panelHandeingabe.add(wtfLieferantArtikelBezeichnungHandeingabe,
+				new GridBagConstraints(4, iZeile, 3, 1, 0.1, 0.0,
+						GridBagConstraints.EAST, GridBagConstraints.BOTH,
+						new Insets(1, 2, 1, 2), 0, 0));
 
 		iZeile++;
 
@@ -394,7 +432,7 @@ public class PanelBestellungPositionen extends PanelPositionen2 {
 
 	/**
 	 * refreshStaffel
-	 * 
+	 *
 	 * @throws Throwable
 	 */
 	private void refreshAktuellesArtikelLFPanel() throws Throwable {
@@ -480,11 +518,10 @@ public class PanelBestellungPositionen extends PanelPositionen2 {
 			wcbPreisstaffelNachpflegen = new WrapperRadioButton(
 					LPMain.getTextRespectUISPr("bes.staffelpreis_nachpflegen"));
 
-			
 			wcbEinzelpreisNachpflegen.addActionListener(this);
 			wcbPreisstaffelNachpflegen.addActionListener(this);
 			wrbPreiseNichtNachpflegen.addActionListener(this);
-			
+
 			jbgNachpflegen = new ButtonGroup();
 			jbgNachpflegen.add(wrbPreiseNichtNachpflegen);
 			jbgNachpflegen.add(wcbEinzelpreisNachpflegen);
@@ -554,8 +591,7 @@ public class PanelBestellungPositionen extends PanelPositionen2 {
 					.getArtikelDelegate()
 					.getAlleGueltigenStaffelneinesLieferanten(
 							artLiefDto.getIId(),
-							tPBes.getBesDto()
-									.getWaehrungCNr(),
+							tPBes.getBesDto().getWaehrungCNr(),
 							tPBes.getBesDto().getDBelegdatum()));
 		} else {
 			wcoStaffelRueckpflege.setMap(new TreeMap());
@@ -592,7 +628,7 @@ public class PanelBestellungPositionen extends PanelPositionen2 {
 	/**
 	 * Eine Position loeschen. <br>
 	 * Tag buttondelete:
-	 * 
+	 *
 	 * @param e
 	 *            Ereignis
 	 * @param bAdministrateLockKeyI
@@ -853,29 +889,32 @@ public class PanelBestellungPositionen extends PanelPositionen2 {
 			}
 			panelArtikelBest.berechnePreisdaten(true);
 
-		} else if(e.getSource().equals(wcbEinzelpreisNachpflegen)){
-			if (getLockedstateDetailMainKey().getIState() == LOCK_IS_LOCKED_BY_ME || getLockedstateDetailMainKey().getIState() == LOCK_FOR_NEW) {
+		} else if (e.getSource().equals(wcbEinzelpreisNachpflegen)) {
+			if (getLockedstateDetailMainKey().getIState() == LOCK_IS_LOCKED_BY_ME
+					|| getLockedstateDetailMainKey().getIState() == LOCK_FOR_NEW) {
 				if (wcbEinzelpreisNachpflegen.isSelected()) {
 					wnfFixkosten.setEditable(true);
 					wnfVerpackungseinheit.setEditable(true);
 					wnfMindestbestellmenge.setEditable(true);
-				} 
+				}
 			}
-		} else if(e.getSource().equals(wcbPreisstaffelNachpflegen)){
-			if (getLockedstateDetailMainKey().getIState() == LOCK_IS_LOCKED_BY_ME || getLockedstateDetailMainKey().getIState() == LOCK_FOR_NEW) {
+		} else if (e.getSource().equals(wcbPreisstaffelNachpflegen)) {
+			if (getLockedstateDetailMainKey().getIState() == LOCK_IS_LOCKED_BY_ME
+					|| getLockedstateDetailMainKey().getIState() == LOCK_FOR_NEW) {
 				if (wcbPreisstaffelNachpflegen.isSelected()) {
 					wnfFixkosten.setEditable(false);
 					wnfVerpackungseinheit.setEditable(true);
 					wnfMindestbestellmenge.setEditable(false);
-				} 
+				}
 			}
-		}else if(e.getSource().equals(wrbPreiseNichtNachpflegen)){
-			if (getLockedstateDetailMainKey().getIState() == LOCK_IS_LOCKED_BY_ME || getLockedstateDetailMainKey().getIState() == LOCK_FOR_NEW) {
+		} else if (e.getSource().equals(wrbPreiseNichtNachpflegen)) {
+			if (getLockedstateDetailMainKey().getIState() == LOCK_IS_LOCKED_BY_ME
+					|| getLockedstateDetailMainKey().getIState() == LOCK_FOR_NEW) {
 				if (wrbPreiseNichtNachpflegen.isSelected()) {
 					wnfFixkosten.setEditable(false);
 					wnfVerpackungseinheit.setEditable(false);
 					wnfMindestbestellmenge.setEditable(false);
-				} 
+				}
 			}
 		}
 
@@ -1062,10 +1101,8 @@ public class PanelBestellungPositionen extends PanelPositionen2 {
 
 			// alle bestellungsabhaengigen Defaults in den verschiedenen
 			// PanelPositionen setzen
-			panelHandeingabe.setWaehrungCNr(besDto
-					.getWaehrungCNr());
-			panelArtikel.setWaehrungCNr(besDto
-					.getWaehrungCNr());
+			panelHandeingabe.setWaehrungCNr(besDto.getWaehrungCNr());
+			panelArtikel.setWaehrungCNr(besDto.getWaehrungCNr());
 
 			panelArtikel.wnfEinzelpreis.setMinimumValue(new BigDecimal(
 					BestellpositionFac.MIN_D_EINZELPREIS));
@@ -1170,7 +1207,7 @@ public class PanelBestellungPositionen extends PanelPositionen2 {
 
 	/**
 	 * Behandle Ereignis Neu.
-	 * 
+	 *
 	 * @param eventObject
 	 *            Ereignis
 	 * @param bLockMeI
@@ -1215,10 +1252,23 @@ public class PanelBestellungPositionen extends PanelPositionen2 {
 
 	private void components2ArtLiefDto() throws Throwable {
 		if (artLiefDto != null) {
-			artLiefDto.setCBezbeilieferant(wtfLieferantArtikelBezeichnung
-					.getText());
-			artLiefDto.setCArtikelnrlieferant(wtfLieferantArtikelNummer
-					.getText());
+
+			if (besPosDto.getPositionsartCNr().equals(
+					BestellpositionFac.BESTELLPOSITIONART_HANDEINGABE)) {
+
+				artLiefDto
+						.setCBezbeilieferant(wtfLieferantArtikelBezeichnungHandeingabe
+								.getText());
+				artLiefDto
+						.setCArtikelnrlieferant(wtfLieferantArtikelNummerHandeingabe
+								.getText());
+			} else {
+
+				artLiefDto.setCBezbeilieferant(wtfLieferantArtikelBezeichnung
+						.getText());
+				artLiefDto.setCArtikelnrlieferant(wtfLieferantArtikelNummer
+						.getText());
+			}
 			artLiefDto.setNFixkosten(wnfFixkosten.getBigDecimal());
 			artLiefDto.setBHerstellerbez(Helper.boolean2Short(false));
 		}
@@ -1255,9 +1305,11 @@ public class PanelBestellungPositionen extends PanelPositionen2 {
 					.getDouble());
 			besPosDto.setCAngebotnummer(wtfAngebotnummer.getText());
 
-			besPosDto.setnVerpackungseinheit_NOT_IN_DB(wnfVerpackungseinheit.getBigDecimal());
-			besPosDto.setfMindestbestellmenge_NOT_IN_DB(wnfMindestbestellmenge.getDouble());
-			
+			besPosDto.setnVerpackungseinheit_NOT_IN_DB(wnfVerpackungseinheit
+					.getBigDecimal());
+			besPosDto.setfMindestbestellmenge_NOT_IN_DB(wnfMindestbestellmenge
+					.getDouble());
+
 			/**
 			 * @todo gh wurde der Rabattsatz aus der Einkaufspreisfindung
 			 *       ubersteuert? PJ 4878
@@ -1314,6 +1366,16 @@ public class PanelBestellungPositionen extends PanelPositionen2 {
 				besPosDto.setTUebersteuerterLiefertermin(new Timestamp(
 						getTPBes().getBesDto().getDLiefertermin().getTime()));
 			}
+
+			if (artLiefDto != null) {
+				artLiefDto
+						.setCBezbeilieferant(wtfLieferantArtikelBezeichnungHandeingabe
+								.getText());
+				artLiefDto
+						.setCArtikelnrlieferant(wtfLieferantArtikelNummerHandeingabe
+								.getText());
+			}
+
 		}
 	}
 
@@ -1348,9 +1410,11 @@ public class PanelBestellungPositionen extends PanelPositionen2 {
 				artLiefDto = DelegateFactory
 						.getInstance()
 						.getArtikelDelegate()
-						.artikellieferantFindByArtikellIIdLieferantIIdOhneExc(
-								oArtikelDto.getIId(),
-								tPBes.getLieferantDto().getIId());
+						.getArtikelEinkaufspreis(oArtikelDto.getIId(),
+								tPBes.getLieferantDto().getIId(),
+								besPosDto.getNMenge(),
+								tPBes.getLieferantDto().getWaehrungCNr(),
+								tPBes.getBesDto().getDBelegdatum());
 			}
 
 			if (artLiefDto != null) {
@@ -1406,6 +1470,28 @@ public class PanelBestellungPositionen extends PanelPositionen2 {
 					.getNNettogesamtpreis());
 			panelHandeingabe.wdfLieferterminPosition.setDate(besPosDto
 					.getTUebersteuerterLiefertermin());
+
+			if (besPosDto.getArtikelIId() != null) {
+				artLiefDto = DelegateFactory
+						.getInstance()
+						.getArtikelDelegate()
+						.getArtikelEinkaufspreis(oArtikelDto.getIId(),
+								tPBes.getLieferantDto().getIId(),
+								besPosDto.getNMenge(),
+								tPBes.getLieferantDto().getWaehrungCNr(),
+								tPBes.getBesDto().getDBelegdatum());
+			}
+
+			if (artLiefDto != null) {
+				wtfLieferantArtikelBezeichnungHandeingabe.setText(artLiefDto
+						.getCBezbeilieferant());
+				wtfLieferantArtikelNummerHandeingabe.setText(artLiefDto
+						.getCArtikelnrlieferant());
+			} else {
+				wtfLieferantArtikelBezeichnungHandeingabe.setText(null);
+				wtfLieferantArtikelNummerHandeingabe.setText(null);
+			}
+
 		}
 
 		// PJ17730
@@ -1434,8 +1520,7 @@ public class PanelBestellungPositionen extends PanelPositionen2 {
 					.rechneUmInAndereWaehrungGerundetZuDatum(
 							tPBes.getLieferantDto().getNMindestbestellwert(),
 							tPBes.getLieferantDto().getWaehrungCNr(),
-							tPBes.getBesDto()
-									.getWaehrungCNr(),
+							tPBes.getBesDto().getWaehrungCNr(),
 							tPBes.getBesDto().getDBelegdatum());
 			if (bdMindestbestellwertinBestellwaehrung.doubleValue() > bdBestellwertinbestellwaehrung
 					.doubleValue()) {
@@ -1465,7 +1550,7 @@ public class PanelBestellungPositionen extends PanelPositionen2 {
 
 	/**
 	 * checkMengeDlg
-	 * 
+	 *
 	 * @return boolean
 	 * @throws ExceptionLP
 	 */
@@ -1553,8 +1638,8 @@ public class PanelBestellungPositionen extends PanelPositionen2 {
 
 				// PJ 16966
 
-				boolean bZertifiziert = pruefeObZertifiziert(besPosDto.getArtikelIId(),
-						tPBes.getLieferantDto());
+				boolean bZertifiziert = pruefeObZertifiziert(
+						besPosDto.getArtikelIId(), tPBes.getLieferantDto());
 
 				if (bZertifiziert == false) {
 					boolean b = DialogFactory
@@ -1669,7 +1754,11 @@ public class PanelBestellungPositionen extends PanelPositionen2 {
 					besPosDto = DelegateFactory.getInstance()
 							.getBestellungDelegate()
 							.bestellpositionFindByPrimaryKey(iId);
-					if (artLiefDto == null) {
+
+					if (artLiefDto == null
+							|| besPosDto
+									.getPositionsartCNr()
+									.equals(BestellpositionFac.BESTELLPOSITIONART_HANDEINGABE)) {
 						artLiefDto = DelegateFactory
 								.getInstance()
 								.getArtikelDelegate()
@@ -1679,17 +1768,28 @@ public class PanelBestellungPositionen extends PanelPositionen2 {
 												.getBesDto()
 												.getLieferantIIdBestelladresse(),
 										new BigDecimal(1),
-										getTPBes()
-												.getBesDto()
-												.getWaehrungCNr(),
+										getTPBes().getBesDto().getWaehrungCNr(),
 										getTPBes().getBesDto().getDBelegdatum());
 						if (artLiefDto != null) {
-							artLiefDto
-									.setCBezbeilieferant(wtfLieferantArtikelBezeichnung
-											.getText());
-							artLiefDto
-									.setCArtikelnrlieferant(wtfLieferantArtikelNummer
-											.getText());
+
+							if (besPosDto
+									.getPositionsartCNr()
+									.equals(BestellpositionFac.BESTELLPOSITIONART_HANDEINGABE)) {
+
+								artLiefDto
+										.setCBezbeilieferant(wtfLieferantArtikelBezeichnungHandeingabe
+												.getText());
+								artLiefDto
+										.setCArtikelnrlieferant(wtfLieferantArtikelNummerHandeingabe
+												.getText());
+							} else {
+								artLiefDto
+										.setCBezbeilieferant(wtfLieferantArtikelBezeichnung
+												.getText());
+								artLiefDto
+										.setCArtikelnrlieferant(wtfLieferantArtikelNummer
+												.getText());
+							}
 							DelegateFactory.getInstance().getArtikelDelegate()
 									.updateArtikellieferant(artLiefDto);
 						}
@@ -1700,12 +1800,26 @@ public class PanelBestellungPositionen extends PanelPositionen2 {
 									.getArtikelDelegate()
 									.artikellieferantFindByPrimaryKey(
 											artLiefDto.getIId());
-							artLiefDto
-									.setCBezbeilieferant(wtfLieferantArtikelBezeichnung
-											.getText());
-							artLiefDto
-									.setCArtikelnrlieferant(wtfLieferantArtikelNummer
-											.getText());
+
+							if (besPosDto
+									.getPositionsartCNr()
+									.equals(BestellpositionFac.BESTELLPOSITIONART_HANDEINGABE)) {
+
+								artLiefDto
+										.setCBezbeilieferant(wtfLieferantArtikelBezeichnungHandeingabe
+												.getText());
+								artLiefDto
+										.setCArtikelnrlieferant(wtfLieferantArtikelNummerHandeingabe
+												.getText());
+							} else {
+
+								artLiefDto
+										.setCBezbeilieferant(wtfLieferantArtikelBezeichnung
+												.getText());
+								artLiefDto
+										.setCArtikelnrlieferant(wtfLieferantArtikelNummer
+												.getText());
+							}
 							DelegateFactory.getInstance().getArtikelDelegate()
 									.updateArtikellieferant(artLiefDto);
 						}
@@ -1759,6 +1873,22 @@ public class PanelBestellungPositionen extends PanelPositionen2 {
 											(Integer) wcoStaffelRueckpflege
 													.getKeyOfSelectedItem());
 
+							if (artLiefDto == null) {
+								artLiefDto = DelegateFactory
+										.getInstance()
+										.getArtikelDelegate()
+										.getArtikelEinkaufspreis(
+												besPosDto.getArtikelIId(),
+												getTPBes()
+														.getBesDto()
+														.getLieferantIIdBestelladresse(),
+												new BigDecimal(1),
+												getTPBes().getBesDto()
+														.getWaehrungCNr(),
+												getTPBes().getBesDto()
+														.getDBelegdatum());
+							}
+
 							if (artLiefDto != null
 									&& artLiefDto.getIId() != null) {
 
@@ -1775,13 +1905,15 @@ public class PanelBestellungPositionen extends PanelPositionen2 {
 							}
 						}
 					} else {
-						DialogFactory.showModalDialog(
-								LPMain.getInstance().getTextRespectUISPr(
-										"lp.hint"),
-								LPMain.getInstance().getTextRespectUISPr(
-										"bestellung.update.kleineralswe"));
+						DialogFactory
+								.showModalDialog(
+										LPMain.getTextRespectUISPr("lp.hint"),
+										LPMain.getTextRespectUISPr("bestellung.update.kleineralswe"));
 					}
 				}
+
+				// PJ18750
+				// preispflegeDerHandeingabe();
 
 				super.eventActionSave(e, false);
 
@@ -1821,7 +1953,7 @@ public class PanelBestellungPositionen extends PanelPositionen2 {
 
 	/**
 	 * getSPreispflege
-	 * 
+	 *
 	 * @return String
 	 * @throws ExceptionLP
 	 * @throws Throwable
@@ -1936,22 +2068,56 @@ public class PanelBestellungPositionen extends PanelPositionen2 {
 
 	/**
 	 * Drucke Bestellung.
-	 * 
+	 *
 	 * @param e
 	 *            Ereignis
 	 * @throws Throwable
 	 */
-	protected void eventActionPrint(ActionEvent e) throws Throwable {
+	protected void eventActionPrint(HvActionEvent e) throws Throwable {
 
-		getTPBes().printBestellung();
+		if (e.isMouseEvent() && e.isRightButtonPressed()) {
+
+			boolean bStatusAngelegt = getTPBes().getBesDto().getStatusCNr().equals(AngebotServiceFac.ANGEBOTSTATUS_ANGELEGT);
+			boolean bKonditionen = getTPBes().pruefeKonditionen();
+
+			if (bStatusAngelegt && bKonditionen) {
+				DelegateFactory.getInstance().getBestellungDelegate()
+					.berechneAktiviereBelegControlled(getTPBes().getBesDto().getIId());
+
+				BestellungDto bestellungDto = DelegateFactory
+						.getInstance()
+						.getBestellungDelegate()
+						.bestellungFindByPrimaryKey(
+								getTPBes().getBesDto().getIId());
+
+				((InternalFrameBestellung) getInternalFrame())
+						.getTabbedPaneBestellung().setBestellungDto(
+								bestellungDto);
+
+				eventActionRefresh(e, false);
+
+			}
+			else if (!bStatusAngelegt){
+				DialogFactory.showModalDialog("Status",
+						LPMain.getMessageTextRespectUISPr("status.zustand",
+								LPMain.getTextRespectUISPr("bes.bestellung"),
+								getTPBes().getBestellungStatus().trim()));
+			}
+
+		} else {
+
+			getTPBes().printBestellung();
+
+		}
 
 		eventYouAreSelected(false);
 
 		getTPBes().enablePanels(getTPBes().getBesDto(), true);
+
 	}
 
 	/**
-	 * 
+	 *
 	 * @throws Throwable
 	 */
 	private void aktualisiereStatusbar() throws Throwable {
@@ -1966,7 +2132,7 @@ public class PanelBestellungPositionen extends PanelPositionen2 {
 
 	/**
 	 * btngeliefert: 0
-	 * 
+	 *
 	 * @return LockStateValue
 	 * @throws Throwable
 	 */
@@ -2030,7 +2196,7 @@ public class PanelBestellungPositionen extends PanelPositionen2 {
 
 	/**
 	 * actionPerformedEinzelpreis
-	 * 
+	 *
 	 * @throws ExceptionLP
 	 * @throws Throwable
 	 */
@@ -2175,8 +2341,7 @@ public class PanelBestellungPositionen extends PanelPositionen2 {
 							getTPBes().getBesDto()
 									.getLieferantIIdBestelladresse(),
 							panelArtikel.wnfMenge.getBigDecimal(),
-							getTPBes().getBesDto()
-									.getWaehrungCNr(),
+							getTPBes().getBesDto().getWaehrungCNr(),
 							getTPBes().getBesDto().getDBelegdatum());
 
 			if (artLiefDto != null) {
@@ -2213,7 +2378,7 @@ public class PanelBestellungPositionen extends PanelPositionen2 {
 	 * Ueberpruefe ob bereits eine Staffel bei dem ArtikelLieferant vorhanden
 	 * ist, die den gleichen Nettopreis hat. Die Stueckzahl wird dabei nicht
 	 * beruecksichtigt.
-	 * 
+	 *
 	 * @throws ExceptionLP
 	 */
 	public void savePreisData() throws ExceptionLP {
@@ -2245,6 +2410,11 @@ public class PanelBestellungPositionen extends PanelPositionen2 {
 			wtfLieferantArtikelNummer.setText(artLiefDto
 					.getCArtikelnrlieferant());
 
+			wtfLieferantArtikelBezeichnungHandeingabe.setText(artLiefDto
+					.getCBezbeilieferant());
+			wtfLieferantArtikelNummerHandeingabe.setText(artLiefDto
+					.getCArtikelnrlieferant());
+
 			if (besPosDto.getIId() == null) {
 				wtfAngebotnummer.setText(artLiefDto.getCAngebotnummer());
 			}
@@ -2255,9 +2425,40 @@ public class PanelBestellungPositionen extends PanelPositionen2 {
 
 	}
 
+	public void artLiefData2ComponentsWennKeinEinzelpreisDefiniert(
+			ArtikelDto artDtoI, ArtikellieferantDto artLiefDtoI)
+			throws Throwable {
+
+		String sArtEinheit = "";
+		if (artDtoI != null && artDtoI.getEinheitCNr() != null) {
+			sArtEinheit = artDtoI.getEinheitCNr().trim();
+		}
+		wlaMindestbestellmengeEinheit.setText(sArtEinheit);
+
+		if (artLiefDtoI != null) {
+			wnfFixkosten.setBigDecimal(artLiefDtoI.getNFixkosten());
+			wnfMindestbestellmenge.setDouble(artLiefDtoI
+					.getFMindestbestelmenge());
+			wnfVerpackungseinheit.setBigDecimal(artLiefDtoI
+					.getNVerpackungseinheit());
+			wtfLieferantArtikelBezeichnung.setText(artLiefDtoI
+					.getCBezbeilieferant());
+			wtfLieferantArtikelNummer.setText(artLiefDtoI
+					.getCArtikelnrlieferant());
+
+			if (besPosDto.getIId() == null) {
+				wtfAngebotnummer.setText(artLiefDtoI.getCAngebotnummer());
+			}
+
+		}
+
+		wlaFixkostenEinheit.setText(panelArtikel.getWaehrungCNr());
+
+	}
+
 	/**
 	 * mouseClickedVerpackungseinheit
-	 * 
+	 *
 	 * @param bdMengeI
 	 *            MouseEvent
 	 * @throws ExceptionLP
@@ -2282,8 +2483,7 @@ public class PanelBestellungPositionen extends PanelPositionen2 {
 					.getArtikelDelegate()
 					.getAlleGueltigenStaffelneinesLieferanten(
 							artLiefDto.getIId(),
-							tPBes.getBesDto()
-									.getWaehrungCNr(),
+							tPBes.getBesDto().getWaehrungCNr(),
 							tPBes.getBesDto().getDBelegdatum());
 
 			java.util.Iterator it = m.keySet().iterator();
@@ -2345,7 +2545,7 @@ public class PanelBestellungPositionen extends PanelPositionen2 {
 
 	/**
 	 * setPreis
-	 * 
+	 *
 	 * @param artLiefDto
 	 *            ArtikelDto
 	 * @throws ExceptionLP
@@ -2435,11 +2635,21 @@ public class PanelBestellungPositionen extends PanelPositionen2 {
 										.getTabbedPaneBestellung().getBesDto()
 										.getLieferantIIdBestelladresse());
 
+				// SP2911
+				BigDecimal vergleichspreis = panelArtikel.wnfNettopreis
+						.getBigDecimal();
+				if (panelArtikel.wnfMaterialzuschlag != null
+						&& panelArtikel.wnfMaterialzuschlag.getBigDecimal() != null) {
+					vergleichspreis = vergleichspreis
+							.subtract(panelArtikel.wnfMaterialzuschlag
+									.getBigDecimal());
+				}
+
 				if (artLiefDtoBilliger != null
 						&& artLiefDtoBilliger.getNNettopreis() != null
 						&& artLiefDtoBilliger.getLieferantIId() != null
-						&& artLiefDtoBilliger.getNNettopreis().doubleValue() < panelArtikel.wnfNettopreis
-								.getBigDecimal().doubleValue()) {
+						&& artLiefDtoBilliger.getNNettopreis().doubleValue() < vergleichspreis
+								.doubleValue()) {
 
 					LieferantDto liefBilliger = DelegateFactory
 							.getInstance()
@@ -2460,8 +2670,7 @@ public class PanelBestellungPositionen extends PanelPositionen2 {
 									+ " "
 									+ getInternalFrameBestellung()
 											.getTabbedPaneBestellung()
-											.getBesDto()
-											.getWaehrungCNr() };
+											.getBesDto().getWaehrungCNr() };
 					sb.append(mf.format(pattern));
 
 					DialogFactory.showModalDialog(
@@ -2475,24 +2684,24 @@ public class PanelBestellungPositionen extends PanelPositionen2 {
 }
 
 /**
- * 
+ *
  * <p>
  * Diese Klasse kuemmert sich um Aenderungen des Einzelpreises.
  * </p>
- * 
+ *
  * <p>
  * Copyright Logistik Pur Software GmbH (c) 2004-2008
  * </p>
- * 
+ *
  * <p>
  * Erstellung: Jsef Ornetsmueller; 17.11.06
  * </p>
- * 
+ *
  * <p>
- * 
+ *
  * @author $Author: christian $
  *         </p>
- * 
+ *
  * @version not attributable Date $Date: 2013/02/05 09:15:20 $
  */
 
@@ -2517,19 +2726,19 @@ class FocusAdapterPreis implements FocusListener {
 }
 
 /**
- * 
+ *
  * <p>
  * Diese Klasse kuemmert sich um FocusLost des Feldes nMenge.
  * </p>
- * 
+ *
  * <p>
  * Copyright Logistik Pur Software GmbH (c) 2004-2008
  * </p>
- * 
+ *
  * <p>
  * Erstellung:Josef Erlinger; 26.07.05
  * </p>
- * 
+ *
  * @version not attributable Date $Date: 2013/02/05 09:15:20 $
  */
 class FocusAdapterMenge extends java.awt.event.FocusAdapter {
@@ -2606,7 +2815,7 @@ class MouseAdapterChangeMenge extends MouseAdapter {
 
 	/**
 	 * refresh je nach MouseEvent.source die Menge und den Preis
-	 * 
+	 *
 	 * @param eI
 	 *            MouseEvent
 	 * @return boolean

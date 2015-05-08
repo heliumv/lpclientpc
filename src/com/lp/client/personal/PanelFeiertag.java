@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -123,9 +123,11 @@ public class PanelFeiertag extends PanelBasis {
 			boolean bNeedNoNewI) throws Throwable {
 		super.eventActionNew(eventObject, true, false);
 		feiertagDto = new FeiertagDto();
+		
+		leereAlleFelder(this);
 		wrbDatum.setSelected(true);
 		eventActionSpecial(new ActionEvent(wrbDatum, 0, ""));
-		leereAlleFelder(this);
+	
 	}
 
 	protected void eventActionSpecial(ActionEvent e) throws Throwable {
@@ -139,6 +141,7 @@ public class PanelFeiertag extends PanelBasis {
 			if (wrbDatum.isSelected()) {
 				wcoMonat.setMandatoryField(true);
 				wcoMonat.setActivatable(true);
+				wnfTag.setActivatable(true);
 				wnfTag.setMandatoryField(true);
 
 				wnfOffsetOstern.setMandatoryField(false);
@@ -147,7 +150,7 @@ public class PanelFeiertag extends PanelBasis {
 				if (lockStateValue.getIState() == LOCK_IS_LOCKED_BY_ME
 						|| lockStateValue.getIState() == LOCK_FOR_NEW) {
 					wcoMonat.setEnabled(true);
-					wnfTag.setEnabled(true);
+					wnfTag.setEditable(true);
 				}
 
 			} else {
@@ -188,9 +191,12 @@ public class PanelFeiertag extends PanelBasis {
 	protected void components2Dto() throws Throwable {
 		if (wrbOstern.isSelected()) {
 			feiertagDto.setIOffsetOstersonntag(wnfOffsetOstern.getInteger());
+			feiertagDto.setiMonat(null);
+			feiertagDto.setiTag(null);
 		} else {
 			feiertagDto.setiMonat((Integer) wcoMonat.getKeyOfSelectedItem());
 			feiertagDto.setiTag(wnfTag.getInteger());
+			feiertagDto.setIOffsetOstersonntag(null);
 		}
 
 		feiertagDto

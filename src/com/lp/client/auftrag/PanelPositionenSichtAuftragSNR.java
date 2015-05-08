@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -46,6 +46,8 @@ import com.lp.client.frame.component.WrapperTable;
 import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.pc.LPMain;
 import com.lp.client.util.fastlanereader.gui.QueryType;
+import com.lp.server.system.service.ParameterFac;
+import com.lp.server.system.service.ParametermandantDto;
 import com.lp.server.util.fastlanereader.service.query.FilterKriterium;
 import com.lp.server.util.fastlanereader.service.query.QueryParameters;
 import com.lp.util.Helper;
@@ -71,7 +73,6 @@ public abstract class PanelPositionenSichtAuftragSNR extends
 	 */
 	private static final long serialVersionUID = 1L;
 	protected Integer iIdLager = null;
-
 
 	/**
 	 * Konstruktor.
@@ -155,8 +156,6 @@ public abstract class PanelPositionenSichtAuftragSNR extends
 	protected void eventItemchanged(EventObject eI) throws Throwable {
 		ItemChangedEvent e = (ItemChangedEvent) eI;
 
-		
-
 	}
 
 	/**
@@ -171,11 +170,29 @@ public abstract class PanelPositionenSichtAuftragSNR extends
 						.getBSeriennrtragend())) {
 			if (Helper.short2boolean(panelArtikel.getArtikelDto()
 					.getBLagerbewirtschaftet())) {
-				BigDecimal nMengeAufLager = DelegateFactory
+				BigDecimal nMengeAufLager = null;
+
+				// PJ18931
+				ParametermandantDto parameter = (ParametermandantDto) DelegateFactory
 						.getInstance()
-						.getLagerDelegate()
-						.getLagerstand(panelArtikel.getArtikelDto().getIId(),
-								iIdLager);
+						.getParameterDelegate()
+						.getParametermandant(
+								ParameterFac.PARAMETER_LAGER_IMMER_AUSREICHEND_VERFUEGBAR,
+								ParameterFac.KATEGORIE_ARTIKEL,
+								LPMain.getTheClient().getMandant());
+
+				boolean bImmerAusreichendVerfuegbar = (Boolean) parameter
+						.getCWertAsObject();
+				if (bImmerAusreichendVerfuegbar == true) {
+					nMengeAufLager = oAuftragpositionDto.getNOffeneMenge();
+				} else {
+					nMengeAufLager = DelegateFactory
+							.getInstance()
+							.getLagerDelegate()
+							.getLagerstand(
+									panelArtikel.getArtikelDto().getIId(),
+									iIdLager);
+				}
 
 				if (nMengeAufLager.doubleValue() >= oAuftragpositionDto
 						.getNOffeneMenge().doubleValue()) {

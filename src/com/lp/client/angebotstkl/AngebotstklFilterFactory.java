@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -32,7 +32,6 @@
  ******************************************************************************/
 package com.lp.client.angebotstkl;
 
-
 import com.lp.client.frame.component.InternalFrame;
 import com.lp.client.frame.component.PanelQueryFLR;
 import com.lp.client.pc.LPMain;
@@ -46,160 +45,166 @@ import com.lp.server.util.fastlanereader.service.query.FilterKriterium;
 import com.lp.server.util.fastlanereader.service.query.FilterKriteriumDirekt;
 import com.lp.server.util.fastlanereader.service.query.QueryParameters;
 
-public class AngebotstklFilterFactory
-{
-  private static AngebotstklFilterFactory filterFactory = null;
+public class AngebotstklFilterFactory {
+	private static AngebotstklFilterFactory filterFactory = null;
 
-  private AngebotstklFilterFactory() {
-    // Singleton.
-  }
+	private AngebotstklFilterFactory() {
+		// Singleton.
+	}
 
+	static public AngebotstklFilterFactory getInstance() {
+		if (filterFactory == null) {
+			filterFactory = new AngebotstklFilterFactory();
+		}
 
-  static public AngebotstklFilterFactory getInstance() {
-    if (filterFactory == null) {
-      filterFactory = new AngebotstklFilterFactory();
-    }
+		return filterFactory;
+	}
 
-    return filterFactory;
-  }
+	public QueryType[] createQTAgstkl() {
 
+		QueryType[] types = new QueryType[2];
 
-  public QueryType[] createQTAgstkl() {
+		FilterKriterium f1 = new FilterKriterium("agstkl.c_nr", true, "",
+				FilterKriterium.OPERATOR_LIKE, false);
 
-    QueryType[] types = new QueryType[2];
+		types[0] = new QueryType(
+				LPMain.getTextRespectUISPr("label.belegnummer"), f1,
+				new String[] { FilterKriterium.OPERATOR_EQUAL }, true, true);
 
-    FilterKriterium f1 = new FilterKriterium("c_nr", true,
-                                             "",
-                                             FilterKriterium.OPERATOR_LIKE, false);
+		FilterKriterium f2 = new FilterKriterium(">agstkl.c_projekt", true, "",
+				FilterKriterium.OPERATOR_LIKE, true);
 
-    types[0] = new QueryType(LPMain.getTextRespectUISPr(
-        "label.belegnummer"), f1, new String[] {
-                             FilterKriterium.OPERATOR_EQUAL}
-                             ,
-                             true, true);
+		types[1] = new QueryType(LPMain.getTextRespectUISPr("label.projekt"),
+				f2, new String[] { FilterKriterium.OPERATOR_EQUAL }, true, true);
 
-    FilterKriterium f2 = new FilterKriterium("c_projekt", true,
-                                             "",
-                                             FilterKriterium.OPERATOR_LIKE, true);
+		return types;
+	}
 
-    types[1] = new QueryType(LPMain.getTextRespectUISPr("label.projekt"),
-                             f2, new String[] {
-                             FilterKriterium.OPERATOR_EQUAL}
-                             ,
-                             true, true);
+	public FilterKriteriumDirekt createFKDAgstklbelegnumer() throws Throwable {
 
-    return types;
-  }
+		return new FilterKriteriumDirekt("c_nr", "",
+				FilterKriterium.OPERATOR_LIKE,
+				LPMain.getTextRespectUISPr("label.belegnummer"),
+				FilterKriteriumDirekt.PROZENT_LEADING, true, false,
+				Facade.MAX_UNBESCHRAENKT);
 
+	}
 
-  public FilterKriteriumDirekt createFKDAgstklbelegnumer()
-      throws Throwable {
+	public FilterKriteriumDirekt createFKDAgstklprojekt() throws Throwable {
 
-    return new FilterKriteriumDirekt("c_nr",
-        "",
-        FilterKriterium.OPERATOR_LIKE,
-        LPMain.getTextRespectUISPr("label.belegnummer"),
-        FilterKriteriumDirekt.PROZENT_LEADING,
-        true, false, Facade.MAX_UNBESCHRAENKT);
+		return new FilterKriteriumDirekt("agstkl.c_bez", "",
+				FilterKriterium.OPERATOR_LIKE,
+				LPMain.getTextRespectUISPr("label.projekt"),
+				FilterKriteriumDirekt.PROZENT_BOTH, true, true,
+				Facade.MAX_UNBESCHRAENKT);
 
-  }
+	}
 
-  public FilterKriteriumDirekt createFKDAgstklprojekt()
-      throws Throwable {
+	public FilterKriterium[] createFKAgstklMandantCNr() throws Throwable {
+		FilterKriterium[] kriterien = new FilterKriterium[1];
+		kriterien[0] = new FilterKriterium("agstkl.mandant_c_nr", true, "'"
+				+ LPMain.getInstance().getTheClient().getMandant() + "'",
+				FilterKriterium.OPERATOR_EQUAL, false);
+		return kriterien;
+	}
 
-    return new FilterKriteriumDirekt("c_bez",
-        "",
-        FilterKriterium.OPERATOR_LIKE,
-        LPMain.getTextRespectUISPr("label.projekt"),
-        FilterKriteriumDirekt.PROZENT_BOTH,
-        true, true, Facade.MAX_UNBESCHRAENKT);
+	public FilterKriteriumDirekt createFKDAgstklAngebote() throws Throwable {
 
-  }
+		return new FilterKriteriumDirekt("angebotspositionen.flrangebot.c_nr",
+				"", FilterKriterium.OPERATOR_LIKE,
+				LPMain.getTextRespectUISPr("angb.angebotsnummer"),
+				FilterKriteriumDirekt.PROZENT_TRAILING, true, true,
+				Facade.MAX_UNBESCHRAENKT);
 
-  public FilterKriteriumDirekt createFKDEinakufsangebotbelegnumer()
-      throws Throwable {
+	}
 
-    return new FilterKriteriumDirekt("c_nr",
-        "",
-        FilterKriterium.OPERATOR_LIKE,
-        LPMain.getTextRespectUISPr("label.belegnummer"),
-        FilterKriteriumDirekt.PROZENT_LEADING,
-        true, false, Facade.MAX_UNBESCHRAENKT);
+	public FilterKriteriumDirekt createFKDEinakufsangebotbelegnumer()
+			throws Throwable {
 
-  }
+		return new FilterKriteriumDirekt("c_nr", "",
+				FilterKriterium.OPERATOR_LIKE,
+				LPMain.getTextRespectUISPr("label.belegnummer"),
+				FilterKriteriumDirekt.PROZENT_LEADING, true, false,
+				Facade.MAX_UNBESCHRAENKT);
 
+	}
 
+	public FilterKriteriumDirekt createFKDKundeName() {
+		FilterKriteriumDirekt fkDirekt1 = new FilterKriteriumDirekt("agstkl."
+				+ AngebotstklFac.FLR_AGSTKL_FLRKUNDE + "."
+				+ KundeFac.FLR_PARTNER + "."
+				+ PartnerFac.FLR_PARTNER_NAME1NACHNAMEFIRMAZEILE1, "",
+				FilterKriterium.OPERATOR_LIKE,
+				LPMain.getTextRespectUISPr("lp.kunde.modulname"),
+				FilterKriteriumDirekt.PROZENT_TRAILING, // Auswertung als 'XX%'
+				true, // wrapWithSingleQuotes
+				true, Facade.MAX_UNBESCHRAENKT); // ignore case
 
-  public FilterKriteriumDirekt createFKDKundeName() {
-    FilterKriteriumDirekt fkDirekt1 = new FilterKriteriumDirekt(
-       AngebotstklFac.FLR_AGSTKL_FLRKUNDE
-        + "." + KundeFac.FLR_PARTNER
-        + "." + PartnerFac.FLR_PARTNER_NAME1NACHNAMEFIRMAZEILE1,
-        "",
-        FilterKriterium.OPERATOR_LIKE,
-        LPMain.getTextRespectUISPr("lp.kunde.modulname"),
-        FilterKriteriumDirekt.PROZENT_TRAILING, // Auswertung als 'XX%'
-        true, // wrapWithSingleQuotes
-        true, Facade.MAX_UNBESCHRAENKT); // ignore case
+		return fkDirekt1;
+	}
 
-    return fkDirekt1;
-  }
+	public FilterKriterium[] createFKAgstklKey(Integer artikelIId)
+			throws Throwable {
+		// Handartikel nicht anzeigen
+		FilterKriterium[] kriterien = new FilterKriterium[1];
+		kriterien[0] = new FilterKriterium("i_id", true, artikelIId + "",
+				FilterKriterium.OPERATOR_EQUAL, false);
 
+		return kriterien;
+	}
 
-  public FilterKriterium[] createFKAgstkl(Integer agstklIId) {
+	public FilterKriterium[] createFKAgstkl(Integer agstklIId) {
 
-    FilterKriterium[] kriterien = new FilterKriterium[1];
-    FilterKriterium krit1 = new FilterKriterium("agstkl_i_id",
-                                                true,
-                                                agstklIId + "",
-                                                FilterKriterium.OPERATOR_EQUAL, false);
-    kriterien[0] = krit1;
-    return kriterien;
+		FilterKriterium[] kriterien = new FilterKriterium[1];
+		FilterKriterium krit1 = new FilterKriterium("agstkl_i_id", true,
+				agstklIId + "", FilterKriterium.OPERATOR_EQUAL, false);
+		kriterien[0] = krit1;
+		return kriterien;
 
-  }
+	}
 
-  public FilterKriterium[] createFKEinkaufsangebot(Integer agstklIId) {
+	public FilterKriterium[] createFKEinkaufsangebot(Integer agstklIId) {
 
-    FilterKriterium[] kriterien = new FilterKriterium[1];
-    FilterKriterium krit1 = new FilterKriterium("einkaufsangebot_i_id",
-                                                true,
-                                                agstklIId + "",
-                                                FilterKriterium.OPERATOR_EQUAL, false);
-    kriterien[0] = krit1;
-    return kriterien;
+		FilterKriterium[] kriterien = new FilterKriterium[1];
+		FilterKriterium krit1 = new FilterKriterium("einkaufsangebot_i_id",
+				true, agstklIId + "", FilterKriterium.OPERATOR_EQUAL, false);
+		kriterien[0] = krit1;
+		return kriterien;
 
-  }
+	}
 
+	/**
+	 * Agstklauswahlliste mit Filter & Direktfilter.
+	 * 
+	 * @param internalFrameI
+	 *            InternalFrame
+	 * @param bShowFilterButton
+	 *            den New Button anzeigen
+	 * @param bShowLeerenButton
+	 *            den Leeren Button anzeigen
+	 * @return PanelQueryFLR die Auswahlliste
+	 * @throws Throwable
+	 *             Ausnahme
+	 */
+	public PanelQueryFLR createPanelFLRAgstkl(InternalFrame internalFrameI,
+			boolean bShowFilterButton, boolean bShowLeerenButton)
+			throws Throwable {
+		String[] aWhichButtonIUse = SystemFilterFactory.getInstance()
+				.createButtonArray(bShowFilterButton, bShowLeerenButton);
 
-  /**
-   * Agstklauswahlliste mit Filter & Direktfilter.
-   * @param internalFrameI InternalFrame
-   * @param bShowFilterButton den New Button anzeigen
-   * @param bShowLeerenButton den Leeren Button anzeigen
-   * @return PanelQueryFLR die Auswahlliste
-   * @throws Throwable Ausnahme
-   */
-  public PanelQueryFLR createPanelFLRAgstkl(InternalFrame internalFrameI,
-                                              boolean bShowFilterButton,
-                                              boolean bShowLeerenButton)
-      throws Throwable {
-    String[] aWhichButtonIUse =
-        SystemFilterFactory.getInstance().createButtonArray(bShowFilterButton,
-        bShowLeerenButton);
+		PanelQueryFLR panelQueryFLRAgstkl = new PanelQueryFLR(createQTAgstkl(),
+				createFKAgstklMandantCNr(), QueryParameters.UC_ID_AGSTKL,
+				aWhichButtonIUse, internalFrameI,
+				LPMain.getTextRespectUISPr("title.agstklauswahlliste"));
 
-    PanelQueryFLR panelQueryFLRAgstkl = new PanelQueryFLR(
-        createQTAgstkl(),
-        SystemFilterFactory.getInstance().createFKMandantCNr(LPMain.
-        getTheClient().getMandant()),
-        QueryParameters.UC_ID_AGSTKL,
-        aWhichButtonIUse,
-        internalFrameI,
-        LPMain.getTextRespectUISPr("title.agstklauswahlliste"));
+		panelQueryFLRAgstkl.befuellePanelFilterkriterienDirekt(
+				createFKDAgstklbelegnumer(), createFKDKundeName());
+		panelQueryFLRAgstkl.addDirektFilter(AngebotstklFilterFactory
+				.getInstance().createFKDAgstklprojekt());
 
-    panelQueryFLRAgstkl.befuellePanelFilterkriterienDirekt(
-        createFKDAgstklbelegnumer(),
-        createFKDKundeName());
+		panelQueryFLRAgstkl.addDirektFilter(AngebotstklFilterFactory
+				.getInstance().createFKDAgstklAngebote());
 
-    return panelQueryFLRAgstkl;
-  }
+		return panelQueryFLRAgstkl;
+	}
 }

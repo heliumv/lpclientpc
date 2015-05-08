@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -35,17 +35,22 @@ package com.lp.client.frame.component;
 import java.awt.Dimension;
 import java.awt.Insets;
 import java.awt.Point;
+import java.awt.Rectangle;
+import java.util.Map;
 
 import javax.swing.Action;
 import javax.swing.Icon;
 import javax.swing.JCheckBox;
+import javax.swing.UIManager;
 
 import com.lp.client.frame.Defaults;
 import com.lp.client.frame.HelperClient;
+import com.lp.client.frame.component.cib.CibIconWrapper;
+import com.lp.client.frame.component.cib.ICibRectangleHolder;
 import com.lp.util.Helper;
 
 public class WrapperCheckBox extends JCheckBox implements IControl,
-		IDirektHilfe {
+		IDirektHilfe, ICibRectangleHolder {
 
 	/**
 	 * 
@@ -53,6 +58,7 @@ public class WrapperCheckBox extends JCheckBox implements IControl,
 	private static final long serialVersionUID = 1L;
 	private boolean isActivatable = true;
 	private CornerInfoButton cib;
+	private Rectangle iconRect = new Rectangle();
 
 	public WrapperCheckBox() {
 		setDefaults();
@@ -164,5 +170,53 @@ public class WrapperCheckBox extends JCheckBox implements IControl,
 	@Override
 	public boolean hasContent() throws Throwable {
 		return true;
+	}
+
+	// override getIcon Methods for CornerInfoButton Position
+	@Override
+	public Icon getIcon() {
+		if(super.getIcon() == null) return null;
+		for(Map.Entry<?, ?> map : UIManager.getDefaults().entrySet()) {if(map.getValue() instanceof Icon)System.out.println(map.getKey());}
+		return new CibIconWrapper(super.getIcon());
+	}
+	
+	@Override
+	public Icon getDisabledIcon() {
+		if(super.getDisabledIcon() == null) return null;
+		return new CibIconWrapper(super.getDisabledIcon());
+	}
+	
+	@Override
+	public Icon getDisabledSelectedIcon() {
+		if(super.getDisabledSelectedIcon() == null) return null;
+		return new CibIconWrapper(super.getDisabledSelectedIcon());
+	}
+	
+	@Override
+	public Icon getPressedIcon() {
+		if(super.getPressedIcon() == null) return null;
+		return new CibIconWrapper(super.getPressedIcon());
+	}
+	
+	@Override
+	public Icon getRolloverIcon() {
+		if(super.getRolloverIcon() == null) return null;
+		return new CibIconWrapper(super.getRolloverIcon());
+	}
+	
+	@Override
+	public Icon getRolloverSelectedIcon() {
+		if(super.getRolloverSelectedIcon() == null) return null;
+		return new CibIconWrapper(super.getRolloverSelectedIcon());
+	}
+	@Override
+	public Icon getSelectedIcon() {
+		if(super.getSelectedIcon() == null) return null;
+		return new CibIconWrapper(super.getSelectedIcon());
+	}
+	
+	@Override
+	public Rectangle getIconRect() {
+		return iconRect;
 	}
 }

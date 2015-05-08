@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -34,17 +34,22 @@ package com.lp.client.zeiterfassung;
 
 import java.util.Calendar;
 
+import com.lp.client.frame.ExceptionLP;
 import com.lp.client.frame.component.InternalFrame;
 import com.lp.client.frame.component.PanelBasis;
 import com.lp.client.frame.component.PanelQueryFLR;
+import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.pc.LPMain;
 import com.lp.client.system.SystemFilterFactory;
 import com.lp.client.util.fastlanereader.gui.QueryType;
 import com.lp.server.artikel.service.ArtikelFac;
+import com.lp.server.benutzer.service.RechteFac;
 import com.lp.server.fertigung.service.FertigungFac;
 import com.lp.server.partner.service.PartnerFac;
 import com.lp.server.personal.service.PersonalFac;
 import com.lp.server.personal.service.ZeiterfassungFac;
+import com.lp.server.system.service.ParameterFac;
+import com.lp.server.system.service.ParametermandantDto;
 import com.lp.server.util.Facade;
 import com.lp.server.util.fastlanereader.service.query.FilterKriterium;
 import com.lp.server.util.fastlanereader.service.query.FilterKriteriumDirekt;
@@ -78,7 +83,8 @@ public class ZeiterfassungFilterFactory {
 				LPMain.getTextRespectUISPr("auft.title.panel.auswahl"));
 
 		panelQueryFLRMaschine.befuellePanelFilterkriterienDirektUndVersteckte(
-				SystemFilterFactory.getInstance().createFKDBezeichnung(), null,createFKVMaschine());
+				SystemFilterFactory.getInstance().createFKDBezeichnung(), null,
+				createFKVMaschine());
 
 		if (selectedId != null) {
 			panelQueryFLRMaschine.setSelectedId(selectedId);
@@ -87,8 +93,9 @@ public class ZeiterfassungFilterFactory {
 		return panelQueryFLRMaschine;
 	}
 
-	public PanelQueryFLR createPanelFLRBereitschaftsart(InternalFrame internalFrameI,
-			Integer selectedId, boolean bMitLeerenButton) throws Throwable {
+	public PanelQueryFLR createPanelFLRBereitschaftsart(
+			InternalFrame internalFrameI, Integer selectedId,
+			boolean bMitLeerenButton) throws Throwable {
 		String[] aWhichButtonIUse = null;
 		if (bMitLeerenButton == true) {
 			aWhichButtonIUse = new String[] { PanelBasis.ACTION_REFRESH,
@@ -104,8 +111,8 @@ public class ZeiterfassungFilterFactory {
 				internalFrameI,
 				LPMain.getTextRespectUISPr("pers.bereitschaftsart"));
 
-		panelQueryFLR.befuellePanelFilterkriterienDirekt(
-				SystemFilterFactory.getInstance().createFKDBezeichnung(), null);
+		panelQueryFLR.befuellePanelFilterkriterienDirekt(SystemFilterFactory
+				.getInstance().createFKDBezeichnung(), null);
 
 		if (selectedId != null) {
 			panelQueryFLR.setSelectedId(selectedId);
@@ -113,8 +120,10 @@ public class ZeiterfassungFilterFactory {
 
 		return panelQueryFLR;
 	}
+
 	public FilterKriterium createFKVMaschine() {
-		FilterKriterium fkVersteckt = new FilterKriterium(ZeiterfassungFac.FLR_MASCHINE_B_VERSTECKT, true, "(1)", // wenn
+		FilterKriterium fkVersteckt = new FilterKriterium(
+				ZeiterfassungFac.FLR_MASCHINE_B_VERSTECKT, true, "(1)", // wenn
 				FilterKriterium.OPERATOR_NOT_IN, false);
 
 		return fkVersteckt;
@@ -217,17 +226,78 @@ public class ZeiterfassungFilterFactory {
 		return kriterien;
 	}
 
-	public FilterKriterium[] createFKAlleTagbuchbarentaetigkeiten() {
-		FilterKriterium[] kriterien = new FilterKriterium[2];
+	public FilterKriterium[] createFKAlleTagbuchbarentaetigkeiten()
+			throws Throwable {
+		FilterKriterium[] kriterien = null;
 
-		kriterien[0] = new FilterKriterium("c_nr", true, "('"
-				+ ZeiterfassungFac.TAETIGKEIT_ENDE + "','"
-				+ ZeiterfassungFac.TAETIGKEIT_GEHT + "','"
-				+ ZeiterfassungFac.TAETIGKEIT_KOMMT + "','"
-				+ ZeiterfassungFac.TAETIGKEIT_UNTER + "')",
-				FilterKriterium.OPERATOR_NOT_IN, false);
-		kriterien[1] = new FilterKriterium("b_versteckt", true, "0",
-				FilterKriterium.OPERATOR_IS, false);
+		boolean bSonderzeitenCUD = DelegateFactory.getInstance()
+				.getTheJudgeDelegate()
+				.hatRecht(RechteFac.RECHT_PERS_SONDERZEITEN_CUD);
+
+		ParametermandantDto parameter = DelegateFactory
+				.getInstance()
+				.getParameterDelegate()
+				.getMandantparameter(LPMain.getTheClient().getMandant(),
+						ParameterFac.KATEGORIE_PERSONAL,
+						ParameterFac.PARAMETER_URLAUBSANTRAG);
+		boolean bUrlaubsantrag = (java.lang.Boolean) parameter
+				.getCWertAsObject();
+
+		if (bSonderzeitenCUD == true) {
+
+			if (bUrlaubsantrag == true) {
+				kriterien = new FilterKriterium[2];
+
+				kriterien[0] = new FilterKriterium("c_nr", true, "('"
+						+ ZeiterfassungFac.TAETIGKEIT_ENDE + "','"
+						+ ZeiterfassungFac.TAETIGKEIT_GEHT + "','"
+						+ ZeiterfassungFac.TAETIGKEIT_KOMMT + "','"
+						+ ZeiterfassungFac.TAETIGKEIT_UNTER + "')",
+						FilterKriterium.OPERATOR_NOT_IN, false);
+				kriterien[1] = new FilterKriterium("b_versteckt", true, "0",
+						FilterKriterium.OPERATOR_IS, false);
+				
+			} else {
+				kriterien = new FilterKriterium[3];
+
+				kriterien[0] = new FilterKriterium("c_nr", true, "('"
+						+ ZeiterfassungFac.TAETIGKEIT_ENDE + "','"
+						+ ZeiterfassungFac.TAETIGKEIT_GEHT + "','"
+						+ ZeiterfassungFac.TAETIGKEIT_KOMMT + "','"
+						+ ZeiterfassungFac.TAETIGKEIT_UNTER + "')",
+						FilterKriterium.OPERATOR_NOT_IN, false);
+				kriterien[1] = new FilterKriterium("b_versteckt", true, "0",
+						FilterKriterium.OPERATOR_IS, false);
+				kriterien[2] = new FilterKriterium("c_nr", true, "('"
+						+ ZeiterfassungFac.TAETIGKEIT_URLAUBSANTRAG + "')",
+						FilterKriterium.OPERATOR_NOT_IN, false);
+
+			}
+
+		} else {
+
+			
+			if (bUrlaubsantrag == true) {
+				kriterien = new FilterKriterium[1];
+				kriterien[0] = new FilterKriterium("c_nr", true, "('DARF_NICHTS_SEHEN')",
+						FilterKriterium.OPERATOR_IN, false);
+			} else {
+				kriterien = new FilterKriterium[3];
+				kriterien[0] = new FilterKriterium("c_nr", true, "('"
+						+ ZeiterfassungFac.TAETIGKEIT_ENDE + "','"
+						+ ZeiterfassungFac.TAETIGKEIT_GEHT + "','"
+						+ ZeiterfassungFac.TAETIGKEIT_KOMMT + "','"
+						+ ZeiterfassungFac.TAETIGKEIT_UNTER + "')",
+						FilterKriterium.OPERATOR_NOT_IN, false);
+				kriterien[1] = new FilterKriterium("b_versteckt", true, "0",
+						FilterKriterium.OPERATOR_IS, false);
+				
+				kriterien[2] = new FilterKriterium("c_nr", true, "('"
+						+ ZeiterfassungFac.TAETIGKEIT_URLAUBSANTRAG + "')",
+						FilterKriterium.OPERATOR_NOT_IN, false);
+			}
+			
+		}
 
 		return kriterien;
 	}
@@ -235,8 +305,8 @@ public class ZeiterfassungFilterFactory {
 	public FilterKriteriumDirekt createFKDZeitdatenArtikelnummer()
 			throws Throwable {
 
-		return new FilterKriteriumDirekt(
-				"zeitdaten."+ZeiterfassungFac.FLR_ZEITDATEN_FLRARTIKEL + ".c_nr", "",
+		return new FilterKriteriumDirekt("zeitdaten."
+				+ ZeiterfassungFac.FLR_ZEITDATEN_FLRARTIKEL + ".c_nr", "",
 				FilterKriterium.OPERATOR_LIKE,
 				LPMain.getTextRespectUISPr("label.ident"),
 				FilterKriteriumDirekt.PROZENT_TRAILING, true, true,
@@ -309,6 +379,15 @@ public class ZeiterfassungFilterFactory {
 
 		return kriterien;
 	}
+	public FilterKriterium[] createFKMaschinemaschinezm(Integer maschineIId)
+			throws Throwable {
+		FilterKriterium[] kriterien = new FilterKriterium[1];
+		kriterien[0] = new FilterKriterium(
+				"maschine_i_id",
+				true, maschineIId + "", FilterKriterium.OPERATOR_EQUAL, false);
+
+		return kriterien;
+	}
 
 	public FilterKriterium[] createFKMaschinenzeitdaten(Integer maschineIId)
 			throws Throwable {
@@ -332,13 +411,17 @@ public class ZeiterfassungFilterFactory {
 				Facade.MAX_UNBESCHRAENKT);
 
 	}
-	public FilterKriteriumDirekt createMaschinenzeitdatenFKDLosnummer() throws Throwable {
-		return new FilterKriteriumDirekt("flrlossollarbeitsplan.flrlos."+FertigungFac.FLR_LOS_C_NR, "",
-				FilterKriterium.OPERATOR_LIKE, "Los Nr.",
-				FilterKriteriumDirekt.PROZENT_LEADING, // Auswertung als '%XX'
+
+	public FilterKriteriumDirekt createMaschinenzeitdatenFKDLosnummer()
+			throws Throwable {
+		return new FilterKriteriumDirekt("flrlossollarbeitsplan.flrlos."
+				+ FertigungFac.FLR_LOS_C_NR, "", FilterKriterium.OPERATOR_LIKE,
+				"Los Nr.", FilterKriteriumDirekt.PROZENT_LEADING, // Auswertung
+																	// als '%XX'
 				true, // wrapWithSingleQuotes
 				false, Facade.MAX_UNBESCHRAENKT);
 	}
+
 	public FilterKriterium[] createFKDiaetentagessatz(Integer diaetenIId)
 			throws Throwable {
 		FilterKriterium[] kriterien = new FilterKriterium[1];
@@ -381,22 +464,22 @@ public class ZeiterfassungFilterFactory {
 	public FilterKriterium[] createFKZeitdatenZuPersonalUndDatum(
 			Integer personalIId, java.sql.Date dDatum) {
 		FilterKriterium[] kriterien = new FilterKriterium[3];
-		FilterKriterium krit1 = new FilterKriterium(
-				"zeitdaten."+ZeiterfassungFac.FLR_ZEITDATEN_FLRPERSONAL + ".i_id", true,
+		FilterKriterium krit1 = new FilterKriterium("zeitdaten."
+				+ ZeiterfassungFac.FLR_ZEITDATEN_FLRPERSONAL + ".i_id", true,
 				personalIId + "", FilterKriterium.OPERATOR_EQUAL, false);
-		FilterKriterium krit2 = new FilterKriterium(
-				"zeitdaten."+ZeiterfassungFac.FLR_ZEITDATEN_T_ZEIT, true, "'"
-						+ Helper.formatDateWithSlashes(dDatum) + "'",
+		FilterKriterium krit2 = new FilterKriterium("zeitdaten."
+				+ ZeiterfassungFac.FLR_ZEITDATEN_T_ZEIT, true, "'"
+				+ Helper.formatDateWithSlashes(dDatum) + "'",
 				FilterKriterium.OPERATOR_GTE, false);
 
 		Calendar c = Calendar.getInstance();
 		c.setTimeInMillis(dDatum.getTime());
 		c.set(Calendar.DAY_OF_YEAR, c.get(Calendar.DAY_OF_YEAR) + 1);
 
-		FilterKriterium krit3 = new FilterKriterium(
-				"zeitdaten."+ZeiterfassungFac.FLR_ZEITDATEN_T_ZEIT, true, "'"
-						+ Helper.formatDateWithSlashes(new java.sql.Date(c
-								.getTimeInMillis())) + "'",
+		FilterKriterium krit3 = new FilterKriterium("zeitdaten."
+				+ ZeiterfassungFac.FLR_ZEITDATEN_T_ZEIT, true, "'"
+				+ Helper.formatDateWithSlashes(new java.sql.Date(c
+						.getTimeInMillis())) + "'",
 				FilterKriterium.OPERATOR_LT, false);
 
 		kriterien[0] = krit1;
@@ -409,6 +492,14 @@ public class ZeiterfassungFilterFactory {
 		FilterKriterium[] kriterien = new FilterKriterium[1];
 		FilterKriterium krit1 = new FilterKriterium(
 				ZeiterfassungFac.FLR_SONDERZEITEN_PERSONAL_I_ID, true,
+				personalIId + "", FilterKriterium.OPERATOR_EQUAL, false);
+		kriterien[0] = krit1;
+		return kriterien;
+	}
+
+	public FilterKriterium[] createFKZeitabschluss(Integer personalIId) {
+		FilterKriterium[] kriterien = new FilterKriterium[1];
+		FilterKriterium krit1 = new FilterKriterium("personal_i_id", true,
 				personalIId + "", FilterKriterium.OPERATOR_EQUAL, false);
 		kriterien[0] = krit1;
 		return kriterien;

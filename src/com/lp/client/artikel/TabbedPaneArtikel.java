@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -33,6 +33,7 @@
 package com.lp.client.artikel;
 
 import java.awt.event.ActionEvent;
+import java.awt.event.InputEvent;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -69,6 +70,7 @@ import com.lp.client.frame.component.WrapperMenuItem;
 import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.frame.dialog.DialogFactory;
 import com.lp.client.frame.dynamisch.PanelDynamisch;
+import com.lp.client.partner.PartnerFilterFactory;
 import com.lp.client.pc.LPMain;
 import com.lp.client.util.fastlanereader.gui.QueryType;
 import com.lp.server.artikel.fastlanereader.generated.service.WwArtikellagerPK;
@@ -82,10 +84,13 @@ import com.lp.server.system.service.MandantFac;
 import com.lp.server.system.service.PanelFac;
 import com.lp.server.system.service.ParameterFac;
 import com.lp.server.system.service.ParametermandantDto;
+import com.lp.server.util.Facade;
 import com.lp.server.util.fastlanereader.service.query.FilterKriterium;
+import com.lp.server.util.fastlanereader.service.query.FilterKriteriumDirekt;
 import com.lp.server.util.fastlanereader.service.query.QueryParameters;
 import com.lp.server.util.fastlanereader.service.query.SortierKriterium;
 import com.lp.util.EJBExceptionLP;
+import com.lp.util.Helper;
 import com.lp.util.csv.LPCSVReader;
 
 @SuppressWarnings("static-access")
@@ -145,6 +150,10 @@ public class TabbedPaneArtikel extends TabbedPane {
 	private PanelBasis panelDetailShopgruppe = null;
 	private PanelBasis panelSplitShopgruppe = null;
 
+	private PanelQuery panelQueryAllergen = null;
+	private PanelBasis panelDetailAllergen = null;
+	private PanelBasis panelSplitAllergen = null;
+
 	private PanelQuery panelQueryZugehoerige = null;
 	private PanelBasis panelDetailZugehoerige = null;
 	private PanelBasis panelSplitZugehoerige = null;
@@ -155,9 +164,11 @@ public class TabbedPaneArtikel extends TabbedPane {
 
 	private PanelBasis panelDetailArtikeleigenschaft = null;
 
-	private PanelQueryFLR panelArtikel = null;
-
 	private PanelQueryFLR panelQueryFLRPaternoster = null;
+
+	private PanelQueryFLR panelQueryFLRKommentarart = null;
+
+	private PanelQueryFLR panelQueryFLRLieferant = null;
 
 	private final String MENUE_ACTION_STATISTIK = "MENUE_ACTION_STATISTIK";
 	private final String MENUE_ACTION_RESERVIERUNGEN = "MENUE_ACTION_RESERVIERUNGEN";
@@ -180,6 +191,8 @@ public class TabbedPaneArtikel extends TabbedPane {
 	private final String MENUE_ACTION_AUFTRAGSSERIENNUMMERN = "MENUE_ACTION_AUFTRAGSSERIENNUMMERN";
 	private final String MENUE_ACTION_KUNDENSOKOS = "MENUE_ACTION_KUNDENSOKOS";
 
+	private final String MENUE_JOURNAL_ACTION_ALERGENE = "MENUE_ACTION_ALERGENE";
+
 	private final String MENUE_JOURNAL_ACTION_LAGERSTANDSLISTE = "MENUE_JOURNAL_ACTION_LAGERSTANDSLISTE";
 	private final String MENUE_JOURNAL_ACTION_SERIENNUMMERN = "MENUE_JOURNAL_ACTION_SERIENNUMMERN";
 	private final String MENUE_JOURNAL_ACTION_LADENHUETER = "MENUE_JOURNAL_ACTION_LADENHUETER";
@@ -194,11 +207,13 @@ public class TabbedPaneArtikel extends TabbedPane {
 	private final String MENUE_JOURNAL_ACTION_ARTIKELGRUPPEN = "MENUE_JOURNAL_ACTION_ARTIKELGRUPPEN";
 	private final String MENUE_JOURNAL_ACTION_SHOPGRUPPEN = "MENUE_JOURNAL_ACTION_SHOPGRUPPEN";
 	private final String MENUE_JOURNAL_ACTION_NAECHSTE_WARTUNGEN = "MENUE_JOURNAL_ACTION_NAECHSTE_WARTUNGEN";
+	private final String MENUE_JOURNAL_ACTION_INDIREKTE_WARENEINSATZSTATISTIK = "MENUE_JOURNAL_ACTION_INDIREKTE_WARENEINSATZSTATISTIK";
 
 	private final String MENUE_ACTION_RAHMENBESTELLTLISTE = "MENUE_JOURNAL_ACTION_RAHMENBESTELLTLISTE";
 	private final String MENUE_ACTION_AENDERUNGEN = "MENUE_ACTION_AENDERUNGEN";
 
 	private final String MENUE_ACTION_CSVIMPORT = "MENUE_ACTION_CSVIMPORT";
+	private final String MENUE_ACTION_XLSIMPORT = "MENUE_ACTION_XLSIMPORT";
 	private final String MENUE_ACTION_PREISPFLEGE_EXPORT = "MENUE_ACTION_PREISPFLEGE_EXPORT";
 	private final String MENUE_ACTION_PREISPFLEGE_IMPORT = "MENUE_ACTION_PREISPFLEGE_IMPORT";
 
@@ -207,9 +222,11 @@ public class TabbedPaneArtikel extends TabbedPane {
 	private final String MENUE_PFLEGE_VKPREISE = "MENUE_PFLEGE_VKPREISE";
 	private final String MENUE_PFLEGE_PATERNOSTER = "MENUE_PFLEGE_PATERNOSTER";
 	private final String MENUE_PFLEGE_AENDERE_SNRCHNR = "MENUE_PFLEGE_AENDERE_SNRCHNR";
+	private final String MENUE_PFLEGE_ALLERGENE = "MENUE_PFLEGE_ALLERGENE";
 
 	private final String EXTRA_NEU_AUS_ARTIKEL = "neu_aus_artikel";
 	private final String EXTRA_LAGERORT_BEARBEITEN = "EXTRA_LAGERORT_BEARBEITEN";
+	private final String EXTRA_KOMMENTAR_SUCHEN = "kommentar_suchen";
 
 	public static int IDX_PANEL_AUSWAHL = -1;
 	public int IDX_PANEL_DETAIL = -1;
@@ -230,9 +247,12 @@ public class TabbedPaneArtikel extends TabbedPane {
 	public int IDX_PANEL_ARTIKELEIGENSCHAFTEN = -1;
 	public int IDX_PANEL_EINKAUFSEAN = -1;
 	public int IDX_PANEL_EXTERNEDOKUMENTE = -1;
+	public int IDX_PANEL_ARTIKELALERGEN = -1;
 	// usemenubar 2: Variable deklarieren, wegen lazy loading
 	private WrapperMenuBar wrapperManuBar = null;
 	boolean bKurzbezeichnungStattVerpackungsart = false;
+
+	public String sRechtModulweit = null;
 
 	public PanelQuery getPanelQueryArtikel() {
 		return panelQueryArtikel;
@@ -242,6 +262,8 @@ public class TabbedPaneArtikel extends TabbedPane {
 		super(internalFrameI, LPMain.getInstance().getTextRespectUISPr(
 				"lp.artikel"));
 		jbInit();
+
+		sRechtModulweit = internalFrameI.getRechtModulweit();
 
 		ParametermandantDto parameter = DelegateFactory
 				.getInstance()
@@ -350,12 +372,48 @@ public class TabbedPaneArtikel extends TabbedPane {
 				aWhichButtonIUse = new String[] { PanelBasis.ACTION_FILTER };
 			}
 
-			panelQueryArtikel = new PanelQuery(qtAuswahl, ArtikelFilterFactory
-					.getInstance().createFKArtikelliste(),
-					QueryParameters.UC_ID_ARTIKELLISTE, aWhichButtonIUse,
-					getInternalFrame(), LPMain.getInstance()
-							.getTextRespectUISPr("lp.auswahl"), true,
-					ArtikelFilterFactory.getInstance().createFKVArtikel());
+			if (LPMain
+					.getInstance()
+					.getDesktop()
+					.darfAnwenderAufZusatzfunktionZugreifen(
+							MandantFac.ZUSATZFUNKTION_SI_WERT)) {
+
+				SortierKriterium krit = new SortierKriterium("aspr.c_siwert",
+						true, "ASC");
+
+				panelQueryArtikel = new PanelQuery(
+						qtAuswahl,
+						ArtikelFilterFactory.getInstance()
+								.createFKArtikelliste(),
+						QueryParameters.UC_ID_ARTIKELLISTE,
+						aWhichButtonIUse,
+						getInternalFrame(),
+						LPMain.getInstance().getTextRespectUISPr("lp.auswahl"),
+						true,
+						ArtikelFilterFactory.getInstance().createFKVArtikel(),
+						null,
+						krit,
+						LPMain.getTextRespectUISPr("artikel.auswahl.sortbysiwert"));
+
+			} else {
+				panelQueryArtikel = new PanelQuery(qtAuswahl,
+						ArtikelFilterFactory.getInstance()
+								.createFKArtikelliste(),
+						QueryParameters.UC_ID_ARTIKELLISTE, aWhichButtonIUse,
+						getInternalFrame(), LPMain.getInstance()
+								.getTextRespectUISPr("lp.auswahl"), true,
+						ArtikelFilterFactory.getInstance().createFKVArtikel(),
+						null, null, null);
+			}
+
+			panelQueryArtikel
+					.createAndSaveAndShowButton(
+							"/com/lp/client/res/text_find.png",
+							LPMain.getInstance().getTextRespectUISPr(
+									"artikel.kommentarsuche"),
+							PanelBasis.ACTION_MY_OWN_NEW
+									+ EXTRA_KOMMENTAR_SUCHEN, null);
+
 			if (bBenutzerIstInMandantensprechAngemeldet) {
 				// Hier den zusaetzlichen Button aufs Panel bringen
 				panelQueryArtikel.createAndSaveAndShowButton(
@@ -365,6 +423,15 @@ public class TabbedPaneArtikel extends TabbedPane {
 						PanelBasis.ACTION_MY_OWN_NEW + EXTRA_NEU_AUS_ARTIKEL,
 						null);
 			}
+
+			// PJ18579
+			panelQueryArtikel.createAndSaveAndShowButton(
+					"/com/lp/client/res/printer216x16.png",
+					LPMain.getInstance().getTextRespectUISPr(
+							"artikel.report.etikett.shortcut"),
+					PanelBasis.ACTION_MY_OWN_NEW + MENUE_ACTION_ETIKETT,
+					KeyStroke.getKeyStroke('P', InputEvent.CTRL_DOWN_MASK
+							| InputEvent.SHIFT_DOWN_MASK), null);
 
 			ArbeitsplatzparameterDto aparameter = DelegateFactory
 					.getInstance()
@@ -411,29 +478,16 @@ public class TabbedPaneArtikel extends TabbedPane {
 						.getInstance().createFKDReferenznr());
 			}
 
-			if (LPMain
-					.getInstance()
-					.getDesktop()
-					.darfAnwenderAufZusatzfunktionZugreifen(
-							MandantFac.ZUSATZFUNKTION_SI_WERT)) {
-
-				SortierKriterium krit = new SortierKriterium("aspr.c_siwert",
-						true, "ASC");
-
-				panelQueryArtikel
-						.setzeErstesUebersteuerbaresSortierkriterium(
-								LPMain.getTextRespectUISPr("artikel.auswahl.sortbysiwert"),
-								krit);
-			}
 			panelQueryArtikel.setFilterComboBox(DelegateFactory.getInstance()
 					.getArtikelDelegate().getAllSprArtgru(),
 					new FilterKriterium("ag.i_id", true, "" + "",
-							FilterKriterium.OPERATOR_EQUAL, false), false,
-					LPMain.getTextRespectUISPr("lp.alle"));
+							FilterKriterium.OPERATOR_IN, false), false, LPMain
+							.getTextRespectUISPr("lp.alle"), false);
 
 			panelQueryArtikel.addStatusBar();
 
 			setComponentAt(IDX_PANEL_AUSWAHL, panelQueryArtikel);
+
 		}
 	}
 
@@ -766,6 +820,34 @@ public class TabbedPaneArtikel extends TabbedPane {
 		}
 	}
 
+	private void createAlergen(Integer key) throws Throwable {
+
+		if (panelQueryAllergen == null) {
+			String[] aWhichStandardButtonIUse = { PanelBasis.ACTION_NEW };
+
+			FilterKriterium[] filters = ArtikelFilterFactory.getInstance()
+					.createFKArtikelalergen(key);
+
+			panelQueryAllergen = new PanelQuery(null, filters,
+					QueryParameters.UC_ID_ARTIKELALERGEN,
+					aWhichStandardButtonIUse, getInternalFrame(), LPMain
+							.getInstance().getTextRespectUISPr(
+									"artikel.allergen"), true);
+
+			panelDetailAllergen = new PanelArtikelallergen(getInternalFrame(),
+					LPMain.getInstance()
+							.getTextRespectUISPr("artikel.allergen"), null);
+
+			panelSplitAllergen = new PanelSplit(getInternalFrame(),
+					panelDetailAllergen, panelQueryAllergen, 360);
+			setComponentAt(IDX_PANEL_ARTIKELALERGEN, panelSplitAllergen);
+		} else {
+			// filter refreshen.
+			panelQueryAllergen.setDefaultFilter(ArtikelFilterFactory
+					.getInstance().createFKArtikelalergen(key));
+		}
+	}
+
 	private void createZugehoerige(Integer key) throws Throwable {
 
 		if (panelQueryZugehoerige == null) {
@@ -1019,6 +1101,16 @@ public class TabbedPaneArtikel extends TabbedPane {
 					null,
 					LPMain.getInstance().getTextRespectUISPr(
 							"artikel.einkaufsean"), IDX_PANEL_EINKAUFSEAN);
+
+			tabIndex++;
+			IDX_PANEL_ARTIKELALERGEN = tabIndex;
+			insertTab(
+					LPMain.getInstance()
+							.getTextRespectUISPr("artikel.allergen"), null,
+					null,
+					LPMain.getInstance()
+							.getTextRespectUISPr("artikel.allergen"),
+					IDX_PANEL_ARTIKELALERGEN);
 		}
 		DokumentenlinkDto[] dtosDoku = DelegateFactory
 				.getInstance()
@@ -1093,6 +1185,61 @@ public class TabbedPaneArtikel extends TabbedPane {
 					setSelectedComponent(panelDetailArtikel);
 				}
 
+			} else if (e.getSource() == panelQueryFLRKommentarart) {
+
+				Integer artikelIId = (Integer) panelQueryFLRKommentarart
+						.getSelectedId();
+				panelQueryArtikel.setSelectedId(artikelIId);
+
+			} else if (e.getSource() == panelQueryFLRLieferant) {
+
+				Integer lieferantIId = (Integer) panelQueryFLRLieferant
+						.getSelectedId();
+
+				File[] files = HelperClient.chooseFile(this,
+						HelperClient.FILE_FILTER_XLS, false);
+				if (files == null || files.length < 1 || files[0] == null) {
+					return;
+				}
+
+				File pfad = files[0];
+
+				File test = new File(pfad.getAbsolutePath());
+
+				if (test.getAbsolutePath().toLowerCase().endsWith(".xls")) {
+
+					ByteArrayOutputStream ous = null;
+					InputStream ios = null;
+					try {
+						byte[] buffer = new byte[4096];
+						ous = new ByteArrayOutputStream();
+						ios = new FileInputStream(pfad.getAbsolutePath());
+						int read = 0;
+						while ((read = ios.read(buffer)) != -1) {
+							ous.write(buffer, 0, read);
+						}
+					} finally {
+						try {
+							if (ous != null)
+								ous.close();
+						} catch (IOException ex) {
+						}
+
+						try {
+							if (ios != null)
+								ios.close();
+						} catch (IOException ex) {
+						}
+					}
+
+					DelegateFactory
+							.getInstance()
+							.getArtikelDelegate()
+							.importiereAlergeneXLS(ous.toByteArray(),
+									lieferantIId);
+
+				}
+
 			} else if (e.getSource() == panelQueryFLRPaternoster) {
 				Integer paternosterIId = (Integer) panelQueryFLRPaternoster
 						.getSelectedId();
@@ -1100,42 +1247,6 @@ public class TabbedPaneArtikel extends TabbedPane {
 				DelegateFactory.getInstance().getAutoPaternosterDelegate()
 						.paternosterAddArtikelAll(paternosterIId);
 
-			} else if (e.getSource() == panelArtikel) {
-				// Neu aus Artikel.
-				Integer iIdArtikel = (Integer) panelArtikel.getSelectedId();
-
-				DialogArtikelkopieren d = new DialogArtikelkopieren(
-						DelegateFactory.getInstance().getArtikelDelegate()
-								.artikelFindByPrimaryKey(iIdArtikel),
-						getInternalFrameArtikel());
-				LPMain.getInstance().getDesktop()
-						.platziereDialogInDerMitteDesFensters(d);
-				d.setVisible(true);
-				if (d.getArtikelnummerNeu() != null) {
-					Object[] o = DelegateFactory
-							.getInstance()
-							.getArtikelDelegate()
-							.kopiereArtikel(iIdArtikel,
-									d.getArtikelnummerNeu(),
-									d.getZuKopierendeFelder(),
-									d.getHerstellerIIdNeu());
-
-					Integer artikelId_Neu = (Integer) o[0];
-
-					panelQueryArtikel.setSelectedId(artikelId_Neu);
-					panelQueryArtikel.eventYouAreSelected(false);
-
-					boolean bAndereSprachenKopiert = (Boolean) o[1];
-					if (bAndereSprachenKopiert == true) {
-
-						DialogFactory.showModalDialog(
-								LPMain.getInstance().getTextRespectUISPr(
-										"lp.info"),
-								LPMain.getInstance().getTextRespectUISPr(
-										"artikel.info.mehreresprachenkopiert"));
-					}
-
-				}
 			}
 
 		}
@@ -1166,6 +1277,8 @@ public class TabbedPaneArtikel extends TabbedPane {
 				panelSplitEinkaufsean.eventYouAreSelected(false);
 			} else if (e.getSource() == panelDetailShopgruppe) {
 				panelSplitShopgruppe.eventYouAreSelected(false);
+			} else if (e.getSource() == panelDetailAllergen) {
+				panelSplitAllergen.eventYouAreSelected(false);
 			}
 		}
 
@@ -1209,6 +1322,10 @@ public class TabbedPaneArtikel extends TabbedPane {
 				panelQueryShopgruppe.updateButtons(new LockStateValue(
 						PanelBasis.LOCK_FOR_NEW));
 				;
+			} else if (e.getSource() == panelDetailAllergen) {
+				panelQueryAllergen.updateButtons(new LockStateValue(
+						PanelBasis.LOCK_FOR_NEW));
+				;
 			}
 		}
 
@@ -1249,6 +1366,12 @@ public class TabbedPaneArtikel extends TabbedPane {
 				panelQueryShopgruppe.eventYouAreSelected(false);
 				panelQueryShopgruppe.setSelectedId(oKey);
 				panelSplitShopgruppe.eventYouAreSelected(false);
+
+			} else if (e.getSource() == panelDetailAllergen) {
+				Object oKey = panelDetailAllergen.getKeyWhenDetailPanel();
+				panelQueryAllergen.eventYouAreSelected(false);
+				panelQueryAllergen.setSelectedId(oKey);
+				panelSplitAllergen.eventYouAreSelected(false);
 
 			} else if (e.getSource() == panelDetailZugehoerige) {
 				Object oKey = panelDetailZugehoerige.getKeyWhenDetailPanel();
@@ -1468,6 +1591,12 @@ public class TabbedPaneArtikel extends TabbedPane {
 				panelDetailShopgruppe.setKeyWhenDetailPanel(iId);
 				panelDetailShopgruppe.eventYouAreSelected(false);
 				panelQueryShopgruppe.updateButtons();
+			} else if (e.getSource() == panelQueryAllergen) {
+
+				Integer iId = (Integer) panelQueryAllergen.getSelectedId();
+				panelDetailAllergen.setKeyWhenDetailPanel(iId);
+				panelDetailAllergen.eventYouAreSelected(false);
+				panelQueryAllergen.updateButtons();
 			} else if (e.getSource() == panelQueryZugehoerige) {
 
 				Integer iId = (Integer) panelQueryZugehoerige.getSelectedId();
@@ -1545,6 +1674,14 @@ public class TabbedPaneArtikel extends TabbedPane {
 					panelQueryShopgruppe.setSelectedId(oNaechster);
 				}
 				panelSplitShopgruppe.eventYouAreSelected(false);
+			} else if (e.getSource() == panelDetailAllergen) {
+				setKeyWasForLockMe();
+				if (panelDetailAllergen.getKeyWhenDetailPanel() == null) {
+					Object oNaechster = panelQueryAllergen
+							.getId2SelectAfterDelete();
+					panelQueryAllergen.setSelectedId(oNaechster);
+				}
+				panelSplitAllergen.eventYouAreSelected(false);
 			} else if (e.getSource() == panelDetailZugehoerige) {
 				setKeyWasForLockMe();
 				if (panelDetailZugehoerige.getKeyWhenDetailPanel() == null) {
@@ -1617,7 +1754,100 @@ public class TabbedPaneArtikel extends TabbedPane {
 				if (panelQueryArtikel.getSelectedId() == null) {
 					getInternalFrame().enableAllPanelsExcept(true);
 				}
-				dialogArtikel();
+				// Neu aus Artikel.
+				Integer iIdArtikel = (Integer) panelQueryArtikel
+						.getSelectedId();
+
+				if (iIdArtikel != null) {
+
+					DialogArtikelkopieren d = new DialogArtikelkopieren(
+							DelegateFactory.getInstance().getArtikelDelegate()
+									.artikelFindByPrimaryKey(iIdArtikel),
+							getInternalFrameArtikel());
+					LPMain.getInstance().getDesktop()
+							.platziereDialogInDerMitteDesFensters(d);
+					d.setVisible(true);
+					if (d.getArtikelnummerNeu() != null) {
+						Object[] o = DelegateFactory
+								.getInstance()
+								.getArtikelDelegate()
+								.kopiereArtikel(iIdArtikel,
+										d.getArtikelnummerNeu(),
+										d.getZuKopierendeFelder(),
+										d.getHerstellerIIdNeu());
+
+						Integer artikelId_Neu = (Integer) o[0];
+
+						panelQueryArtikel.setSelectedId(artikelId_Neu);
+						panelQueryArtikel.eventYouAreSelected(false);
+
+						boolean bAndereSprachenKopiert = (Boolean) o[1];
+
+						if (bAndereSprachenKopiert == true) {
+
+							DialogFactory
+									.showModalDialog(
+											LPMain.getInstance()
+													.getTextRespectUISPr(
+															"lp.info"),
+											LPMain.getInstance()
+													.getTextRespectUISPr(
+															"artikel.info.mehreresprachenkopiert"));
+						}
+
+						boolean bEsSindZukuenftigePreisevorhanden = (Boolean) o[2];
+						if (bEsSindZukuenftigePreisevorhanden == true) {
+
+							DialogFactory
+									.showModalDialog(
+											LPMain.getInstance()
+													.getTextRespectUISPr(
+															"lp.info"),
+											LPMain.getInstance()
+													.getTextRespectUISPr(
+															"artikel.info.zukuenftigepreisekopiert"));
+						}
+					}
+				}
+
+			} else if (e.getSource() == panelQueryArtikel
+					&& sAspectInfo.endsWith(EXTRA_KOMMENTAR_SUCHEN)) {
+
+				String[] aWhichButtonIUse = new String[] { PanelBasis.ACTION_REFRESH };
+
+				panelQueryFLRKommentarart = new PanelQueryFLR(null,
+						ArtikelFilterFactory.getInstance()
+								.createFKArtikelkommentarSuche(),
+						QueryParameters.UC_ID_ARTIKELKOMMENTARSUCHE,
+						aWhichButtonIUse, getInternalFrame(), LPMain
+								.getInstance().getTextRespectUISPr(
+										"artikel.kommentarsuche"),
+						new FilterKriterium("locale.c_nr", true, "'"
+								+ LPMain.getTheClient().getLocUiAsString()
+								+ "'", // wenn
+								// das
+								// Kriterium
+								// verwendet
+								// wird,
+								// sollen
+								// die
+								// versteckten
+								// nicht
+								// mitangezeigt
+								// werden
+								FilterKriterium.OPERATOR_EQUAL, false), LPMain
+								.getInstance().getTextRespectUISPr(
+										"artikel.kommentarsuche.allesprachen"));
+
+				panelQueryFLRKommentarart.befuellePanelFilterkriterienDirekt(
+						new FilterKriteriumDirekt("x_kommentar", "",
+								FilterKriterium.OPERATOR_LIKE, LPMain
+										.getInstance().getTextRespectUISPr(
+												"lp.kommentar"),
+								FilterKriteriumDirekt.EXTENDED_SEARCH, false,
+								true, Facade.MAX_UNBESCHRAENKT), null);
+
+				new DialogQuery(panelQueryFLRKommentarart);
 
 			} else if (e.getSource() == panelQueryArtikel
 					&& sAspectInfo.endsWith(EXTRA_LAGERORT_BEARBEITEN)) {
@@ -1642,6 +1872,13 @@ public class TabbedPaneArtikel extends TabbedPane {
 
 				d.setVisible(true);
 
+			} else if (e.getSource() == panelQueryArtikel
+					&& sAspectInfo.endsWith(MENUE_ACTION_ETIKETT)) {
+				String add2Title = LPMain.getInstance().getTextRespectUISPr(
+						"artikel.report.etikett.shortcut");
+				getInternalFrame().showReportKriterien(
+						new ReportArtikeletikett(getInternalFrameArtikel(),
+								add2Title));
 			}
 
 		} else if (e.getID() == ItemChangedEvent.ACTION_NEW) {
@@ -1677,6 +1914,10 @@ public class TabbedPaneArtikel extends TabbedPane {
 				panelDetailShopgruppe.eventActionNew(e, true, false);
 				panelDetailShopgruppe.eventYouAreSelected(false);
 				this.setSelectedComponent(panelSplitShopgruppe);
+			} else if (e.getSource() == panelQueryAllergen) {
+				panelDetailAllergen.eventActionNew(e, true, false);
+				panelDetailAllergen.eventYouAreSelected(false);
+				this.setSelectedComponent(panelSplitAllergen);
 			} else if (e.getSource() == panelQueryZugehoerige) {
 				panelDetailZugehoerige.eventActionNew(e, true, false);
 				panelDetailZugehoerige.eventYouAreSelected(false);
@@ -1880,13 +2121,6 @@ public class TabbedPaneArtikel extends TabbedPane {
 		}
 	}
 
-	private void dialogArtikel() throws Throwable {
-		panelArtikel = ArtikelFilterFactory.getInstance()
-				.createPanelFLRArtikel(getInternalFrame(), false);
-		panelArtikel.setSelectedId(panelQueryArtikel.getSelectedId());
-		new DialogQuery(panelArtikel);
-	}
-
 	private void dialogPaternoster() throws Throwable {
 		panelQueryFLRPaternoster = ArtikelFilterFactory.getInstance()
 				.createPanelFLRPaternoster(getInternalFrame(), null, null);
@@ -1900,6 +2134,8 @@ public class TabbedPaneArtikel extends TabbedPane {
 		 * e.getSource().toString());
 		 */
 		super.lPEventObjectChanged(e);
+
+		getInternalFrameArtikel().setRechtModulweit(sRechtModulweit);
 
 		int selectedIndex = this.getSelectedIndex();
 
@@ -2018,12 +2254,29 @@ public class TabbedPaneArtikel extends TabbedPane {
 			createShopgruppe(getInternalFrameArtikel().getArtikelDto().getIId());
 			panelSplitShopgruppe.eventYouAreSelected(false);
 			panelQueryShopgruppe.updateButtons();
+		} else if (selectedIndex == IDX_PANEL_ARTIKELALERGEN) {
+			createAlergen(getInternalFrameArtikel().getArtikelDto().getIId());
+			panelSplitAllergen.eventYouAreSelected(false);
+			panelQueryAllergen.updateButtons();
 		} else if (selectedIndex == IDX_PANEL_ZUGEHOERIGE) {
 			createZugehoerige(getInternalFrameArtikel().getArtikelDto()
 					.getIId());
 			panelSplitZugehoerige.eventYouAreSelected(false);
 			panelQueryZugehoerige.updateButtons();
 		} else if (selectedIndex == IDX_PANEL_LAGERPLATZ) {
+
+			boolean hatRecht = DelegateFactory.getInstance()
+					.getTheJudgeDelegate()
+					.hatRecht(RechteFac.RECHT_WW_ARTIKEL_LAGERPLATZ_CUD);
+			if (hatRecht == true) {
+				getInternalFrameArtikel().setRechtModulweit(
+						RechteFac.RECHT_MODULWEIT_UPDATE);
+			} else {
+				getInternalFrameArtikel().setRechtModulweit(
+						RechteFac.RECHT_MODULWEIT_READ);
+
+			}
+
 			createLagerplatz(getInternalFrameArtikel().getArtikelDto().getIId());
 			panelSplitLagerplatz.eventYouAreSelected(false);
 			panelQueryLagerplatz.updateButtons();
@@ -2143,6 +2396,11 @@ public class TabbedPaneArtikel extends TabbedPane {
 					"artikel.title.panel.preise");
 			getInternalFrame().showPanelDialog(
 					new PanelDialogPreispflege(getInternalFrame(), add2Title));
+		} else if (e.getActionCommand().equals(MENUE_PFLEGE_ALLERGENE)) {
+			panelQueryFLRLieferant = PartnerFilterFactory.getInstance()
+					.createPanelFLRLieferantGoto(getInternalFrame(), null,
+							true, false);
+			new DialogQuery(panelQueryFLRLieferant);
 		} else if (e.getActionCommand().equals(MENUE_PFLEGE_PATERNOSTER)) {
 			dialogPaternoster();
 		} else if (e.getActionCommand().equals(
@@ -2152,6 +2410,11 @@ public class TabbedPaneArtikel extends TabbedPane {
 			getInternalFrame().showReportKriterien(
 					new ReportLagerstandliste(getInternalFrameArtikel(),
 							add2Title));
+		} else if (e.getActionCommand().equals(MENUE_JOURNAL_ACTION_ALERGENE)) {
+			String add2Title = LPMain.getInstance().getTextRespectUISPr(
+					"artikel.allergen");
+			getInternalFrame().showReportKriterien(
+					new ReportAllergene(getInternalFrameArtikel(), add2Title));
 		} else if (e.getActionCommand().equals(
 				MENUE_JOURNAL_ACTION_ARTIKELGRUPPEN)) {
 			String add2Title = LPMain.getInstance().getTextRespectUISPr(
@@ -2159,6 +2422,13 @@ public class TabbedPaneArtikel extends TabbedPane {
 			getInternalFrame().showReportKriterien(
 					new ReportArtikelgruppen(getInternalFrameArtikel(),
 							add2Title));
+		} else if (e.getActionCommand().equals(
+				MENUE_JOURNAL_ACTION_INDIREKTE_WARENEINSATZSTATISTIK)) {
+			String add2Title = LPMain.getInstance().getTextRespectUISPr(
+					"artikel.report.indirektewareneinsatzstatistik");
+			getInternalFrame().showReportKriterien(
+					new ReportIndirekteWarneinsatzstatistik(
+							getInternalFrameArtikel(), add2Title));
 		} else if (e.getActionCommand()
 				.equals(MENUE_JOURNAL_ACTION_SHOPGRUPPEN)) {
 			String add2Title = LPMain.getInstance().getTextRespectUISPr(
@@ -2318,10 +2588,69 @@ public class TabbedPaneArtikel extends TabbedPane {
 							new ReportAenderungen(getInternalFrameArtikel(),
 									add2Title));
 		} else if (e.getActionCommand().equals(MENUE_PFLEGE_AENDERE_SNRCHNR)) {
-			getInternalFrame().showPanelDialog(
-					new PanelDialogSnrChnrAendern(getInternalFrameArtikel(),
-							LPMain.getInstance().getTextRespectUISPr(
-									"artikel.pflege.snrchnraendern")));
+
+			if (getInternalFrameArtikel().getArtikelDto() != null
+					&& (Helper.short2boolean(getInternalFrameArtikel()
+							.getArtikelDto().getBSeriennrtragend()) || Helper
+							.short2boolean(getInternalFrameArtikel()
+									.getArtikelDto().getBChargennrtragend()))) {
+				getInternalFrame().showPanelDialog(
+						new PanelDialogSnrChnrAendern(
+								getInternalFrameArtikel(),
+								LPMain.getInstance().getTextRespectUISPr(
+										"artikel.pflege.snrchnraendern")));
+			} else {
+				DialogFactory
+						.showModalDialog("Fehler",
+								"Artikel ist nicht Seriennumern-/Chargennumernbehaftet");
+				return;
+			}
+		} else if (e.getActionCommand().equals(MENUE_ACTION_XLSIMPORT)) {
+			File[] files = HelperClient.chooseFile(this,
+					HelperClient.FILE_FILTER_XLS, false);
+			if (files == null || files.length < 1 || files[0] == null) {
+				return;
+			}
+
+			File pfad = files[0];
+
+			File test = new File(pfad.getAbsolutePath());
+
+			if (test.getAbsolutePath().toLowerCase().endsWith(".xls")) {
+
+				ByteArrayOutputStream ous = null;
+				InputStream ios = null;
+				try {
+					byte[] buffer = new byte[4096];
+					ous = new ByteArrayOutputStream();
+					ios = new FileInputStream(pfad.getAbsolutePath());
+					int read = 0;
+					while ((read = ios.read(buffer)) != -1) {
+						ous.write(buffer, 0, read);
+					}
+				} finally {
+					try {
+						if (ous != null)
+							ous.close();
+					} catch (IOException ex) {
+					}
+
+					try {
+						if (ios != null)
+							ios.close();
+					} catch (IOException ex) {
+					}
+				}
+
+				DialogArtikelXLSImport d = new DialogArtikelXLSImport(
+						ous.toByteArray(), this);
+				d.setSize(500, 500);
+				LPMain.getInstance().getDesktop()
+						.platziereDialogInDerMitteDesFensters(d);
+				d.setVisible(true);
+
+			}
+
 		} else if (e.getActionCommand().equals(MENUE_ACTION_CSVIMPORT)) {
 
 			// Dateiauswahldialog
@@ -2469,12 +2798,18 @@ public class TabbedPaneArtikel extends TabbedPane {
 			JMenu menuDatei = (JMenu) wrapperManuBar
 					.getComponent(WrapperMenuBar.MENU_MODUL);
 			menuDatei.add(new JSeparator(), 0);
-			// CSV-Import
+			// XLS-Import
 			JMenuItem menuItemImport = new JMenuItem(LPMain.getInstance()
 					.getTextRespectUISPr("part.csvimport"));
 			menuItemImport.addActionListener(this);
 			menuItemImport.setActionCommand(MENUE_ACTION_CSVIMPORT);
 			menuDatei.add(menuItemImport, 0);
+			// CSV-Import
+			JMenuItem menuItemXLSImport = new JMenuItem(LPMain.getInstance()
+					.getTextRespectUISPr("part.xlsimport"));
+			menuItemXLSImport.addActionListener(this);
+			menuItemXLSImport.setActionCommand(MENUE_ACTION_XLSIMPORT);
+			menuDatei.add(menuItemXLSImport, 0);
 
 			// usemenubar 4: Hier Artikelspezifische Menues hinzufuegen
 			JMenu menuPflege = new WrapperMenu("lp.pflege", this);
@@ -2840,6 +3175,28 @@ public class TabbedPaneArtikel extends TabbedPane {
 						.setActionCommand(MENUE_JOURNAL_ACTION_NAECHSTE_WARTUNGEN);
 				journal.add(menuItemNaechsteWartungen);
 
+				JMenuItem menuItemIndirektewareneinsatzstatistik = new JMenuItem(
+						LPMain.getInstance()
+								.getTextRespectUISPr(
+										"artikel.report.indirektewareneinsatzstatistik"));
+				menuItemIndirektewareneinsatzstatistik.addActionListener(this);
+				menuItemIndirektewareneinsatzstatistik
+						.setActionCommand(MENUE_JOURNAL_ACTION_INDIREKTE_WARENEINSATZSTATISTIK);
+				journal.add(menuItemIndirektewareneinsatzstatistik);
+
+				if (LPMain
+						.getInstance()
+						.getDesktop()
+						.darfAnwenderAufModulZugreifen(
+								LocaleFac.BELEGART_KUECHE)) {
+					JMenuItem menuItemAlergene = new JMenuItem(LPMain
+							.getInstance().getTextRespectUISPr(
+									"artikel.allergen"));
+					menuItemAlergene.addActionListener(this);
+					menuItemAlergene
+							.setActionCommand(MENUE_JOURNAL_ACTION_ALERGENE);
+					journal.add(menuItemAlergene);
+				}
 			}
 			boolean bDarfLagerprueffunktionensehen = false;
 
@@ -2894,6 +3251,20 @@ public class TabbedPaneArtikel extends TabbedPane {
 					menuItemExport
 							.setActionCommand(MENUE_ACTION_PREISPFLEGE_IMPORT);
 					menuPflege.add(menuItemExport);
+				}
+
+				if (LPMain
+						.getInstance()
+						.getDesktop()
+						.darfAnwenderAufModulZugreifen(
+								LocaleFac.BELEGART_KUECHE)) {
+					JMenuItem menuItemImportAllergene = new JMenuItem(LPMain
+							.getInstance().getTextRespectUISPr(
+									"artikel.import.allergen"));
+					menuItemImportAllergene.addActionListener(this);
+					menuItemImportAllergene
+							.setActionCommand(MENUE_PFLEGE_ALLERGENE);
+					menuPflege.add(menuItemImportAllergene);
 				}
 
 				wrapperManuBar.addJMenuItem(menuPflege);

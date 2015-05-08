@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -32,7 +32,6 @@
  ******************************************************************************/
 package com.lp.client.finanz;
 
-
 import javax.swing.event.ChangeEvent;
 
 import com.lp.client.frame.ExceptionLP;
@@ -55,7 +54,7 @@ import com.lp.server.finanz.service.BuchungdetailDto;
 import com.lp.server.util.fastlanereader.service.query.FilterKriterium;
 import com.lp.server.util.fastlanereader.service.query.QueryParameters;
 
-@SuppressWarnings("static-access") 
+@SuppressWarnings("static-access")
 /**
  * <p>Diese Klasse kuemmert sich um die Panels der Bankverbindungen in der FiBu</p>
  *
@@ -63,341 +62,299 @@ import com.lp.server.util.fastlanereader.service.query.QueryParameters;
  * @author  Martin Bluehweis
  * @version $Revision: 1.4 $
  */
+public class TabbedPaneBankverbindung extends TabbedPane {
 
-public class TabbedPaneBankverbindung
-    extends TabbedPane
-{
-
-  /**
+	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-private PanelQuery panelQueryBankverbindung = null;
-  private PanelFinanzBankverbindungKopfdaten
-      panelDetailBankverbindungKopfdaten = null;
-  private PanelSplit panelSplit3 = null;
-  private PanelQuery panelQueryBuchungen = null;
-  private PanelFinanzBuchungDetails panelDetailBuchung = null;
+	private PanelQuery panelQueryBankverbindung = null;
+	private PanelFinanzBankverbindungKopfdaten panelDetailBankverbindungKopfdaten = null;
+	private PanelSplit panelSplit3 = null;
+	private PanelQuery panelQueryBuchungen = null;
+	private PanelFinanzBuchungDetails panelDetailBuchung = null;
 
-  private final static int IDX_BANKVERBINDUGEN = 0;
-  private final static int IDX_KOPFDATEN = 1;
-  private final static int IDX_BUCHUNGEN = 2;
+	private final static int IDX_BANKVERBINDUGEN = 0;
+	private final static int IDX_KOPFDATEN = 1;
+	private final static int IDX_BUCHUNGEN = 2;
 
-  private BankverbindungDto bankverbindungDto = null;
+	private BankverbindungDto bankverbindungDto = null;
 
-  private boolean bVollversion = false;
+	private boolean bVollversion = false;
 
-  public TabbedPaneBankverbindung(InternalFrame internalFrameI) throws Throwable {
-    super(internalFrameI, LPMain.getInstance().getTextRespectUISPr(
-        "finanz.tab.unten.bankverbindungen.title"));
-    jbInit();
-    initComponents();
-  }
+	public TabbedPaneBankverbindung(InternalFrame internalFrameI)
+			throws Throwable {
+		super(internalFrameI, LPMain.getInstance().getTextRespectUISPr(
+				"finanz.tab.unten.bankverbindungen.title"));
+		jbInit();
+		initComponents();
+	}
 
+	public BankverbindungDto getBankverbindungDto() {
+		return bankverbindungDto;
+	}
 
-  public BankverbindungDto getBankverbindungDto() {
-    return bankverbindungDto;
-  }
+	public void setBankverbindungDto(BankverbindungDto bankverbindungDto) {
+		this.bankverbindungDto = bankverbindungDto;
+		if (getBankverbindungDto() != null) {
+			getInternalFrame().setLpTitle(InternalFrame.TITLE_IDX_AS_I_LIKE,
+					getBankverbindungDto().getCBez());
+		} else {
+			getInternalFrame()
+					.setLpTitle(InternalFrame.TITLE_IDX_AS_I_LIKE, "");
+		}
+	}
 
+	private void jbInit() throws Throwable {
+		// Berechtigungen
+		bVollversion = ((InternalFrameFinanz) getInternalFrame())
+				.getBVollversion();
 
-  public void setBankverbindungDto(BankverbindungDto bankverbindungDto) {
-    this.bankverbindungDto = bankverbindungDto;
-    if (getBankverbindungDto() != null) {
-      getInternalFrame().setLpTitle(InternalFrame.TITLE_IDX_AS_I_LIKE,
-                                    getBankverbindungDto().getCBez());
-    }
-    else {
-      getInternalFrame().setLpTitle(InternalFrame.TITLE_IDX_AS_I_LIKE, "");
-    }
-  }
+		// Tab 1: Liste der Bankverbindungen
+		insertTab(
+				LPMain.getInstance().getTextRespectUISPr(
+						"finanz.bankverbindung"),
+				null,
+				null,
+				LPMain.getInstance().getTextRespectUISPr(
+						"finanz.bankverbindung"), IDX_BANKVERBINDUGEN);
+		// Tab 2: Kopfdaten
+		insertTab(LPMain.getInstance().getTextRespectUISPr("lp.kopfdaten"),
+				null, null,
+				LPMain.getInstance().getTextRespectUISPr("lp.kopfdaten"),
+				IDX_KOPFDATEN);
 
+		// Defaults
+		setSelectedComponent(getPanelTop1QueryBankverbindung());
+		// refresh
+		getPanelTop1QueryBankverbindung().eventYouAreSelected(false);
+		// damit gleich eine selektiert ist
+		ItemChangedEvent it = new ItemChangedEvent(
+				getPanelTop1QueryBankverbindung(),
+				ItemChangedEvent.ITEM_CHANGED);
+		lPEventItemChanged(it);
+		// Listener
+		addChangeListener(this);
+		getInternalFrame().addItemChangedListener(this);
+	}
 
-  private void jbInit()
-      throws Throwable {
-    // Berechtigungen
-    bVollversion =((InternalFrameFinanz)getInternalFrame()).getBVollversion();
+	public void lPEventItemChanged(ItemChangedEvent e) throws Throwable {
+		if (e.getID() == ItemChangedEvent.GOTO_DETAIL_PANEL) {
+			// da will jemand die Buchungen ansehen
+			if (e.getSource() == getPanelTop1QueryBankverbindung()) {
+				Object key = getPanelTop1QueryBankverbindung().getSelectedId();
+				holeBankverbindungDto(key);
+				// nur wechseln wenns auch einen gibt
+				if (key != null) {
 
-    // Tab 1: Liste der Bankverbindungen
-    insertTab(LPMain.getInstance().getTextRespectUISPr("finanz.bankverbindung"),
-              null,
-              null,
-              LPMain.getInstance().getTextRespectUISPr("finanz.bankverbindung"),
-              IDX_BANKVERBINDUGEN);
-    // Tab 2: Kopfdaten
-    insertTab(LPMain.getInstance().getTextRespectUISPr("lp.kopfdaten"),
-              null,
-              null,
-              LPMain.getInstance().getTextRespectUISPr("lp.kopfdaten"),
-              IDX_KOPFDATEN);
-//    if(bVollversion) {
-//      // Tab 3: Liste der Buchungen am Bankkonto
-//      insertTab(LPMain.getInstance().getTextRespectUISPr("finanz.buchungen"),
-//                null,
-//                null,
-//                LPMain.getInstance().getTextRespectUISPr("finanz.buchungen"),
-//                IDX_BUCHUNGEN);
-//    }
-    // Defaults
-    setSelectedComponent(getPanelTop1QueryBankverbindung());
-    // refresh
-    getPanelTop1QueryBankverbindung().eventYouAreSelected(false);
-    // damit gleich eine selektiert ist
-    ItemChangedEvent it = new ItemChangedEvent(getPanelTop1QueryBankverbindung(),
-                                               ItemChangedEvent.ITEM_CHANGED);
-    lPEventItemChanged(it);
-    // Listener
-    addChangeListener(this);
-    getInternalFrame().addItemChangedListener(this);
-  }
+					setSelectedComponent(getPanelDetailBankverbindungKopfdaten());
+					getPanelDetailBankverbindungKopfdaten()
+							.eventYouAreSelected(false);
 
-  public void lPEventItemChanged(ItemChangedEvent e)
-      throws Throwable {
-    if (e.getID() == ItemChangedEvent.GOTO_DETAIL_PANEL) {
-      // da will jemand die Buchungen ansehen
-      if (e.getSource() == getPanelTop1QueryBankverbindung()) {
-        Object key = getPanelTop1QueryBankverbindung().getSelectedId();
-        holeBankverbindungDto(key);
-        // nur wechseln wenns auch einen gibt
-        if (key != null) {
-          if (bVollversion) {
-            setSelectedComponent(getPanelSplit3());
-            getPanelSplit3().eventYouAreSelected(false);
-          }
-          else {
-            setSelectedComponent(getPanelDetailBankverbindungKopfdaten());
-            getPanelDetailBankverbindungKopfdaten().eventYouAreSelected(false);
-          }
-        }
-      }
-    }
-    else if (e.getID() == ItemChangedEvent.ITEM_CHANGED) {
-      if (e.getSource() == getPanelTop1QueryBankverbindung()) {
-        Object key = getPanelTop1QueryBankverbindung().getSelectedId();
-        holeBankverbindungDto(key);
-        if (key == null) {
-          getInternalFrame().enableAllOberePanelsExceptMe(this, IDX_BANKVERBINDUGEN, false);
-        }
-        else {
-          getInternalFrame().enableAllOberePanelsExceptMe(this, IDX_BANKVERBINDUGEN, true);
-        }
-        getPanelTop1QueryBankverbindung().updateButtons();
-      }
-      else if (e.getSource() == panelQueryBuchungen) {
-        panelDetailBuchung.changed(e);
-        panelQueryBuchungen.updateButtons();
-      }
-    }
-    else if (e.getID() == ItemChangedEvent.ACTION_NEW) {
-      if (e.getSource() == getPanelTop1QueryBankverbindung()) {
-        if (getPanelTop1QueryBankverbindung().getSelectedId() == null) {
-          getInternalFrame().enableAllPanelsExcept(true);
-        }
-        getPanelDetailBankverbindungKopfdaten().eventActionNew(null, true, false);
-        setSelectedComponent(getPanelDetailBankverbindungKopfdaten());
-      }
-    }
-    else if (e.getID() == ItemChangedEvent.ACTION_PRINT) {
-      if (e.getSource() == panelQueryBuchungen) {
-        printKontoblatt();
-      }
-    }
-    else if (e.getID() == ItemChangedEvent.ACTION_GOTO_MY_DEFAULT_QP) {
-      if (e.getSource() == getPanelDetailBankverbindungKopfdaten()) {
-        setBankverbindungDto(null);
-        this.setSelectedComponent(getPanelTop1QueryBankverbindung());
-        getPanelTop1QueryBankverbindung().eventYouAreSelected(false);
-      }
-    }
-    else if (e.getID() == ItemChangedEvent.ACTION_SAVE) {
-      if (e.getSource() == getPanelDetailBankverbindungKopfdaten()) {
-        getPanelTop1QueryBankverbindung().clearDirektFilter();
-        Object key = getPanelDetailBankverbindungKopfdaten().getKeyWhenDetailPanel();
-        getPanelTop1QueryBankverbindung().eventYouAreSelected(false);
-        getPanelTop1QueryBankverbindung().setSelectedId(key);
-        getPanelTop1QueryBankverbindung().eventYouAreSelected(false);
-      }
-    }
-  }
+				}
+			}
+		} else if (e.getID() == ItemChangedEvent.ITEM_CHANGED) {
+			if (e.getSource() == getPanelTop1QueryBankverbindung()) {
+				Object key = getPanelTop1QueryBankverbindung().getSelectedId();
+				holeBankverbindungDto(key);
+				if (key == null) {
+					getInternalFrame().enableAllOberePanelsExceptMe(this,
+							IDX_BANKVERBINDUGEN, false);
+				} else {
+					getInternalFrame().enableAllOberePanelsExceptMe(this,
+							IDX_BANKVERBINDUGEN, true);
+				}
+				getPanelTop1QueryBankverbindung().updateButtons();
+			} else if (e.getSource() == panelQueryBuchungen) {
+				panelDetailBuchung.changed(e);
+				panelQueryBuchungen.updateButtons();
+			}
+		} else if (e.getID() == ItemChangedEvent.ACTION_NEW) {
+			if (e.getSource() == getPanelTop1QueryBankverbindung()) {
+				if (getPanelTop1QueryBankverbindung().getSelectedId() == null) {
+					getInternalFrame().enableAllPanelsExcept(true);
+				}
+				getPanelDetailBankverbindungKopfdaten().eventActionNew(null,
+						true, false);
+				setSelectedComponent(getPanelDetailBankverbindungKopfdaten());
+			}
+		} else if (e.getID() == ItemChangedEvent.ACTION_PRINT) {
+			if (e.getSource() == panelQueryBuchungen) {
+				printKontoblatt();
+			}
+		} else if (e.getID() == ItemChangedEvent.ACTION_GOTO_MY_DEFAULT_QP) {
+			if (e.getSource() == getPanelDetailBankverbindungKopfdaten()) {
+				setBankverbindungDto(null);
+				this.setSelectedComponent(getPanelTop1QueryBankverbindung());
+				getPanelTop1QueryBankverbindung().eventYouAreSelected(false);
+			}
+		} else if (e.getID() == ItemChangedEvent.ACTION_SAVE) {
+			if (e.getSource() == getPanelDetailBankverbindungKopfdaten()) {
+				getPanelTop1QueryBankverbindung().clearDirektFilter();
+				Object key = getPanelDetailBankverbindungKopfdaten()
+						.getKeyWhenDetailPanel();
+				getPanelTop1QueryBankverbindung().eventYouAreSelected(false);
+				getPanelTop1QueryBankverbindung().setSelectedId(key);
+				getPanelTop1QueryBankverbindung().eventYouAreSelected(false);
+			}
+		}
+	}
 
+	/**
+	 * hole BankverbindugnDto.
+	 * 
+	 * @param key
+	 *            Object
+	 * @throws Throwable
+	 */
+	private void holeBankverbindungDto(Object key) throws Throwable {
+		if (key != null) {
+			BankverbindungDto kassenbuchDto = getFinanzDelegate()
+					.bankverbindungFindByPrimaryKey((Integer) key);
+			setBankverbindungDto(kassenbuchDto);
+			getInternalFrame().setKeyWasForLockMe(key.toString());
+			getPanelDetailBankverbindungKopfdaten().setKeyWhenDetailPanel(key);
+		} else {
+			setBankverbindungDto(null);
+		}
+	}
 
-  /**
-   * hole BankverbindugnDto.
-   *
-   * @param key Object
-   * @throws Throwable
-   */
-  private void holeBankverbindungDto(Object key) throws Throwable {
-    if (key != null) {
-      BankverbindungDto kassenbuchDto = getFinanzDelegate().
-          bankverbindungFindByPrimaryKey( (Integer) key);
-      setBankverbindungDto(kassenbuchDto);
-      getInternalFrame().setKeyWasForLockMe(key.toString());
-      getPanelDetailBankverbindungKopfdaten().setKeyWhenDetailPanel(key);
-    }
-    else {
-      setBankverbindungDto(null);
-    }
-  }
+	public void lPEventObjectChanged(ChangeEvent e) throws Throwable {
+		super.lPEventObjectChanged(e);
+		int selectedIndex = this.getSelectedIndex();
+		if (selectedIndex == IDX_BANKVERBINDUGEN) {
+			getPanelTop1QueryBankverbindung().eventYouAreSelected(false);
+		} else if (selectedIndex == IDX_KOPFDATEN) {
+			getPanelDetailBankverbindungKopfdaten().eventYouAreSelected(false);
+		} else if (selectedIndex == IDX_BUCHUNGEN) {
+			getPanelSplit3();
+			panelQueryBuchungen.setDefaultFilter(buildFiltersBuchungen());
+			panelQueryBuchungen.eventYouAreSelected(false);
+		}
+	}
 
+	private FilterKriterium[] buildFiltersBuchungen() throws Throwable {
+		FilterKriterium[] filter = null;
+		BankverbindungDto bankverbindungDto = getBankverbindungDto();
+		if (bankverbindungDto != null) {
+			filter = FinanzFilterFactory.getInstance().createFKBuchungDetail(
+					getBankverbindungDto().getKontoIId());
+		}
+		return filter;
+	}
 
-  public void lPEventObjectChanged(ChangeEvent e)
-      throws Throwable {
-    super.lPEventObjectChanged(e);
-    int selectedIndex = this.getSelectedIndex();
-    if (selectedIndex == IDX_BANKVERBINDUGEN) {
-      getPanelTop1QueryBankverbindung().eventYouAreSelected(false);
-    }
-    else if (selectedIndex == IDX_KOPFDATEN) {
-      getPanelDetailBankverbindungKopfdaten().eventYouAreSelected(false);
-    }
-    else if (selectedIndex == IDX_BUCHUNGEN) {
-      getPanelSplit3();
-      panelQueryBuchungen.setDefaultFilter(buildFiltersBuchungen());
-      panelQueryBuchungen.eventYouAreSelected(false);
-    }
-  }
+	private void initPanelTop3QueryBuchungen() throws Throwable {
+		if (panelQueryBuchungen == null) {
+			QueryType[] qtBuchungen = FinanzFilterFactory.getInstance()
+					.createQTBuchungDetail();
+			String[] aWhichButtonIUseBuchungen = { PanelBasis.ACTION_REFRESH,
+					PanelBasis.ACTION_FILTER, PanelBasis.ACTION_PRINT };
+			FilterKriterium[] filtersBuchungen = buildFiltersBuchungen();
 
-  private FilterKriterium[] buildFiltersBuchungen() throws Throwable {
-    FilterKriterium[] filter = null;
-    BankverbindungDto bankverbindungDto = getBankverbindungDto();
-    if (bankverbindungDto != null) {
-      filter = FinanzFilterFactory.getInstance().createFKBuchungDetail(
-          getBankverbindungDto().getKontoIId());
-    }
-    return filter;
-  }
+			panelQueryBuchungen = new PanelQuery(qtBuchungen, filtersBuchungen,
+					QueryParameters.UC_ID_BUCHUNGDETAIL,
+					aWhichButtonIUseBuchungen, getInternalFrame(), LPMain
+							.getInstance().getTextRespectUISPr(
+									"finanz.buchungen"), true);
+		}
+		// Filter updaten
+		panelQueryBuchungen.setDefaultFilter(buildFiltersBuchungen());
+	}
 
+	/**
+	 * Drucken des Kontoblattes
+	 * 
+	 * @throws Throwable
+	 */
+	protected void printKontoblatt() throws Throwable {
+		if (getBankverbindungDto() != null) {
+			Integer kontoIId = getBankverbindungDto().getKontoIId();
+			BuchungdetailDto[] buchungen = getBuchenDelegate()
+					.buchungdetailFindByKontoIId(kontoIId);
+			if (buchungen.length == 0) {
+				DialogFactory
+						.showModalDialog(
+								LPMain.getTextRespectUISPr("lp.error"),
+								LPMain.getTextRespectUISPr("finanz.error.keinebuchungenaufdiesemkonto"));
+			} else {
+				String sTitle = LPMain.getInstance().getTextRespectUISPr(
+						"finanz.buchungen");
+				getInternalFrame().showReportKriterien(
+						new ReportBuchungenAufKonto(getInternalFrame(),
+								kontoIId, sTitle));
+			}
+		} else {
+			DialogFactory.showModalDialog(
+					LPMain.getTextRespectUISPr("lp.error"),
+					LPMain.getTextRespectUISPr("lp.hint.nopages"));
+		}
+	}
 
-  private void initPanelTop3QueryBuchungen()
-      throws Throwable {
-    if (panelQueryBuchungen == null) {
-      QueryType[] qtBuchungen = FinanzFilterFactory.getInstance().createQTBuchungDetail();
-      String[] aWhichButtonIUseBuchungen = {
-          PanelBasis.ACTION_REFRESH,
-          PanelBasis.ACTION_FILTER,
-          PanelBasis.ACTION_PRINT};
-      FilterKriterium[] filtersBuchungen = buildFiltersBuchungen();
+	private BuchenDelegate getBuchenDelegate() throws Throwable {
+		return DelegateFactory.getInstance().getBuchenDelegate();
+	}
 
-      panelQueryBuchungen = new PanelQuery(
-          qtBuchungen,
-          filtersBuchungen,
-          QueryParameters.UC_ID_BUCHUNGDETAIL,
-          aWhichButtonIUseBuchungen,
-          getInternalFrame(),
-          LPMain.getInstance().getTextRespectUISPr("finanz.buchungen"), true);
-    }
-    // Filter updaten
-    panelQueryBuchungen.setDefaultFilter(buildFiltersBuchungen());
-  }
+	private PanelFinanzBankverbindungKopfdaten getPanelDetailBankverbindungKopfdaten()
+			throws Throwable {
+		if (panelDetailBankverbindungKopfdaten == null) {
+			panelDetailBankverbindungKopfdaten = new PanelFinanzBankverbindungKopfdaten(
+					getInternalFrame(), LPMain.getInstance()
+							.getTextRespectUISPr("lp.kopfdaten"), null, this);
+			this.setComponentAt(IDX_KOPFDATEN,
+					panelDetailBankverbindungKopfdaten);
+		}
+		return panelDetailBankverbindungKopfdaten;
+	}
 
+	private PanelSplit getPanelSplit3() throws Throwable {
+		if (panelSplit3 == null) {
+			panelDetailBuchung = new PanelFinanzBuchungDetails(
+					getInternalFrame(), "my title!!!", null);
+			initPanelTop3QueryBuchungen();
+			panelSplit3 = new PanelSplit(getInternalFrame(),
+					panelDetailBuchung, panelQueryBuchungen, 280);
+			this.setComponentAt(IDX_BUCHUNGEN, panelSplit3);
+		}
+		return panelSplit3;
+	}
 
-  /**
-   * Drucken des Kontoblattes
-   *
-   * @throws Throwable
-   */
-  protected void printKontoblatt() throws Throwable {
-    if (getBankverbindungDto() != null) {
-      Integer kontoIId = getBankverbindungDto().
-          getKontoIId();
-      BuchungdetailDto[] buchungen = getBuchenDelegate().
-          buchungdetailFindByKontoIId(kontoIId);
-      if (buchungen.length == 0) {
-        DialogFactory.showModalDialog(
-            LPMain.getTextRespectUISPr("lp.error"),
-            LPMain.getTextRespectUISPr("finanz.error.keinebuchungenaufdiesemkonto"));
-      }
-      else {
-        String sTitle = LPMain.getInstance().getTextRespectUISPr("finanz.buchungen");
-        getInternalFrame().showReportKriterien(new ReportBuchungenAufKonto(
-            getInternalFrame(), kontoIId, sTitle));
-      }
-    }
-    else {
-      DialogFactory.showModalDialog(
-          LPMain.getTextRespectUISPr("lp.error"),
-          LPMain.getTextRespectUISPr("lp.hint.nopages"));
-    }
-  }
+	private FinanzDelegate getFinanzDelegate() throws ExceptionLP {
+		return DelegateFactory.getInstance().getFinanzDelegate();
+	}
 
+	protected void lPActionEvent(java.awt.event.ActionEvent e) {
 
-  private BuchenDelegate getBuchenDelegate()
-      throws Throwable {
-    return DelegateFactory.getInstance().getBuchenDelegate();
-  }
+	}
 
+	private PanelQuery getPanelTop1QueryBankverbindung() throws Throwable {
+		if (panelQueryBankverbindung == null) {
+			String[] aWhichButtonIUse = new String[] { PanelBasis.ACTION_NEW,
+					PanelBasis.ACTION_FILTER };
+			panelQueryBankverbindung = new PanelQuery(
+					FinanzFilterFactory.getInstance().createQTBankverbindung(),
+					SystemFilterFactory.getInstance().createFKMandantCNr(),
+					QueryParameters.UC_ID_BANKKONTO,
+					aWhichButtonIUse,
+					getInternalFrame(),
+					LPMain.getInstance().getTextRespectUISPr("lp.auswahl"),
+					true,
+					FinanzFilterFactory.getInstance().createFKVBankverbindung(),
+					null);
+			panelQueryBankverbindung
+					.befuellePanelFilterkriterienDirekt(FinanzFilterFactory
+							.getInstance().createFKDBankverbindungBank(),
+							FinanzFilterFactory.getInstance()
+									.createFKDBankverbindungKontonummer());
+			setComponentAt(IDX_BANKVERBINDUGEN, panelQueryBankverbindung);
+		}
+		return panelQueryBankverbindung;
+	}
 
-  private PanelFinanzBankverbindungKopfdaten getPanelDetailBankverbindungKopfdaten() throws Throwable {
-    if (panelDetailBankverbindungKopfdaten == null) {
-      panelDetailBankverbindungKopfdaten = new
-          PanelFinanzBankverbindungKopfdaten(
-              getInternalFrame(),
-              LPMain.getInstance().getTextRespectUISPr("lp.kopfdaten"),
-              null,
-              this);
-      this.setComponentAt(IDX_KOPFDATEN, panelDetailBankverbindungKopfdaten);
-    }
-    return panelDetailBankverbindungKopfdaten;
-  }
+	protected javax.swing.JMenuBar getJMenuBar() throws Throwable {
+		return new WrapperMenuBar(this);
+	}
 
-
-  private PanelSplit getPanelSplit3()
-      throws Throwable {
-    if (panelSplit3 == null) {
-      panelDetailBuchung = new PanelFinanzBuchungDetails(getInternalFrame(),
-          "my title!!!", null);
-      initPanelTop3QueryBuchungen();
-      panelSplit3 = new PanelSplit(
-          getInternalFrame(),
-          panelDetailBuchung,
-          panelQueryBuchungen,
-          280);
-      this.setComponentAt(IDX_BUCHUNGEN, panelSplit3);
-    }
-    return panelSplit3;
-  }
-
-
-  private FinanzDelegate getFinanzDelegate() throws ExceptionLP {
-    return DelegateFactory.getInstance().getFinanzDelegate();
-  }
-
-
-  protected void lPActionEvent(java.awt.event.ActionEvent e) {
-
-  }
-
-
-  private PanelQuery getPanelTop1QueryBankverbindung()
-      throws Throwable {
-    if (panelQueryBankverbindung == null) {
-      String[] aWhichButtonIUse= new String[]{
-            PanelBasis.ACTION_NEW,
-            PanelBasis.ACTION_FILTER};
-      panelQueryBankverbindung = new PanelQuery(
-          FinanzFilterFactory.getInstance().createQTBankverbindung(),
-          SystemFilterFactory.getInstance().createFKMandantCNr(),
-          QueryParameters.UC_ID_BANKKONTO,
-          aWhichButtonIUse,
-          getInternalFrame(),
-          LPMain.getInstance().getTextRespectUISPr("lp.auswahl"),
-          true);
-      panelQueryBankverbindung.befuellePanelFilterkriterienDirekt(
-          FinanzFilterFactory.getInstance().createFKDBankverbindungBank(),
-          FinanzFilterFactory.getInstance().createFKDBankverbindungKontonummer());
-      setComponentAt(IDX_BANKVERBINDUGEN, panelQueryBankverbindung);
-    }
-    return panelQueryBankverbindung;
-  }
-
-
-  protected javax.swing.JMenuBar getJMenuBar()
-      throws Throwable {
-    return new WrapperMenuBar(this);
-  }
-
-
-  public Object getInseratDto() {
-    return bankverbindungDto;
-  }
+	public Object getDto() {
+		return bankverbindungDto;
+	}
 }

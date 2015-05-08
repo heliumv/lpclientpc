@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -59,6 +59,8 @@ import com.lp.server.personal.service.TaetigkeitDto;
 import com.lp.server.personal.service.TagesartDto;
 import com.lp.server.personal.service.TelefonzeitenDto;
 import com.lp.server.personal.service.UrlaubsabrechnungDto;
+import com.lp.server.personal.service.VonBisErfassungTagesdatenDto;
+import com.lp.server.personal.service.WochenabschlussReportDto;
 import com.lp.server.personal.service.ZeitdatenDto;
 import com.lp.server.personal.service.ZeiterfassungFac;
 import com.lp.server.personal.service.ZeitmodellDto;
@@ -68,6 +70,7 @@ import com.lp.server.personal.service.ZeitstiftDto;
 import com.lp.server.personal.service.ZeitverteilungDto;
 import com.lp.server.system.service.TheClientDto;
 import com.lp.server.util.report.JasperPrintLP;
+import com.lp.util.Helper;
 
 public class ZeiterfassungDelegate extends Delegate {
 
@@ -94,6 +97,17 @@ public class ZeiterfassungDelegate extends Delegate {
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 			return true;
+		}
+	}
+
+	public WochenabschlussReportDto printWochenabschluss(Integer personalIId,
+			java.sql.Timestamp tKW) throws ExceptionLP {
+		try {
+			return zeiterfassungFac.printWochenabschluss(personalIId, tKW,
+					LPMain.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
 		}
 	}
 
@@ -182,34 +196,46 @@ public class ZeiterfassungDelegate extends Delegate {
 		}
 	}
 
+	public Timestamp getLetzteGebuchteZeit(Integer personalIId,
+			java.sql.Timestamp tDatum) throws ExceptionLP {
+		try {
+			return zeiterfassungFac.getLetzteGebuchteZeit(personalIId, tDatum,
+					LPMain.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
+
 	public JasperPrintLP printWochenabrechnung(Integer personalIId,
 			java.sql.Timestamp tVon, java.sql.Timestamp tBis, Integer iOption,
-			boolean bPlusVersteckte) throws ExceptionLP {
+			boolean bPlusVersteckte, boolean bNurAnwesende) throws ExceptionLP {
 
 		try {
 			return zeiterfassungFac.printWochenabrechnung(personalIId, tVon,
-					tBis, LPMain.getTheClient(), iOption, bPlusVersteckte);
+					tBis, LPMain.getTheClient(), iOption, bPlusVersteckte,
+					bNurAnwesende);
 
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 			return null;
 		}
 	}
-	
+
 	public JasperPrintLP printWochenjournal(Integer personalIId,
 			java.sql.Timestamp tVon, java.sql.Timestamp tBis, Integer iOption,
-			boolean bPlusVersteckte) throws ExceptionLP {
+			boolean bPlusVersteckte, boolean bNurAnwesende) throws ExceptionLP {
 
 		try {
-			return zeiterfassungFac.printWochenjournal(personalIId, tVon,
-					tBis, LPMain.getTheClient(), iOption, bPlusVersteckte);
+			return zeiterfassungFac.printWochenjournal(personalIId, tVon, tBis,
+					LPMain.getTheClient(), iOption, bPlusVersteckte,
+					bNurAnwesende);
 
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 			return null;
 		}
 	}
-	
 
 	public Integer createDiaetentagessatz(
 			DiaetentagessatzDto diaetentagessatzDto) throws ExceptionLP {
@@ -290,6 +316,17 @@ public class ZeiterfassungDelegate extends Delegate {
 		}
 	}
 
+	public java.sql.Timestamp gibtEsBereitseinenZeitabschlussBisZurKW(
+			Integer personalIId, java.sql.Timestamp tKW) throws ExceptionLP {
+		try {
+			return zeiterfassungFac.gibtEsBereitseinenZeitabschlussBisZurKW(
+					personalIId, tKW, LPMain.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
+
 	public Integer createSonderzeitenVonBis(SonderzeitenDto sonderzeitenDto,
 			java.sql.Timestamp tVon, java.sql.Timestamp tBis,
 			java.sql.Timestamp[] auslassen) throws ExceptionLP {
@@ -299,6 +336,17 @@ public class ZeiterfassungDelegate extends Delegate {
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 			return null;
+		}
+	}
+
+	public void zeitenAbschliessen(Integer personalIId, java.sql.Timestamp tKW)
+			throws ExceptionLP {
+		try {
+			zeiterfassungFac.zeitenAbschliessen(personalIId, tKW,
+					LPMain.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+
 		}
 	}
 
@@ -490,7 +538,7 @@ public class ZeiterfassungDelegate extends Delegate {
 			throws ExceptionLP {
 		try {
 			return zeiterfassungFac.createZeitdaten(zeitdatenDto, true, true,
-					true, LPMain.getTheClient());
+					true, true, LPMain.getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 			return null;
@@ -584,14 +632,14 @@ public class ZeiterfassungDelegate extends Delegate {
 
 	public JasperPrintLP printMonatsabrechnung(Integer personalIId,
 			Integer iJahr, Integer iMonat, Integer iOption,
-			Integer iOptionSortierung, boolean bPlusVersteckte,
+			Integer iOptionSortierung, boolean bPlusVersteckte,boolean bNurAnwesende,
 			boolean bBisMonatsende, java.sql.Date d_datum_bis)
 			throws ExceptionLP {
 
 		try {
 			return zeiterfassungFac.printMonatsAbrechnung(personalIId, iJahr,
 					iMonat, bBisMonatsende, d_datum_bis, LPMain.getTheClient(),
-					iOption, iOptionSortierung, new Boolean(bPlusVersteckte));
+					iOption, iOptionSortierung, new Boolean(bPlusVersteckte),bNurAnwesende);
 
 		} catch (Throwable ex) {
 			handleThrowable(ex);
@@ -603,13 +651,15 @@ public class ZeiterfassungDelegate extends Delegate {
 			Integer iMonatVon, Integer iJahrBis, Integer iMonatBis,
 			Integer iOption, Integer iOptionSortierung,
 			boolean bPlusVersteckte, boolean bBisMonatsende,
-			java.sql.Date d_datum_bis) throws ExceptionLP {
+			java.sql.Date d_datum_bis, boolean bNurAnwesende)
+			throws ExceptionLP {
 
 		try {
 			return zeiterfassungFac.printZeitsaldo(personalIId, iJahrVon,
 					iMonatVon, iJahrBis, iMonatBis, bBisMonatsende,
 					d_datum_bis, LPMain.getTheClient(), iOption,
-					iOptionSortierung, new Boolean(bPlusVersteckte));
+					iOptionSortierung, new Boolean(bPlusVersteckte),
+					bNurAnwesende);
 
 		} catch (Throwable ex) {
 			handleThrowable(ex);
@@ -629,12 +679,13 @@ public class ZeiterfassungDelegate extends Delegate {
 
 	public JasperPrintLP printSondertaetigkeitsliste(Integer personalIId,
 			Integer taetigkeitIId, java.sql.Timestamp tVon,
-			java.sql.Timestamp tBis, boolean bPlusVersteckte, Integer iOption)
-			throws ExceptionLP {
+			java.sql.Timestamp tBis, boolean bPlusVersteckte,
+			boolean bNurAnwesende, Integer iOption) throws ExceptionLP {
 		try {
 			return zeiterfassungFac.printSondertaetigkeitsliste(personalIId,
 					taetigkeitIId, tVon, tBis, iOption, new Boolean(
-							bPlusVersteckte), LPMain.getTheClient());
+							bPlusVersteckte), bNurAnwesende, LPMain
+							.getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 			return null;
@@ -644,12 +695,12 @@ public class ZeiterfassungDelegate extends Delegate {
 	public JasperPrintLP printLohndatenexport(Integer personalIId,
 			Integer iJahr, Integer iMonat, boolean bisMonatsende,
 			java.sql.Date d_datum_bis, Integer iOption,
-			Integer iOptionSortierung, Boolean bPlusVersteckte)
+			Integer iOptionSortierung, Boolean bPlusVersteckte, boolean bNurAnwesende)
 			throws ExceptionLP {
 		try {
 			return zeiterfassungFac.printLohndatenexport(personalIId, iJahr,
 					iMonat, bisMonatsende, d_datum_bis, LPMain.getTheClient(),
-					iOption, iOptionSortierung, bPlusVersteckte);
+					iOption, iOptionSortierung, bPlusVersteckte, bNurAnwesende);
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 			return null;
@@ -669,12 +720,12 @@ public class ZeiterfassungDelegate extends Delegate {
 
 	public JasperPrintLP printProduktivitaetsstatistik(Integer personalIId,
 			java.sql.Timestamp tVon, java.sql.Timestamp tBis,
-			boolean bPlusVersteckte, boolean bVerdichtet, Integer iOption)
-			throws ExceptionLP {
+			boolean bPlusVersteckte,boolean bNurAnwesende, boolean bVerdichtet,
+			boolean bMonatsbetrachtung, Integer iOption) throws ExceptionLP {
 		try {
 			return zeiterfassungFac.printProduktivitaetsstatistik(personalIId,
-					tVon, tBis, iOption, new Boolean(bPlusVersteckte),
-					bVerdichtet, LPMain.getTheClient());
+					tVon, tBis, iOption, new Boolean(bPlusVersteckte),bNurAnwesende,
+					bVerdichtet, bMonatsbetrachtung, LPMain.getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 			return null;
@@ -922,6 +973,42 @@ public class ZeiterfassungDelegate extends Delegate {
 		}
 	}
 
+	public Map<Integer, String> getAllMaschinen() throws ExceptionLP {
+		try {
+			return zeiterfassungFac.getAllMaschinen(LPMain.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
+
+	public String getMeldungFehlenderMindestpauste(java.sql.Timestamp tDatum,
+			Integer personalIId) throws ExceptionLP {
+		try {
+
+			ZeitdatenDto[] zDtos = zeiterfassungFac
+					.zeitdatenFindZeitdatenEinesTagesUndEinerPerson(
+							personalIId, Helper.cutTimestamp(tDatum), Helper
+									.cutTimestamp(new Timestamp(tDatum
+											.getTime() + 24 * 3600000)));
+			if (zDtos.length > 0) {
+
+				// zeiterfassungFac.taetigkeitFindByCNr(ZeiterfassungFac.TAETIGKEIT_GEHT,
+				// LPMain.getTheClient());
+
+				return zeiterfassungFac.erstelleAutomatischeMindestpause(
+						zDtos[zDtos.length - 1].getTZeit(), personalIId,
+						LPMain.getTheClient());
+			} else {
+				return null;
+			}
+
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
+
 	public Map<Integer, String> getAllSprSondertaetigkeitenOhneVersteckt()
 			throws ExceptionLP {
 		try {
@@ -1096,14 +1183,6 @@ public class ZeiterfassungDelegate extends Delegate {
 		}
 	}
 
-	public void updateTagesart(DiaetenDto diaetenDto) throws ExceptionLP {
-		try {
-			zeiterfassungFac.updateDiaeten(diaetenDto);
-		} catch (Throwable ex) {
-			handleThrowable(ex);
-		}
-	}
-
 	public void updateDiaetentagessatz(DiaetentagessatzDto diaetentagessatzDto)
 			throws ExceptionLP {
 		try {
@@ -1242,6 +1321,16 @@ public class ZeiterfassungDelegate extends Delegate {
 		}
 	}
 
+	public TagesartDto tagesartFindByCNr(String cNr) throws ExceptionLP {
+		try {
+			return zeiterfassungFac.tagesartFindByCNr(cNr,
+					LPMain.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
+
 	public DiaetenDto diaetenFindByPrimaryKey(Integer iId) throws ExceptionLP {
 		try {
 			return zeiterfassungFac.diaetenFindByPrimaryKey(iId);
@@ -1363,6 +1452,19 @@ public class ZeiterfassungDelegate extends Delegate {
 		}
 	}
 
+	public ZeitmodelltagDto getZeitmodelltagZuDatum(Integer personalIId,
+			Timestamp d_datum, Integer tagesartIId_Feiertag,
+			Integer tagesartIId_Halbtag) throws ExceptionLP {
+		try {
+			return zeiterfassungFac.getZeitmodelltagZuDatum(personalIId,
+					d_datum, tagesartIId_Feiertag, tagesartIId_Halbtag, false,
+					LPMain.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
+
 	public ZeitstiftDto zeitstiftFindByPrimaryKey(Integer iId)
 			throws ExceptionLP {
 		try {
@@ -1456,4 +1558,51 @@ public class ZeiterfassungDelegate extends Delegate {
 			return null;
 		}
 	}
+
+	public void wandleUrlaubsantragInUrlaubUm(Integer[] sonderzeitenIIds)
+			throws ExceptionLP {
+		try {
+			zeiterfassungFac.wandleUrlaubsantragInUrlaubUm(sonderzeitenIIds,
+					LPMain.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+
+		}
+	}
+
+	public void pflegeUmstellungAufVonBisErfassung() throws ExceptionLP {
+		try {
+			zeiterfassungFac.pflegeUmstellungAufVonBisErfassung(LPMain
+					.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+
+		}
+	}
+
+	public VonBisErfassungTagesdatenDto berechneTagesArbeitszeitVonBisZeiterfassungOhneKommtGeht(
+			Integer personalIId, java.sql.Date d_datum) throws ExceptionLP {
+		try {
+			return zeiterfassungFac
+					.berechneTagesArbeitszeitVonBisZeiterfassungOhneKommtGeht(
+							personalIId, d_datum, LPMain.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
+
+	public Double berechneArbeitszeitImZeitraum(Integer personalIId,
+			java.sql.Date dDatumVon, java.sql.Date dDatumBis,
+			boolean bAbzueglichTelefonzeiten) throws ExceptionLP {
+		try {
+			return zeiterfassungFac.berechneArbeitszeitImZeitraum(personalIId,
+					dDatumVon, dDatumBis, bAbzueglichTelefonzeiten,
+					LPMain.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
+
 }

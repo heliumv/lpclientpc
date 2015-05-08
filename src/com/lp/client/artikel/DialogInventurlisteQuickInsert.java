@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -40,6 +40,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -54,7 +56,9 @@ import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.frame.dialog.DialogFactory;
 import com.lp.client.pc.LPMain;
 import com.lp.server.artikel.service.ArtikelDto;
+import com.lp.server.artikel.service.InventurDto;
 import com.lp.server.artikel.service.InventurlisteDto;
+import com.lp.server.artikel.service.LagerDto;
 import com.lp.util.EJBExceptionLP;
 import com.lp.util.Helper;
 
@@ -119,7 +123,7 @@ public class DialogInventurlisteQuickInsert extends JDialog implements
 		super.dispose();
 	}
 
-	private void jbInit() throws Exception {
+	private void jbInit() throws Throwable {
 		panelUrlaubsanspruch.setLayout(gridBagLayout1);
 
 		wlaArtikelnummer.setText(LPMain.getInstance().getTextRespectUISPr(
@@ -142,11 +146,23 @@ public class DialogInventurlisteQuickInsert extends JDialog implements
 		wnfMenge.addKeyListener(this);
 		wcoLager.setMandatoryField(true);
 
-		try {
-			wcoLager.setMap(DelegateFactory.getInstance().getLagerDelegate()
-					.getAllLager());
-		} catch (Throwable ex) {
-			panelInventurliste.handleException(ex, true);
+		InventurDto inventurDto = DelegateFactory.getInstance()
+				.getInventurDelegate().inventurFindByPrimaryKey(inventurIId);
+
+		if (inventurDto.getLagerIId() != null) {
+			LagerDto lDto=DelegateFactory.getInstance().getLagerDelegate().lagerFindByPrimaryKey(inventurDto.getLagerIId());
+			Map m=new HashMap();
+			m.put(lDto.getIId(), lDto.getCNr());
+			
+			wcoLager.setMap(m);
+		} else {
+
+			try {
+				wcoLager.setMap(DelegateFactory.getInstance()
+						.getLagerDelegate().getAllLager());
+			} catch (Throwable ex) {
+				panelInventurliste.handleException(ex, true);
+			}
 		}
 
 		wbuFertig.setText(LPMain.getInstance()
@@ -214,6 +230,13 @@ public class DialogInventurlisteQuickInsert extends JDialog implements
 		if (e.getKeyCode() == KeyEvent.VK_ENTER) {
 			if (e.getSource() == wtfArtikelnummer) {
 
+				//SP2056 Uppercase
+				String artikelnummer=wtfArtikelnummer.getText();
+				if(artikelnummer!=null){
+					artikelnummer=artikelnummer.toUpperCase();
+					wtfArtikelnummer.setText(artikelnummer);
+				}
+				
 				try {
 					artikelDto = DelegateFactory.getInstance()
 							.getArtikelDelegate()

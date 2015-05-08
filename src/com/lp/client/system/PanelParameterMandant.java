@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -252,8 +252,9 @@ public class PanelParameterMandant extends PanelBasis {
 					bSpeichern = true;
 				}
 			} else {
-				if (Helper.istWertVomTyp(wtfWert.getText(), wtfDatentyp.getText())) {
-					bSpeichern=true;
+				if (Helper.istWertVomTyp(wtfWert.getText(),
+						wtfDatentyp.getText())) {
+					bSpeichern = true;
 				}
 			}
 
@@ -340,7 +341,7 @@ public class PanelParameterMandant extends PanelBasis {
 		wtfDatentyp.setText(parametermandantDto.getCDatentyp());
 		wtfBezeichnung.setText(parametermandantDto.getCNr());
 		wtfKategorie.setText(parametermandantDto.getCKategorie());
-		
+
 		wtfBemerkungsmall.setText(parametermandantDto.getCBemerkungsmall());
 		wefBemerkunglarge.setText(parametermandantDto.getCBemerkunglarge());
 
@@ -361,7 +362,6 @@ public class PanelParameterMandant extends PanelBasis {
 		jPanelWorkingOn.repaint();
 	}
 
-	
 	private void components2Dto() throws Throwable {
 		// es werden keine neuen Parameter angelegt
 
@@ -385,7 +385,7 @@ public class PanelParameterMandant extends PanelBasis {
 
 		// zuerst alles zuruecksetzen, ausloeser war ev. ein discard
 		// setDefaults();
-
+		intFrame.getTabbedPaneParameter().disableParametermandantgueltigab();
 		if (oKey != null && !oKey.equals(LPMain.getLockMeForNew())) {
 			ParametermandantPK pkParametermandant = new ParametermandantPK();
 			pkParametermandant.setCNr(((FLRParametermandantPK) oKey).getC_nr());
@@ -396,6 +396,7 @@ public class PanelParameterMandant extends PanelBasis {
 					.getParameterDelegate()
 					.parametermandantFindByPrimaryKey(pkParametermandant);
 			dto2Components();
+
 		}
 
 		getInternalFrame()

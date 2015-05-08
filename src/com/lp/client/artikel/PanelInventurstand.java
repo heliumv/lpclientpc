@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -36,6 +36,9 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.math.BigDecimal;
 import java.util.EventObject;
 
 import javax.swing.BorderFactory;
@@ -50,6 +53,8 @@ import com.lp.client.frame.HelperClient;
 import com.lp.client.frame.component.InternalFrame;
 import com.lp.client.frame.component.ItemChangedEvent;
 import com.lp.client.frame.component.PanelBasis;
+import com.lp.client.frame.component.WrapperEditorField;
+import com.lp.client.frame.component.WrapperEditorFieldKommentar;
 import com.lp.client.frame.component.WrapperLabel;
 import com.lp.client.frame.component.WrapperNumberField;
 import com.lp.client.frame.delegate.DelegateFactory;
@@ -57,6 +62,7 @@ import com.lp.client.pc.LPMain;
 import com.lp.server.artikel.service.ArtikelDto;
 import com.lp.server.artikel.service.InventurstandDto;
 import com.lp.server.artikel.service.LagerDto;
+import com.lp.util.Helper;
 
 @SuppressWarnings("static-access")
 public class PanelInventurstand extends PanelBasis {
@@ -83,8 +89,17 @@ public class PanelInventurstand extends PanelBasis {
 	private WrapperNumberField wnfInventurmenge = new WrapperNumberField();
 	private WrapperNumberField wnfInventurpreis = new WrapperNumberField();
 
+	private WrapperLabel wlaBasispreis = new WrapperLabel();
+	private WrapperNumberField wnfBasispreis = new WrapperNumberField();
+
+	private WrapperLabel wlaAbwertungUm = new WrapperLabel();
+	private WrapperNumberField wnfAbwertungUm = new WrapperNumberField();
+
 	private WrapperLabel wlaWaehrungPreis = new WrapperLabel();
 	private WrapperLabel wlaEinheitMenge = new WrapperLabel();
+
+	private WrapperEditorField wefKommentar = new WrapperEditorFieldKommentar(
+			getInternalFrame(), LPMain.getTextRespectUISPr("lp.bemerkung"));
 
 	public PanelInventurstand(InternalFrame internalFrame, String add2TitleI,
 			Object pk) throws Throwable {
@@ -118,8 +133,8 @@ public class PanelInventurstand extends PanelBasis {
 
 		} else {
 			inventurstandDto = DelegateFactory.getInstance()
-					.getInventurDelegate().inventurstandFindByPrimaryKey(
-							(Integer) key);
+					.getInventurDelegate()
+					.inventurstandFindByPrimaryKey((Integer) key);
 			dto2Components();
 		}
 	}
@@ -142,11 +157,35 @@ public class PanelInventurstand extends PanelBasis {
 
 		wnfInventurmenge.setBigDecimal(inventurstandDto.getNInventurmenge());
 		wnfInventurpreis.setBigDecimal(inventurstandDto.getNInventurpreis());
+		wnfAbwertungUm.setDouble(inventurstandDto.getFAbwertung());
+		wnfBasispreis.setBigDecimal(inventurstandDto.getNBasispreis());
+		wefKommentar.setText(inventurstandDto.getCKommentar());
 	}
 
-	protected void components2Dto() throws ExceptionLP {
+	protected void components2Dto() throws Throwable {
 		inventurstandDto.setNInventurmenge(wnfInventurmenge.getBigDecimal());
-		inventurstandDto.setNInventurpreis(wnfInventurpreis.getBigDecimal());
+		inventurstandDto.setCKommentar(wefKommentar.getText());
+		inventurstandDto.setFAbwertung(wnfAbwertungUm.getDouble());
+
+		inventurstandDto.setNBasispreis(wnfBasispreis.getBigDecimal());
+		if (wnfAbwertungUm.getDouble() != null
+				&& wnfAbwertungUm.getDouble().doubleValue() > 0) {
+
+			// Basispreis(Gestpreis) um % abwerten und in Inventurpreis
+			// festschreiben
+
+			BigDecimal prozentwert = Helper.getProzentWert(inventurstandDto
+					.getNBasispreis(),
+					new BigDecimal(inventurstandDto.getFAbwertung()), 4);
+
+			inventurstandDto.setNInventurpreis(inventurstandDto
+					.getNBasispreis().subtract(prozentwert));
+
+		} else {
+			inventurstandDto
+					.setNInventurpreis(wnfInventurpreis.getBigDecimal());
+		}
+
 	}
 
 	protected void eventItemchanged(EventObject eI) throws Throwable {
@@ -173,16 +212,29 @@ public class PanelInventurstand extends PanelBasis {
 		wnfInventurmenge.setMinimumValue(0);
 		wnfInventurpreis.setMandatoryField(true);
 		wnfInventurpreis.setMinimumValue(0);
+		wnfInventurpreis.setActivatable(false);
+
+		wnfBasispreis.setMandatoryField(true);
+		// wnfAbwertungUm.setMandatoryField(true);
+		wnfAbwertungUm.setMinimumValue(0);
+		wnfAbwertungUm.setMaximumValue(100);
+
+		wnfBasispreis
+				.addFocusListener(new PanelInventurstand_wnfBasispreis_focusAdapter(
+						this));
+		wnfAbwertungUm
+				.addFocusListener(new PanelInventurstand_wnfAbwertungUm_focusAdapter(
+						this));
 
 		int iNachkommastellen = Defaults.getInstance()
 				.getIUINachkommastellenPreiseAllgemein();
 		wnfInventurpreis.setFractionDigits(iNachkommastellen);
+		wnfBasispreis.setFractionDigits(iNachkommastellen);
 
 		int iNachkommastellenMenge = Defaults.getInstance()
-		.getIUINachkommastellenMenge();
+				.getIUINachkommastellenMenge();
 		wnfInventurmenge.setFractionDigits(iNachkommastellenMenge);
-		
-		
+
 		wlaArtikelLabel.setText(LPMain.getInstance().getTextRespectUISPr(
 				"lp.artikel")
 				+ ":");
@@ -196,10 +248,21 @@ public class PanelInventurstand extends PanelBasis {
 		wlaEinheitMenge.setHorizontalAlignment(SwingConstants.LEFT);
 		wlaWaehrungPreis.setHorizontalAlignment(SwingConstants.LEFT);
 
+		WrapperLabel wlaWaehrungPreis2 = new WrapperLabel(LPMain.getInstance()
+				.getTheClient().getSMandantenwaehrung());
+		wlaWaehrungPreis2.setHorizontalAlignment(SwingConstants.LEFT);
+
+		WrapperLabel wlaProzent = new WrapperLabel("%");
+		wlaProzent.setHorizontalAlignment(SwingConstants.LEFT);
+
 		wlaInventurmenge.setText(LPMain.getInstance().getTextRespectUISPr(
 				"artikel.inventurmenge"));
 		wlaInventurpreis.setText(LPMain.getInstance().getTextRespectUISPr(
 				"artikel.inventurpreis"));
+		wlaBasispreis.setText(LPMain.getInstance().getTextRespectUISPr(
+				"artikel.inventurbasispreis"));
+		wlaAbwertungUm.setText(LPMain.getInstance().getTextRespectUISPr(
+				"artikel.inventur.abwertungum"));
 
 		this.add(jpaButtonAction, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(0,
@@ -215,38 +278,66 @@ public class PanelInventurstand extends PanelBasis {
 		this.add(getPanelStatusbar(), new GridBagConstraints(0, 2, 1, 1, 1.0,
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(0, 0, 0, 0), 0, 0));
-		jpaWorkingOn.add(wlaArtikelLabel, new GridBagConstraints(0, 0, 1, 1,
-				0.05, 0.0, GridBagConstraints.CENTER,
+		jpaWorkingOn.add(wlaArtikelLabel, new GridBagConstraints(0, iZeile, 1,
+				1, 1, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wlaArtikel, new GridBagConstraints(1, 0, 1, 1, 0.10,
+		jpaWorkingOn.add(wlaArtikel, new GridBagConstraints(1, iZeile, 1, 1, 1,
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wlaLagerLabel, new GridBagConstraints(0, 1, 1, 1, 0.0,
+		jpaWorkingOn.add(wlaLagerLabel, new GridBagConstraints(2, iZeile, 1, 1,
+				1, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wlaLager, new GridBagConstraints(3, iZeile, 1, 1, 1,
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
-				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wlaLager, new GridBagConstraints(1, 1, 1, 1, 0.0, 0.0,
-				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 2, 2, 2), 0, 0));
 
-		jpaWorkingOn.add(wlaInventurmenge, new GridBagConstraints(0, 2, 1, 1,
-				0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wnfInventurmenge, new GridBagConstraints(1, 2, 1, 1,
-				0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wlaEinheitMenge, new GridBagConstraints(2, 2, 1, 1, 0,
-				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
-				new Insets(2, 2, 2, 2), 15, 0));
+		iZeile++;
 
-		jpaWorkingOn.add(wlaInventurpreis, new GridBagConstraints(0, 3, 1, 1,
+		jpaWorkingOn.add(wlaInventurmenge, new GridBagConstraints(0, iZeile, 1,
+				1, 0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wnfInventurmenge, new GridBagConstraints(1, iZeile, 1,
+				1, 0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wlaEinheitMenge, new GridBagConstraints(2, iZeile, 1,
+				1, 0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 15, 0));
+		iZeile++;
+		jpaWorkingOn.add(wlaBasispreis, new GridBagConstraints(0, iZeile, 1, 1,
 				0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wnfInventurpreis, new GridBagConstraints(1, 3, 1, 1,
+		jpaWorkingOn.add(wnfBasispreis, new GridBagConstraints(1, iZeile, 1, 1,
 				0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wlaWaehrungPreis, new GridBagConstraints(2, 3, 1, 1,
-				0, 0.0, GridBagConstraints.CENTER,
+		jpaWorkingOn.add(wlaWaehrungPreis2, new GridBagConstraints(2, iZeile,
+				1, 1, 0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		iZeile++;
+		jpaWorkingOn.add(wlaAbwertungUm, new GridBagConstraints(0, iZeile, 1,
+				1, 0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wnfAbwertungUm, new GridBagConstraints(1, iZeile, 1,
+				1, 0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wlaProzent, new GridBagConstraints(2, iZeile, 1, 1, 0,
+				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+				new Insets(2, 2, 2, 2), 0, 0));
+		iZeile++;
+		jpaWorkingOn.add(wlaInventurpreis, new GridBagConstraints(0, iZeile, 1,
+				1, 0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wnfInventurpreis, new GridBagConstraints(1, iZeile, 1,
+				1, 0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wlaWaehrungPreis, new GridBagConstraints(2, iZeile, 1,
+				1, 0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+
+		iZeile++;
+
+		jpaWorkingOn.add(wefKommentar, new GridBagConstraints(0, iZeile, 4, 1,
+				1, 1, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
+				new Insets(2, 2, 2, 2), 0, 0));
 
 		String[] aWhichButtonIUse = { ACTION_UPDATE, ACTION_SAVE,
 				ACTION_DISCARD, };
@@ -281,6 +372,59 @@ public class PanelInventurstand extends PanelBasis {
 			eventYouAreSelected(false);
 		}
 
+	}
+
+	public void berechnePreis(FocusEvent e) {
+		try {
+
+			if (wnfAbwertungUm.getDouble() == null) {
+				wnfInventurpreis.setBigDecimal(wnfBasispreis.getBigDecimal());
+			} else {
+
+				if (wnfAbwertungUm.getDouble().doubleValue() > 0) {
+
+					// Basispreis(Gestpreis) um % abwerten und in Inventurpreis
+					// festschreiben
+					BigDecimal prozentwert = Helper.getProzentWert(
+							wnfBasispreis.getBigDecimal(), new BigDecimal(
+									wnfAbwertungUm.getDouble()), 4);
+					wnfInventurpreis.setBigDecimal(wnfBasispreis
+							.getBigDecimal().subtract(prozentwert));
+				} else {
+					wnfInventurpreis.setBigDecimal(wnfBasispreis
+							.getBigDecimal());
+				}
+			}
+
+		} catch (Throwable ex) {
+			// nix
+		}
+
+	}
+
+	class PanelInventurstand_wnfBasispreis_focusAdapter extends FocusAdapter {
+		private PanelInventurstand adaptee;
+
+		PanelInventurstand_wnfBasispreis_focusAdapter(PanelInventurstand adaptee) {
+			this.adaptee = adaptee;
+		}
+
+		public void focusLost(FocusEvent e) {
+			adaptee.berechnePreis(e);
+		}
+	}
+
+	class PanelInventurstand_wnfAbwertungUm_focusAdapter extends FocusAdapter {
+		private PanelInventurstand adaptee;
+
+		PanelInventurstand_wnfAbwertungUm_focusAdapter(
+				PanelInventurstand adaptee) {
+			this.adaptee = adaptee;
+		}
+
+		public void focusLost(FocusEvent e) {
+			adaptee.berechnePreis(e);
+		}
 	}
 
 }

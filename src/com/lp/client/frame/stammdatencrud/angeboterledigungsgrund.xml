@@ -49,7 +49,7 @@
     colname="CBez"
     dtyp="java.lang.String"
     labelbez="lp.bezeichnung" istsprache="">
-    <attribut setColumnsMax="40"/>
+    <attribut setColumnsMax="80"/>
     <attribut setMandatoryFieldDB="true"/>
   </control>
 

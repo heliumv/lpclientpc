@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -36,17 +36,21 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Point;
 import java.awt.Toolkit;
+import java.io.FileNotFoundException;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.JOptionPane;
 import javax.swing.event.InternalFrameEvent;
 import javax.swing.event.InternalFrameListener;
 
 import com.lp.client.frame.component.InternalFrame;
+import com.lp.client.frame.component.PanelQueryFLR;
 import com.lp.client.pc.Desktop;
 import com.lp.client.pc.LPMain;
 import com.lp.server.util.fastlanereader.service.query.SortierKriterium;
+import com.lp.util.Helper;
 
 /**
  * K&uuml;mmert sich um das Speichern, Laden und Anwenden von Layouts.
@@ -104,7 +108,11 @@ public class ClientPerspectiveManager implements InternalFrameListener {
 		if(output != null)
 			output.println(x);
 	}
-	
+
+	private void errPrintlnMsg(String x) {
+		errPrintln(x);
+		JOptionPane.showMessageDialog(null, x);
+	}
 	private void errPrintln(String x) {
 		if(errOutput != null)
 			errOutput.println(x);
@@ -137,6 +145,7 @@ public class ClientPerspectiveManager implements InternalFrameListener {
 	
 	/**
 	 * L&auml;dt die Layouteigenschaften aus dem Filesystem / der DB und wendet sie an.
+	 * @param d 
 	 * @return true wenn erfolgreich, false wenn keine settings gefunden wurden
 	 */
 	public boolean load(Desktop d) {
@@ -157,36 +166,73 @@ public class ClientPerspectiveManager implements InternalFrameListener {
 			println("Alle Anzeigeeinstellungen gespeichert.");
 		} catch (Exception e) {
 			//TODO: ordentliche fehlermeldung
-			errPrintln("Konnte Anzeigeeinstellungen nicht speichern.");
+			errPrintlnMsg("Konnte Anzeigeeinstellungen nicht speichern.");
 			e.printStackTrace();
 		}
 		cpLoaderAndSaver =  new ClientPerspectiveLoaderAndSaver(getClientPerspectiveIO()); 
 	}
 	
-	public void saveInternalFrame(String belegart) {
+	public void saveInternalFramePosition(String belegart) {
 		Desktop d = LPMain.getInstance().getDesktop();
 		cpLoaderAndSaver.updateFramePosition(d.getLPModul(belegart));
 		try {
 			cpLoaderAndSaver.saveFramePosition(belegart);
 		} catch (Exception e) {
-			errPrintln("Konnte Anzeigeeinstellungen von Modul nicht speichern: " + belegart);
+			errPrintlnMsg("Konnte Anzeigeeinstellungen von Modul nicht speichern: " + belegart);
+			e.printStackTrace();
+		}
+	}
+	
+	public void saveQueryFLRPosition(PanelQueryFLR panel) {
+		cpLoaderAndSaver.updateFramePosition(panel);
+		try {
+			cpLoaderAndSaver.saveFramePosition(Integer.toString(panel.getIdUsecase()));
+		} catch (Exception e) {
+			errPrintlnMsg("Konnte Anzeigeeinstellungen von PanelQueryFLR nicht speichern. UC = " + panel.getIdUsecase());
+			e.printStackTrace();
+		}
+	}
+	
+	public void loadAndApplyQueryFLRPosition(PanelQueryFLR panel) {
+		try {
+			FramePositionData fpData = cpLoaderAndSaver.getFramePositionData(Integer.toString(panel.getIdUsecase()));
+			fpData.applyTo(panel);
+		} catch (FileNotFoundException e) {
+			errPrintln("Keine Anzeigeeinstellungen f\u00FCr PanelQueryFLR. UC = " + panel.getIdUsecase());
+		} catch (Exception e) {
+			errPrintln("Konnte Anzeigeeinstellungen von PanelQueryFLR nicht laden. UC = " + panel.getIdUsecase());
+			e.printStackTrace();
+		}
+	}
+	/**
+	 * Speichert die Sortierkriterien der Tabelle im Layout
+	 * @param usecaseId die ucId des <code>PanelQuery</code>
+	 * @param kriterien eine <code>List\<SortierKriterium\></code>
+	 */
+	public void saveQueryColumnSorting(int usecaseId, List<SortierKriterium> kriterien) {
+		try {
+			kriterien = removeEmptyKriterien(kriterien);
+			cpLoaderAndSaver.saveQueryColumnSorting(usecaseId, kriterien);
+			println("Sortierkriterien f\u00FCr UC " + usecaseId + " erfolgreich gespeichert.");
+		} catch (Exception e) {
+			errPrintlnMsg("Konnte die Sortierkriterien nicht speichern f\u00FCr UC " + usecaseId);
 			e.printStackTrace();
 		}
 	}
 	
 	/**
-	 * Speichert die Sortierkriterien der Tabelle im Layout
-	 * @param usecaseId die ucId des <code>PanelQuery</code>
-	 * @param widths eine <code>List\<Integer\></code> mit den Breiten der Spalten
+	 * Entfernt alle SortierKriterien, in welchen <code>kritName null</code> oder ein leerer String ist.
+	 * @param kriterien wird nicht ver&auml;ndert
+	 * @return die eine neue Liste mit Sortierkriterien
 	 */
-	public void saveQueryColumnSorting(int usecaseId, List<SortierKriterium> kriterien) {
-		try {
-			cpLoaderAndSaver.saveQueryColumnSorting(usecaseId, kriterien);
-			println("Sortierkriterien f\u00FCr UC " + usecaseId + " erfolgreich gespeichert.");
-		} catch (Exception e) {
-			errPrintln("Konnte die Sortierkriterien nicht speichern f\u00FCr UC " + usecaseId);
-			e.printStackTrace();
+	private List<SortierKriterium> removeEmptyKriterien(List<SortierKriterium> kriterien) {		
+		List<SortierKriterium> clearedKriterien = new ArrayList<SortierKriterium>();
+		for (SortierKriterium sortierKriterium : kriterien) {
+			if(!Helper.isStringEmpty(sortierKriterium.kritName)) {
+				clearedKriterien.add(sortierKriterium);
+			}
 		}
+		return clearedKriterien;
 	}
 	
 	/**
@@ -198,7 +244,7 @@ public class ClientPerspectiveManager implements InternalFrameListener {
 		try {
 			List<SortierKriterium> kriterien = cpLoaderAndSaver.loadQueryColumnSorting(usecaseId);
 			println("Sortierkriterien f\u00FCr UC " + usecaseId + " erfolgreich geladen.");
-			return kriterien;
+			return removeEmptyKriterien(kriterien);
 		} catch (Exception e) {
 			errPrintln("F\u00FCr den UC " + usecaseId + " wurden keine Sortierkriterien gefunden");
 		}
@@ -215,7 +261,7 @@ public class ClientPerspectiveManager implements InternalFrameListener {
 			cpLoaderAndSaver.saveQueryColumnWidths(usecaseId, widths);
 			println("Spaltenbreiten f\u00FCr UC " + usecaseId + " erfolgreich gespeichert.");
 		} catch (Exception e) {
-			errPrintln("Konnte die Spaltenbreiten nicht speichern f\u00FCr UC " + usecaseId);
+			errPrintlnMsg("Konnte die Spaltenbreiten nicht speichern f\u00FCr UC " + usecaseId);
 			e.printStackTrace();
 		}
 	}
@@ -279,14 +325,14 @@ public class ClientPerspectiveManager implements InternalFrameListener {
 					return false;
 				}
 				desktopData = fitLocationToScreen(desktopData);
-				desktopData.applyto(desktop);
+				desktopData.applyTo(desktop);
 
 				println("Desktopeinstellungen erfolgreich geladen.");
 			}
 		} catch (Exception e) {
 			//TODO: ordentliche fehlermeldung
-			errPrintln("Konnte Desktopeinstellungen nicht laden.");
-			e.printStackTrace();
+			errPrintlnMsg("Konnte Desktopeinstellungen nicht laden.");
+			e.printStackTrace(errOutput);
 		}
 		return true;
 	}
@@ -348,7 +394,7 @@ public class ClientPerspectiveManager implements InternalFrameListener {
 	}
 	
 	private IClientPerspectiveIO getClientPerspectiveIO() {
-		return new ClientPerspectiveFileIO(new LocalSettingsPathGenerator().getPath());
+		return new ClientPerspectiveFileIO(new LocalSettingsPathGenerator().getUserPath());
 	}
 	
 	/**
@@ -432,5 +478,39 @@ public class ClientPerspectiveManager implements InternalFrameListener {
 		} catch (Exception e) {
 			errPrintln("Font konnte nicht zur\u00FCckgesetzt werden");
 		}
+	}
+
+	public void saveColorVision(String colorVision) {
+		try {
+			cpLoaderAndSaver.saveColorVision(colorVision);
+		} catch (Exception e) {
+			errPrintln("ColorVision konnte nicht gespeichert werden");
+		}
+	}
+	
+	public String readColorVision() {
+		try {
+			return cpLoaderAndSaver.readColorVision();
+		} catch (Exception e) {
+			errPrintln("ColorVision konnte nicht gelesen werden");
+		}
+		return null;
+	}
+	
+	public void setDirekthilfeEnabled(boolean b) {
+		try {
+			cpLoaderAndSaver.saveDirekthilfeVisible(b);
+		} catch (Exception e) {
+			errPrintln("ColorVision konnte nicht gespeichert werden");
+		}
+	}
+	
+	public boolean isDirekthilfeVisible() {
+		try {
+			return cpLoaderAndSaver.readDirekthilfeVisible();
+		} catch (Exception e) {
+			errPrintln("ColorVision konnte nicht gelesen werden");
+		}
+		return true;
 	}
 }

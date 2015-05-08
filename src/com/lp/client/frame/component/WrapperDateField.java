@@ -1,33 +1,33 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published 
- * by the Free Software Foundation, either version 3 of theLicense, or 
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of theLicense, or
  * (at your option) any later version.
- * 
- * According to sec. 7 of the GNU Affero General Public License, version 3, 
+ *
+ * According to sec. 7 of the GNU Affero General Public License, version 3,
  * the terms of the AGPL are supplemented with the following terms:
- * 
- * "HELIUM V" and "HELIUM 5" are registered trademarks of 
- * HELIUM V IT-Solutions GmbH. The licensing of the program under the 
+ *
+ * "HELIUM V" and "HELIUM 5" are registered trademarks of
+ * HELIUM V IT-Solutions GmbH. The licensing of the program under the
  * AGPL does not imply a trademark license. Therefore any rights, title and
  * interest in our trademarks remain entirely with us. If you want to propagate
  * modified versions of the Program under the name "HELIUM V" or "HELIUM 5",
- * you may only do so if you have a written permission by HELIUM V IT-Solutions 
+ * you may only do so if you have a written permission by HELIUM V IT-Solutions
  * GmbH (to acquire a permission please contact HELIUM V IT-Solutions
  * at trademark@heliumv.com).
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Affero General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Contact: developers@heliumv.com
  ******************************************************************************/
 package com.lp.client.frame.component;
@@ -40,7 +40,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
-import java.awt.event.KeyEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.net.URL;
@@ -51,7 +50,6 @@ import java.util.Locale;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -60,8 +58,8 @@ import javax.swing.JPopupMenu;
 import javax.swing.MenuElement;
 import javax.swing.MenuSelectionManager;
 import javax.swing.SwingUtilities;
-import javax.swing.event.PopupMenuEvent;
-import javax.swing.event.PopupMenuListener;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 import com.lp.client.frame.Defaults;
 import com.lp.client.frame.HelperClient;
@@ -81,580 +79,623 @@ import com.lp.util.Helper;
  * @version $LastChangedDate: 2006-06-04 14:42:29 +0200 (So, 04 Jun 2006) $
  */
 public class WrapperDateField extends JPanel implements ActionListener,
-		IControl, PropertyChangeListener, FocusListener {
+        IControl, PropertyChangeListener, FocusListener {
+	private static final long serialVersionUID = -7276692781178702639L;
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
+	private static final String AC_WEEKUP = "weekup";
+    private static final String AC_WEEKDOWN = "weekdown";
 
-	protected JTextFieldDateEditor dateEditor;
+    private static final String ACTION_SPECIAL_LEEREN = "action_special_datefield_leeren";
+    private static final int I_BREITE = 90;
 
-	protected JButton calendarButton;
+// 	protected final LpLogger myLogger = (LpLogger) LpLogger.getInstance(this.getClass());
 
-	protected JCalendar jcalendar;
+    Locale locale;
 
-	protected JPopupMenu popup;
+    private ChangeListener changeListener;
 
-	protected boolean isInitialized;
+    protected JTextFieldDateEditor dateEditor;
 
-	protected boolean dateSelected;
+    protected JButton calendarButton;
 
-	private boolean bWithRubber = true;
+    protected JCalendar jcalendar;
 
-	private ImageIcon imageIconLeeren = null;
-	private boolean isMandatoryField = false;
-	private boolean isMandatoryFieldDB = false;
-	private boolean isActivatable = true;
-	private JButton jbuSetNull = null;
-	private Date oldDate = null;
-	public final static int I_BREITE = 90;
+    protected JPopupMenu popup;
 
-	public void removeContent() {
-		this.setDate(null);
-	}
+    protected boolean isInitialized;
 
-	private static final String ACTION_SPECIAL_LEEREN = "action_special_datefield_leeren";
+    protected boolean dateSelected;
 
-	private ImageIcon getImageIconLeeren() {
-		if (imageIconLeeren == null) {
-			imageIconLeeren = new ImageIcon(getClass().getResource(
-					"/com/lp/client/res/leeren.png"));
-		}
-		return imageIconLeeren;
-	}
+    private boolean bWithRubber = true;
 
-	public WrapperDateField() {
+    private ImageIcon imageIconLeeren = null;
+    private boolean isMandatoryField = false;
+    private boolean isMandatoryFieldDB = false;
 
-		Locale locale;
+    private boolean isActivatable = true;
+    private JButton jbuSetNull = null;
+    private Date oldDate = null;
 
-		try {
-			locale = LPMain.getTheClient().getLocUi();
-		} catch (Throwable t) {
-			locale = Locale.getDefault();
-			/**
-			 * TODO: Konstruktor soll throwen
-			 */
-		}
-		dateEditor = new JTextFieldDateEditor();
-		dateEditor.setLocale(locale);
-		dateEditor.addPropertyChangeListener("date", this);
-		dateEditor.addFocusListener(this);
-		jcalendar = new JCalendar(null, locale);
-		dateEditor.setLocale(locale);
-		jbuSetNull = new JButton();
-		jbuSetNull.setActionCommand(ACTION_SPECIAL_LEEREN);
-		jbuSetNull.addActionListener(this);
-		jbuSetNull.setIcon(getImageIconLeeren());
+    public WrapperDateField()
+    {
+        this(null, null);
+    }
 
-		this.dateEditor.setMinimumSize(
-				new Dimension(Defaults.getInstance().bySizeFactor(I_BREITE), Defaults.getInstance()
-						.getControlHeight()));
-		this.dateEditor.setPreferredSize(
-				new Dimension(Defaults.getInstance().bySizeFactor(I_BREITE), Defaults.getInstance()
-						.getControlHeight()));
-		jbuSetNull
-				.setMinimumSize(new Dimension(Defaults.getInstance()
-						.getControlHeight(), Defaults.getInstance()
-						.getControlHeight()));
-		jbuSetNull
-				.setPreferredSize(new Dimension(Defaults.getInstance()
-						.getControlHeight(), Defaults.getInstance()
-						.getControlHeight()));
+    public WrapperDateField(Date minDate)
+    {
+        this(minDate, null);
+    }
 
-		setLayout(new GridBagLayout());
+    public WrapperDateField(Date minDate, Date maxDate) {
 
-		jcalendar.setTodayButtonVisible(true);
-		jcalendar.setYesterdayButtonVisible(true);
-		jcalendar.getDayChooser().addPropertyChangeListener("day", this);
-		jcalendar.getMonthChooser().addPropertyChangeListener("month", this);
-		
-		jcalendar.getDayChooser().setAlwaysFireDayProperty(true);
+        try {
+            locale = LPMain.getTheClient().getLocUi();
+        } catch (Throwable t) {
+            locale = Locale.getDefault();
+        }
 
-		setDateFormatString(null);
-		setDate(null);
+        dateEditor = new JTextFieldDateEditor();
+        dateEditor.setLocale(locale);
+        jcalendar = new JCalendar(null, locale);
+        jbuSetNull = new JButton();
+        jbuSetNull.setIcon(getImageIconLeeren());
 
-		// Display a calendar button with an icon
-		URL iconURL = getClass().getResource(
-				"/com/lp/client/res/JDateChooserIcon.png");
-		ImageIcon icon = new ImageIcon(iconURL);
+        this.dateEditor.setMinimumSize(
+                new Dimension(Defaults.getInstance().bySizeFactor(I_BREITE), Defaults.getInstance()
+                        .getControlHeight()));
+        this.dateEditor.setPreferredSize(
+                new Dimension(Defaults.getInstance().bySizeFactor(I_BREITE), Defaults.getInstance()
+                        .getControlHeight()));
+        jbuSetNull
+                .setMinimumSize(new Dimension(Defaults.getInstance()
+                        .getControlHeight(), Defaults.getInstance()
+                        .getControlHeight()));
+        jbuSetNull
+                .setPreferredSize(new Dimension(Defaults.getInstance()
+                        .getControlHeight(), Defaults.getInstance()
+                        .getControlHeight()));
 
-		calendarButton = new JButton(icon) {
+        setLayout(new GridBagLayout());
 
-			/**
-		 * 
-		 */
-			private static final long serialVersionUID = 1L;
+        jcalendar.setTodayButtonVisible(true);
+        jcalendar.setYesterdayButtonVisible(true);
 
-			public boolean isFocusable() {
-				return false;
-			}
-		};
-		calendarButton.setMinimumSize(new Dimension(Defaults.getInstance()
-				.getControlHeight(), Defaults.getInstance()
-				.getControlHeight()));
+        setDateFormatString(null);
+        setDate(null);
 
-		calendarButton.setPreferredSize(new Dimension(Defaults.getInstance()
-				.getControlHeight(), Defaults.getInstance()
-				.getControlHeight()));
-		calendarButton.setMargin(new Insets(0, 0, 0, 0));
-		calendarButton.addActionListener(this);
+        jcalendar.getDayChooser().setAlwaysFireDayProperty(true);
 
-		// Alt + 'C' selects the calendar.
-		calendarButton.setMnemonic(KeyEvent.VK_C);
+        // Display a calendar button with an icon
+        URL iconURL = getClass().getResource(
+                "/com/lp/client/res/JDateChooserIcon.png");
+        ImageIcon icon = new ImageIcon(iconURL);
 
-		add(this.dateEditor.getUiComponent(), new GridBagConstraints(0, 0, 1,
-				1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(0, 0, 0, 0), 0, 0));
+        calendarButton = new JButton(icon) {
 
-		add(calendarButton, new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
-				GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(
-						0, 0, 0, 0), 0, 0));
-		add(jbuSetNull, new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
-				GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(
-						0, 0, 0, 0), 0, 0));
-		add(new JLabel(), new GridBagConstraints(3, 0, 1, 1, 1.0, 0.0,
-				GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(
-						0, 0, 0, 0), 0, 0));
+            private static final long serialVersionUID = 1L;
 
-		// calendarButton.setMargin(new Insets(0, 0, 0, 0));
+            public boolean isFocusable() {
+                return false;
+            }
+        };
 
-		popup = new JPopupMenu() {
+        calendarButton.setMinimumSize(new Dimension(Defaults.getInstance()
+                .getControlHeight(), Defaults.getInstance()
+                .getControlHeight()));
 
-			/**
-		 * 
-		 */
-			private static final long serialVersionUID = 1L;
+        calendarButton.setPreferredSize(new Dimension(Defaults.getInstance()
+                .getControlHeight(), Defaults.getInstance()
+                .getControlHeight()));
+        calendarButton.setMargin(new Insets(0, 0, 0, 0));
 
-			public void setVisible(boolean b) {
-				Boolean isCanceled = (Boolean) getClientProperty("JPopupMenu.firePopupMenuCanceled");
-				if (b
-						|| (!b && dateSelected)
-						|| ((isCanceled != null) && !b && isCanceled
-								.booleanValue())) {
-					super.setVisible(b);
+        // Alt + 'C' selects the calendar.
+//        calendarButton.setMnemonic(KeyEvent.VK_C);
+
+        add(this.dateEditor.getUiComponent(), new GridBagConstraints(0, 0, 1,
+                1, 0.0, 0.0, GridBagConstraints.CENTER,
+                GridBagConstraints.BOTH, new Insets(0, 0, 0, 0), 0, 0));
+
+        add(calendarButton, new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
+                GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(
+                        0, 0, 0, 0), 0, 0));
+        add(jbuSetNull, new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
+                GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(
+                        0, 0, 0, 0), 0, 0));
+        add(new JLabel(), new GridBagConstraints(3, 0, 1, 1, 1.0, 0.0,
+                GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(
+                        0, 0, 0, 0), 0, 0));
+
+        if (minDate != null || maxDate != null) {
+            setSelectableDateRange(minDate, maxDate);
+        }
+
+        popup = new JPopupMenu() {
+
+            private static final long serialVersionUID = 1L;
+
+            public void setVisible(boolean b) {
+                Boolean isCanceled = (Boolean) getClientProperty("JPopupMenu.firePopupMenuCanceled");
+                if (b || (!b && dateSelected) || ((isCanceled != null) && !b && isCanceled.booleanValue())) {
+                    super.setVisible(b);
+                }
+            }
+        };
+
+        popup.setLightWeightPopupEnabled(true);
+
+        popup.add(jcalendar);
+
+        setListener();
+
+        isInitialized = true;
+    }
+
+    private void setListener() {
+        dateEditor.addPropertyChangeListener("date", this);
+        dateEditor.addFocusListener(this);
+        calendarButton.addFocusListener(this);
+
+        calendarButton.addActionListener(this);
+
+        jbuSetNull.setActionCommand(ACTION_SPECIAL_LEEREN);
+        jbuSetNull.addActionListener(this);
+        jcalendar.getDayChooser().addPropertyChangeListener("day", this);
+
+        jcalendar.getDayChooser().getButtonWeekDown().addActionListener(this);
+        jcalendar.getDayChooser().getButtonWeekUp().addActionListener(this);
+
+        jcalendar.getMonthChooser().addPropertyChangeListener("month", this);
+
+        jcalendar.getYearChooser().addPropertyChangeListener("year", this);
+
+        // Corrects a problem that occurred when the JMonthChooser's combobox is
+		// displayed, and a click outside the popup does not close it.
+
+		// The following idea was originally provided by forum user
+		// podiatanapraia:
+		changeListener = new ChangeListener() {
+			boolean hasListened = false;
+
+			public void stateChanged(ChangeEvent e) {
+				if (hasListened) {
+					hasListened = false;
+					return;
 				}
-			}
-		};
-
-		popup.setLightWeightPopupEnabled(true);
-		popup.add(jcalendar);
-		
-		((JComboBox)jcalendar.getMonthChooser()
-		.getComboBox()).addPopupMenuListener(new PopupMenuListener() {
-			
-			@Override
-			public void popupMenuWillBecomeVisible(PopupMenuEvent arg0) {				
-			}
-			
-			@Override
-			public void popupMenuWillBecomeInvisible(PopupMenuEvent arg0) {
-				if (popup.isVisible()
-						&& WrapperDateField.this.jcalendar.getMonthChooser()
-								.getComboBox().hasFocus()) {
-					
-					int x = calendarButton.getWidth()
-							- (int) popup.getPreferredSize().getWidth();
-					int y = calendarButton.getY() + calendarButton.getHeight();
-					popup.show(calendarButton, x,y);
-					dateSelected = false;
-				}
-			}
-			
-			@Override
-			public void popupMenuCanceled(PopupMenuEvent arg0) {
-				if (popup.isVisible()
-						&& WrapperDateField.this.jcalendar.getMonthChooser()
-								.getComboBox().hasFocus()) {
-					MenuElement[] me = MenuSelectionManager.defaultManager()
-							.getSelectedPath();
+				if (popup != null && popup.isVisible() && jcalendar.getMonthChooser().getComboBox().hasFocus()) {
+					MenuElement[] me = MenuSelectionManager.defaultManager().getSelectedPath();
 					MenuElement[] newMe = new MenuElement[me.length + 1];
 					newMe[0] = popup;
 					for (int i = 0; i < me.length; i++) {
 						newMe[i + 1] = me[i];
 					}
-					dateSelected = true;
-					MenuSelectionManager.defaultManager()
-					.setSelectedPath(newMe);
-					MenuSelectionManager.defaultManager()
-					.clearSelectedPath();
-					dateSelected = false;
+					hasListened = true;
+					MenuSelectionManager.defaultManager().setSelectedPath(newMe);
+
 				}
 			}
-		});
+		};
+		MenuSelectionManager.defaultManager().addChangeListener(changeListener);
+		// end of code provided by forum user podiatanapraia
 
+    }
 
-		isInitialized = true;
-	}
+    public void removeContent() {
+        this.setDate(null);
+    }
 
-	/**
-	 * Called when the jalendar button was pressed.
-	 * 
-	 * @param e
-	 *            the action event
-	 */
-	public void actionPerformed(ActionEvent e) {
+    private ImageIcon getImageIconLeeren() {
+        if (imageIconLeeren == null) {
+            imageIconLeeren = new ImageIcon(getClass().getResource(
+                    "/com/lp/client/res/leeren.png"));
+        }
+        return imageIconLeeren;
+    }
 
-		if (e.getSource().equals(jbuSetNull)) {
-			setDate(null);
-		} else {
-			int x = calendarButton.getWidth()
-					- (int) popup.getPreferredSize().getWidth();
-			int y = calendarButton.getY() + calendarButton.getHeight();
+    /**
+     * Called when the jalendar button was pressed.
+     *
+     * @param e
+     *            the action event
+     */
+    @Override
+    public void actionPerformed(ActionEvent e) {
 
-			Calendar calendar = Calendar.getInstance();
-			Date date = dateEditor.getDate();
+        if (e.getSource().equals(jbuSetNull)) {
+            setDate(null);
+        }
 
-			if (date != null) {
-				calendar.setTime(date);
-			}
-			jcalendar.setCalendar(calendar);
-			popup.show(calendarButton, x, y);
-			dateSelected = false;
+		else if (AC_WEEKUP.equals(e.getActionCommand()) || AC_WEEKDOWN.equals(e.getActionCommand())) {
 
-			jcalendar.updateUI();
-			jcalendar.getDayChooser().updateUI();
+			Calendar c = getCalendarFromDate(dateEditor.getDate()) ;
+			c.add(Calendar.DAY_OF_MONTH, AC_WEEKUP.equals(e.getActionCommand()) ? -7 : 7);
+
+        	dateEditor.setDate(c.getTime());
+
+			updateCalendarUiDate(c);
 
 		}
-	}
 
-	public void setActivatable(boolean isActivatable) {
-		this.isActivatable = isActivatable;
-		if(!isActivatable)
-			setEditable(false);
-	}
+        else {
+            if (!popup.isVisible()) {
+                int x = calendarButton.getWidth() - (int) popup.getPreferredSize().getWidth();
+                int y = calendarButton.getY() + calendarButton.getHeight();
 
-	public boolean isActivatable() {
-		return isActivatable;
-	}
-	
+                Calendar calendar = getCalendarFromDate(dateEditor.getDate());
+                jcalendar.setCalendar(calendar);
+                popup.show(calendarButton, x, y);
+                dateSelected = false;
+
+                jcalendar.updateUI();
+                jcalendar.getDayChooser().updateUI();
+            }
+        }
+
+    }
+
+    public void setActivatable(boolean isActivatable) {
+        this.isActivatable = isActivatable;
+        if(!isActivatable)
+            setEditable(false);
+    }
+
+    public boolean isActivatable() {
+        return isActivatable;
+    }
+
+    /**
+     * Calendar aus Date erstellen.
+     *
+     * @param date bei Null wird das aktuelle Datum verwendet
+     */
+    private Calendar getCalendarFromDate(Date date) {
+		Calendar c = Calendar.getInstance();
+		if(date != null) {
+			c.setTime(date);
+		}
+		return c ;
+    }
+
 	/**
 	 * Listens for a "date" property change or a "day" property change event
 	 * from the JCalendar. Updates the date editor and closes the popup.
-	 * 
+	 *
 	 * @param evt
 	 *            the event
 	 */
 	public void propertyChange(PropertyChangeEvent evt) {
-		if (evt.getPropertyName().equals("month")) {
+
+		if (evt.getPropertyName().equals("year")) {
 			if (popup.isVisible()) {
-				dateSelected = true;
-				popup.setVisible(false);
-				int x = calendarButton.getWidth()
-						- (int) popup.getPreferredSize().getWidth();
-				int y = calendarButton.getY() + calendarButton.getHeight();
-				popup.show(calendarButton, x,y);
-				dateSelected = false;
+
+				int yearAddition = (int) evt.getNewValue() - (int) evt.getOldValue();
+				Calendar c = getCalendarFromDate(dateEditor.getDate()) ;
+				c.add(Calendar.YEAR, yearAddition);
+
+				dateEditor.setDate(c.getTime());
+
+				updateCalendarUiDate(c);
+
 			}
-			
+		} else if (evt.getPropertyName().equals("month")) {
+			if (popup.isVisible()) {
+
+				int monthAddition = (int) evt.getNewValue() - (int) evt.getOldValue();
+				Calendar c = getCalendarFromDate(dateEditor.getDate()) ;
+				c.add(Calendar.MONTH, monthAddition);
+
+				dateEditor.setDate(c.getTime());
+
+				updateCalendarUiDate(c);
+
+			}
 		} else if (evt.getPropertyName().equals("day")) {
 			if (popup.isVisible()) {
-				dateEditor.setDate(jcalendar.getCalendar().getTime());
-				dateSelected = (Integer.valueOf(evt.getOldValue().toString()) == 0);
-				popup.setVisible(false);
-				showDialogIfDiffMoreThan(getDate(), 5);
-//				// start add by sebastian
-//				String tmpStore = jcalendar.getCalendar().getTime().toString();
-//				String tmpDay = tmpStore.substring(4, 6);
-//				String tmpYear = tmpStore.substring(23, 28);
-//				String tmpDate = tmpDay + tmpYear;
-//				if (actDate != null) {
-//					if (tmpDate.compareTo(actDate) == 0) {
-//						popup.setVisible(false);
-//					}
-//				}
-//				actDate = tmpDate;
-//				// end of added part
-			}
-		} else if (evt.getPropertyName().equals("date")) {
-			if (evt.getSource() == dateEditor) {
-				firePropertyChange("date", evt.getOldValue(), evt.getNewValue());
-			} else {
-				setDate((Date) evt.getNewValue());
-			}
 
+				setDate(jcalendar.getDate());
+				dateSelected = true;
+				popup.setVisible(false);
+
+				showDialogIfDiffMoreThan(getDate(), 5);
+			}
 		}
-	}	
-	
+	}
+
+	private void updateCalendarUiDate(Calendar c) {
+		jcalendar.getDayChooser().removePropertyChangeListener("day", this);
+		jcalendar.getMonthChooser().removePropertyChangeListener("month", this);
+		jcalendar.getYearChooser().removePropertyChangeListener("year", this);
+		jcalendar.getYearChooser().setYear(c.get(Calendar.YEAR));
+		jcalendar.getMonthChooser().setMonth(c.get(Calendar.MONTH));
+		jcalendar.getDayChooser().setDay(c.get(Calendar.DAY_OF_MONTH));
+		jcalendar.getDayChooser().addPropertyChangeListener("day", this);
+		jcalendar.getMonthChooser().addPropertyChangeListener("month", this);
+		jcalendar.getYearChooser().addPropertyChangeListener("year", this);
+//		jcalendar.getDayChooser().setAlwaysFireDayProperty(true);
+	}
+
 	private void showDialogIfDiffMoreThan(Date date, int allowedDifferenceYears) {
-		if(date == null || date.equals(oldDate)) return;
+		if (date == null || date.equals(oldDate))
+			return;
 		Calendar now = Calendar.getInstance();
 		Calendar c = Calendar.getInstance();
 		c.setTimeInMillis(date.getTime());
 
 		oldDate = new Date(date.getTime());
 
-		int diff = now.get(Calendar.YEAR) - c.get(Calendar.YEAR) ;
-		if(Math.abs(diff) < allowedDifferenceYears)
+		int diff = now.get(Calendar.YEAR) - c.get(Calendar.YEAR);
+		if (Math.abs(diff) < allowedDifferenceYears)
 			return;
-		
+
 		String token = diff > 0 ? "calendar.info.vergangenheit" : "calendar.info.zukunft";
 
-		JOptionPane.showMessageDialog(null, dateEditor.getText() + "\n"
-				+ LPMain.getTextRespectUISPr(token),
-				LPMain.getTextRespectUISPr("calendar.info.titel"),
-				JOptionPane.INFORMATION_MESSAGE);
+		JOptionPane.showMessageDialog(LPMain.getInstance().getDesktop(),
+				LPMain.getMessageTextRespectUISPr(token, dateEditor.getText()),
+				LPMain.getTextRespectUISPr("calendar.info.titel"), JOptionPane.INFORMATION_MESSAGE);
+
+//		JOptionPane.showMessageDialog(LPMain.getInstance().getDesktop(), dateEditor.getText() + "\n" + LPMain.getTextRespectUISPr(token),
+//				LPMain.getTextRespectUISPr("calendar.info.titel"), JOptionPane.INFORMATION_MESSAGE);
 	}
 
-	/**
-	 * Updates the UI of itself and the popup.
-	 */
-	public void updateUI() {
-		super.updateUI();
-		setEnabled(isEnabled());
+    /**
+     * Updates the UI of itself and the popup.
+     */
+    public void updateUI() {
+        super.updateUI();
+        setEnabled(isEnabled());
 
-		if (jcalendar != null) {
-			SwingUtilities.updateComponentTreeUI(popup);
-		}
-	}
+        if (jcalendar != null) {
+            SwingUtilities.updateComponentTreeUI(popup);
+        }
+    }
 
-	/**
-	 * Sets the locale.
-	 * 
-	 * @param l
-	 *            The new locale value
-	 */
-	public void setLocale(Locale l) {
-		super.setLocale(l);
-		dateEditor.setLocale(l);
-		jcalendar.setLocale(l);
-	}
+    /**
+     * Sets the locale.
+     *
+     * @param l
+     *            The new locale value
+     */
+    public void setLocale(Locale l) {
+        super.setLocale(l);
+        dateEditor.setLocale(l);
+        jcalendar.setLocale(l);
+    }
 
-	/**
-	 * Gets the date format string.
-	 * 
-	 * @return Returns the dateFormatString.
-	 */
-	public String getDateFormatString() {
-		return dateEditor.getDateFormatString();
-	}
+    /**
+     * Gets the date format string.
+     *
+     * @return Returns the dateFormatString.
+     */
+    public String getDateFormatString() {
+        return dateEditor.getDateFormatString();
+    }
 
-	/**
-	 * Sets the date format string. E.g "MMMMM d, yyyy" will result in "July 21,
-	 * 2004" if this is the selected date and locale is English.
-	 * 
-	 * @param dfString
-	 *            The dateFormatString to set.
-	 */
-	public void setDateFormatString(String dfString) {
-		dateEditor.setDateFormatString(dfString);
-		invalidate();
-	}
+    /**
+     * Sets the date format string. E.g "MMMMM d, yyyy" will result in "July 21,
+     * 2004" if this is the selected date and locale is English.
+     *
+     * @param dfString
+     *            The dateFormatString to set.
+     */
+    public void setDateFormatString(String dfString) {
+        dateEditor.setDateFormatString(dfString);
+        invalidate();
+    }
 
-	/**
-	 * Returns the date. If the JDateChooser is started with a null date and no
-	 * date was set by the user, null is returned.
-	 * 
-	 * @return the current date
-	 */
-	public java.sql.Date getDate() {
-		Date d = dateEditor.getDate();
-		return d != null ? new java.sql.Date(d.getTime()) : null;
-	}
+    /**
+     * Returns the date. If the JDateChooser is started with a null date and no
+     * date was set by the user, null is returned.
+     *
+     * @return the current date
+     */
+    public java.sql.Date getDate() {
+        Date d = dateEditor.getDate();
+        return d != null ? new java.sql.Date(d.getTime()) : null;
+    }
 
-	/**
-	 * Sets the date. Fires the property change "date" if date != null.
-	 * 
-	 * @param date
-	 *            the new date.
-	 */
-	public void setDate(Date date) {
-		dateEditor.setDate(date);
-		if (getParent() != null) {
-			getParent().invalidate();
-		}
-	}
+    /**
+     * Sets the date. Fires the property change "date" if date != null.
+     *
+     * @param date
+     *            the new date.
+     */
+    public void setDate(Date date) {
+        dateEditor.setDate(date);
+        if (getParent() != null) {
+            getParent().invalidate();
+        }
+    }
 
-	public void setMaximumValue(Date dMaximum) {
-		jcalendar.setMaxSelectableDate(dMaximum);
-		dateEditor.setMaxSelectableDate(dMaximum);
-	}
+    /**
+     * Returns the calendar. If the JDateChooser is started with a null date (or
+     * null calendar) and no date was set by the user, null is returned.
+     *
+     * @return the current calendar
+     */
+    public Calendar getCalendar() {
+        Date date = getDate();
+        if (date == null) {
+            return null;
+        }
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+        return calendar;
+    }
 
-	public void setMinimumValue(Date dMinimum) {
-		dateEditor.setMinSelectableDate(dMinimum);
-		jcalendar.setMinSelectableDate(dMinimum);
-	}
+    public void setCalendar(Calendar calendar) {
+        dateEditor.setDate(calendar != null ? calendar.getTime() : null ) ;
+    }
 
-	public void setTimestamp(Timestamp t) {
-		setDate(t != null ? new Date(t.getTime()) : null);
-	}
+    public void setDatumHeute(){
+        setDate(Helper.cutDate(new Date()));
+    }
 
-	public Timestamp getTimestamp() {
-		Date d = getDate();
-		return d != null ? new Timestamp(d.getTime()) : null;
-	}
+    public void setEnabled(boolean enabled) {
+        super.setEnabled(enabled);
+        if (dateEditor != null) {
+            dateEditor.setEnabled(enabled);
+            calendarButton.setEnabled(enabled);
 
-	/**
-	 * Returns the calendar. If the JDateChooser is started with a null date (or
-	 * null calendar) and no date was set by the user, null is returned.
-	 * 
-	 * @return the current calendar
-	 */
-	public Calendar getCalendar() {
-		Date date = getDate();
-		if (date == null) {
-			return null;
-		}
-		Calendar calendar = Calendar.getInstance();
-		calendar.setTime(date);
-		return calendar;
-	}
+            if (!isMandatoryField) {
+                if (bWithRubber) {
+                    jbuSetNull.setVisible(enabled);
+                }
+            }
 
-	public void setCalendar(Calendar calendar) {
-//		if (calendar == null) {
-//			dateEditor.setDate(null);
-//		} else {
-//			dateEditor.setDate(calendar.getTime());
-//		}
-//		
-		dateEditor.setDate(calendar != null ? calendar.getTime() : null ) ;
-	}
+            if (enabled) {
+                dateEditor.getUiComponent().setBackground(
+                        HelperClient.getEditableColor());
+            } else {
+                dateEditor.getUiComponent().setBackground(
+                        HelperClient.getNotEditableColor());
+            }
 
-	public void setDatumHeute(){
-		setDate(Helper.cutDate(new Date()));
-	}
-	
-	public void setEnabled(boolean enabled) {
-		super.setEnabled(enabled);
-		if (dateEditor != null) {
-			dateEditor.setEnabled(enabled);
-			calendarButton.setEnabled(enabled);
+        }
+    }
 
-			if (!isMandatoryField) {
-				if (bWithRubber) {
-					jbuSetNull.setVisible(enabled);
-				}
-			}
+    public void cleanup(){
+        jcalendar=null;
+        popup=null;
+    }
 
-			if (enabled) {
-				dateEditor.getUiComponent().setBackground(
-						HelperClient.getEditableColor());
-			} else {
-				dateEditor.getUiComponent().setBackground(
-						HelperClient.getNotEditableColor());
-			}
+    public boolean isEnabled() {
+        return super.isEnabled();
+    }
 
-		}
-	}
+    public JCalendar getJCalendar() {
+        return jcalendar;
+    }
 
-	public boolean isEnabled() {
-		return super.isEnabled();
-	}
+    public JButton getCalendarButton() {
+        return calendarButton;
+    }
 
-	public JCalendar getJCalendar() {
-		return jcalendar;
-	}
+    public IDateEditor getDateEditor() {
+        return dateEditor;
+    }
 
-	public JButton getCalendarButton() {
-		return calendarButton;
-	}
+    public void setSelectableDateRange(Date min, Date max) {
+        jcalendar.setSelectableDateRange(min, max);
+        this.dateEditor.setSelectableDateRange(
+                jcalendar.getMinSelectableDate(),
+                jcalendar.getMaxSelectableDate());
+    }
 
-	public IDateEditor getDateEditor() {
-		return dateEditor;
-	}
+    public void setMaxSelectableDate(Date max) {
+        jcalendar.setMaxSelectableDate(max);
+        this.dateEditor.setMaxSelectableDate(max);
+    }
 
-	public void setSelectableDateRange(Date min, Date max) {
-		jcalendar.setSelectableDateRange(min, max);
-		this.dateEditor.setSelectableDateRange(
-				jcalendar.getMinSelectableDate(),
-				jcalendar.getMaxSelectableDate());
-	}
+    public void setMinSelectableDate(Date min) {
+        jcalendar.setMinSelectableDate(min);
+        this.dateEditor.setMinSelectableDate(min);
+    }
 
-	public void setMaxSelectableDate(Date max) {
-		jcalendar.setMaxSelectableDate(max);
-		this.dateEditor.setMaxSelectableDate(max);
-	}
+    public void setMaximumValue(Date dMaximum) {
+        jcalendar.setMaxSelectableDate(dMaximum);
+        dateEditor.setMaxSelectableDate(dMaximum);
+    }
 
-	public void setMinSelectableDate(Date min) {
-		jcalendar.setMinSelectableDate(min);
-		this.dateEditor.setMinSelectableDate(min);
-	}
+    public void setMinimumValue(Date dMinimum) {
+        jcalendar.setMinSelectableDate(dMinimum);
+     	dateEditor.setMinSelectableDate(dMinimum);
+    }
 
-	/**
-	 * Gets the maximum selectable date.
-	 * 
-	 * @return the maximum selectable date
-	 */
-	public Date getMaxSelectableDate() {
-		return jcalendar.getMaxSelectableDate();
-	}
+    public void setTimestamp(Timestamp t) {
+        setDate(t != null ? new Date(t.getTime()) : null);
+    }
 
-	/**
-	 * Gets the minimum selectable date.
-	 * 
-	 * @return the minimum selectable date
-	 */
-	public Date getMinSelectableDate() {
-		return jcalendar.getMinSelectableDate();
-	}
+    public Timestamp getTimestamp() {
+        Date d = getDate();
+        return d != null ? new Timestamp(d.getTime()) : null;
+    }
 
-	/**
-	 * Should only be invoked if the JDateChooser is not used anymore. Due to
-	 * popup handling it had to register a change listener to the default menu
-	 * selection manager which will be unregistered here. Use this method to
-	 * cleanup possible memory leaks.
-	 */
+    /**
+     * Gets the maximum selectable date.
+     *
+     * @return the maximum selectable date
+     */
+    public Date getMaxSelectableDate() {
+        return jcalendar.getMaxSelectableDate();
+    }
 
-	public JComponent getDisplay() {
-		return dateEditor.getUiComponent();
-	}
+    /**
+     * Gets the minimum selectable date.
+     *
+     * @return the minimum selectable date
+     */
+    public Date getMinSelectableDate() {
+        return jcalendar.getMinSelectableDate();
+    }
 
-	public void setMandatoryFieldDB(boolean isMandatoryFieldDB) {
-		this.isMandatoryFieldDB = isMandatoryFieldDB;
-		if (isMandatoryFieldDB == true) {
-			setMandatoryField(true);
-		}
-	}
+    /**
+     * Should only be invoked if the JDateChooser is not used anymore. Due to
+     * popup handling it had to register a change listener to the default menu
+     * selection manager which will be unregistered here. Use this method to
+     * cleanup possible memory leaks.
+     */
 
-	public boolean isMandatoryField() {
-		return isMandatoryField || isMandatoryFieldDB;
-	}
+    public JComponent getDisplay() {
+        return dateEditor.getUiComponent();
+    }
 
-	public void setShowRubber(boolean bShowRubber) {
-		jbuSetNull.setVisible(bShowRubber);
-	}
+    public void setMandatoryFieldDB(boolean isMandatoryFieldDB) {
+        this.isMandatoryFieldDB = isMandatoryFieldDB;
+        if (isMandatoryFieldDB == true) {
+            setMandatoryField(true);
+        }
+    }
 
-	public void setMandatoryField(boolean isMandatoryField) {
-		jbuSetNull.setVisible(!isMandatoryField);
-		if (isMandatoryFieldDB == false || isMandatoryField == true) {
-			this.isMandatoryField = isMandatoryField;
-			if (this.isMandatoryField == true) {
-				this.dateEditor.getUiComponent().setBorder(
-						Defaults.getInstance().getMandatoryFieldBorder());
-			} else {
-				this.dateEditor.getUiComponent().setBorder(
-						new WrapperTextField().getBorder());
-			}
-		}
-	}
+    public boolean isMandatoryField() {
+        return isMandatoryField || isMandatoryFieldDB;
+    }
 
-	public void setEditable(boolean bEditable) {
-		this.dateEditor.getUiComponent().setEnabled(bEditable);
-	}
+    public void setShowRubber(boolean bShowRubber) {
+        jbuSetNull.setVisible(bShowRubber);
+    }
 
-	public boolean isMandatoryFieldDB() {
-		return isMandatoryFieldDB;
-	}
+    public void setMandatoryField(boolean isMandatoryField) {
+        jbuSetNull.setVisible(!isMandatoryField);
+        if (isMandatoryFieldDB == false || isMandatoryField == true) {
+            this.isMandatoryField = isMandatoryField;
+            if (this.isMandatoryField == true) {
+                this.dateEditor.getUiComponent().setBorder(
+                        Defaults.getInstance().getMandatoryFieldBorder());
+            } else {
+                this.dateEditor.getUiComponent().setBorder(
+                        new WrapperTextField().getBorder());
+            }
+        }
+    }
 
-	public boolean isBwithRubber() {
-		return bWithRubber;
-	}
+    public void setEditable(boolean bEditable) {
+        this.dateEditor.getUiComponent().setEnabled(bEditable);
+    }
 
-	public void setBwithRubber(boolean bwithRubber) {
-		this.bWithRubber = bwithRubber;
-	}
+    public boolean isMandatoryFieldDB() {
+        return isMandatoryFieldDB;
+    }
 
-	@Override
-	public void focusGained(FocusEvent arg0) {
-		//ist nicht relevant
-	}
+    public boolean isBwithRubber() {
+        return bWithRubber;
+    }
 
-	@Override
-	public void focusLost(FocusEvent arg0) {
-		showDialogIfDiffMoreThan(getDate(), 5);
-	}
-	@Override
-	public boolean hasContent() throws Throwable {
-		return getDate() != null;// && dateEditor.checkDate();
-	}
+    public void setBwithRubber(boolean bwithRubber) {
+        this.bWithRubber = bwithRubber;
+    }
+
+    @Override
+    public void focusGained(FocusEvent arg0) {
+
+    }
+
+    @Override
+    public void focusLost(FocusEvent arg0) {
+    	showDialogIfDiffMoreThan(getDate(), 5);
+    }
+
+    @Override
+    public boolean hasContent() throws Throwable {
+        return getDate() != null;// && dateEditor.checkDate();
+    }
+
 }

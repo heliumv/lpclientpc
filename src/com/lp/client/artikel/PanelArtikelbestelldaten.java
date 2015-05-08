@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -48,6 +48,7 @@ import javax.swing.border.EtchedBorder;
 
 import net.miginfocom.swing.MigLayout;
 
+import com.lp.client.frame.Defaults;
 import com.lp.client.frame.ExceptionLP;
 import com.lp.client.frame.HelperClient;
 import com.lp.client.frame.component.InternalFrame;
@@ -89,9 +90,9 @@ public class PanelArtikelbestelldaten extends PanelBasis {
 	private WrapperNumberField wnfLagersollstand = new WrapperNumberField();
 	private WrapperNumberField wnfFertigungssatzgroesse = new WrapperNumberField();
 
-	private WrapperSelectField wsfHersteller = new WrapperSelectField(WrapperSelectField.HERSTELLER,
-			getInternalFrame(), true);
-	
+	private WrapperSelectField wsfHersteller = new WrapperSelectField(
+			WrapperSelectField.HERSTELLER, getInternalFrame(), true);
+
 	private WrapperLabel wlaDummy = new WrapperLabel();
 	private WrapperLabel wlaArtikelBez = new WrapperLabel();
 	private WrapperTextField wtfArtikelBez = new WrapperTextField();
@@ -108,6 +109,8 @@ public class PanelArtikelbestelldaten extends PanelBasis {
 	private WrapperLabel wlaLagermindestMengeneinheit = new WrapperLabel();
 	private WrapperLabel wlaFertigungssatzgroesseMengeneinheit = new WrapperLabel();
 	private WrapperLabel wlaJahresmengeprozent = new WrapperLabel();
+	private WrapperLabel wlaFertigungsVPE = new WrapperLabel();
+	private WrapperNumberField wnfFertigungsVPE = new WrapperNumberField();
 
 	private WrapperLabel wlaDetailprozentmindeststand = new WrapperLabel();
 	private WrapperNumberField wnfDetailprozentmindeststand = new WrapperNumberField();
@@ -116,6 +119,9 @@ public class PanelArtikelbestelldaten extends PanelBasis {
 	private WrapperTextField wtfHerstellerNr = new WrapperTextField();
 	private WrapperLabel wlaHerstellerBez = new WrapperLabel();
 	private WrapperTextField wtfHerstellerBez = new WrapperTextField();
+
+	private WrapperLabel wlaUeberproduktion = new WrapperLabel();
+	private WrapperNumberField wnfUeberproduktion = new WrapperNumberField();
 
 	public PanelArtikelbestelldaten(InternalFrame internalFrame,
 			String add2TitleI, Object pk) throws Throwable {
@@ -167,6 +173,11 @@ public class PanelArtikelbestelldaten extends PanelBasis {
 				"artikel.letzterabgang"));
 		wlaverschnittfaktor.setText(LPMain.getInstance().getTextRespectUISPr(
 				"artikel.verschnittfaktor"));
+		wlaUeberproduktion.setText(LPMain.getInstance().getTextRespectUISPr(
+				"artikel.ueberproduktion"));
+		wlaFertigungsVPE.setText(LPMain.getInstance().getTextRespectUISPr(
+				"artikel.fertigungsvpe"));
+
 		wlaJahresmenge.setText(LPMain.getInstance().getTextRespectUISPr(
 				"artikel.jahresmenge"));
 		wlaLagersollstand.setText(LPMain.getInstance().getTextRespectUISPr(
@@ -218,6 +229,11 @@ public class PanelArtikelbestelldaten extends PanelBasis {
 		wlaJahresmengeprozent.setHorizontalAlignment(SwingConstants.LEFT);
 		wlaJahresmengeprozent.setText("EHT");
 		wnfVerschnittfaktor.setMinimumValue(new BigDecimal(0));
+		wnfUeberproduktion.setMinimumValue(new BigDecimal(0));
+		
+		wnfFertigungsVPE.setFractionDigits(Defaults.getInstance().getIUINachkommastellenMenge());
+		wnfVerschnitt.setFractionDigits(Defaults.getInstance().getIUINachkommastellenMenge());
+		
 
 		JPanel jpaWorkingOn = new JPanel(new MigLayout("wrap 6",
 				"[20%][15%][5%][30%][15%][5%]"));
@@ -245,14 +261,15 @@ public class PanelArtikelbestelldaten extends PanelBasis {
 		jpaWorkingOn.add(wtfArtikelZBez2, "growx, span, wrap 30");
 
 		jpaWorkingOn.add(wsfHersteller.getWrapperButton(), "growx");
-		jpaWorkingOn.add(wsfHersteller.getWrapperTextField(), "growx,span 3, wrap");
-		
+		jpaWorkingOn.add(wsfHersteller.getWrapperTextField(),
+				"growx,span 3, wrap");
+
 		jpaWorkingOn.add(wlaHerstellerNr, "growx");
 		jpaWorkingOn.add(wtfHerstellerNr, "growx,span 3, wrap");
 
 		jpaWorkingOn.add(wlaHerstellerBez, "growx");
 		jpaWorkingOn.add(wtfHerstellerBez, "growx, span 3,wrap 30");
-		
+
 		jpaWorkingOn.add(wlaLetzterzugang, "growx");
 		jpaWorkingOn.add(wdfLetzterzugang, "growx");
 		jpaWorkingOn.add(wla8, "growx");
@@ -268,7 +285,14 @@ public class PanelArtikelbestelldaten extends PanelBasis {
 
 		jpaWorkingOn.add(wlaJahresmenge, "growx");
 		jpaWorkingOn.add(wnfJahresmenge, "growx");
-		jpaWorkingOn.add(wlaJahresmengeprozent, "growx, wrap");
+		jpaWorkingOn.add(wlaJahresmengeprozent, "growx");
+		jpaWorkingOn.add(wlaUeberproduktion, "growx");
+		jpaWorkingOn.add(wnfUeberproduktion, "growx");
+
+		WrapperLabel wlaUeberproduktionProzent = new WrapperLabel("%");
+		wlaUeberproduktionProzent.setHorizontalAlignment(SwingConstants.LEFT);
+
+		jpaWorkingOn.add(wlaUeberproduktionProzent, "growx");
 
 		jpaWorkingOn.add(wlaLagermindeststand, "growx");
 		jpaWorkingOn.add(wnfLagermindeststand, "growx");
@@ -293,9 +317,10 @@ public class PanelArtikelbestelldaten extends PanelBasis {
 		jpaWorkingOn.add(wlaLagersollMengeneinheit, "growx, wrap");
 
 		jpaWorkingOn.add(wlaFertigungssatzgrosse, "growx");
-		jpaWorkingOn.add(wnfFertigungssatzgroesse, "growx, wrap");
-
-
+		jpaWorkingOn.add(wnfFertigungssatzgroesse, "growx");
+		jpaWorkingOn.add(new WrapperLabel(""), "growx");
+		jpaWorkingOn.add(wlaFertigungsVPE, "growx");
+		jpaWorkingOn.add(wnfFertigungsVPE, "growx, wrap");
 
 		String[] aWhichButtonIUse = { ACTION_UPDATE, ACTION_SAVE,
 				ACTION_DISCARD, ACTION_PREVIOUS, ACTION_NEXT, };
@@ -314,11 +339,10 @@ public class PanelArtikelbestelldaten extends PanelBasis {
 		wnfFertigungssatzgroesse.setDouble(artikelDto
 				.getFFertigungssatzgroesse());
 
-		
-		
-		
 		wnfVerschnitt.setDouble(artikelDto.getFVerschnittbasis());
 		wnfVerschnittfaktor.setDouble(artikelDto.getFVerschnittfaktor());
+		wnfUeberproduktion.setDouble(artikelDto.getFUeberproduktion());
+		wnfFertigungsVPE.setDouble(artikelDto.getFFertigungsVpe());
 		wlaVerschnittMengeneinheit.setText(artikelDto.getEinheitCNr().trim());
 		wlaLagermindestMengeneinheit.setText(artikelDto.getEinheitCNr().trim());
 		wlaLagersollMengeneinheit.setText(artikelDto.getEinheitCNr().trim());
@@ -328,7 +352,7 @@ public class PanelArtikelbestelldaten extends PanelBasis {
 				.getFDetailprozentmindeststand());
 
 		wsfHersteller.setKey(artikelDto.getHerstellerIId());
-		
+
 		wtfArtikelnummer.setText(artikelDto.getCNr());
 
 		wtfHerstellerBez.setText(artikelDto.getCArtikelbezhersteller());
@@ -359,7 +383,9 @@ public class PanelArtikelbestelldaten extends PanelBasis {
 	protected void components2Dto() throws ExceptionLP {
 		artikelDto.setFVerschnittbasis(wnfVerschnitt.getDouble());
 		artikelDto.setFVerschnittfaktor(wnfVerschnittfaktor.getDouble());
+		artikelDto.setFUeberproduktion(wnfUeberproduktion.getDouble());
 		artikelDto.setFJahresmenge(wnfJahresmenge.getDouble());
+		artikelDto.setFFertigungsVpe(wnfFertigungsVPE.getDouble());
 		artikelDto.setFLagersoll(wnfLagersollstand.getDouble());
 		artikelDto.setFLagermindest(wnfLagermindeststand.getDouble());
 		artikelDto.setFFertigungssatzgroesse(wnfFertigungssatzgroesse
@@ -368,9 +394,9 @@ public class PanelArtikelbestelldaten extends PanelBasis {
 				.getDouble());
 		artikelDto.setCArtikelbezhersteller(wtfHerstellerBez.getText());
 		artikelDto.setCArtikelnrhersteller(wtfHerstellerNr.getText());
-		
+
 		artikelDto.setHerstellerIId(wsfHersteller.getIKey());
-		
+
 	}
 
 	public void eventActionSave(ActionEvent e, boolean bNeedNoSaveI)

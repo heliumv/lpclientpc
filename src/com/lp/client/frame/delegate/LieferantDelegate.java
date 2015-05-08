@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -39,6 +39,7 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 
 import com.lp.client.frame.ExceptionLP;
+import com.lp.client.frame.component.InternalFrame;
 import com.lp.client.frame.dialog.DialogFactory;
 import com.lp.client.pc.LPMain;
 import com.lp.server.finanz.service.KontoDto;
@@ -49,9 +50,12 @@ import com.lp.server.partner.service.LieferantDto;
 import com.lp.server.partner.service.LieferantFac;
 import com.lp.server.partner.service.LieferantReportFac;
 import com.lp.server.partner.service.LieferantbeurteilungDto;
+import com.lp.server.partner.service.PartnerServicesFac;
 import com.lp.server.partner.service.StatistikParamDto;
+import com.lp.server.system.service.LocaleFac;
 import com.lp.server.system.service.TheClientDto;
 import com.lp.server.util.report.JasperPrintLP;
+import com.lp.util.Helper;
 
 public class LieferantDelegate extends Delegate {
 	private Context context;
@@ -364,7 +368,8 @@ public class LieferantDelegate extends Delegate {
 		return k;
 	}
 
-	public void pruefeLieferant(Integer LieferantIId) throws ExceptionLP {
+	public void pruefeLieferant(Integer LieferantIId, String belegartCNr,
+			InternalFrame internalFrame) throws ExceptionLP {
 		try {
 			LieferantDto lieferantDto = lieferantFac.lieferantFindByPrimaryKey(
 					LieferantIId, LPMain.getTheClient());
@@ -385,6 +390,32 @@ public class LieferantDelegate extends Delegate {
 						LPMain.getTextRespectUISPr("lief.hinweisintern") + " "
 								+ lieferantDto.getCHinweisintern());
 			}
+			if (belegartCNr != null) {
+				// Partnerhinweise anzeigen
+				String[] hinweise = DelegateFactory
+						.getInstance()
+						.getPartnerServicesDelegate()
+						.getPartnerhinweise(lieferantDto.getPartnerIId(),
+								false, belegartCNr);
+				for (int i = 0; i < hinweise.length; i++) {
+					DialogFactory.showModalDialog(
+							LPMain.getTextRespectUISPr("lp.hinweis"),
+							Helper.strippHTML(hinweise[i]));
+				}
+
+				ArrayList<byte[]> bilder = DelegateFactory
+						.getInstance()
+						.getPartnerServicesDelegate()
+						.getPartnerkommentarBilderUndPDFAlsBilderUmgewandelt(
+								lieferantDto.getPartnerIId(), false,
+								belegartCNr,
+								PartnerServicesFac.PARTNERKOMMENTARART_HINWEIS);
+
+				if (bilder != null && bilder.size() > 0) {
+					DialogFactory.showArtikelHinweisBild(bilder, internalFrame);
+				}
+			}
+
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 		}

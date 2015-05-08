@@ -1,33 +1,33 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
- * 
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
+ *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published 
- * by the Free Software Foundation, either version 3 of theLicense, or 
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of theLicense, or
  * (at your option) any later version.
- * 
- * According to sec. 7 of the GNU Affero General Public License, version 3, 
+ *
+ * According to sec. 7 of the GNU Affero General Public License, version 3,
  * the terms of the AGPL are supplemented with the following terms:
- * 
- * "HELIUM V" and "HELIUM 5" are registered trademarks of 
- * HELIUM V IT-Solutions GmbH. The licensing of the program under the 
+ *
+ * "HELIUM V" and "HELIUM 5" are registered trademarks of
+ * HELIUM V IT-Solutions GmbH. The licensing of the program under the
  * AGPL does not imply a trademark license. Therefore any rights, title and
  * interest in our trademarks remain entirely with us. If you want to propagate
  * modified versions of the Program under the name "HELIUM V" or "HELIUM 5",
- * you may only do so if you have a written permission by HELIUM V IT-Solutions 
+ * you may only do so if you have a written permission by HELIUM V IT-Solutions
  * GmbH (to acquire a permission please contact HELIUM V IT-Solutions
  * at trademark@heliumv.com).
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Affero General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Contact: developers@heliumv.com
  ******************************************************************************/
 package com.lp.client.angebot;
@@ -37,6 +37,7 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.FocusEvent;
 import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.util.EventObject;
 
 import javax.swing.JComponent;
@@ -44,13 +45,13 @@ import javax.swing.JComponent;
 import com.lp.client.frame.Defaults;
 import com.lp.client.frame.ExceptionLP;
 import com.lp.client.frame.HelperClient;
+import com.lp.client.frame.component.HvActionEvent;
 import com.lp.client.frame.component.InternalFrame;
 import com.lp.client.frame.component.ItemChangedEvent;
 import com.lp.client.frame.component.PanelBasis;
 import com.lp.client.frame.component.PanelPositionen2;
 import com.lp.client.frame.component.PanelPositionenArtikelVerkauf;
 import com.lp.client.frame.component.PositionNumberHelperAngebot;
-import com.lp.client.frame.component.PositionNumberHelperRechnung;
 import com.lp.client.frame.component.WrapperCheckBox;
 import com.lp.client.frame.component.WrapperLabel;
 import com.lp.client.frame.component.WrapperNumberField;
@@ -61,12 +62,11 @@ import com.lp.client.pc.LPMain;
 import com.lp.client.pc.PasteBuffer;
 import com.lp.server.angebot.service.AngebotServiceFac;
 import com.lp.server.angebot.service.AngebotpositionDto;
-import com.lp.server.angebot.service.AngebotpositionFac;
 import com.lp.server.artikel.service.ArtikelDto;
-import com.lp.server.rechnung.service.RechnungFac;
-import com.lp.server.rechnung.service.RechnungPositionDto;
 import com.lp.server.system.service.LocaleFac;
 import com.lp.server.system.service.MwstsatzDto;
+import com.lp.server.system.service.ParameterFac;
+import com.lp.server.system.service.ParametermandantDto;
 import com.lp.util.EJBExceptionLP;
 import com.lp.util.Helper;
 
@@ -81,7 +81,7 @@ import com.lp.util.Helper;
  */
 public class PanelAngebotPositionen extends PanelPositionen2 {
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = 1L;
 	/** Cache for convenience. */
@@ -95,6 +95,9 @@ public class PanelAngebotPositionen extends PanelPositionen2 {
 	private WrapperLabel wlaGestehungspreisArtikel = null;
 	private WrapperNumberField wnfGestehungspreisArtikel = null;
 	private WrapperLabel wlaWaehrungGestehungspreisArtikel = null;
+
+	private WrapperLabel wlaEinkaufspreisArtikel = null;
+	private WrapperNumberField wnfEinkaufspreisArtikel = null;
 
 	private WrapperCheckBox wcbAlternativeHandeingabe = null;
 	private WrapperLabel wlaGestehungspreisHandeingabe = null;
@@ -149,15 +152,43 @@ public class PanelAngebotPositionen extends PanelPositionen2 {
 				.getIUINachkommastellenPreiseVK());
 		wlaWaehrungGestehungspreisArtikel = new WrapperLabel();
 
+		wlaEinkaufspreisArtikel = new WrapperLabel(
+				LPMain.getTextRespectUISPr("lp.einkaufspreis"));
+		wnfEinkaufspreisArtikel = new WrapperNumberField();
+		wnfEinkaufspreisArtikel.setFractionDigits(Defaults.getInstance()
+				.getIUINachkommastellenPreiseVK());
+
 		panelArtikel.add(wcbAlternativeArtikel, new GridBagConstraints(1, 9, 1,
 				1, 0.0, 0.0, GridBagConstraints.NORTH,
 				GridBagConstraints.HORIZONTAL, new Insets(10, 0, 2, 2), 0, 0));
-		panelArtikel.add(wlaGestehungspreisArtikel, new GridBagConstraints(3,
-				9, 3, 1, 0.0, 0.0, GridBagConstraints.NORTH,
-				GridBagConstraints.HORIZONTAL, new Insets(10, 2, 2, 2), 0, 0));
-		panelArtikel.add(wnfGestehungspreisArtikel, new GridBagConstraints(6,
-				9, 1, 1, 0.0, 0.0, GridBagConstraints.NORTH,
-				GridBagConstraints.HORIZONTAL, new Insets(10, 2, 2, 2), 0, 0));
+
+		ParametermandantDto parameterDto = DelegateFactory
+				.getInstance()
+				.getParameterDelegate()
+				.getMandantparameter(LPMain.getTheClient().getMandant(),
+						ParameterFac.KATEGORIE_ANGEBOT,
+						ParameterFac.PARAMETER_LIEFERANT_ANGEBEN);
+		boolean bLieferantAngeben = (Boolean) parameterDto.getCWertAsObject();
+		if (bLieferantAngeben == true) {
+			panelArtikel.add(wlaEinkaufspreisArtikel, new GridBagConstraints(3,
+					9, 3, 1, 0.0, 0.0, GridBagConstraints.NORTH,
+					GridBagConstraints.HORIZONTAL, new Insets(10, 2, 2, 2), 0,
+					0));
+			panelArtikel.add(wnfEinkaufspreisArtikel, new GridBagConstraints(6,
+					9, 1, 1, 0.0, 0.0, GridBagConstraints.NORTH,
+					GridBagConstraints.HORIZONTAL, new Insets(10, 2, 2, 2), 0,
+					0));
+		} else {
+			panelArtikel.add(wlaGestehungspreisArtikel, new GridBagConstraints(
+					3, 9, 3, 1, 0.0, 0.0, GridBagConstraints.NORTH,
+					GridBagConstraints.HORIZONTAL, new Insets(10, 2, 2, 2), 0,
+					0));
+			panelArtikel.add(wnfGestehungspreisArtikel, new GridBagConstraints(
+					6, 9, 1, 1, 0.0, 0.0, GridBagConstraints.NORTH,
+					GridBagConstraints.HORIZONTAL, new Insets(10, 2, 2, 2), 0,
+					0));
+		}
+
 		panelArtikel.add(wlaWaehrungGestehungspreisArtikel,
 				new GridBagConstraints(7, 9, 1, 1, 0.0, 0.0,
 						GridBagConstraints.NORTH,
@@ -208,6 +239,10 @@ public class PanelAngebotPositionen extends PanelPositionen2 {
 		wlaGestehungspreisArtikel
 				.setVisible(getInternalFrame().bRechtDarfPreiseSehenEinkauf);
 		wnfGestehungspreisArtikel
+				.setVisible(getInternalFrame().bRechtDarfPreiseSehenEinkauf);
+		wlaEinkaufspreisArtikel
+				.setVisible(getInternalFrame().bRechtDarfPreiseSehenEinkauf);
+		wnfEinkaufspreisArtikel
 				.setVisible(getInternalFrame().bRechtDarfPreiseSehenEinkauf);
 		wlaWaehrungGestehungspreisArtikel
 				.setVisible(getInternalFrame().bRechtDarfPreiseSehenEinkauf);
@@ -270,6 +305,8 @@ public class PanelAngebotPositionen extends PanelPositionen2 {
 		wlaWaehrungGestehungspreisArtikel.setText(tpAngebot.getAngebotDto()
 				.getWaehrungCNr());
 		wnfGestehungspreisArtikel.setBigDecimal(new BigDecimal(0));
+
+		wnfGestehungspreisArtikel.setBigDecimal(null);
 
 		wlaWaehrungGestehungspreisHandeingabe.setText(tpAngebot.getAngebotDto()
 				.getWaehrungCNr());
@@ -343,7 +380,7 @@ public class PanelAngebotPositionen extends PanelPositionen2 {
 	/**
 	 * Verwerfen der aktuelle Usereingabe und zurueckgehen auf den bestehenden
 	 * Datensatz, wenn einer existiert.
-	 * 
+	 *
 	 * @param e
 	 *            Ereignis
 	 * @throws Throwable
@@ -563,6 +600,13 @@ public class PanelAngebotPositionen extends PanelPositionen2 {
 								.updateAngebotposition(angebotpositionDto);
 					}
 
+					// SP2140 Korrekturbetraag zuruecksetzen
+					DelegateFactory
+							.getInstance()
+							.getAngebotDelegate()
+							.korrekturbetragZuruecknehmen(
+									angebotpositionDto.getBelegIId());
+
 					// buttons schalten
 					super.eventActionSave(e, false);
 
@@ -623,6 +667,12 @@ public class PanelAngebotPositionen extends PanelPositionen2 {
 		if (tpAngebot.istAktualisierenAngebotErlaubt()) {
 			DelegateFactory.getInstance().getAngebotpositionDelegate()
 					.removeAngebotposition(angebotpositionDto);
+			DelegateFactory
+					.getInstance()
+					.getAngebotDelegate()
+					.korrekturbetragZuruecknehmen(
+							angebotpositionDto.getBelegIId());
+
 			this.setKeyWhenDetailPanel(null);
 			super.eventActionDelete(e, false, false); // keyWasForLockMe nicht
 														// ueberschreiben
@@ -643,6 +693,8 @@ public class PanelAngebotPositionen extends PanelPositionen2 {
 					.short2boolean(angebotpositionDto.getBAlternative()));
 			wnfGestehungspreisArtikel.setBigDecimal(angebotpositionDto
 					.getNGestehungspreis());
+			wnfEinkaufspreisArtikel.setBigDecimal(angebotpositionDto
+					.getNEinkaufpreis());
 		} else if (positionsart
 				.equalsIgnoreCase(AngebotServiceFac.ANGEBOTPOSITIONART_HANDEINGABE)) {
 			// Angebotsspezifisches.
@@ -661,6 +713,7 @@ public class PanelAngebotPositionen extends PanelPositionen2 {
 					.getCNr());
 			panelAGStueckliste.wtfBezeichnungAgstkl
 					.setText(panelAGStueckliste.agstklDto.getCBez());
+			panelAGStueckliste.wbuAgstklGoto.setOKey(panelAGStueckliste.agstklDto.getIId());
 
 			panelAGStueckliste.wnfMenge.setBigDecimal(angebotpositionDto
 					.getNMenge());
@@ -694,8 +747,12 @@ public class PanelAngebotPositionen extends PanelPositionen2 {
 
 			panelAGStueckliste.wnfNettopreis.setBigDecimal(angebotpositionDto
 					.getNNettoeinzelpreis());
-			panelAGStueckliste.wnfNettopreis.getWrbFixNumber().setSelected(Helper.short2boolean(angebotpositionDto.getBNettopreisuebersteuert()));
-			panelAGStueckliste.wnfRabattsumme.getWrbFixNumber().setSelected(Helper.short2boolean(angebotpositionDto.getBRabattsatzuebersteuert()));
+			panelAGStueckliste.wnfNettopreis.getWrbFixNumber().setSelected(
+					Helper.short2boolean(angebotpositionDto
+							.getBNettopreisuebersteuert()));
+			panelAGStueckliste.wnfRabattsumme.getWrbFixNumber().setSelected(
+					Helper.short2boolean(angebotpositionDto
+							.getBRabattsatzuebersteuert()));
 
 			BigDecimal nMwstsumme = angebotpositionDto.getNNettoeinzelpreis()
 					.multiply(
@@ -772,6 +829,8 @@ public class PanelAngebotPositionen extends PanelPositionen2 {
 					.boolean2Short(wcbAlternativeArtikel.isSelected()));
 			angebotpositionDto.setNGestehungspreis(wnfGestehungspreisArtikel
 					.getBigDecimal());
+			angebotpositionDto.setNEinkaufpreis(wnfEinkaufspreisArtikel
+					.getBigDecimal());
 		} else if (positionsart
 				.equalsIgnoreCase(AngebotServiceFac.ANGEBOTPOSITIONART_HANDEINGABE)) {
 			// hier zusaetzlich gespeicherte Betraege.
@@ -803,7 +862,7 @@ public class PanelAngebotPositionen extends PanelPositionen2 {
 			angebotpositionDto.setBNettopreisuebersteuert(Helper
 					.boolean2Short(panelAGStueckliste.wnfNettopreis
 							.getWrbFixNumber().isSelected()));
-			
+
 			angebotpositionDto.setBRabattsatzuebersteuert(Helper
 					.boolean2Short(panelAGStueckliste.wnfRabattsumme
 							.getWrbFixNumber().isSelected()));
@@ -913,8 +972,30 @@ public class PanelAngebotPositionen extends PanelPositionen2 {
 		}
 	}
 
-	protected void eventActionPrint(ActionEvent e) throws Throwable {
-		tpAngebot.printAngebot();
+	protected void eventActionPrint(HvActionEvent e) throws Throwable {
+
+		if (e.isMouseEvent() && e.isRightButtonPressed()) {
+
+			boolean bStatusAngelegt = tpAngebot.getAngebotDto().getStatusCNr().equals(AngebotServiceFac.ANGEBOTSTATUS_ANGELEGT);
+			boolean bKonditionen = tpAngebot.pruefeKonditionen();
+
+			if (bStatusAngelegt && bKonditionen) {
+				DelegateFactory.getInstance().getAngebotDelegate().berechneAktiviereBelegControlled(
+						tpAngebot.getAngebotDto().getIId());
+				eventActionRefresh(e, false);
+			}
+			else if (!bStatusAngelegt) {
+				DialogFactory.showModalDialog("Status",
+						LPMain.getMessageTextRespectUISPr("status.zustand",
+								LPMain.getTextRespectUISPr("angb.angebot"),
+								tpAngebot.getAngebotStatus().trim()));
+			}
+
+
+		} else {
+			tpAngebot.printAngebot();
+		}
+
 		eventYouAreSelected(false);
 	}
 
@@ -924,7 +1005,7 @@ public class PanelAngebotPositionen extends PanelPositionen2 {
 	 * MindestDB des Artikels erreicht (Gestehungspreis + Aufschlag MindestDB).
 	 * Ob diese Pruefung notwendig ist, bestimmt der Mandantenparameter
 	 * DEFAULT_ANGEBOT_PRUEFESTANDARDDBARTIKEL.
-	 * 
+	 *
 	 * @return boolean true, wenn der Parameter auf 1 steht
 	 * @throws java.lang.Throwable
 	 *             Ausnahme

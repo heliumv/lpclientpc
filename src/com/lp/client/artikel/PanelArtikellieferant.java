@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -37,6 +37,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.math.BigDecimal;
@@ -46,6 +47,8 @@ import javax.swing.ButtonGroup;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
+
+import net.miginfocom.swing.MigLayout;
 
 import com.lp.client.frame.Defaults;
 import com.lp.client.frame.ExceptionLP;
@@ -57,6 +60,7 @@ import com.lp.client.frame.component.ItemChangedEvent;
 import com.lp.client.frame.component.PanelBasis;
 import com.lp.client.frame.component.PanelQueryFLR;
 import com.lp.client.frame.component.WrapperCheckBox;
+import com.lp.client.frame.component.WrapperComboBox;
 import com.lp.client.frame.component.WrapperDateField;
 import com.lp.client.frame.component.WrapperGotoButton;
 import com.lp.client.frame.component.WrapperLabel;
@@ -86,15 +90,16 @@ public class PanelArtikellieferant extends PanelBasis {
 	private static final long serialVersionUID = 1L;
 	private ArtikellieferantDto artikellieferantDto = null;
 	private InternalFrameArtikel internalFrameArtikel = null;
-	private GridBagLayout gridBagLayoutAll = null;
-	private JPanel jpaWorkingOn = new JPanel();
+	private JPanel jpaWorkingOn;
 	private JPanel jpaButtonAction = null;
-	private GridBagLayout gridBagLayoutWorkingPanel = null;
 	private WrapperGotoButton wbuLieferant = new WrapperGotoButton(
 			WrapperGotoButton.GOTO_LIEFERANT_AUSWAHL);
 	private WrapperTextField wtfLieferant = new WrapperTextField();
 	private WrapperCheckBox wcbHerstellerbezeichnung = new WrapperCheckBox();
 	private WrapperCheckBox wcbWebshop = new WrapperCheckBox();
+
+	private WrapperComboBox wcoEinheitVpe = new WrapperComboBox();
+
 	private WrapperLabel wlaArtikelnummerbeilieferant = new WrapperLabel();
 	private WrapperLabel wlaEinzelpreis = new WrapperLabel();
 	private WrapperLabel wlaNettopreis = new WrapperLabel();
@@ -222,6 +227,8 @@ public class PanelArtikellieferant extends PanelBasis {
 				.getWaehrungCNr().trim());
 		wlaEinheitFixkosten.setText(artikellieferantDto.getLieferantDto()
 				.getWaehrungCNr().trim());
+		wcoEinheitVpe.setKeyOfSelectedItem(artikellieferantDto
+				.getEinheitCNrVpe());
 
 		if (Helper.short2boolean(artikellieferantDto.getBRabattbehalten()) == true) {
 			wrbRabatt.setSelected(true);
@@ -281,16 +288,12 @@ public class PanelArtikellieferant extends PanelBasis {
 
 	private void jbInit() throws Throwable {
 		// das Aussenpanel hat immer das Gridbaglayout.
-		gridBagLayoutAll = new GridBagLayout();
-		this.setLayout(gridBagLayoutAll);
+		this.setLayout(new GridBagLayout());
 		getInternalFrame().addItemChangedListener(this);
 
 		// Actionpanel von Oberklasse holen und anhaengen.
 		jpaButtonAction = getToolsPanel();
 		this.setActionMap(null);
-		jpaWorkingOn = new JPanel();
-		gridBagLayoutWorkingPanel = new GridBagLayout();
-		jpaWorkingOn.setLayout(gridBagLayoutWorkingPanel);
 		wbuLieferant
 				.setText(LPMain.getTextRespectUISPr("lp.lieferant") + "...");
 		wbuLieferant
@@ -312,6 +315,13 @@ public class PanelArtikellieferant extends PanelBasis {
 		wlaWiederbeschaffungszeit
 				.setText(LPMain
 						.getTextRespectUISPr("artikel.artikellieferant.wiederbeschaffungszeit"));
+
+		wcoEinheitVpe.setMap(DelegateFactory.getInstance().getSystemDelegate()
+				.getAllEinheiten());
+
+		wcoEinheitVpe
+				.addActionListener(new PanelArtikellieferant_wcoEinheitVpe_actionAdapter(
+						this));
 
 		wsfZertifikatart = new WrapperSelectField(
 				WrapperSelectField.ZERTIFIKATART, getInternalFrame(), true);
@@ -368,6 +378,8 @@ public class PanelArtikellieferant extends PanelBasis {
 		wtfRabattgruppe.setColumnsMax(5);
 		wtfRabattgruppe.setText("");
 
+		wtfWeblink.setColumnsMax(300);
+
 		wtfArtikelnummer.setSelectionStart(17);
 		wtfArtikelnummer
 				.setColumnsMax(ArtikelFac.MAX_ARTIKELLIEFERANT_ARTIKELNUMMERBEILIEFERANT);
@@ -388,9 +400,6 @@ public class PanelArtikellieferant extends PanelBasis {
 		wlaEinheitStandardmenge.setToolTipText("");
 		wlaEinheitStandardmenge.setHorizontalAlignment(SwingConstants.LEFT);
 		wlaEinheitStandardmenge.setText("");
-		wlaEinheitVerpackungseinheit
-				.setHorizontalAlignment(SwingConstants.LEFT);
-		wlaEinheitVerpackungseinheit.setText("");
 		wlaEinheitFixkosten.setHorizontalAlignment(SwingConstants.LEFT);
 		wlaEinheitFixkosten.setText("");
 		wnfNettopreis.setDependenceField(true);
@@ -443,105 +452,90 @@ public class PanelArtikellieferant extends PanelBasis {
 		wnfEKPReis.setFractionDigits(iNachkommastellen);
 		wnfEKPReis.setActivatable(false);
 
-		this.add(jpaButtonAction, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(2, 2, 2, 2), 0, 0));
-		this.add(jpaWorkingOn, new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0, GridBagConstraints.NORTHEAST, GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		this.add(getPanelStatusbar(), new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		int zeile = 0;
-		jpaWorkingOn.add(wbuLieferant, new GridBagConstraints(0, zeile, 1, 1, 0.8, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wtfLieferant, new GridBagConstraints(1, zeile, 2, 1, 0.3, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wtfWeblink, new GridBagConstraints(3, zeile, 6, 1, 0.3, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn = new JPanel(new MigLayout("wrap 10", "[fill, 15%|fill,10%|fill,5%|fill,2%|fill,10%|fill,10%|fill,17%|fill, 8%|5%, fill, 0:0:5%|fill,10%]"));
+		
+		this.add(jpaButtonAction, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(2,
+						2, 2, 2), 0, 0));
+		this.add(jpaWorkingOn, new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0,
+				GridBagConstraints.NORTHEAST, GridBagConstraints.BOTH,
+				new Insets(2, 2, 2, 2), 0, 0));
+		this.add(getPanelStatusbar(), new GridBagConstraints(0, 2, 1, 1, 0.0,
+				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
+				new Insets(2, 2, 2, 2), 0, 0));
+		
+		jpaWorkingOn.add(wbuLieferant);
+		jpaWorkingOn.add(wtfLieferant, "span 3");
+		jpaWorkingOn.add(wtfWeblink, "span");
 
-		zeile++;
+		jpaWorkingOn.add(wlaArtikelnummerbeilieferant);
+		jpaWorkingOn.add(wtfArtikelnummer, "span 3");
+		jpaWorkingOn.add(wcbHerstellerbezeichnung, "span 3");
+		jpaWorkingOn.add(wcbWebshop, "span");
+		
+		jpaWorkingOn.add(wlaBezbeuilieferant);
+		jpaWorkingOn.add(wtfBezbeilieferant, "span");
 
-		jpaWorkingOn.add(wlaArtikelnummerbeilieferant, new GridBagConstraints(0, zeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wtfArtikelnummer, new GridBagConstraints(1, zeile, 2, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wcbHerstellerbezeichnung, new GridBagConstraints(3, zeile, 4, 1, 1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wcbWebshop, new GridBagConstraints(7, zeile, 2, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		zeile++;
-		jpaWorkingOn.add(wlaBezbeuilieferant, new GridBagConstraints(0, zeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wtfBezbeilieferant, new GridBagConstraints(1, zeile, 8, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wlaEinheitArtikelmenge, "skip");
+		jpaWorkingOn.add(wlaEinheitBestellmenge, "skip 2");
+		jpaWorkingOn.add(wlaMaterialzuschlag, "wrap");
+		
+		jpaWorkingOn.add(wlaEinzelpreis);
+		jpaWorkingOn.add(wnfEinzelpreis);
+		jpaWorkingOn.add(wlaWaehrungEinzelpreis, "span 2");
+		jpaWorkingOn.add(wnfEinzelpreisBestellmenge);
+		jpaWorkingOn.add(wlaArtikelMaterial);
+		jpaWorkingOn.add(wlaStandardmenge);
+		jpaWorkingOn.add(wnfStandardmenge, "span 2");
+		jpaWorkingOn.add(wlaEinheitStandardmenge);
+		
+		jpaWorkingOn.add(wlaRabatt);
+		jpaWorkingOn.add(wnfRabatt);
+		jpaWorkingOn.add(wlaProzent);
+		jpaWorkingOn.add(wrbRabatt);
+		jpaWorkingOn.add(wnfZuschlag, "skip");
+		jpaWorkingOn.add(wlaMindestbestellmenge);
+		jpaWorkingOn.add(wnfMindestbestellmenge, "span 2");
+		jpaWorkingOn.add(wlaEinheitMindestbestellmenge);
 
-		zeile++;
+		jpaWorkingOn.add(wlaNettopreis);
+		jpaWorkingOn.add(wnfNettopreis);
+		jpaWorkingOn.add(wlaWaehrungNettopreis);
+		jpaWorkingOn.add(wrbNettopreis);
+		jpaWorkingOn.add(wnfNettopreisBestellmenge);
+		jpaWorkingOn.add(wnfEKPReis);
+		jpaWorkingOn.add(wlaVerpackungseinheit);
+		jpaWorkingOn.add(wnfVerpackungseinheit);
+		jpaWorkingOn.add(wlaEinheitVerpackungseinheit);
+		jpaWorkingOn.add(wcoEinheitVpe);
 
-		jpaWorkingOn.add(wlaEinheitArtikelmenge, new GridBagConstraints(1, zeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wlaFixkosten);
+		jpaWorkingOn.add(wnfFixkosten);
+		jpaWorkingOn.add(wlaEinheitFixkosten);
 
-		jpaWorkingOn.add(wlaEinheitBestellmenge, new GridBagConstraints(4, zeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wlaMaterialzuschlag, new GridBagConstraints(5, zeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		zeile++;
+		jpaWorkingOn.add(wlaWiederbeschaffungszeit, "skip 2, span 2");
+		jpaWorkingOn.add(wnfWiederbeschaffungszeit, "span 2");
+		jpaWorkingOn.add(wlaWiederbeschaffungszeitEinheit);
 
-		jpaWorkingOn.add(wlaEinzelpreis, new GridBagConstraints(0, zeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wnfEinzelpreis, new GridBagConstraints(1, zeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wlaWaehrungEinzelpreis, new GridBagConstraints(2, zeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wlaGueltigab);
+		jpaWorkingOn.add(wdfgueltigab);
+		jpaWorkingOn.add(wlaRabattgruppe, "skip 4");
+		jpaWorkingOn.add(wtfRabattgruppe, "span 2, wrap");
 
-		jpaWorkingOn.add(wnfEinzelpreisBestellmenge, new GridBagConstraints(4, zeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wlaGueltigbis);
+		jpaWorkingOn.add(wdfgueltigbis);
 
-		jpaWorkingOn.add(wlaArtikelMaterial, new GridBagConstraints(5, zeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-
-		jpaWorkingOn.add(wlaStandardmenge, new GridBagConstraints(6, zeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wnfStandardmenge, new GridBagConstraints(7, zeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wlaEinheitStandardmenge, new GridBagConstraints(8, zeile, 1, 1, 0.4, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		zeile++;
-
-		jpaWorkingOn.add(wlaRabatt, new GridBagConstraints(0, zeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wnfRabatt, new GridBagConstraints(1, zeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wlaProzent, new GridBagConstraints(2, zeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wrbRabatt, new GridBagConstraints(3, zeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-
-		jpaWorkingOn.add(wnfZuschlag, new GridBagConstraints(5, zeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wlaMindestbestellmenge, new GridBagConstraints(6, zeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wnfMindestbestellmenge, new GridBagConstraints(7, zeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wlaEinheitMindestbestellmenge, new GridBagConstraints(8, zeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-
-		zeile++;
-
-		jpaWorkingOn.add(wlaNettopreis, new GridBagConstraints(0, zeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wnfNettopreis, new GridBagConstraints(1, zeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wlaWaehrungNettopreis, new GridBagConstraints(2, zeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wrbNettopreis, new GridBagConstraints(3, zeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wnfNettopreisBestellmenge, new GridBagConstraints(4, zeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wnfEKPReis, new GridBagConstraints(5, zeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-
-		jpaWorkingOn.add(wlaVerpackungseinheit, new GridBagConstraints(6, zeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wnfVerpackungseinheit, new GridBagConstraints(7, zeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wlaEinheitVerpackungseinheit, new GridBagConstraints(8, zeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-
-		zeile++;
-
-		jpaWorkingOn.add(wlaFixkosten, new GridBagConstraints(0, zeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wnfFixkosten, new GridBagConstraints(1, zeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wlaEinheitFixkosten, new GridBagConstraints(2, zeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-
-		jpaWorkingOn.add(wlaWiederbeschaffungszeit, new GridBagConstraints(6, zeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wnfWiederbeschaffungszeit, new GridBagConstraints(7, zeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wlaWiederbeschaffungszeitEinheit,
-				new GridBagConstraints(8, zeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-
-		zeile++;
-
-		jpaWorkingOn.add(wlaGueltigab, new GridBagConstraints(0, zeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wdfgueltigab, new GridBagConstraints(1, zeile, 2, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-
-		jpaWorkingOn.add(wlaRabattgruppe, new GridBagConstraints(6, zeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wtfRabattgruppe, new GridBagConstraints(7, zeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-
-		zeile++;
-
-		jpaWorkingOn.add(wlaGueltigbis, new GridBagConstraints(0, zeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wdfgueltigbis, new GridBagConstraints(1, zeile, 2, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-
-		jpaWorkingOn.add(wlaAngebotsnummer, new GridBagConstraints(6, zeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wtfAngebotsnummer, new GridBagConstraints(7, zeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wlaAngebotsnummer, "skip 4");
+		jpaWorkingOn.add(wtfAngebotsnummer, "span 2, wrap");
 
 		if (LPMain
 				.getInstance()
 				.getDesktop()
 				.darfAnwenderAufZusatzfunktionZugreifen(
 						MandantFac.ZUSATZFUNKTION_ZERTIFIKATART)) {
-			zeile++;
-			jpaWorkingOn.add(wsfZertifikatart.getWrapperButton(),
-					new GridBagConstraints(0, zeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-			jpaWorkingOn.add(wsfZertifikatart.getWrapperTextField(),
-					new GridBagConstraints(1, zeile, 7, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+			
+			jpaWorkingOn.add(wsfZertifikatart.getWrapperButton());
+			jpaWorkingOn.add(wsfZertifikatart.getWrapperTextField(), "span 8");
 
 		}
 
@@ -642,6 +636,8 @@ public class PanelArtikellieferant extends PanelBasis {
 		artikellieferantDto.setCAngebotnummer(wtfAngebotsnummer.getText());
 		artikellieferantDto.setZertifikatartIId(wsfZertifikatart.getIKey());
 		artikellieferantDto.setCWeblink(wtfWeblink.getText());
+		artikellieferantDto.setEinheitCNrVpe((String) wcoEinheitVpe
+				.getKeyOfSelectedItem());
 
 		if (wrbRabatt.isSelected() == true) {
 			artikellieferantDto.setBRabattbehalten(Helper.boolean2Short(true));
@@ -752,6 +748,84 @@ public class PanelArtikellieferant extends PanelBasis {
 
 	}
 
+	public void setBestellpreisVisible() throws Throwable {
+		wnfVerpackungseinheit.setMandatoryField(false);
+		if (internalFrameArtikel.getArtikelDto().getEinheitCNrBestellung() != null) {
+
+			String s = internalFrameArtikel.getArtikelDto()
+					.getEinheitCNrBestellung().trim()
+					+ " (";
+
+			if (internalFrameArtikel.getArtikelDto().getNUmrechnungsfaktor() != null) {
+
+				boolean bInvers = Helper.short2boolean(internalFrameArtikel
+						.getArtikelDto().getbBestellmengeneinheitInvers());
+
+				if (bInvers) {
+					s += Helper.formatZahl(BigDecimal.ONE.divide(
+							internalFrameArtikel.getArtikelDto()
+									.getNUmrechnungsfaktor(), 2,
+							BigDecimal.ROUND_HALF_EVEN), 2, LPMain
+							.getTheClient().getLocUi())
+							+ " ";
+				} else {
+					s += Helper.formatZahl(internalFrameArtikel.getArtikelDto()
+							.getNUmrechnungsfaktor(), 2, LPMain.getTheClient()
+							.getLocUi())
+							+ " ";
+				}
+
+			}
+			s += internalFrameArtikel.getArtikelDto().getEinheitCNr().trim()
+					+ ")";
+			wlaEinheitBestellmenge.setText(s);
+
+			wlaEinheitBestellmenge.setVisible(true);
+			wlaEinheitArtikelmenge.setVisible(true);
+			wnfEinzelpreisBestellmenge.setVisible(true);
+			wnfNettopreisBestellmenge.setVisible(true);
+			wcoEinheitVpe.setVisible(false);
+			wcoEinheitVpe.setKeyOfSelectedItem(null);
+
+		} else {
+
+			wcoEinheitVpe.setVisible(true);
+
+			if (wcoEinheitVpe.getKeyOfSelectedItem() == null) {
+				wlaEinheitBestellmenge.setVisible(false);
+				wlaEinheitArtikelmenge.setVisible(false);
+				wnfEinzelpreisBestellmenge.setVisible(false);
+				wnfNettopreisBestellmenge.setVisible(false);
+			} else {
+				String s = ((String) wcoEinheitVpe.getKeyOfSelectedItem())
+						.trim() + " (";
+
+				if (wnfVerpackungseinheit.getBigDecimal() != null) {
+					s += Helper.formatZahl(wnfVerpackungseinheit
+							.getBigDecimal(), 2, LPMain.getTheClient()
+							.getLocUi())
+							+ " ";
+				}
+
+				wlaEinheitVerpackungseinheit.setText(internalFrameArtikel
+						.getArtikelDto().getEinheitCNr().trim()
+						+ "/");
+
+				s += internalFrameArtikel.getArtikelDto().getEinheitCNr()
+						.trim()
+						+ ")";
+				wlaEinheitBestellmenge.setText(s);
+
+				wlaEinheitBestellmenge.setVisible(true);
+				wlaEinheitArtikelmenge.setVisible(true);
+				wnfEinzelpreisBestellmenge.setVisible(true);
+				wnfNettopreisBestellmenge.setVisible(true);
+				wnfVerpackungseinheit.setMandatoryField(true);
+			}
+
+		}
+	}
+
 	public void eventYouAreSelected(boolean bNeedNoYouAreSelectedI)
 			throws Throwable {
 
@@ -760,37 +834,29 @@ public class PanelArtikellieferant extends PanelBasis {
 
 		wlaMaterialzuschlag.setForeground(Color.BLACK);
 
+		wlaEinheitMindestbestellmenge.setText(internalFrameArtikel
+				.getArtikelDto().getEinheitCNr().trim());
+		wlaEinheitStandardmenge.setText(internalFrameArtikel.getArtikelDto()
+				.getEinheitCNr().trim());
+		wlaEinheitVerpackungseinheit.setText(internalFrameArtikel
+				.getArtikelDto().getEinheitCNr().trim());
+		wlaEinheitArtikelmenge.setText(internalFrameArtikel.getArtikelDto()
+				.getEinheitCNr().trim());
+
 		if (key == null || (key.equals(LPMain.getLockMeForNew()))) {
 
 			leereAlleFelder(this);
 			wlaWaehrungEinzelpreis.setText("");
 			wlaWaehrungNettopreis.setText("");
 			wlaEinheitFixkosten.setText("");
-			wlaEinheitArtikelmenge.setText("");
 			wlaEinheitBestellmenge.setText("");
-			wlaEinheitMindestbestellmenge.setText("");
-			wlaEinheitStandardmenge.setText("");
-			wlaEinheitVerpackungseinheit.setText("");
 			wdfgueltigab.setTimestamp(new java.sql.Timestamp(System
 					.currentTimeMillis()));
 
 			eventActionSpecial(new ActionEvent(wrbNettopreis, 0, ""));
 
-			if (internalFrameArtikel.getArtikelDto().getEinheitCNrBestellung() != null) {
+			setBestellpreisVisible();
 
-				wlaEinheitBestellmenge.setText(internalFrameArtikel
-						.getArtikelDto().getEinheitCNrBestellung().trim());
-				wlaEinheitBestellmenge.setVisible(true);
-				wlaEinheitArtikelmenge.setVisible(true);
-				wnfEinzelpreisBestellmenge.setVisible(true);
-				wnfNettopreisBestellmenge.setVisible(true);
-
-			} else {
-				wlaEinheitBestellmenge.setVisible(false);
-				wlaEinheitArtikelmenge.setVisible(false);
-				wnfEinzelpreisBestellmenge.setVisible(false);
-				wnfNettopreisBestellmenge.setVisible(false);
-			}
 			if (internalFrameArtikel.getArtikelDto().getMaterialIId() != null) {
 				if (DelegateFactory
 						.getInstance()
@@ -819,16 +885,6 @@ public class PanelArtikellieferant extends PanelBasis {
 			artikellieferantDto = DelegateFactory.getInstance()
 					.getArtikelDelegate()
 					.artikellieferantFindByPrimaryKey((Integer) key);
-
-			wlaEinheitMindestbestellmenge.setText(internalFrameArtikel
-					.getArtikelDto().getEinheitCNr().trim());
-			wlaEinheitStandardmenge.setText(internalFrameArtikel
-					.getArtikelDto().getEinheitCNr().trim());
-			wlaEinheitVerpackungseinheit.setText(internalFrameArtikel
-					.getArtikelDto().getEinheitCNr().trim());
-
-			wlaEinheitArtikelmenge.setText(internalFrameArtikel.getArtikelDto()
-					.getEinheitCNr().trim());
 
 			if (internalFrameArtikel.getArtikelDto().getMaterialIId() != null) {
 
@@ -878,23 +934,9 @@ public class PanelArtikellieferant extends PanelBasis {
 				wnfZuschlag.setVisible(false);
 			}
 
-			if (internalFrameArtikel.getArtikelDto().getEinheitCNrBestellung() != null) {
-
-				wlaEinheitBestellmenge.setText(internalFrameArtikel
-						.getArtikelDto().getEinheitCNrBestellung().trim());
-				wlaEinheitBestellmenge.setVisible(true);
-				wlaEinheitArtikelmenge.setVisible(true);
-				wnfEinzelpreisBestellmenge.setVisible(true);
-				wnfNettopreisBestellmenge.setVisible(true);
-
-			} else {
-				wlaEinheitBestellmenge.setVisible(false);
-				wlaEinheitArtikelmenge.setVisible(false);
-				wnfEinzelpreisBestellmenge.setVisible(false);
-				wnfNettopreisBestellmenge.setVisible(false);
-			}
-
 			dto2Components();
+
+			setBestellpreisVisible();
 
 			if (wnfEinzelpreis.getBigDecimal() != null
 					&& wnfNettopreis.getBigDecimal() != null) {
@@ -903,11 +945,18 @@ public class PanelArtikellieferant extends PanelBasis {
 
 				BigDecimal faktor = internalFrameArtikel.getArtikelDto()
 						.getNUmrechnungsfaktor();
+
+				boolean bInvers = Helper.short2boolean(internalFrameArtikel
+						.getArtikelDto().getbBestellmengeneinheitInvers());
+				if (faktor == null
+						&& wnfVerpackungseinheit.getBigDecimal() != null  && wcoEinheitVpe.getKeyOfSelectedItem()!=null) {
+					faktor = wnfVerpackungseinheit.getBigDecimal();
+					bInvers = true;
+				}
+
 				if (faktor != null) {
 					if (faktor.doubleValue() != 0) {
-						if (Helper.short2boolean(internalFrameArtikel
-								.getArtikelDto()
-								.getbBestellmengeneinheitInvers())) {
+						if (bInvers) {
 							wnfEinzelpreisBestellmenge
 									.setBigDecimal(wnfEinzelpreis
 											.getBigDecimal().multiply(faktor));
@@ -1019,6 +1068,12 @@ public class PanelArtikellieferant extends PanelBasis {
 
 					BigDecimal faktor = internalFrameArtikel.getArtikelDto()
 							.getNUmrechnungsfaktor();
+
+					if (faktor == null
+							&& wnfVerpackungseinheit.getBigDecimal() != null) {
+						faktor = wnfVerpackungseinheit.getBigDecimal();
+					}
+
 					if (faktor != null
 							&& wnfEinzelpreisBestellmenge.getBigDecimal() != null
 							&& wnfEinzelpreisBestellmenge.getBigDecimal()
@@ -1138,12 +1193,19 @@ public class PanelArtikellieferant extends PanelBasis {
 
 				BigDecimal faktor = internalFrameArtikel.getArtikelDto()
 						.getNUmrechnungsfaktor();
+
+				boolean bInvers = Helper.short2boolean(internalFrameArtikel
+						.getArtikelDto().getbBestellmengeneinheitInvers());
+				if (faktor == null
+						&& wnfVerpackungseinheit.getBigDecimal() != null  && wcoEinheitVpe.getKeyOfSelectedItem()!=null) {
+					faktor = wnfVerpackungseinheit.getBigDecimal();
+					bInvers = true;
+				}
+
 				if (faktor != null) {
 					if (faktor.doubleValue() != 0) {
 
-						if (Helper.short2boolean(internalFrameArtikel
-								.getArtikelDto()
-								.getbBestellmengeneinheitInvers())) {
+						if (bInvers) {
 							wnfEinzelpreisBestellmenge
 									.setBigDecimal(wnfEinzelpreis
 											.getBigDecimal().multiply(faktor));
@@ -1241,10 +1303,18 @@ public class PanelArtikellieferant extends PanelBasis {
 		try {
 			BigDecimal faktor = internalFrameArtikel.getArtikelDto()
 					.getNUmrechnungsfaktor();
+
+			boolean bInvers = Helper.short2boolean(internalFrameArtikel
+					.getArtikelDto().getbBestellmengeneinheitInvers());
+
+			if (faktor == null && wnfVerpackungseinheit.getBigDecimal() != null && wcoEinheitVpe.getKeyOfSelectedItem()!=null) {
+				faktor = wnfVerpackungseinheit.getBigDecimal();
+				bInvers = true;
+			}
+
 			if (faktor != null
 					&& wnfEinzelpreisBestellmenge.getBigDecimal() != null) {
-				if (Helper.short2boolean(internalFrameArtikel.getArtikelDto()
-						.getbBestellmengeneinheitInvers())) {
+				if (bInvers) {
 					wnfEinzelpreis.setBigDecimal(wnfEinzelpreisBestellmenge
 							.getBigDecimal().divide(faktor, 4,
 									BigDecimal.ROUND_HALF_EVEN));
@@ -1271,6 +1341,11 @@ public class PanelArtikellieferant extends PanelBasis {
 		try {
 			BigDecimal faktor = internalFrameArtikel.getArtikelDto()
 					.getNUmrechnungsfaktor();
+
+			if (faktor == null && wnfVerpackungseinheit.getBigDecimal() != null) {
+				faktor = wnfVerpackungseinheit.getBigDecimal();
+			}
+
 			if (faktor != null
 					&& wnfEinzelpreisBestellmenge.getBigDecimal() != null
 					&& wnfNettopreisBestellmenge.getBigDecimal() != null
@@ -1306,6 +1381,16 @@ public class PanelArtikellieferant extends PanelBasis {
 			// nix
 		}
 	}
+
+	public void wcoEinheitVpe_actionPerformed(ActionEvent e) {
+
+		try {
+			setBestellpreisVisible();
+		} catch (Throwable e1) {
+			getInternalFrame().handleException(e1, true);
+		}
+	}
+
 }
 
 class PanelArtikellieferant_wnfEinzelpreis_focusAdapter extends FocusAdapter {
@@ -1318,6 +1403,20 @@ class PanelArtikellieferant_wnfEinzelpreis_focusAdapter extends FocusAdapter {
 
 	public void focusLost(FocusEvent e) {
 		adaptee.wnfEinzelpreis_focusLost(e);
+	}
+}
+
+class PanelArtikellieferant_wcoEinheitVpe_actionAdapter implements
+		ActionListener {
+	private PanelArtikellieferant adaptee;
+
+	PanelArtikellieferant_wcoEinheitVpe_actionAdapter(
+			PanelArtikellieferant adaptee) {
+		this.adaptee = adaptee;
+	}
+
+	public void actionPerformed(ActionEvent e) {
+		adaptee.wcoEinheitVpe_actionPerformed(e);
 	}
 }
 

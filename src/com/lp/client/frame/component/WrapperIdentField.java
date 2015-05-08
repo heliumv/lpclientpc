@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -241,7 +241,7 @@ public class WrapperIdentField implements ActionListener, FocusListener {
 		if (bMitLeerenButton == false) {
 			aWhichButtonIUse = new String[] { PanelBasis.ACTION_REFRESH };
 		}
-
+		wcbAlleLieferanten.setSelected(false);
 		ParametermandantDto parameter = DelegateFactory
 				.getInstance()
 				.getParameterDelegate()
@@ -279,22 +279,44 @@ public class WrapperIdentField implements ActionListener, FocusListener {
 			}
 		}
 
-		panelQueryFLRArtikel = new PanelQueryFLR(null, defaultFilter,
-				QueryParameters.UC_ID_ARTIKELLISTE, aWhichButtonIUse,
-				internalFrame,
-				LPMain.getTextRespectUISPr("title.artikelauswahlliste"),
-				ArtikelFilterFactory.getInstance().createFKVArtikel());
-		panelQueryFLRArtikel = new PanelQueryFLR(null,
-				bArtikelDesLieferantenAnzeigen ? defaultFilterArtikelLieferant
-						: defaultFilter, QueryParameters.UC_ID_ARTIKELLISTE,
-				aWhichButtonIUse, internalFrame,
-				LPMain.getTextRespectUISPr("title.artikelauswahlliste"),
-				ArtikelFilterFactory.getInstance().createFKVArtikel());
+
+		
+		
+		
+		if (LPMain
+				.getInstance()
+				.getDesktop()
+				.darfAnwenderAufZusatzfunktionZugreifen(
+						MandantFac.ZUSATZFUNKTION_SI_WERT)) {
+
+			SortierKriterium krit = new SortierKriterium("aspr.c_siwert", true,
+					"ASC");
+
+			panelQueryFLRArtikel = new PanelQueryFLR(null,
+					bArtikelDesLieferantenAnzeigen ? defaultFilterArtikelLieferant
+							: defaultFilter, QueryParameters.UC_ID_ARTIKELLISTE,
+					aWhichButtonIUse, internalFrame,
+					LPMain.getTextRespectUISPr("title.artikelauswahlliste"),
+					ArtikelFilterFactory.getInstance().createFKVArtikel(), null,krit,LPMain.getTextRespectUISPr("artikel.auswahl.sortbysiwert"));
+			
+		} else {
+			panelQueryFLRArtikel = new PanelQueryFLR(null,
+					bArtikelDesLieferantenAnzeigen ? defaultFilterArtikelLieferant
+							: defaultFilter, QueryParameters.UC_ID_ARTIKELLISTE,
+					aWhichButtonIUse, internalFrame,
+					LPMain.getTextRespectUISPr("title.artikelauswahlliste"),
+					ArtikelFilterFactory.getInstance().createFKVArtikel(), null);
+		}
+
+		if (artikelDto != null) {
+			panelQueryFLRArtikel.setSelectedId(artikelDto.getIId());
+		}
+		
 		panelQueryFLRArtikel.setFilterComboBox(DelegateFactory.getInstance()
 				.getArtikelDelegate().getAllSprArtgru(),
 				new FilterKriterium("ag.i_id", true, "" + "",
-						FilterKriterium.OPERATOR_EQUAL, false), false, LPMain
-						.getTextRespectUISPr("lp.alle"));
+						FilterKriterium.OPERATOR_IN, false), false, LPMain
+						.getTextRespectUISPr("lp.alle"),false);
 		if (bArtikelDesLieferantenAnzeigen) {
 			panelQueryFLRArtikel.getToolBar().getToolsPanelCenter()
 					.add(wcbAlleLieferanten);
@@ -355,23 +377,7 @@ public class WrapperIdentField implements ActionListener, FocusListener {
 			panelQueryFLRArtikel.addDirektFilter(ArtikelFilterFactory
 					.getInstance().createFKDReferenznr());
 		}
-		if (LPMain
-				.getInstance()
-				.getDesktop()
-				.darfAnwenderAufZusatzfunktionZugreifen(
-						MandantFac.ZUSATZFUNKTION_SI_WERT)) {
-
-			SortierKriterium krit = new SortierKriterium("aspr.c_siwert", true,
-					"ASC");
-
-			panelQueryFLRArtikel.setzeErstesUebersteuerbaresSortierkriterium(
-					LPMain.getTextRespectUISPr("artikel.auswahl.sortbysiwert"),
-					krit);
-		}
-
-		if (artikelDto != null) {
-			panelQueryFLRArtikel.setSelectedId(artikelDto.getIId());
-		}
+	
 		/**
 		 * @todo MB->MB das geht vielleicht noch ohne den zusaetzlichen refresh
 		 *       PJ 5339

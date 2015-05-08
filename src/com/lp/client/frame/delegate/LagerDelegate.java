@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -34,8 +34,10 @@ package com.lp.client.frame.delegate;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -152,17 +154,6 @@ public class LagerDelegate extends Delegate {
 
 	}
 
-	public String getNaechsteSeriennummer(Integer artikelIId, Integer lagerIId)
-			throws ExceptionLP {
-		try {
-			return lagerFac.getNaechsteSeriennummer(artikelIId, lagerIId,
-					LPMain.getInstance().getTheClient());
-		} catch (Throwable ex) {
-			handleThrowable(ex);
-			return null;
-		}
-	}
-
 	public void removeArtikellagerplaetze(
 			ArtikellagerplaetzeDto artikellagerplaetzeDto) throws ExceptionLP {
 		try {
@@ -194,12 +185,12 @@ public class LagerDelegate extends Delegate {
 	}
 
 	public int aendereEinzelneSerienChargennummerEinesArtikel(
-			Integer artikelIId, String snrChnr_Alt, String snrChnr_Neu)
-			throws ExceptionLP {
+			Integer artikelIId, String snrChnr_Alt, String snrChnr_Neu,
+			String version_Alt, String version_Neu) throws ExceptionLP {
 		try {
 			return lagerFac.aendereEinzelneSerienChargennummerEinesArtikel(
-					artikelIId, snrChnr_Alt, snrChnr_Neu, LPMain.getInstance()
-							.getTheClient());
+					artikelIId, snrChnr_Alt, snrChnr_Neu, version_Alt,
+					version_Neu, LPMain.getInstance().getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 			return 0;
@@ -316,6 +307,7 @@ public class LagerDelegate extends Delegate {
 			handleThrowable(ex);
 		}
 	}
+
 	public void konstruiereLagergewegungenBESTAusBelegen() throws ExceptionLP {
 		try {
 			lagerFac.konstruiereLagergewegungenBESTAusBelegen(LPMain
@@ -324,6 +316,7 @@ public class LagerDelegate extends Delegate {
 			handleThrowable(ex);
 		}
 	}
+
 	public void konstruiereLagergewegungenLOSAusBelegen() throws ExceptionLP {
 		try {
 			lagerFac.konstruiereLagergewegungenLOSAusBelegen(LPMain
@@ -332,11 +325,11 @@ public class LagerDelegate extends Delegate {
 			handleThrowable(ex);
 		}
 	}
-	
+
 	public void konstruiereLagergewegungenHAND() throws ExceptionLP {
 		try {
-			lagerFac.konstruiereLagergewegungenHAND(LPMain
-					.getInstance().getTheClient());
+			lagerFac.konstruiereLagergewegungenHAND(LPMain.getInstance()
+					.getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 		}
@@ -375,6 +368,14 @@ public class LagerDelegate extends Delegate {
 		try {
 			return lagerFac.lagerFindByCNrByMandantCNr(cNr, LPMain
 					.getInstance().getTheClient().getMandant());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
+	public LagerDto[] lagerFindByMandantCNr(String sMandantI) throws ExceptionLP {
+		try {
+			return lagerFac.lagerFindByMandantCNr(sMandantI);
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 			return null;
@@ -482,10 +483,10 @@ public class LagerDelegate extends Delegate {
 
 	public BigDecimal getLagerstandsVeraenderungOhneInventurbuchungen(
 			Integer artikelIId, Integer lagerIId, java.sql.Timestamp tVon,
-			java.sql.Timestamp tBis) throws ExceptionLP {
+			java.sql.Timestamp tBis, String cSnrChnr) throws ExceptionLP {
 		try {
 			return lagerFac.getLagerstandsVeraenderungOhneInventurbuchungen(
-					artikelIId, lagerIId, tVon, tBis, LPMain.getInstance()
+					artikelIId, lagerIId, tVon, tBis, cSnrChnr, LPMain.getInstance()
 							.getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
@@ -497,6 +498,16 @@ public class LagerDelegate extends Delegate {
 			throws ExceptionLP {
 		try {
 			return lagerFac.getLagerstandAllerLagerEinesMandanten(artikelIId,
+					LPMain.getInstance().getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
+	public BigDecimal getLagerstandAllerLagerAllerMandanten(Integer artikelIId, boolean bMitKonsignationslager)
+			throws ExceptionLP {
+		try {
+			return lagerFac.getLagerstandAllerLagerAllerMandanten(artikelIId, bMitKonsignationslager, 
 					LPMain.getInstance().getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
@@ -579,11 +590,14 @@ public class LagerDelegate extends Delegate {
 			return null;
 		}
 	}
+
 	public SeriennrChargennrAufLagerDto[] getAllSerienChargennrAufLager(
-			Integer artikelIId, Integer lagerIId,boolean bSortiertNachSerienChargennummer) throws ExceptionLP {
+			Integer artikelIId, Integer lagerIId,
+			boolean bSortiertNachSerienChargennummer) throws ExceptionLP {
 		try {
 			return lagerFac.getAllSerienChargennrAufLagerInfoDtos(artikelIId,
-					lagerIId, bSortiertNachSerienChargennummer, null, LPMain.getInstance().getTheClient());
+					lagerIId, bSortiertNachSerienChargennummer, null, LPMain
+							.getInstance().getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 			return null;
@@ -591,11 +605,13 @@ public class LagerDelegate extends Delegate {
 	}
 
 	public SeriennrChargennrAufLagerDto[] getAllSerienChargennrAufLagerInfoDtosMitBereitsVerbrauchten(
-			Integer artikelIId, Integer lagerIId,boolean bSortiertNachSerienChargennummer) throws ExceptionLP {
+			Integer artikelIId, Integer lagerIId,
+			boolean bSortiertNachSerienChargennummer) throws ExceptionLP {
 		try {
 			return lagerFac
 					.getAllSerienChargennrAufLagerInfoDtosMitBereitsVerbrauchten(
-							artikelIId, lagerIId, bSortiertNachSerienChargennummer, null, LPMain
+							artikelIId, lagerIId,
+							bSortiertNachSerienChargennummer, null, LPMain
 									.getInstance().getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
@@ -642,11 +658,28 @@ public class LagerDelegate extends Delegate {
 		}
 	}
 
+	public SeriennrChargennrAufLagerDto[] getAllSerienChargennrAufLagerInfoDtos(
+			Integer artikelIId, Integer lagerIId, String cSeriennrChargennr,
+			boolean bSortiertNachSerienChargennummer,
+			java.sql.Timestamp tStichtag) throws ExceptionLP {
+		try {
+
+			return lagerFac.getAllSerienChargennrAufLagerInfoDtos(artikelIId,
+					lagerIId, cSeriennrChargennr, true, null, LPMain
+							.getInstance().getTheClient());
+
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
+
 	public List<SeriennrChargennrMitMengeDto> getAllSeriennrchargennrEinerBelegartposition(
 			String belegartCNr, Integer belegartpositionIId) throws ExceptionLP {
 		try {
-			return lagerFac.getAllSeriennrchargennrEinerBelegartposition(
-					belegartCNr, belegartpositionIId);
+			return lagerFac
+					.getAllSeriennrchargennrEinerBelegartpositionUeberHibernate(
+							belegartCNr, belegartpositionIId);
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 			return null;
@@ -681,13 +714,13 @@ public class LagerDelegate extends Delegate {
 
 	public JasperPrintLP printSeriennummern(Integer lagerIId,
 			Integer artikelIId, String[] cSeriennrs, boolean bSortIdent,
-			boolean bMitGeraeteseriennummern, String snrWildcard)
-			throws ExceptionLP {
+			boolean bMitGeraeteseriennummern, String snrWildcard,
+			String versionWildcard) throws ExceptionLP {
 		try {
 			return lagerFac.printSeriennummern(lagerIId, artikelIId,
 					cSeriennrs, snrWildcard, new Boolean(bSortIdent),
-					bMitGeraeteseriennummern, LPMain.getInstance()
-							.getTheClient());
+					bMitGeraeteseriennummern, versionWildcard, LPMain
+							.getInstance().getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 			return null;
@@ -755,6 +788,15 @@ public class LagerDelegate extends Delegate {
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 			return null;
+		}
+	}
+
+	public void pruefeSeriennummernMitVersion() throws ExceptionLP {
+		try {
+			lagerFac.pruefeSeriennummernMitVersion(LPMain.getInstance()
+					.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
 		}
 	}
 
@@ -826,19 +868,18 @@ public class LagerDelegate extends Delegate {
 		}
 	}
 
-	
 	public LagerbewegungDto getLetzteintrag(String belegartCNr,
-			Integer belegartpositionIId, String cSeriennrchargennr) throws ExceptionLP {
+			Integer belegartpositionIId, String cSeriennrchargennr)
+			throws ExceptionLP {
 		try {
-			return lagerFac.getLetzteintrag(
-					belegartCNr, belegartpositionIId,cSeriennrchargennr);
+			return lagerFac.getLetzteintrag(belegartCNr, belegartpositionIId,
+					cSeriennrchargennr);
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 			return null;
 		}
 	}
-	
-	
+
 	public LagerbewegungDto[] lagerbewegungFindByArtikelIIdCSeriennrChargennr(
 			Integer artikelIId, String cSnrChnr) throws ExceptionLP {
 		try {
@@ -949,6 +990,16 @@ public class LagerDelegate extends Delegate {
 		}
 	}
 
+	public void gestehungspreiseImportieren(ArrayList<Object[]> alDaten,
+			Integer lagerIId) throws ExceptionLP {
+		try {
+			lagerFac.gestehungspreiseImportieren(alDaten, lagerIId, LPMain
+					.getInstance().getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+	}
+
 	/**
 	 * Ein Lager ueber seine Lagerart bestimmen.
 	 * 
@@ -1025,4 +1076,28 @@ public class LagerDelegate extends Delegate {
 			return null;
 		}
 	}
+
+	public String getNaechsteSeriennummer(Integer artikelIId,
+			String uebersteuerteSeriennummer) throws ExceptionLP {
+		try {
+			return lagerFac.getNaechsteSeriennummer(artikelIId,
+					uebersteuerteSeriennummer, LPMain.getInstance()
+							.getTheClient());
+		} catch (Throwable t) {
+			handleThrowable(t);
+			return null;
+		}
+	}
+
+	public String getNaechsteChargennummer(Integer artikelIId)
+			throws ExceptionLP {
+		try {
+			return lagerFac.getNaechsteChargennummer(artikelIId, LPMain
+					.getInstance().getTheClient());
+		} catch (Throwable t) {
+			handleThrowable(t);
+			return null;
+		}
+	}
+
 }

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -190,7 +190,8 @@ public class PanelRechnungKopfdaten extends PanelBasis {
 	private WrapperDateField wdfDatum = new WrapperDateField();
 	private WrapperButton wbuAnsprechpartner = new WrapperButton();
 	private WrapperTextField wtfAuftragNummer = new WrapperTextField();
-	private WrapperButton wbuAuftrag = new WrapperButton();
+	private WrapperGotoButton wbuAuftrag = new WrapperGotoButton(
+			WrapperGotoButton.GOTO_AUFTRAG_AUSWAHL);
 	private WrapperLabel wbuLieferschein = new WrapperLabel();
 	private WrapperButton wbuRechnung = new WrapperButton();
 	private WrapperTextField wtfAuftragBezeichnung = new WrapperTextField();
@@ -227,6 +228,9 @@ public class PanelRechnungKopfdaten extends PanelBasis {
 
 	private WrapperLabel wlaZahlungGutschriften = null;
 	private WrapperTextArea wtaZahlungGutschriften = null;
+
+	private WrapperLabel wlaAnzahlungen;
+	private WrapperTextField wtfAnzahlungen;
 
 	private WrapperSelectField wsfProjekt = new WrapperSelectField(
 			WrapperSelectField.PROJEKT, getInternalFrame(), true);
@@ -313,10 +317,16 @@ public class PanelRechnungKopfdaten extends PanelBasis {
 		wcbReversecharge
 				.setText(LPMain.getTextRespectUISPr("lp.reversecharge"));
 
-		wlaZahlungGutschriften = new WrapperLabel(LPMain.getTextRespectUISPr("fb.export.gutschriften"));
+		wlaZahlungGutschriften = new WrapperLabel(
+				LPMain.getTextRespectUISPr("fb.export.gutschriften"));
 		wtaZahlungGutschriften = new WrapperTextArea();
 		wtaZahlungGutschriften.setActivatable(false);
 		wtaZahlungGutschriften.setRows(3);
+
+		wlaAnzahlungen = new WrapperLabel(
+				LPMain.getTextRespectUISPr("rech.zahlung.anzahlungen"));
+		wtfAnzahlungen = new WrapperTextField(9999);
+		wtfAnzahlungen.setActivatable(false);
 
 		if (getTabbedPaneRechnungAll().getRechnungstyp().equals(
 				RechnungFac.RECHNUNGTYP_RECHNUNG)) {
@@ -497,8 +507,7 @@ public class PanelRechnungKopfdaten extends PanelBasis {
 		wcoRechnungart.setMandatoryFieldDB(true);
 
 		labelProjekt = new WrapperLabel();
-		labelProjekt.setText(LPMain.getTextRespectUISPr(
-				"label.projekt"));
+		labelProjekt.setText(LPMain.getTextRespectUISPr("label.projekt"));
 		wtfProjekt = new WrapperTextField(80);
 
 		wnfKurs.setFractionDigits(LocaleFac.ANZAHL_NACHKOMMASTELLEN_WECHSELKURS);
@@ -544,61 +553,67 @@ public class PanelRechnungKopfdaten extends PanelBasis {
 		wtfVertreter = new WrapperTextField();
 		wtfVertreter.setActivatable(false);
 		wtfVertreter.setMandatoryField(true);
-		wcbErledigt.setText(LPMain.getTextRespectUISPr(
-				"label.erledigt"));
+		wcbErledigt.setText(LPMain.getTextRespectUISPr("label.erledigt"));
 		wcbErledigt.setActivatable(false);
-		jpaWorkingOn = new JPanel(new MigLayout("wrap 5, hidemode 3", "[fill,25%][fill,35%][fill,15%][fill,25%][fill,25%]"));
-		
-		this.add(panelButtonAction, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.NORTHWEST, GridBagConstraints.NONE, new Insets(0, 0, 0, 0), 0, 0));
-		this.add(jpaWorkingOn, new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(-5, 0, 0, 0), 0, 0));
+		jpaWorkingOn = new JPanel(new MigLayout("wrap 5, hidemode 3",
+				"[fill,25%][fill,35%][fill,15%][fill,25%][fill,25%]"));
+
+		this.add(panelButtonAction, new GridBagConstraints(0, 0, 1, 1, 0.0,
+				0.0, GridBagConstraints.NORTHWEST, GridBagConstraints.NONE,
+				new Insets(0, 0, 0, 0), 0, 0));
+		this.add(jpaWorkingOn, new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0,
+				GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(
+						-5, 0, 0, 0), 0, 0));
 		// statusbarneu: 1 an den unteren rand des panels haengen
-		this.add(getPanelStatusbar(), new GridBagConstraints(0, 2, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(0, 0, 0, 0), 0, 0));
-		
+		this.add(getPanelStatusbar(), new GridBagConstraints(0, 2, 1, 1, 1.0,
+				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
+				new Insets(0, 0, 0, 0), 0, 0));
+
 		jpaWorkingOn.add(wlaRechnungart);
 		jpaWorkingOn.add(wcoRechnungart, "span 2");
 		jpaWorkingOn.add(wlaDatum);
 		jpaWorkingOn.add(wdfDatum, "span");
-		
+
 		jpaWorkingOn.add(wbuAuftrag);
 		jpaWorkingOn.add(wtfAuftragNummer, "span 2");
 		jpaWorkingOn.add(wtfAuftragBezeichnung, "span");
-		
+
 		jpaWorkingOn.add(wbuRechnung);
 		jpaWorkingOn.add(wtfRechnungNummer, "span 2, wrap");
-		
+
 		jpaWorkingOn.add(wbuLieferschein);
 		jpaWorkingOn.add(wtfLieferscheinNummer, "span 2");
 		jpaWorkingOn.add(wtfLieferscheinBezeichnung, "span");
-		
+
 		jpaWorkingOn.add(wbuKunde);
 		jpaWorkingOn.add(wtfKunde, "span");
-		
+
 		jpaWorkingOn.add(wlaAdresse);
 		jpaWorkingOn.add(wtfAdresse, "span");
-		
+
 		jpaWorkingOn.add(wlaAbteilung);
 		jpaWorkingOn.add(wtfAbteilung, "span");
-		
+
 		jpaWorkingOn.add(wbuAnsprechpartner);
 		jpaWorkingOn.add(wtfAnsprechpartner, "span");
 
 		jpaWorkingOn.add(wbuVertreter);
 		jpaWorkingOn.add(wtfVertreter, "span");
-		
+
 		jpaWorkingOn.add(wbuStatistikadresse);
 		jpaWorkingOn.add(wtfStatistikadresse, "span");
 
 		jpaWorkingOn.add(wbuKostenstelle);
 		jpaWorkingOn.add(wtfKostenstelleNummer, "span 2");
 		jpaWorkingOn.add(wtfKostenstelleBezeichnung, "span");
-		
+
 		jpaWorkingOn.add(wlaMehrfachkontierung, "skip, span");
 
 		jpaWorkingOn.add(wlaWaehrung);
 		jpaWorkingOn.add(wcoWaehrung, "span 2");
 		jpaWorkingOn.add(wlaKurs);
 		jpaWorkingOn.add(wnfKurs, "wrap");
-		
+
 		jpaWorkingOn.add(wlaWert);
 		jpaWorkingOn.add(wnfWertFW);
 		jpaWorkingOn.add(wlaWaehrung1);
@@ -622,7 +637,7 @@ public class PanelRechnungKopfdaten extends PanelBasis {
 		jpaWorkingOn.add(wtfMahnstufe);
 		jpaWorkingOn.add(wlaMahnsperreBis, "span 2");
 		jpaWorkingOn.add(wdfMahnsperre, "wrap");
-		
+
 		jpaWorkingOn.add(labelProjekt);
 
 		if (LPMain
@@ -630,11 +645,10 @@ public class PanelRechnungKopfdaten extends PanelBasis {
 				.getDesktop()
 				.darfAnwenderAufZusatzfunktionZugreifen(
 						MandantFac.ZUSATZFUNKTION_PROJEKTKLAMMER)) {
-			 parametermandantDto = DelegateFactory
+			parametermandantDto = DelegateFactory
 					.getInstance()
 					.getParameterDelegate()
-					.getMandantparameter(
-							LPMain.getTheClient().getMandant(),
+					.getMandantparameter(LPMain.getTheClient().getMandant(),
 							ParameterFac.KATEGORIE_ALLGEMEIN,
 							ParameterFac.PARAMETER_PROJEKT_IST_PFLICHTFELD);
 			boolean bProjektIstPflichtfeld = ((Boolean) parametermandantDto
@@ -663,6 +677,8 @@ public class PanelRechnungKopfdaten extends PanelBasis {
 
 		jpaWorkingOn.add(wlaZahlungGutschriften);
 		jpaWorkingOn.add(wtaZahlungGutschriften, "wrap");
+		jpaWorkingOn.add(wlaAnzahlungen);
+		jpaWorkingOn.add(wtfAnzahlungen, "span");
 
 	}
 
@@ -702,10 +718,8 @@ public class PanelRechnungKopfdaten extends PanelBasis {
 						.isBMwstSatzWurdeVonNullGeaendertUndEsGibtHandeingaben() == true) {
 					DialogFactory
 							.showModalDialog(
-									LPMain.getTextRespectUISPr(
-											"lp.hint"),
-									LPMain.getTextRespectUISPr(
-													"lp.error.mwstvonnullgeaendertundhandeingaben"));
+									LPMain.getTextRespectUISPr("lp.hint"),
+									LPMain.getTextRespectUISPr("lp.error.mwstvonnullgeaendertundhandeingaben"));
 
 				}
 
@@ -957,7 +971,8 @@ public class PanelRechnungKopfdaten extends PanelBasis {
 													.exportlaufFindByPrimaryKey(
 															exportDto
 																	.getExportlaufIId())
-													.getTAendern(), LPMain.getTheClient().getLocUi()));
+													.getTAendern(), LPMain
+													.getTheClient().getLocUi()));
 
 				} catch (Exception e) {
 					// Kein Exoprt vorhanden
@@ -965,7 +980,17 @@ public class PanelRechnungKopfdaten extends PanelBasis {
 
 			}
 
-			wsfProjekt.setKey(rechnungDto.getProjektIId());
+			// SP2202
+			if (rechnungDto.getLieferscheinIId() != null) {
+				LieferscheinDto lsDto = DelegateFactory
+						.getInstance()
+						.getLsDelegate()
+						.lieferscheinFindByPrimaryKey(
+								rechnungDto.getLieferscheinIId());
+				wsfProjekt.setKey(lsDto.getProjektIId());
+			} else {
+				wsfProjekt.setKey(rechnungDto.getProjektIId());
+			}
 
 			this.wnfKurs.setBigDecimal(rechnungDto.getNKurs());
 
@@ -1030,9 +1055,8 @@ public class PanelRechnungKopfdaten extends PanelBasis {
 					.getVersandstatus(LocaleFac.BELEGART_RECHNUNG,
 							rechnungDto.getIId());
 			if (status != null) {
-				status = LPMain.getTextRespectUISPr(
-						"lp.versandstatus")
-						+ ": " + status;
+				status = LPMain.getTextRespectUISPr("lp.versandstatus") + ": "
+						+ status;
 			}
 			setStatusbarSpalte5(status);
 			this.wcbReversecharge.setShort(rechnungDto.getBReversecharge());
@@ -1132,12 +1156,12 @@ public class PanelRechnungKopfdaten extends PanelBasis {
 			String sAdresse = getTabbedPaneRechnungAll().getKundeDto()
 					.getPartnerDto().formatAdresse();
 			if (getTabbedPaneRechnungAll().getKundeDto().getPartnerDto()
-					.getCKbez() != null)
-				;
-			sAdresse = sAdresse
-					+ "  /  "
-					+ getTabbedPaneRechnungAll().getKundeDto().getPartnerDto()
-							.getCKbez();
+					.getCKbez() != null) {
+				sAdresse = sAdresse
+						+ "  /  "
+						+ getTabbedPaneRechnungAll().getKundeDto()
+								.getPartnerDto().getCKbez();
+			}
 			wtfAdresse.setText(sAdresse);
 			wtfAbteilung.setText(getTabbedPaneRechnungAll().getKundeDto()
 					.getPartnerDto().getCName3vorname2abteilung());
@@ -1185,15 +1209,47 @@ public class PanelRechnungKopfdaten extends PanelBasis {
 
 	/**
 	 * Die Auftragsdaten in die Felder schreiben
+	 * 
+	 * @throws Throwable
+	 * @throws ExceptionLP
 	 */
-	private void dto2ComponentsAuftrag() {
+	private void dto2ComponentsAuftrag() throws ExceptionLP, Throwable {
 		if (auftragDto != null) {
+			wbuAuftrag.setOKey(auftragDto.getIId());
 			wtfAuftragNummer.setText(auftragDto.getCNr());
 			wtfAuftragBezeichnung.setText(auftragDto
 					.getCBezProjektbezeichnung());
+			String art = getTabbedPaneRechnungAll().getRechnungDto() == null ? null
+					: getTabbedPaneRechnungAll().getRechnungDto()
+							.getRechnungartCNr();
+			art = art == null ? wcoRechnungart.getSelectedItem().toString()
+					: art;
+			if (art.equals(RechnungFac.RECHNUNGART_SCHLUSSZAHLUNG)) {
+				StringBuffer sb = new StringBuffer();
+				wlaAnzahlungen.setVisible(true);
+				wtfAnzahlungen.setVisible(true);
+				RechnungDto[] dtos = DelegateFactory.getInstance()
+						.getRechnungDelegate()
+						.findByAuftragIId(auftragDto.getIId());
+				for (RechnungDto dto : dtos) {
+					if (!dto.getRechnungartCNr().equals(
+							RechnungFac.RECHNUNGART_ANZAHLUNG))
+						continue;
+					if (dto.getStatusCNr().equals(RechnungFac.STATUS_STORNIERT))
+						continue;
+					sb.append(dto.getCNr() + ", ");
+				}
+				wtfAnzahlungen.setText(sb.toString());
+			} else {
+				wlaAnzahlungen.setVisible(false);
+				wtfAnzahlungen.setVisible(false);
+			}
 		} else {
+			wbuAuftrag.setOKey(null);
 			wtfAuftragNummer.setText(null);
 			wtfAuftragBezeichnung.setText(null);
+			wlaAnzahlungen.setVisible(false);
+			wtfAnzahlungen.setVisible(false);
 		}
 	}
 
@@ -1469,6 +1525,50 @@ public class PanelRechnungKopfdaten extends PanelBasis {
 					holeKunde(auftragDto.getKundeIIdRechnungsadresse());
 					besetzeKundendatenVor(auftragDto
 							.getKundeIIdRechnungsadresse());
+
+					// SP3322
+					if (getTabbedPaneRechnungAll().getRechnungDto() != null
+							&& getTabbedPaneRechnungAll().getRechnungDto()
+									.getIId() == null) {
+						// Wenn die Rechnung neu ist und noch kein Kunde
+						// ausgewaehlt wurde, dann Konditionen aus Auftrag
+						// verwenden
+
+						getTabbedPaneRechnungAll().getRechnungDto()
+								.setZahlungszielIId(
+										auftragDto.getZahlungszielIId());
+						getTabbedPaneRechnungAll().getRechnungDto()
+								.setLieferartIId(auftragDto.getLieferartIId());
+						getTabbedPaneRechnungAll().getRechnungDto()
+								.setSpediteurIId(auftragDto.getSpediteurIId());
+
+						double dFaktor = 100.0;
+						if (auftragDto.getFAllgemeinerRabattsatz() != null) {
+							dFaktor = dFaktor
+									- auftragDto.getFAllgemeinerRabattsatz();
+						}
+						if (auftragDto.getFProjektierungsrabattsatz() != null) {
+							double dFaktor2 = 100.0 - auftragDto
+									.getFProjektierungsrabattsatz();
+							dFaktor = dFaktor * dFaktor2 / 100.0;
+						}
+						getTabbedPaneRechnungAll().getRechnungDto()
+								.setFAllgemeinerRabattsatz(
+										new Double(100.0 - dFaktor));
+						getTabbedPaneRechnungAll().getRechnungDto()
+								.setFVersteckterAufschlag(
+										auftragDto.getFVersteckterAufschlag()
+												.doubleValue());
+
+						holeKostenstelle(auftragDto.getKostIId());
+						// in auftragswaehrung
+						if (auftragDto.getCAuftragswaehrung() != null) {
+							wcoWaehrung.setKeyOfSelectedItem(auftragDto
+									.getWaehrungCNr());
+						}
+
+					}
+
 				}
 			} else if (e.getSource() == panelQueryFLRKostenstelle) {
 				Object key = ((ISourceEvent) e.getSource()).getIdSelected();
@@ -1487,8 +1587,20 @@ public class PanelRechnungKopfdaten extends PanelBasis {
 					return;
 				}
 
-				DelegateFactory.getInstance().getKundeDelegate()
-						.pruefeKunde(key);
+				if (getTabbedPaneRechnungAll().getRechnungstyp().equals(
+						RechnungFac.RECHNUNGTYP_GUTSCHRIFT)) {
+					DelegateFactory
+							.getInstance()
+							.getKundeDelegate()
+							.pruefeKunde(key, LocaleFac.BELEGART_GUTSCHRIFT,
+									getInternalFrame());
+				} else {
+					DelegateFactory
+							.getInstance()
+							.getKundeDelegate()
+							.pruefeKunde(key, LocaleFac.BELEGART_RECHNUNG,
+									getInternalFrame());
+				}
 
 				holeKunde(key);
 				besetzeKundendatenVor(key);
@@ -1609,57 +1721,60 @@ public class PanelRechnungKopfdaten extends PanelBasis {
 
 	}
 
-//	/**
-//	 * erstelleRechnungPositionAusLieferschein
-//	 * 
-//	 * @param key
-//	 *            Integer
-//	 * @throws Throwable
-//	 */
-//	private void erstelleRechnungPositionAusLieferschein(Integer key)
-//			throws Throwable {
-//		LieferscheinDto lsDto = DelegateFactory.getInstance().getLsDelegate()
-//				.lieferscheinFindByPrimaryKey(key);
-//		RechnungDto reDto = getTabbedPaneRechnungAll().getRechnungDto();
-//		if (!reDto.getKundeIId().equals(lsDto.getKundeIIdRechnungsadresse())) {
-//			boolean bAnswer = (DialogFactory
-//					.showMeldung(
-//							"Die Rechnungsadresse des Lieferscheins "
-//									+ lsDto.getCNr()
-//									+ " stimmt nicht\nmit dem Kunden dieser Rechnung ueberein. Trotzdem hinzufuegen?",
-//							LPMain.getTextRespectUISPr("lp.frage"),
-//							javax.swing.JOptionPane.YES_NO_OPTION) == javax.swing.JOptionPane.YES_OPTION);
-//			if (!bAnswer) {
-//				return;
-//			}
-//		} else {
-//			boolean bAnswer = (DialogFactory.showMeldung("Lieferschein "
-//					+ lsDto.getCNr() + " hinzufuegen?",
-//					LPMain.getTextRespectUISPr("lp.frage"),
-//					javax.swing.JOptionPane.YES_NO_OPTION) == javax.swing.JOptionPane.YES_OPTION);
-//			if (!bAnswer) {
-//				return;
-//			}
-//		}
-//		RechnungPositionDto rePos = new RechnungPositionDto();
-//		rePos.setRechnungpositionartCNr(RechnungFac.POSITIONSART_RECHNUNG_LIEFERSCHEIN);
-//		rePos.setRechnungIId(reDto.getIId());
-//		rePos.setLieferscheinIId(lsDto.getIId());
-//		rePos.setCBez(lsDto.getCBezProjektbezeichnung());
-//		rePos.setNEinzelpreis(lsDto.getNGesamtwertInLieferscheinwaehrung());
-//		rePos.setNNettoeinzelpreis(lsDto.getNGesamtwertInLieferscheinwaehrung());
-//		rePos.setNBruttoeinzelpreis(lsDto
-//				.getNGesamtwertInLieferscheinwaehrung());
-//		rePos.setBMwstsatzuebersteuert(Helper.boolean2Short(false));
-//		rePos.setBRabattsatzuebersteuert(Helper.boolean2Short(false));
-//		rePos.setBDrucken(Helper.boolean2Short(true));
-//		DelegateFactory.getInstance().getRechnungDelegate()
-//				.updateRechnungPosition(rePos, reDto.getLagerIId());
-//		// eventuell wuede die LS-Zuordnung veraendert - diese anzeigen
-//		getTabbedPaneRechnungAll().reloadRechnungDto();
-//		holeLieferschein(getTabbedPaneRechnungAll().getRechnungDto()
-//				.getLieferscheinIId());
-//	}
+	// /**
+	// * erstelleRechnungPositionAusLieferschein
+	// *
+	// * @param key
+	// * Integer
+	// * @throws Throwable
+	// */
+	// private void erstelleRechnungPositionAusLieferschein(Integer key)
+	// throws Throwable {
+	// LieferscheinDto lsDto = DelegateFactory.getInstance().getLsDelegate()
+	// .lieferscheinFindByPrimaryKey(key);
+	// RechnungDto reDto = getTabbedPaneRechnungAll().getRechnungDto();
+	// if (!reDto.getKundeIId().equals(lsDto.getKundeIIdRechnungsadresse())) {
+	// boolean bAnswer = (DialogFactory
+	// .showMeldung(
+	// "Die Rechnungsadresse des Lieferscheins "
+	// + lsDto.getCNr()
+	// +
+	// " stimmt nicht\nmit dem Kunden dieser Rechnung ueberein. Trotzdem hinzufuegen?",
+	// LPMain.getTextRespectUISPr("lp.frage"),
+	// javax.swing.JOptionPane.YES_NO_OPTION) ==
+	// javax.swing.JOptionPane.YES_OPTION);
+	// if (!bAnswer) {
+	// return;
+	// }
+	// } else {
+	// boolean bAnswer = (DialogFactory.showMeldung("Lieferschein "
+	// + lsDto.getCNr() + " hinzufuegen?",
+	// LPMain.getTextRespectUISPr("lp.frage"),
+	// javax.swing.JOptionPane.YES_NO_OPTION) ==
+	// javax.swing.JOptionPane.YES_OPTION);
+	// if (!bAnswer) {
+	// return;
+	// }
+	// }
+	// RechnungPositionDto rePos = new RechnungPositionDto();
+	// rePos.setRechnungpositionartCNr(RechnungFac.POSITIONSART_RECHNUNG_LIEFERSCHEIN);
+	// rePos.setRechnungIId(reDto.getIId());
+	// rePos.setLieferscheinIId(lsDto.getIId());
+	// rePos.setCBez(lsDto.getCBezProjektbezeichnung());
+	// rePos.setNEinzelpreis(lsDto.getNGesamtwertInLieferscheinwaehrung());
+	// rePos.setNNettoeinzelpreis(lsDto.getNGesamtwertInLieferscheinwaehrung());
+	// rePos.setNBruttoeinzelpreis(lsDto
+	// .getNGesamtwertInLieferscheinwaehrung());
+	// rePos.setBMwstsatzuebersteuert(Helper.boolean2Short(false));
+	// rePos.setBRabattsatzuebersteuert(Helper.boolean2Short(false));
+	// rePos.setBDrucken(Helper.boolean2Short(true));
+	// DelegateFactory.getInstance().getRechnungDelegate()
+	// .updateRechnungPosition(rePos, reDto.getLagerIId());
+	// // eventuell wuede die LS-Zuordnung veraendert - diese anzeigen
+	// getTabbedPaneRechnungAll().reloadRechnungDto();
+	// holeLieferschein(getTabbedPaneRechnungAll().getRechnungDto()
+	// .getLieferscheinIId());
+	// }
 
 	/**
 	 * erstelle Gutschrift aus Rechnung.
@@ -1673,8 +1788,11 @@ public class PanelRechnungKopfdaten extends PanelBasis {
 			RechnungDto rechnung = DelegateFactory.getInstance()
 					.getRechnungDelegate().rechnungFindByPrimaryKey(key);
 
-			DelegateFactory.getInstance().getKundeDelegate()
-					.pruefeKunde(rechnung.getKundeIId());
+			DelegateFactory
+					.getInstance()
+					.getKundeDelegate()
+					.pruefeKunde(rechnung.getKundeIId(),
+							LocaleFac.BELEGART_GUTSCHRIFT, getInternalFrame());
 
 			boolean bAnswer = (DialogFactory.showMeldung(
 					LPMain.getTextRespectUISPr("rech.gutschriftausrechnung")
@@ -1686,9 +1804,11 @@ public class PanelRechnungKopfdaten extends PanelBasis {
 			if (!bAnswer) {
 				return;
 			}
-			Integer iIdRechnung = DelegateFactory.getInstance()
+			Integer iIdRechnung = DelegateFactory
+					.getInstance()
 					.getRechnungDelegate()
-					.createGutschriftAusRechnung(key, wdfDatum.getDate());
+					.createGutschriftAusRechnung(key, wdfDatum.getDate(),
+							(String) wcoRechnungart.getSelectedItem());
 			this.setKeyWhenDetailPanel(iIdRechnung);
 			rechnung = DelegateFactory.getInstance().getRechnungDelegate()
 					.rechnungFindByPrimaryKey(iIdRechnung);
@@ -1843,31 +1963,37 @@ public class PanelRechnungKopfdaten extends PanelBasis {
 					kundeDto = DelegateFactory.getInstance().getKundeDelegate()
 							.kundeFindByPrimaryKey((Integer) key);
 				}
-				getTabbedPaneRechnungAll().getRechnungDto().setZahlungszielIId(
-						kundeDto.getZahlungszielIId());
-				getTabbedPaneRechnungAll().getRechnungDto().setLieferartIId(
-						kundeDto.getLieferartIId());
-				getTabbedPaneRechnungAll().getRechnungDto().setSpediteurIId(
-						kundeDto.getSpediteurIId());
-				if (kundeDto.getMwstsatzbezIId() != null) {
-					ParametermandantDto parameter = (ParametermandantDto) DelegateFactory
-							.getInstance()
-							.getParameterDelegate()
-							.getParametermandant(
-									ParameterFac.PARAMETER_KUNDEN_POSITIONSKONTIERUNG,
-									ParameterFac.KATEGORIE_KUNDEN,
-									LPMain.getTheClient().getMandant());
-					boolean isPositionskontierung = ((Boolean) parameter
-							.getCWertAsObject()).booleanValue();
-					if (!isPositionskontierung) {
-						// Aktuellen MWST-Satz uebersetzen.
-						MwstsatzDto mwstsatzDtoAktuell = DelegateFactory
+
+				if (getTabbedPaneRechnungAll().getRechnungDto().getIId() == null
+						&& auftragDto == null) {
+
+					getTabbedPaneRechnungAll().getRechnungDto()
+							.setZahlungszielIId(kundeDto.getZahlungszielIId());
+					getTabbedPaneRechnungAll().getRechnungDto()
+							.setLieferartIId(kundeDto.getLieferartIId());
+					getTabbedPaneRechnungAll().getRechnungDto()
+							.setSpediteurIId(kundeDto.getSpediteurIId());
+					if (kundeDto.getMwstsatzbezIId() != null) {
+						ParametermandantDto parameter = (ParametermandantDto) DelegateFactory
 								.getInstance()
-								.getMandantDelegate()
-								.mwstsatzFindByMwstsatzbezIIdAktuellster(
-										kundeDto.getMwstsatzbezIId());
-						getTabbedPaneRechnungAll().getRechnungDto()
-								.setMwstsatzIId(mwstsatzDtoAktuell.getIId());
+								.getParameterDelegate()
+								.getParametermandant(
+										ParameterFac.PARAMETER_KUNDEN_POSITIONSKONTIERUNG,
+										ParameterFac.KATEGORIE_KUNDEN,
+										LPMain.getTheClient().getMandant());
+						boolean isPositionskontierung = ((Boolean) parameter
+								.getCWertAsObject()).booleanValue();
+						if (!isPositionskontierung) {
+							// Aktuellen MWST-Satz uebersetzen.
+							MwstsatzDto mwstsatzDtoAktuell = DelegateFactory
+									.getInstance()
+									.getMandantDelegate()
+									.mwstsatzFindByMwstsatzbezIIdAktuellster(
+											kundeDto.getMwstsatzbezIId());
+							getTabbedPaneRechnungAll()
+									.getRechnungDto()
+									.setMwstsatzIId(mwstsatzDtoAktuell.getIId());
+						}
 					}
 				}
 				getTabbedPaneRechnungAll().setRechnungDto(
@@ -1986,35 +2112,35 @@ public class PanelRechnungKopfdaten extends PanelBasis {
 		new DialogQuery(panelQueryFLRStatistikadresse);
 	}
 
-//	/**
-//	 * Dialogfenster zur Lieferscheinauswahl.
-//	 * 
-//	 * @throws Throwable
-//	 */
-//	private void dialogQueryLieferschein() throws Throwable {
-//		FilterKriterium[] fk = LieferscheinFilterFactory.getInstance()
-//				.createFKGelieferteLieferscheine();
-//		String sTitle = LPMain
-//				.getTextRespectUISPr("ls.print.listenichtverrechnet");
-//		panelQueryFLRLieferschein = LieferscheinFilterFactory
-//				.getInstance()
-//				.createPanelQueryFLRLieferschein(getInternalFrame(), fk, sTitle);
-//		new DialogQuery(panelQueryFLRLieferschein);
-//	}
+	// /**
+	// * Dialogfenster zur Lieferscheinauswahl.
+	// *
+	// * @throws Throwable
+	// */
+	// private void dialogQueryLieferschein() throws Throwable {
+	// FilterKriterium[] fk = LieferscheinFilterFactory.getInstance()
+	// .createFKGelieferteLieferscheine();
+	// String sTitle = LPMain
+	// .getTextRespectUISPr("ls.print.listenichtverrechnet");
+	// panelQueryFLRLieferschein = LieferscheinFilterFactory
+	// .getInstance()
+	// .createPanelQueryFLRLieferschein(getInternalFrame(), fk, sTitle);
+	// new DialogQuery(panelQueryFLRLieferschein);
+	// }
 
-//	/**
-//	 * Dialogfenster zur Rechnungsauswahl.
-//	 * 
-//	 * @throws Throwable
-//	 */
-//	private void dialogQueryRechnung() throws Throwable {
-//		panelQueryFLRRechnung = RechnungFilterFactory.getInstance()
-//				.createPanelFLRRechnung(getInternalFrame(), null);
-//		if (rechnungDtoZuRechnung != null) {
-//			panelQueryFLRRechnung.setSelectedId(rechnungDtoZuRechnung.getIId());
-//		}
-//		new DialogQuery(panelQueryFLRRechnung);
-//	}
+	// /**
+	// * Dialogfenster zur Rechnungsauswahl.
+	// *
+	// * @throws Throwable
+	// */
+	// private void dialogQueryRechnung() throws Throwable {
+	// panelQueryFLRRechnung = RechnungFilterFactory.getInstance()
+	// .createPanelFLRRechnung(getInternalFrame(), null);
+	// if (rechnungDtoZuRechnung != null) {
+	// panelQueryFLRRechnung.setSelectedId(rechnungDtoZuRechnung.getIId());
+	// }
+	// new DialogQuery(panelQueryFLRRechnung);
+	// }
 
 	/**
 	 * Dialogfenster zur Kundenauswahl fuer die Lieferadresse.
@@ -2088,15 +2214,15 @@ public class PanelRechnungKopfdaten extends PanelBasis {
 
 		// PJ18129
 		if (rechnungDto.getLieferscheinIId() != null) {
-			LieferscheinDto lsDto = DelegateFactory
-					.getInstance()
-					.getLsDelegate()
-					.lieferscheinFindByPrimaryKey(
-							rechnungDto.getLieferscheinIId());
-			if (lsDto.getProjektIId() != null) {
-				wsfProjekt.setEnabled(false);
-				wsfProjekt.getWrapperGotoButton().setEnabled(false);
-			}
+			wsfProjekt.getWrapperGotoButton().setEnabled(false);
+		}
+
+		if (DelegateFactory
+				.getInstance()
+				.getRechnungDelegate()
+				.getAnzahlMengenbehafteteRechnungpositionen(
+						rechnungDto.getIId()) > 0) {
+			wcoWaehrung.setEnabled(false);
 
 		}
 
@@ -2308,6 +2434,10 @@ public class PanelRechnungKopfdaten extends PanelBasis {
 			wtfGutschriftsgrund.setVisible(false);
 			wbuGutschriftsgrund.setVisible(false);
 		}
+		boolean schlusszahlung = sArt
+				.equals(RechnungFac.RECHNUNGART_SCHLUSSZAHLUNG);
+		wlaAnzahlungen.setVisible(schlusszahlung);
+		wtfAnzahlungen.setVisible(schlusszahlung);
 	}
 }
 

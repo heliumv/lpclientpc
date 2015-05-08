@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -32,6 +32,10 @@
  ******************************************************************************/
 package com.lp.client.pc;
 
+import java.util.List;
+
+import com.lp.client.frame.component.InternalFrame;
+import com.lp.client.pc.Desktop.ModulStatus;
 import com.lp.server.system.service.ModulberechtigungDto;
 import com.lp.server.system.service.ZusatzfunktionberechtigungDto;
 
@@ -64,8 +68,40 @@ public interface IDesktopController {
 	 * Hat Anwender die entsprechende Berechtigung f&uuml;r die Zusatzfunktion?
 	 * 
 	 * @param whichZusatzfunktion
-	 * @return
+	 * @return true wenn die Zusatzfunktionsberechtigung vorhanden ist
 	 */
 	public boolean darfAnwenderAufZusatzfunktionZugreifen(String whichZusatzfunktion) ;
 
+	/**
+	 * Hat der Anwender das Recht RECHT_LP_DARF_DIREKTHILFETEXTE_BEARBEITEN?
+	 * @return true wenn er es hat, sonst false
+	 */
+	public boolean darfDirekthilfeTexteEditieren();
+	
+	public void setDarfDirekthilfeTexteEditieren(boolean b);
+
+	/**
+	 * Gibt es bereits aufgeloeste Fehlmengen die noch gedruckt werden sollen?
+	 * 
+	 * @return true wenn es noch Fehlmengen gibt, die gedruckt werden sollen
+	 */
+	boolean hatAufgeloesteFehlmengen() ;
+	
+	/**
+	 * Gibt es im gesamten System &Auml;nderungen (an Daten) die vor der Beendigung behandelt werden m&uuml;ssen?</br>
+	 * <p> Die Behandlung von offenen Modulen und deren damit verbundenen Daten ist nicht im Scope, das macht das 
+	 * #see {@link Desktop#doLogout()}</p>
+	 * 
+	 * @return true wenn es noch zu behandelnde &Auml;nderungen gibt.
+	 */
+	boolean hatOffeneAenderungen() ;
+	
+	/**
+	 * Im System befindliche Daten&auml;nderungen "persistieren"/behandlen/verwerfen/...
+	 * 
+	 * @throws Throwable 
+	 */
+	void behandleOffeneAenderungen(List<ModulStatus> offeneModule) throws Throwable ;
+	
+	void behandleOffeneFehlmengen(InternalFrame internalFrame) throws Throwable ;
 }

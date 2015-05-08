@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -32,8 +32,10 @@
  ******************************************************************************/
 package com.lp.client.pc;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -45,15 +47,15 @@ import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Vector;
 
+import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JDialog;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
-import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.border.Border;
 
@@ -65,6 +67,7 @@ import com.lp.client.frame.component.WrapperLabel;
 import com.lp.client.frame.component.WrapperPasswordField;
 import com.lp.client.frame.component.WrapperTextField;
 import com.lp.client.frame.delegate.DelegateFactory;
+import com.lp.client.util.logger.LpLogger;
 import com.lp.server.benutzer.service.BenutzerFac;
 import com.lp.util.Helper;
 
@@ -79,27 +82,29 @@ import com.lp.util.Helper;
  * Letzte Aenderung: $Date: 2012/10/10 07:31:28 $
  */
 public class DialogLogin extends JDialog {
-	/**
-	 * 
-	 */
+
 	private static final long serialVersionUID = 1L;
 
+	// JVM Message
+	private JOptionPane jOptionPane = new JOptionPane();
+	
 	private WrapperPasswordField wpwdKennwort = new WrapperPasswordField();
 	private WrapperTextField wtfBenutzer = new WrapperTextField();
 	private WrapperLabel wlaBenutzer = new WrapperLabel();
 	private WrapperLabel wlaKennwort = new WrapperLabel();
 	private WrapperButton wbuAnmelden = new WrapperButton();
 	private WrapperCheckBox wcbKennwortaendern = new WrapperCheckBox();
-
+	
 	private JTextArea taOut = new JTextArea();
 	private JScrollPane jspTaOut = new JScrollPane(taOut,
-			JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-			JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+				JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+				JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
-	private JPanel jpaOben = new JPanel();
-	private GridBagLayout gridBagLayout = new GridBagLayout();
+	private JPanel panel = new JPanel();
+	private GridBagLayout gbl = new GridBagLayout();
+	private GridBagConstraints gbc = new GridBagConstraints();
+	
 	private WrapperComboBox wcoResourcebundels = null;
-	private GridBagLayout gridBagLayoutAussen = new GridBagLayout();
 	private WrapperLabel wlaUILocale = new WrapperLabel();
 	private WrapperLabel wlaMandant = new WrapperLabel();
 	private Border border = null;
@@ -107,9 +112,16 @@ public class DialogLogin extends JDialog {
 
 	private boolean bShowMandant = false;
 	private JButton btnInfo = new JButton();
-	private Border borderSpTaOut = null;
 	private Frame frame = null;
 	private char[] neuesKennwort = null;
+	
+	private Font currentFont = UIManager.getDefaults().getFont("Label.font");
+	private int  fontSize = currentFont.getSize();
+	private int maxwidth = LPMain.getInstance().getDesktop().getWidth();
+	private int maxheight = LPMain.getInstance().getDesktop().getHeight();
+	
+	protected final LpLogger myLogger = (LpLogger) com.lp.client.util.logger.LpLogger
+			.getInstance(this.getClass());
 
 	public DialogLogin(Frame frame, String title, boolean modal,
 			boolean bShowMandantI) throws Throwable {
@@ -119,43 +131,107 @@ public class DialogLogin extends JDialog {
 		bShowMandant = bShowMandantI;
 
 		jbInit();
+		
 		initComponents();
 
 		checkJVM();
-
+		
 		pack();
+		
 		wtfBenutzer.requestFocus();
 	}
 
-	public boolean kennwortAendern() {
-		return wcbKennwortaendern.isSelected();
-	}
-
+//	private void checkJVM() {
+//		String sJVM = System.getProperty("java.version");
+//		String tmp = sJVM;
+//		if (sJVM != null) {
+//			if (sJVM.length() < 8) {
+//				tmp = sJVM.substring(0);
+//			} else {
+//				tmp = sJVM.substring(0, 8);
+//			}
+//		}
+//		sJVM = tmp;
+////		if ((sJVM != null && (sJVM.startsWith("1.6.") || sJVM
+////				.startsWith("1.7.")) == false)) {
+//		if(sJVM != null && !sJVM.startsWith("1.7.")) {			
+//			
+//			String tmp2 = LPMain.getInstance().getTextRespectUISPr(
+//					"lp.jvm.versionen.freigebenen");
+//			
+//			taOut.setText(LPMain.getInstance().getTextRespectUISPr(
+//					"lp.jvm.version")
+//					+ " ("
+//					+ LPMain.getInstance().getTextRespectUISPr(
+//							"lp.jvm.version.installiert")
+//					+ ": "
+//					+ sJVM
+//					+ " "
+//					+ LPMain.getInstance().getTextRespectUISPr(
+//							"lp.jvm.versionen.freigebenen")
+//					+ ": "
+////					+ "1.6.*, 1.7.* " + ")");
+//					+ "1.7.* " + ")");
+//		}
+//
+//	}
+	
+	
+	// *** wp ***
+	// ***
+	
 	private void checkJVM() {
-		String sJVM = System.getProperty("java.version");
-		String tmp = sJVM;
-		if (sJVM != null) {
-			if (sJVM.length() < 8) {
-				tmp = sJVM.substring(0);
-			} else {
-				tmp = sJVM.substring(0, 8);
+		if (LPMain.getInstance().getBenutzernameRaw() == null) {
+			// String clientJavaVersion = "1.6.0";
+			String clientJavaVersion = System.getProperty("java.version");
+
+			String[] javaVersion = new String[4];
+			javaVersion = clientJavaVersion.split("\\.|_");
+
+			final String javaMinVersionApproved = "1.7.0_20";
+			final String javaVersionNext = "1.8.0";
+			final int javaMajorReleaseApproved = 7;
+			final int javaUpdateApproved = 20;
+
+			int javaMajorRelease = 0;
+			int javaUpdate = 0;
+			try {
+
+				javaMajorRelease = Integer.parseInt(javaVersion[1]);
+				// wenn kein update vorhanden dann setze auf 0
+				javaUpdate = 0;
+				if (javaVersion.length > 3) {
+					javaUpdate = Integer.parseInt(javaVersion[3]);
+				}
+			} catch (NumberFormatException e) {
+				myLogger.error(
+						"Java Version konnte nicht sauber festgestellt werden!",
+						e);
 			}
-		}
-		sJVM = tmp;
-		if ((sJVM != null && (sJVM.startsWith("1.6.") || sJVM
-				.startsWith("1.7.")) == false)) {
-			taOut.setText(LPMain.getInstance().getTextRespectUISPr(
-					"lp.jvm.version")
+
+			String outputText = LPMain.getTextRespectUISPr("lp.jvm.version")
 					+ " ("
-					+ LPMain.getInstance().getTextRespectUISPr(
-							"lp.jvm.version.installiert")
+					+ LPMain.getTextRespectUISPr("lp.jvm.version.installiert")
 					+ ": "
-					+ sJVM
+					+ clientJavaVersion
 					+ " "
-					+ LPMain.getInstance().getTextRespectUISPr(
-							"lp.jvm.versionen.freigebenen")
-					+ ": "
-					+ "1.6.*, 1.7.* " + ")");
+					+ LPMain.getTextRespectUISPr("lp.jvm.versionen.freigebenen")
+					+ ", ab: " + javaMinVersionApproved + ", unter: "
+					+ javaVersionNext + ")";
+
+			// Unter 1.7.0_20 und ab 1.8.0 Fehlermeldung
+			if (javaMajorRelease < javaMajorReleaseApproved
+					|| javaMajorRelease == javaMajorReleaseApproved
+					&& javaUpdate < javaUpdateApproved
+					|| javaMajorRelease > javaMajorReleaseApproved) {
+
+				jOptionPane.showMessageDialog(
+						LPMain.getInstance().getDesktop(),
+						"<html><body><p style='width: 200px;'>" + outputText
+								+ "</p></body></html>", "JVM Hinweis",
+						jOptionPane.WARNING_MESSAGE);
+
+			}
 		}
 
 	}
@@ -178,8 +254,74 @@ public class DialogLogin extends JDialog {
 
 			locUi = Helper.string2Locale(locParameter);
 		}
+		
+		
+		// Dialog
+		setTitle(LPMain.getInstance().getTextRespectUISPr("lp.anmeldung"));
+		setIconImage(ImageIO.read(getClass().getResource(
+				"/com/lp/client/res/heliumv.png")));
+			
+		Dimension dimensionLogin = new Dimension(400,225);
+		Dimension dimensionMandantenwechsel = new Dimension(400,140);
+		
+		if (fontSize > 12) {
+			dialogSetDynamicSize(fontSize, dimensionLogin, maxwidth, maxheight);
+		} else {
+			
+		setMinimumSize(new Dimension(dimensionLogin.width, dimensionLogin.height));
+		setMaximumSize(new Dimension(dimensionLogin.width, dimensionLogin.height));
+		setPreferredSize(new Dimension(dimensionLogin.width, dimensionLogin.height));
+		
+		}
+		
+		if (bShowMandant) {
+			
+			setMinimumSize(new Dimension(dimensionMandantenwechsel.width, dimensionMandantenwechsel.height));
+			setMaximumSize(new Dimension(dimensionMandantenwechsel.width, dimensionMandantenwechsel.height));
+			setPreferredSize(new Dimension(dimensionMandantenwechsel.width, dimensionMandantenwechsel.height));
+		}
+		
+		if (bShowMandant && fontSize > 12) {
+			dialogSetDynamicSize(fontSize, dimensionMandantenwechsel, maxwidth, maxheight);
+		}
+		
+		
+		setModal(true);
+		setLayout(new BorderLayout(5, 5));
+		setResizable(false);
+		addWindowListener(new DialogLogin_this_windowAdapter(this));
 
-		Map m = DelegateFactory.getInstance().getLocaleDelegate()
+		// Panel
+		panel.setLayout(gbl);
+		border = BorderFactory.createEmptyBorder(20, 20, 0, 20);
+		panel.setBorder(border);
+		
+		// Benutzer
+		wlaBenutzer.setText(LPMain.getInstance().getTextRespectUISPr(
+				"lp.benutzer"));
+		wlaBenutzer.setRequestFocusEnabled(true);
+
+		wtfBenutzer.setText("");
+		wtfBenutzer
+				.addKeyListener(new DialogLogin_wtfBenutzer_keyAdapter(this));
+		wtfBenutzer.addFocusListener(new DialogLogin_wtfBenutzer_focusAdapter(
+				this));
+
+		// Kennwort
+		wlaKennwort.setText(LPMain.getInstance().getTextRespectUISPr(
+				"lp.kennwort"));
+
+		wpwdKennwort
+				.addFocusListener(new DialogLogin_wpwdKennwort_focusAdapter(
+						this));
+		wpwdKennwort.addKeyListener(new DialogLogin_wpwdKennwort_keyAdapter(
+				this));
+		
+		// Sprache
+		wlaUILocale.setText(LPMain.getInstance().getTextRespectUISPr(
+				"lp.uisprache"));
+		
+		Map<?, ?> m = DelegateFactory.getInstance().getLocaleDelegate()
 				.getAllLocales(locUi);
 
 		wcoResourcebundels = new WrapperComboBox();
@@ -197,78 +339,46 @@ public class DialogLogin extends JDialog {
 		// wtfBenutzer.setColumns(12);
 		wtfBenutzer.setColumnsMax(BenutzerFac.MAX_BENUTZER_KENNUNG);
 
-		wlaBenutzer.setText(LPMain.getInstance().getTextRespectUISPr(
-				"lp.benutzer"));
-		wlaBenutzer.setVerticalAlignment(javax.swing.SwingConstants.CENTER);
-		wlaBenutzer.setVerticalTextPosition(javax.swing.SwingConstants.CENTER);
-		wlaBenutzer.setRequestFocusEnabled(true);
-		wlaBenutzer.setHorizontalAlignment(SwingConstants.RIGHT);
-		wlaBenutzer.setHorizontalTextPosition(SwingConstants.RIGHT);
-
-		wlaKennwort.setText(LPMain.getInstance().getTextRespectUISPr(
-				"lp.kennwort"));
-		wlaKennwort.setVerticalAlignment(javax.swing.SwingConstants.CENTER);
-		wlaKennwort.setVerticalTextPosition(javax.swing.SwingConstants.CENTER);
-		wlaKennwort.setHorizontalAlignment(SwingConstants.RIGHT);
-		wlaKennwort.setHorizontalTextPosition(SwingConstants.RIGHT);
-		wtfBenutzer.setColumnsMax(BenutzerFac.MAX_BENUTZER_KENNUNG);
-
+		// Anmelden
 		wbuAnmelden.setEnabled(false);
-		wbuAnmelden.setHorizontalAlignment(SwingConstants.CENTER);
-		wbuAnmelden.setHorizontalTextPosition(SwingConstants.CENTER);
 		wbuAnmelden.setText(LPMain.getInstance().getTextRespectUISPr(
 				"lp.anmeldung"));
+		
 		wbuAnmelden
 				.addActionListener(new DialogLogin_brnAnmelden_actionAdapter(
 						this));
 
-		wcbKennwortaendern.setText(LPMain
-				.getTextRespectUISPr("pers.benutzer.kennwortaendern"));
-		wcbKennwortaendern.setHorizontalAlignment(SwingConstants.RIGHT);
-
-		// getRootPane().setDefaultButton(wbuAnmelden);
-
-		setModal(true);
-		setResizable(false);
-		setTitle(LPMain.getInstance().getTextRespectUISPr("lp.anmeldung"));
-		getContentPane().setLayout(gridBagLayoutAussen);
-		addWindowListener(new DialogLogin_this_windowAdapter(this));
-
-		// taOut.setAlignmentX( (float) 1);
-		// taOut.setAlignmentY( (float) 1);
-		// taOut.setRequestFocusEnabled(false);
-		taOut.setForeground(Color.RED);
-		taOut.setEditable(false);
-		taOut.setText("");
-		taOut.setLineWrap(true);
-		taOut.setRows(4);
-		taOut.setWrapStyleWord(true);
-		taOut.setBackground(UIManager.getColor("control"));
-		borderSpTaOut = BorderFactory.createEmptyBorder(0, 0, 0, 0);
-		jspTaOut.setBorder(borderSpTaOut);
-
+		// Info Button
 		javax.swing.ImageIcon imageIcon = new javax.swing.ImageIcon(getClass()
-				.getResource("/com/lp/client/res/message.png"));
+				.getResource("/com/lp/client/res/info16x16.png"));
+		
 		btnInfo.setMaximumSize(new Dimension(25, 25));
 		btnInfo.setMinimumSize(new Dimension(25, 25));
 		btnInfo.setPreferredSize(new Dimension(25, 25));
 		btnInfo.setIcon(imageIcon);
-		updateBtnInfoEnabled();
+		btnInfo.setFocusable(false);
+		btnInfo.addActionListener(new DialogLogin_btnInfo_actionAdapter(this));
+//		updateBtnInfoEnabled();
+		
+		wcbKennwortaendern.setText(LPMain
+				.getTextRespectUISPr("pers.benutzer.kennwortaendern"));
 
-		jpaOben.setLayout(gridBagLayout);
-		jpaOben.setAlignmentX((float) 0.0);
-		jpaOben.setAlignmentY((float) 0.0);
-		border = BorderFactory.createEmptyBorder(0, 20, 0, 20);
-		jpaOben.setBorder(border);
-
-		int w = 320;
-		int h = 160;
-		jpaOben.setMaximumSize(new Dimension(w, h));
-		jpaOben.setMinimumSize(new Dimension(w, h));
-		jpaOben.setPreferredSize(new Dimension(w, h));
-
-		wlaUILocale.setText(LPMain.getInstance().getTextRespectUISPr(
-				"lp.uisprache"));
+		// Fehlermeldung
+		taOut.setText("");
+        taOut.setForeground(Color.RED);
+        taOut.setBackground(null);
+        taOut.setMargin(new Insets(5, 5, 5, 5));
+        taOut.setCaretPosition(0);
+        taOut.setEditable(false);
+        taOut.setLineWrap(true);
+		taOut.setRows(2);
+		taOut.setWrapStyleWord(true);
+        
+        jspTaOut.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        jspTaOut.setVerticalScrollBarPolicy(
+        		JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        jspTaOut.setBorder(BorderFactory.createEmptyBorder(0, 22, 10, 20));
+        jspTaOut.setAlignmentX(CENTER_ALIGNMENT);
 
 		if (bShowMandant) {
 			wlaMandant.setText(LPMain.getInstance().getTextRespectUISPr(
@@ -278,78 +388,129 @@ public class DialogLogin extends JDialog {
 					new String(LPMain.getInstance().getKennwortRaw())));
 		}
 
-		wpwdKennwort
-				.addFocusListener(new DialogLogin_wpwdKennwort_focusAdapter(
-						this));
-		wpwdKennwort.addKeyListener(new DialogLogin_wpwdKennwort_keyAdapter(
-				this));
-
-		btnInfo.addActionListener(new DialogLogin_btnInfo_actionAdapter(this));
-
-		getContentPane().add(
-				jspTaOut,
-				new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
-						GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-						new Insets(2, 5, 0, 2), 0, 0));
-		getContentPane().add(
-				jpaOben,
-				new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
-						GridBagConstraints.EAST, GridBagConstraints.BOTH,
-						new Insets(0, 0, 0, 0), 0, 0));
-		int iZeile = 0;
+			
+		gbc = new GridBagConstraints();
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+		gbc.insets = new Insets(5, 5, 5, 5);
+		
+		int yZeile = 0;
 		if (!bShowMandant) {
-			jpaOben.add(wlaBenutzer, new GridBagConstraints(0, iZeile, 1, 1,
-					0.4, 0.0, GridBagConstraints.CENTER,
-					GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-			jpaOben.add(wtfBenutzer, new GridBagConstraints(1, iZeile, 1, 1,
-					0.6, 0.0, GridBagConstraints.CENTER,
-					GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+			
+			// Benutzereingabe
+			gbc.gridx = 0;
+			gbc.gridy = yZeile;
+			gbc.weightx = 0.3;
+			gbl.setConstraints(wlaBenutzer, gbc);
+			panel.add(wlaBenutzer);
+			
+			gbc.gridx = 1;
+			gbc.gridy = yZeile;
+			gbc.weightx = 0.7;
+			gbl.setConstraints(wtfBenutzer, gbc);
+			panel.add(wtfBenutzer);
+			yZeile++;
+			
+			// Kennwortabfrage
+			gbc.gridx = 0;
+			gbc.gridy = yZeile;
+			gbc.weightx = 0.3;
+			gbl.setConstraints(wlaKennwort, gbc);
+			panel.add(wlaKennwort);
+			
+			gbc.gridx = 1;
+			gbc.gridy = yZeile;
+			gbc.weightx = 0.7;
+			gbl.setConstraints(wpwdKennwort, gbc);
+			panel.add(wpwdKennwort);
+			yZeile++;
+			
+			// Sprachauswahl
+			gbc.gridx = 0;
+			gbc.gridy = yZeile;
+			gbc.weightx = 0.3;
+			gbl.setConstraints(wlaUILocale, gbc);
+			panel.add(wlaUILocale);
+			
+			gbc.gridx = 1;
+			gbc.gridy = yZeile;
+			gbc.weightx = 0.7;
+			gbl.setConstraints(wcoResourcebundels, gbc);
+			panel.add(wcoResourcebundels);
+			yZeile++;
+			
+			// Kennwort aendern
+			gbc.gridx = 1;
+	        gbc.gridy = yZeile;
+	        gbc.gridwidth = 2;
+	        gbl.setConstraints(wcbKennwortaendern, gbc);
+	        panel.add(wcbKennwortaendern);
+	        yZeile++;
+	        
+		}
 
-			iZeile++;
-			jpaOben.add(wlaKennwort, new GridBagConstraints(0, iZeile, 1, 1,
-					0.0, 0.0, GridBagConstraints.CENTER,
-					GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-			jpaOben.add(wpwdKennwort, new GridBagConstraints(1, iZeile, 1, 1,
-					0.0, 0.0, GridBagConstraints.CENTER,
-					GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+		else {
+			// Mandanteneingabe
+			gbc.gridx = 0;
+			gbc.gridy = yZeile;
+			gbc.weightx = 0.3;
+			gbl.setConstraints(wlaMandant, gbc);
+			panel.add(wlaMandant);
+			
+			gbc.gridx = 1;
+			gbc.gridy = yZeile;
+			gbc.weightx = 0.7;
+			gbl.setConstraints(wcoMandant, gbc);
+			panel.add(wcoMandant);
+			yZeile++;
 
-			iZeile++;
-			jpaOben.add(wlaUILocale, new GridBagConstraints(0, iZeile, 1, 1,
-					0.0, 0.0, GridBagConstraints.CENTER,
-					GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-
-			jpaOben.add(wcoResourcebundels, new GridBagConstraints(1, iZeile,
-					1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-					GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-
-			iZeile++;
-			jpaOben.add(wcbKennwortaendern,
-					new GridBagConstraints(0, iZeile, 2, 1, 0.0, 0.0,
-							GridBagConstraints.EAST,
-							GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2,
-									2), 0, 0));
-
-		} else {
-			iZeile++;
-			jpaOben.add(wlaMandant, new GridBagConstraints(0, iZeile, 1, 1,
-					0.4, 0.0, GridBagConstraints.CENTER,
-					GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-			jpaOben.add(wcoMandant, new GridBagConstraints(1, iZeile, 1, 1,
-					0.6, 0.0, GridBagConstraints.CENTER,
-					GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-			// Hier immer einschalten.
 			wbuAnmelden.setEnabled(true);
 		}
-		iZeile++;
-		jpaOben.add(wbuAnmelden, new GridBagConstraints(1, iZeile, 1, 1, 0.0,
-				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
-				new Insets(2, 2, 2, 2), 0, 0));
 
-		getContentPane().add(
-				btnInfo,
-				new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
-						GridBagConstraints.CENTER, GridBagConstraints.NONE,
-						new Insets(0, 0, 0, 0), 0, 0));
+
+        // Button Info
+		gbc.gridx = 0;
+        gbc.gridy = yZeile;
+        gbc.gridwidth = 2;
+        gbc.fill = GridBagConstraints.WEST;
+        gbc.anchor = GridBagConstraints.SOUTHWEST;
+        gbl.setConstraints(btnInfo, gbc);
+        panel.add(btnInfo);
+        
+        // Button Anmeldung
+		gbc.gridx = 1;
+        gbc.gridy = yZeile;
+        gbc.gridwidth = 2;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.anchor = GridBagConstraints.SOUTHEAST;
+        gbl.setConstraints(wbuAnmelden, gbc);
+        panel.add(wbuAnmelden);
+
+		getContentPane().add(BorderLayout.PAGE_START, panel);
+        
+		//***
+        //*** wp ***
+
+		
+	}
+
+	private void dialogSetDynamicSize(int fontSize, Dimension d, int maxwidth,
+			int maxheight) {
+		d.width = d.width / 15 * fontSize;
+		d.height = d.height / 15 * fontSize;
+		
+		if (d.width > maxwidth)
+			d.width = maxwidth;
+		
+		if (d.height > maxheight)
+			d.height = maxheight;
+		
+		setMinimumSize(new Dimension(d.width, d.height));	
+		setMaximumSize(new Dimension(d.width, d.height));
+		setPreferredSize(new Dimension(d.width, d.height));
+	}
+	
+	public boolean kennwortAendern() {
+		return wcbKennwortaendern.isSelected();
 	}
 
 	public char[] getNeuesKennwort() {
@@ -423,12 +584,30 @@ public class DialogLogin extends JDialog {
 		getRootPane().setDefaultButton(wbuAnmelden);
 	}
 
+
+	
 	public void showInfo(String info) {
+		Dimension dimensionScrollpane = new Dimension(350,270);
 		taOut.setText(info);
+		taOut.setCaretPosition(0);
+		getContentPane().add(BorderLayout.CENTER, jspTaOut);
+
+			if (fontSize > 12) {
+				dialogSetDynamicSize(fontSize, dimensionScrollpane, maxwidth, maxheight);
+				}
+			
+			else {
+				setMinimumSize(new Dimension(dimensionScrollpane.width, dimensionScrollpane.height));
+				setMaximumSize(new Dimension(dimensionScrollpane.width, dimensionScrollpane.height));
+				setPreferredSize(new Dimension(dimensionScrollpane.width, dimensionScrollpane.height));
+				
+			}
+		
 	}
 
 	void this_windowClosing(WindowEvent e) {
 		((Desktop) getOwner()).setBAbbruch(true);
+		LPMain.getInstance().getDesktop().exitClientDlg();
 	}
 
 	public boolean isBShowMandant() {
@@ -446,29 +625,26 @@ public class DialogLogin extends JDialog {
 	void wpwdKennwortKeyPressed(KeyEvent e) {
 		checkAnmelden();
 	}
+	
 
-	/**
-	 * About-Dialog (Systeminfo) anzeigen.
-	 * 
-	 * Die Methode verl&auml;sst sich darauf, dass Desktop != null ist
-	 * 
-	 * @param e
-	 */
+	// Funktion "Exit Client" vom Info-Button entfernt und auf das "Window Closing Event" gelegt
 	public void btnInfo_actionPerformed(ActionEvent e) {
-		try {
-			LPMain.getInstance().getDesktop().showAboutDialog();
-		} catch (Throwable ex) {
-			LPMain.getInstance().getDesktop().exitClientDlg();
-		}
-	}
 
-	/**
-	 * Beim allerersten Login gibt es noch keinen Desktop, deshalb macht es auch
-	 * keinen Sinn den About-Button freizuschalten.
-	 */
-	private void updateBtnInfoEnabled() {
-		btnInfo.setEnabled(LPMain.getInstance().getDesktop() != null);
+			try {
+				LPMain.getInstance().getDesktop().showAboutDialog();
+			} catch (Throwable e1) {
+				e1.printStackTrace();
+			}
+
 	}
+	
+//	private boolean isUserAvailable() throws Throwable {
+//		return LPMain.getTheClient() != null ;
+//	}
+	
+	//***
+	//*** wp ***
+
 }
 
 class DialogLogin_btnInfo_actionAdapter implements ActionListener {
@@ -555,4 +731,5 @@ class DialogLogin_wpwdKennwort_keyAdapter extends java.awt.event.KeyAdapter {
 	public void keyReleased(KeyEvent e) {
 		adaptee.wpwdKennwortKeyPressed(e);
 	}
+
 }

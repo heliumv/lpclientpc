@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -39,6 +39,7 @@ import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentListener;
+import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.beans.PropertyVetoException;
 import java.io.BufferedReader;
@@ -52,6 +53,9 @@ import java.util.EventObject;
 import java.util.Stack;
 import java.util.Vector;
 
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JInternalFrame;
 import javax.swing.JMenuItem;
@@ -66,15 +70,19 @@ import com.lp.client.frame.Defaults;
 import com.lp.client.frame.ExceptionLP;
 import com.lp.client.frame.HelperClient;
 import com.lp.client.frame.ICommand;
+import com.lp.client.frame.assistent.view.AssistentView;
 import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.frame.dialog.DialogFactory;
 import com.lp.client.frame.editor.PanelEditor;
 import com.lp.client.frame.report.PanelReportIfJRDS;
 import com.lp.client.frame.report.PanelReportIfJRDSZweiDrucker;
 import com.lp.client.frame.report.PanelReportKriterien;
+import com.lp.client.frame.report.PanelReportKriterienOptions;
 import com.lp.client.frame.report.PanelReportKriterienZweiDrucker;
 import com.lp.client.pc.LPMain;
 import com.lp.client.projekt.InternalFrameProjekt;
+import com.lp.client.projekt.TabbedPaneProjekt;
+import com.lp.client.util.ClientConfiguration;
 import com.lp.client.util.dtable.DistributedTableModelImpl;
 import com.lp.client.util.logger.LpLogger;
 import com.lp.server.benutzer.service.RechteFac;
@@ -169,6 +177,8 @@ abstract public class InternalFrame extends JInternalFrame implements
 
 	public Integer letzteKostentraegerIId = null;
 
+	private boolean modulLocked ;
+	
 	public InternalFrame(String sAddTitleI, String belegartCNr,
 			String sRechtModulweitI) throws Throwable {
 		// titlp: 1 hier keinen Titel setzen!
@@ -223,8 +233,7 @@ abstract public class InternalFrame extends JInternalFrame implements
 
 			String line;
 
-			String logpScan = LPMain.getInstance().getLPParameter(
-					"doc.logpscantool");
+			String logpScan = ClientConfiguration.getLogpScan() ;
 
 			ArbeitsplatzparameterDto parameter = DelegateFactory
 					.getInstance()
@@ -297,8 +306,7 @@ abstract public class InternalFrame extends JInternalFrame implements
 
 			String line;
 
-			String logpScan = LPMain.getInstance().getLPParameter(
-					"doc.logpscantool");
+			String logpScan = ClientConfiguration.getLogpScan() ;
 
 			ArbeitsplatzparameterDto parameter = DelegateFactory
 					.getInstance()
@@ -438,6 +446,14 @@ abstract public class InternalFrame extends JInternalFrame implements
 		listeners.removeElement(listener);
 	}
 
+	public final void fireItemChanged(Object source, int id, MouseEvent e) {
+		if (listeners != null && !listeners.isEmpty()) {
+			ItemChangedEvent event = new ItemChangedEvent(source, id);
+			event.setMouseEvent(e);
+			fireItemChangedImpl(event);
+		}
+	}
+
 	/**
 	 * Feuere einen Event an alle registrierten Listener (zB. Panels).
 	 * 
@@ -451,81 +467,173 @@ abstract public class InternalFrame extends JInternalFrame implements
 		if (listeners != null && !listeners.isEmpty()) {
 			// create the event object to send
 			ItemChangedEvent event = new ItemChangedEvent(source, idI);
+			fireItemChangedImpl(event);
 
-			// make a copy of the listener list in case
-			// anyone adds/removes listeners
-			Vector<ItemChangedListener> targets = new Vector<ItemChangedListener>();
-			synchronized (this) {
-				targets.setSize(listeners.size());
-				Collections.copy(targets, listeners);
-			}
+			// // make a copy of the listener list in case
+			// // anyone adds/removes listeners
+			// Vector<ItemChangedListener> targets = new
+			// Vector<ItemChangedListener>();
+			// synchronized (this) {
+			// targets.setSize(listeners.size());
+			// Collections.copy(targets, listeners);
+			// }
+			//
+			// // walk through the listener list and
+			// // call the sunMoved method in each
+			// Enumeration<ItemChangedListener> e = targets.elements();
+			// while (e.hasMoreElements()) {
+			// ItemChangedListener listener = (ItemChangedListener) e
+			// .nextElement();
+			// // itemevt: 2 jeder Listener wird jetzt via changed
+			// // verstaendigt.
+			//
+			// // CK: optimiert, sodass nur mehr das Panel mit derselben
+			// // Use-Case-ID verstaendigt wird
+			// if (event.getSource() instanceof PanelQuery) {
+			// PanelQuery pqSource = (PanelQuery) event.getSource();
+			// if (pqSource.getTable().getModel() instanceof
+			// DistributedTableModelImpl) {
+			// DistributedTableModelImpl tm = (DistributedTableModelImpl)
+			// pqSource
+			// .getTable().getModel();
+			// try {
+			// if (tm.getDataSource() != null
+			// && tm.getDataSource().getUseCaseId() != null) {
+			//
+			// if (listener instanceof PanelQuery) {
+			// PanelQuery pq = (PanelQuery) listener;
+			//
+			// DistributedTableModelImpl tm2 = (DistributedTableModelImpl) pq
+			// .getTable().getModel();
+			// if (tm2.getDataSource().getUseCaseId()
+			// .intValue() != tm.getDataSource()
+			// .getUseCaseId().intValue()) {
+			// continue;
+			// }
+			// }
+			// }
+			// } catch (Throwable t) {
+			// handleException(t, true);
+			// }
+			// }
+			// }
+			// if (event.getSource() instanceof WrapperTable) {
+			// WrapperTable wtSource = (WrapperTable) event.getSource() ;
+			// if (wtSource.getModel() instanceof DistributedTableModelImpl) {
+			// DistributedTableModelImpl tm = (DistributedTableModelImpl)
+			// wtSource
+			// .getModel();
+			// try {
+			// if (tm.getDataSource() != null
+			// && tm.getDataSource().getUseCaseId() != null) {
+			//
+			// if (listener instanceof PanelQuery) {
+			// PanelQuery pq = (PanelQuery) listener;
+			//
+			// DistributedTableModelImpl tm2 = (DistributedTableModelImpl) pq
+			// .getTable().getModel();
+			// if (tm2.getDataSource().getUseCaseId()
+			// .intValue() != tm.getDataSource()
+			// .getUseCaseId().intValue()) {
+			// continue;
+			// }
+			// }
+			// }
+			// } catch (Throwable t) {
+			// handleException(t, true);
+			// }
+			// }
+			// }
+			//
+			// listener.changed(event);
+			// // AD: System.out.println(listener.getClass() + " " +
+			// // event.toString());
+			// }
+		}
+	}
 
-			// walk through the listener list and
-			// call the sunMoved method in each
-			Enumeration<ItemChangedListener> e = targets.elements();
-			while (e.hasMoreElements()) {
-				ItemChangedListener listener = (ItemChangedListener) e
-						.nextElement();
-				// itemevt: 2 jeder Listener wird jetzt via changed
-				// verstaendigt.
+	public final void fireItemChanged(ItemChangedEvent event) {
+		if (listeners != null && !listeners.isEmpty()) {
+			fireItemChangedImpl(event);
+		}
+	}
 
-				// CK: optimiert, sodass nur mehr das Panel mit derselben
-				// Use-Case-ID verstaendigt wird
-				if (source instanceof PanelQuery) {
-					if (((PanelQuery) source).getTable().getModel() instanceof DistributedTableModelImpl) {
-						DistributedTableModelImpl tm = (DistributedTableModelImpl) ((PanelQuery) source)
-								.getTable().getModel();
-						try {
-							if (tm.getDataSource() != null
-									&& tm.getDataSource().getUseCaseId() != null) {
+	protected void fireItemChangedImpl(ItemChangedEvent event) {
+		// make a copy of the listener list in case
+		// anyone adds/removes listeners
+		Vector<ItemChangedListener> targets = new Vector<ItemChangedListener>();
+		synchronized (this) {
+			targets.setSize(listeners.size());
+			Collections.copy(targets, listeners);
+		}
 
-								if (listener instanceof PanelQuery) {
-									PanelQuery pq = (PanelQuery) listener;
+		// walk through the listener list and
+		// call the sunMoved method in each
+		Enumeration<ItemChangedListener> e = targets.elements();
+		while (e.hasMoreElements()) {
+			ItemChangedListener listener = (ItemChangedListener) e
+					.nextElement();
+			// itemevt: 2 jeder Listener wird jetzt via changed
+			// verstaendigt.
 
-									DistributedTableModelImpl tm2 = (DistributedTableModelImpl) pq
-											.getTable().getModel();
-									if (tm2.getDataSource().getUseCaseId()
-											.intValue() != tm.getDataSource()
-											.getUseCaseId().intValue()) {
-										continue;
-									}
+			// CK: optimiert, sodass nur mehr das Panel mit derselben
+			// Use-Case-ID verstaendigt wird
+			if (event.getSource() instanceof PanelQuery) {
+				PanelQuery pqSource = (PanelQuery) event.getSource();
+				if (pqSource.getTable().getModel() instanceof DistributedTableModelImpl) {
+					DistributedTableModelImpl tm = (DistributedTableModelImpl) pqSource
+							.getTable().getModel();
+					try {
+						if (tm.getDataSource() != null
+								&& tm.getDataSource().getUseCaseId() != null) {
+
+							if (listener instanceof PanelQuery) {
+								PanelQuery pq = (PanelQuery) listener;
+
+								DistributedTableModelImpl tm2 = (DistributedTableModelImpl) pq
+										.getTable().getModel();
+								if (tm2.getDataSource().getUseCaseId()
+										.intValue() != tm.getDataSource()
+										.getUseCaseId().intValue()) {
+									continue;
 								}
 							}
-						} catch (Throwable t) {
-							handleException(t, true);
 						}
+					} catch (Throwable t) {
+						handleException(t, true);
 					}
 				}
-				if (source instanceof WrapperTable) {
-					if (((WrapperTable) source).getModel() instanceof DistributedTableModelImpl) {
-						DistributedTableModelImpl tm = (DistributedTableModelImpl) ((WrapperTable) source)
-								.getModel();
-						try {
-							if (tm.getDataSource() != null
-									&& tm.getDataSource().getUseCaseId() != null) {
+			}
+			if (event.getSource() instanceof WrapperTable) {
+				WrapperTable wtSource = (WrapperTable) event.getSource();
+				if (wtSource.getModel() instanceof DistributedTableModelImpl) {
+					DistributedTableModelImpl tm = (DistributedTableModelImpl) wtSource
+							.getModel();
+					try {
+						if (tm.getDataSource() != null
+								&& tm.getDataSource().getUseCaseId() != null) {
 
-								if (listener instanceof PanelQuery) {
-									PanelQuery pq = (PanelQuery) listener;
+							if (listener instanceof PanelQuery) {
+								PanelQuery pq = (PanelQuery) listener;
 
-									DistributedTableModelImpl tm2 = (DistributedTableModelImpl) pq
-											.getTable().getModel();
-									if (tm2.getDataSource().getUseCaseId()
-											.intValue() != tm.getDataSource()
-											.getUseCaseId().intValue()) {
-										continue;
-									}
+								DistributedTableModelImpl tm2 = (DistributedTableModelImpl) pq
+										.getTable().getModel();
+								if (tm2.getDataSource().getUseCaseId()
+										.intValue() != tm.getDataSource()
+										.getUseCaseId().intValue()) {
+									continue;
 								}
 							}
-						} catch (Throwable t) {
-							handleException(t, true);
 						}
+					} catch (Throwable t) {
+						handleException(t, true);
 					}
 				}
-
-				listener.changed(event);
-				// AD: System.out.println(listener.getClass() + " " +
-				// event.toString());
 			}
+
+			listener.changed(event);
+			// AD: System.out.println(listener.getClass() + " " +
+			// event.toString());
 		}
 	}
 
@@ -622,7 +730,9 @@ abstract public class InternalFrame extends JInternalFrame implements
 		// wird aus PanelBasis gesetzt
 		// this.setLpTitle(TITLE_IDX_OHRWASCHLOBEN, pbPanel.getAdd2Title());
 		// fuer Reports und Dokumente nicht ueberschreiben
-		if (!(pbPanel instanceof PanelReportKriterien)
+		if (pbPanel instanceof AssistentView) {
+			this.setLpTitle(TITLE_IDX_OHRWASCHLOBEN, pbPanel.getAdd2Title());
+		} else if (!(pbPanel instanceof PanelReportKriterien)
 				&& !(pbPanel instanceof PanelDokumentenablage)) {
 			this.setLpTitle(TITLE_IDX_AS_I_LIKE, "");
 		}
@@ -717,6 +827,62 @@ abstract public class InternalFrame extends JInternalFrame implements
 				sAdd2Title, partnerDtoEmpfaenger, ansprechpartnerIId, bDirekt,
 				bMitEmailFax, bNurVorschau));
 	}
+
+	// ***** wp & ghp *****
+	// *****
+
+	PanelDialogFehlmengen panelDialogFehlmengen;
+
+	protected void showPanelDialogFehlmengen(
+			PanelReportKriterien panelReportKriterien) {
+		panelDialogFehlmengen = new PanelDialogFehlmengen(LPMain.getInstance()
+				.getDesktop(),
+				LPMain.getTextRespectUISPr("fert.report.fehlteilliste"),
+				panelReportKriterien, this);
+		panelDialogFehlmengen.setVisible(true);
+	}
+
+	public void showReportKriterienDialog(PanelReportIfJRDS panelKriterien,
+			PanelReportKriterienOptions options) throws Throwable {
+
+		String sAdd2Title = null;
+		if (panelKriterien instanceof PanelBasis) {
+			sAdd2Title = ((PanelBasis) panelKriterien).getAdd2Title();
+		}
+
+		options.setAddTitleI(sAdd2Title);
+
+		// deaktiviere default exit button, da action aus panel reportkriterien
+		// fuer internal frame nicht erreichbar
+		options.setMitExitButton(false);
+		PanelReportKriterien panelReportKriterienInDialog = new PanelReportKriterien(
+				panelKriterien, options);
+
+		// erzeuge neuen exit button mit lokaler action
+		JButton buttonExit = new JButton(new ImageIcon(getClass().getResource(
+				"/com/lp/client/res/exit.png")));
+		buttonExit.setMinimumSize(HelperClient.getToolsPanelButtonDimension());
+		buttonExit
+				.setPreferredSize(HelperClient.getToolsPanelButtonDimension());
+
+		buttonExit.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				panelDialogFehlmengen.dispose();
+
+			}
+		});
+
+		panelReportKriterienInDialog.getToolBar().getToolsPanelRight()
+				.add(buttonExit);
+
+		showPanelDialogFehlmengen(panelReportKriterienInDialog);
+
+	}
+
+	// *****
+	// **** wp & ghp ****
 
 	public void showReportKriterienZweiDrucker(
 			PanelReportIfJRDSZweiDrucker panelKriterien,
@@ -974,6 +1140,25 @@ abstract public class InternalFrame extends JInternalFrame implements
 							pq.eventYouAreSelected(false);
 						}
 
+						// PJ18469 fkcombobox und schnellansicht leeren
+						if (pq.getCbSchnellansicht() != null) {
+							pq.getCbSchnellansicht().setSelected(false);
+						}
+						pq.setKeyOfFilterComboBox(null);
+
+						if (DelegateFactory
+								.getInstance()
+								.getTheJudgeDelegate()
+								.hatRecht(
+										com.lp.server.benutzer.service.RechteFac.RECHT_LP_DARF_VERSTECKTE_SEHEN)) {
+							if (pq.getWcbVersteckteFelderAnzeigen() != null) {
+								// Wenn Recht DARF_VERSTECKTE_SEHEN, dann
+
+								pq.getWcbVersteckteFelderAnzeigen()
+										.setSelected(true);
+							}
+						}
+
 						pq.befuelleFilterkriteriumKey(kritKey);
 
 						// Bereich in Projekt setzen
@@ -985,6 +1170,17 @@ abstract public class InternalFrame extends JInternalFrame implements
 									.projektFindByPrimaryKey((Integer) key);
 							pq.setKeyOfFilterComboBox(projektDto
 									.getBereichIId());
+
+							if (tpComponent instanceof TabbedPaneProjekt) {
+
+								TabbedPaneProjekt tpProjekt = (TabbedPaneProjekt) tpComponent;
+								ActionEvent e = new ActionEvent(
+										this,
+										-1,
+										TabbedPaneProjekt.MENU_ANSICHT_PROJEKT_ALLE);
+								tpProjekt.lPActionEvent(e);
+							}
+
 						}
 
 						pq.setSelectedId(key);
@@ -1078,8 +1274,8 @@ abstract public class InternalFrame extends JInternalFrame implements
 	}
 
 	/**
-	 * @todo JO passt der platz da? PJ 4708 Workaraound f&uuml;r WordWrap : http :
-	 *       //java.sun.com/developer/JDCTechTips/2004/tt0122.html
+	 * @todo JO passt der platz da? PJ 4708 Workaraound f&uuml;r WordWrap : http
+	 *       : //java.sun.com/developer/JDCTechTips/2004/tt0122.html
 	 * 
 	 * @param maxCharactersPerLineCount
 	 *            int
@@ -1198,9 +1394,48 @@ abstract public class InternalFrame extends JInternalFrame implements
 	 */
 	public PropertyVetoException vetoableChangeLP() throws Throwable {
 		PropertyVetoException exc = null;
+
+		JComponent topComponent = getStack().peek().getJComponent();
+		if (topComponent != null && topComponent != tabbedPaneRoot
+				&& topComponent instanceof PanelBasis) {
+			exc = ((PanelBasis) topComponent).vetoableChangeLP();
+			if (exc != null)
+				return exc;
+		}
+
 		TabbedPane tp = (TabbedPane) tabbedPaneRoot.getSelectedComponent();
 		if (tp == null)
 			return exc;
+
+		// ***** wp & ghp *****
+		// *****
+
+		if (exc == null) {
+			LPMain.getInstance().getDesktopController().behandleOffeneFehlmengen(this);			
+//			if (FehlmengenAufloesen.getAufgeloesteFehlmengen().size() > 0) {
+//				boolean bOption = DialogFactory
+//						.showModalJaNeinDialog(
+//								this,
+//								LPMain.getTextRespectUISPr("lp.frage.fehlmengenaufloesendrucken"),
+//								LPMain.getTextRespectUISPr("lp.hint"));
+//				if (bOption) {
+//					PanelReportKriterienOptions options = new PanelReportKriterienOptions();
+//					options.setInternalFrame(this);
+//					options.setMitEmailFax(true);
+//					showReportKriterienDialog(
+//							new ReportAufgeloestefehlmengen(this,
+//									FehlmengenAufloesen
+//											.getAufgeloesteFehlmengen()),
+//							options);
+//
+//					exc = new PropertyVetoException("", null);
+//				}
+//				FehlmengenAufloesen.loescheAufgeloesteFehlmengen();
+//			}
+		}
+		
+		// *****
+		// ***** wp & ghp *****
 
 		exc = tp.vetoableChangeLP();
 		if (getFrameProgress() != null) {
@@ -1296,5 +1531,24 @@ abstract public class InternalFrame extends JInternalFrame implements
 		// }
 		// this.getContentPane().removeAll();
 		super.finalize();
+	}
+	
+	
+	/**
+	 * Irgendein Datensatz dieses Moduls ist gesperrt
+	 */
+	public void lock() {
+		modulLocked = true ;
+	}
+
+	/**
+	 * Keine gesperrte Datens&auml;tze dieses Moduls
+	 */
+	public void unlock() {
+		modulLocked = false ;
+	}
+	
+	public boolean isLocked() {
+		return modulLocked ;
 	}
 }

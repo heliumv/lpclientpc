@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -39,6 +39,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.EventObject;
 
+import javax.swing.ButtonGroup;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 
@@ -56,6 +57,7 @@ import com.lp.client.frame.component.WrapperDateField;
 import com.lp.client.frame.component.WrapperEditorField;
 import com.lp.client.frame.component.WrapperLabel;
 import com.lp.client.frame.component.WrapperNumberField;
+import com.lp.client.frame.component.WrapperRadioButton;
 import com.lp.client.frame.component.WrapperSelectField;
 import com.lp.client.frame.component.WrapperTextField;
 import com.lp.client.frame.delegate.DelegateFactory;
@@ -112,6 +114,13 @@ public class PanelSerienbriefKopfdaten extends PanelBasis {
 	private WrapperCheckBox wcbPartner = null;
 	private WrapperCheckBox wcbMitzugeordnetenfirmen = null;
 	private WrapperCheckBox wcbNewsletter = null;
+	
+	private WrapperCheckBox wcbWennKeinAnspMitFktDannErster = new WrapperCheckBox();;
+	
+	
+	private WrapperRadioButton wrbLogischesODER = new WrapperRadioButton();
+	private WrapperRadioButton wrbLogischesUND = new WrapperRadioButton();
+	private ButtonGroup bgVerknuepfung=new ButtonGroup();
 
 	private WrapperDateField wdfZeitraumVon = new WrapperDateField();
 	private WrapperDateField wdfZeitraumBis = new WrapperDateField();
@@ -197,6 +206,19 @@ public class PanelSerienbriefKopfdaten extends PanelBasis {
 		wsfPartnerklasse = new WrapperSelectField(
 				WrapperSelectField.PARTNERKLASSE, getInternalFrame(), true);
 
+		
+		wrbLogischesODER.setText(LPMain
+				.getInstance().getTextRespectUISPr("part.serienbrief.selektionen.oder"));
+		wrbLogischesUND.setText(LPMain
+				.getInstance().getTextRespectUISPr("part.serienbrief.selektionen.und"));
+		
+		
+		wcbWennKeinAnspMitFktDannErster.setText(LPMain
+				.getInstance().getTextRespectUISPr("part.serienbrief.wennkeinanspmitfktdannerster"));
+		
+		bgVerknuepfung.add(wrbLogischesODER);
+		bgVerknuepfung.add(wrbLogischesUND);
+		
 		// von hier ...
 		// das aussenpanel hat immer das gridbaglayout.
 		gblAussen = new GridBagLayout();
@@ -263,6 +285,10 @@ public class PanelSerienbriefKopfdaten extends PanelBasis {
 
 		wcbMitzugeordnetenfirmen.addActionListener(this);
 		wcbPartner.addActionListener(this);
+		
+		
+		wcbWennKeinAnspMitFktDannErster.addActionListener(this);
+		
 
 		wbuAnsprechpartnerfunktion = new WrapperButton(LPMain.getInstance()
 				.getTextRespectUISPr("part.ansprechpartner_funktion"));
@@ -274,6 +300,7 @@ public class PanelSerienbriefKopfdaten extends PanelBasis {
 		wcbAnsprechpartnerfunktionAuchOhne = new WrapperCheckBox(LPMain
 				.getInstance().getTextRespectUISPr(
 						"part.ansprechpartnerfkt_auch_ohne"));
+		wcbAnsprechpartnerfunktionAuchOhne.addActionListener(this);
 		wcbNewsletter = new WrapperCheckBox(LPMain
 				.getInstance().getTextRespectUISPr(
 						"part.serienbrief.newsletter"));
@@ -320,15 +347,20 @@ public class PanelSerienbriefKopfdaten extends PanelBasis {
 		jpaWorking.add(wtfPLZ, new GridBagConstraints(1, iZeile, 1, 1, 0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(
 						2, 2, 2, 2), 0, 0));
-		jpaWorking.add(wcbNewsletter, new GridBagConstraints(2, iZeile, 1, 1, 0, 0.0,
-				GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(
-						2, 2, 2, 2), 0, 0));
+		jpaWorking.add(wcbWennKeinAnspMitFktDannErster,
+				new GridBagConstraints(2, iZeile, 2, 1, 0, 0.0,
+						GridBagConstraints.CENTER, GridBagConstraints.BOTH,
+						new Insets(2, 2, 2, 2), 0, 0));
+	
 		// Zeile
 		iZeile++;
 		jpaWorking.add(wbuLKZ, new GridBagConstraints(0, iZeile, 1, 1, 0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(
 						2, 2, 2, 2), 0, 0));
 		jpaWorking.add(wtfLKZ, new GridBagConstraints(1, iZeile, 1, 1, 0, 0.0,
+				GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(
+						2, 2, 2, 2), 0, 0));
+		jpaWorking.add(wcbNewsletter, new GridBagConstraints(2, iZeile, 1, 1, 0, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(
 						2, 2, 2, 2), 0, 0));
 
@@ -408,15 +440,22 @@ public class PanelSerienbriefKopfdaten extends PanelBasis {
 		jpaWorking.add(wdfZeitraumBis, new GridBagConstraints(2, iZeile, 1, 1,
 				0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(2, 2, 2, 80), 0, 0));
-
+		jpaWorking.add(wrbLogischesODER, new GridBagConstraints(3,
+				iZeile, 2, 1, 0, 0.0, GridBagConstraints.EAST,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
 		iZeile++;
 
 		jpaWorking.add(wlaBetreff, new GridBagConstraints(0, iZeile, 1, 1, 0,
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(10, 2, 2, 2), 0, 0));
-		jpaWorking.add(wtfBetreff, new GridBagConstraints(1, iZeile, 3, 1, 0,
+		jpaWorking.add(wtfBetreff, new GridBagConstraints(1, iZeile, 2, 1, 0,
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(10, 2, 2, 2), 0, 0));
+		
+		jpaWorking.add(wrbLogischesUND, new GridBagConstraints(3,
+				iZeile, 2, 1, 0, 0.0, GridBagConstraints.EAST,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		
 		iZeile++;
 		jpaWorking.add(wefText, new GridBagConstraints(0, iZeile, 4, 1, 0, 1,
 				GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(
@@ -440,6 +479,18 @@ public class PanelSerienbriefKopfdaten extends PanelBasis {
 
 	protected void eventActionSpecial(ActionEvent eI) throws Throwable {
 
+		
+		if (eI.getSource().equals(wcbAnsprechpartnerfunktionAuchOhne)) {
+			if(wcbAnsprechpartnerfunktionAuchOhne.isSelected()){
+				wcbWennKeinAnspMitFktDannErster.setSelected(false);
+			}
+		}
+		if (eI.getSource().equals(wcbWennKeinAnspMitFktDannErster)) {
+			if(wcbAnsprechpartnerfunktionAuchOhne.isSelected()){
+				wcbAnsprechpartnerfunktionAuchOhne.setSelected(false);
+			}
+		}
+		
 		if (eI.getSource().equals(wcbMitzugeordnetenfirmen)) {
 			if (wcbMitzugeordnetenfirmen.isSelected()) {
 				// Das alles geht nicht, wenn wcbMitzugeordnetenfirmen
@@ -746,6 +797,15 @@ public class PanelSerienbriefKopfdaten extends PanelBasis {
 		wcbMitzugeordnetenfirmen.setShort(serienbriefDto
 				.getBMitzugeordnetenfirmen());
 
+		
+		
+		if(Helper.short2boolean(serienbriefDto.getBSelektionenLogischesOder())){
+			wrbLogischesODER.setSelected(true);
+		} else {
+			wrbLogischesUND.setSelected(true);
+		}
+		
+		
 		wcbLF.setShort(serienbriefDto.getBGehtanlieferanten());
 		wcbMoeglicheLF
 				.setShort(serienbriefDto.getBGehtanmoeglichelieferanten());
@@ -761,6 +821,9 @@ public class PanelSerienbriefKopfdaten extends PanelBasis {
 				.getPartnerklasseIId());
 
 		wcbVersteckte.setShort(serienbriefDto.getBVersteckteDabei());
+		
+		wcbWennKeinAnspMitFktDannErster.setShort(serienbriefDto.getBWennkeinanspmitfktDannersteransp());
+		
 		wtfBezeichnung.setText(serienbriefDto.getCBez());
 		wtfPLZ.setText(serienbriefDto.getCPlz());
 
@@ -913,6 +976,11 @@ public class PanelSerienbriefKopfdaten extends PanelBasis {
 		serienbriefDto.setTUmsatzbis(Helper.cutTimestamp(wdfZeitraumBis
 				.getTimestamp()));
 		serienbriefDto.setNewsletter(wcbNewsletter.isSelected());
+		
+		serienbriefDto.setBSelektionenLogischesOder(wrbLogischesODER.getShort());
+		
+		serienbriefDto.setBWennkeinanspmitfktDannersteransp(wcbWennKeinAnspMitFktDannErster.getShort());
+		
 
 	}
 

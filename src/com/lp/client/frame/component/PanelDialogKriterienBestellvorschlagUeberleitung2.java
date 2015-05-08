@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -35,6 +35,7 @@ package com.lp.client.frame.component;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
+import java.math.BigDecimal;
 import java.util.EventObject;
 
 import javax.swing.ButtonGroup;
@@ -49,6 +50,8 @@ import com.lp.server.partner.service.LieferantDto;
 import com.lp.server.personal.service.PersonalDto;
 import com.lp.server.system.service.KostenstelleDto;
 import com.lp.server.system.service.MandantFac;
+import com.lp.server.system.service.ParameterFac;
+import com.lp.server.system.service.ParametermandantDto;
 import com.lp.server.util.Facade;
 import com.lp.util.Helper;
 
@@ -333,7 +336,36 @@ public class PanelDialogKriterienBestellvorschlagUeberleitung2 extends
 	private void setDefaults() throws Throwable {
 		// per default wird 1 Beleg pro Lieferant mit all seinen Positionen
 		// angelegt
-		wrbBelegeinlieferant.setSelected(true);
+		
+		
+		//PJ18414
+		int iDefault=4;
+		ParametermandantDto parameter = (ParametermandantDto) DelegateFactory
+				.getInstance()
+				.getParameterDelegate()
+				.getParametermandant(
+						ParameterFac.PARAMETER_DEFAULT_BESTELLVORSCHLAG_UEBERLEITUNG,
+						ParameterFac.KATEGORIE_BESTELLUNG,
+						LPMain.getTheClient().getMandant());
+
+		if (parameter.getCWertAsObject() != null) {
+			iDefault=(Integer) parameter.getCWertAsObject();
+		}
+		
+		
+		if(iDefault==1){
+			wrbBelegprolieferantprotermin.setSelected(true);
+		}else if(iDefault==2){
+			wrbBelegprolieferant.setSelected(true);
+		}else if(iDefault==3){
+			wrbBelegeinlieferanteintermin.setSelected(true);
+		}else if(iDefault==4){
+			wrbBelegeinlieferant.setSelected(true);
+		}else if(iDefault==5){
+			wrbAbrufeZuRahmen.setSelected(true);
+		}
+		
+		
 		wtfBelegeinlieferant.setMandatoryField(true);
 
 		wbuBelegeinlieferanteinterminLieferant.setEnabled(false);

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -34,6 +34,7 @@ package com.lp.client.fertigung;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -57,6 +58,8 @@ import com.lp.client.system.SystemFilterFactory;
 import com.lp.server.benutzer.service.RechteFac;
 import com.lp.server.fertigung.service.InternebestellungDto;
 import com.lp.server.stueckliste.service.StuecklisteDto;
+import com.lp.server.system.service.ParameterFac;
+import com.lp.server.system.service.ParametermandantDto;
 import com.lp.server.util.fastlanereader.service.query.FilterKriterium;
 import com.lp.server.util.fastlanereader.service.query.FilterKriteriumDirekt;
 import com.lp.server.util.fastlanereader.service.query.QueryParameters;
@@ -107,10 +110,23 @@ public class TabbedPaneInternebestellung extends TabbedPane {
 	private static final String ACTION_SPECIAL_VERDICHTEN = PanelBasis.ALWAYSENABLED
 			+ "action_special_verdichten";
 
+	private boolean bInterneBestellungVerdichtenMitRahmenpruefung = false;
+
 	public TabbedPaneInternebestellung(InternalFrame internalFrameI)
 			throws Throwable {
 		super(internalFrameI, LPMain
 				.getTextRespectUISPr("fert.tab.oben.internebestellung.title"));
+
+		ParametermandantDto parameter = DelegateFactory
+				.getInstance()
+				.getParameterDelegate()
+				.getMandantparameter(
+						LPMain.getTheClient().getMandant(),
+						ParameterFac.KATEGORIE_FERTIGUNG,
+						ParameterFac.PARAMETER_INT_BEST_VERDICHTEN_RAHMENPRUEFUNG);
+		bInterneBestellungVerdichtenMitRahmenpruefung = (java.lang.Boolean) parameter
+				.getCWertAsObject();
+
 		jbInit();
 		initComponents();
 	}
@@ -122,21 +138,17 @@ public class TabbedPaneInternebestellung extends TabbedPane {
 	 */
 	private void jbInit() throws Throwable {
 		insertTab(
-				LPMain
-						.getTextRespectUISPr("fert.tab.oben.internebestellung.title"),
+				LPMain.getTextRespectUISPr("fert.tab.oben.internebestellung.title"),
 				null,
 				null,
-				LPMain
-						.getTextRespectUISPr("fert.tab.oben.internebestellung.tooltip"),
+				LPMain.getTextRespectUISPr("fert.tab.oben.internebestellung.tooltip"),
 				IDX_PANEL_INTERNEBESTELLUNGBESTELLUNG);
 
 		insertTab(
-				LPMain
-						.getTextRespectUISPr("fert.tab.oben.bewegungsvorschau.title"),
+				LPMain.getTextRespectUISPr("fert.tab.oben.bewegungsvorschau.title"),
 				null,
 				null,
-				LPMain
-						.getTextRespectUISPr("fert.tab.oben.bewegungsvorschau.tooltip"),
+				LPMain.getTextRespectUISPr("fert.tab.oben.bewegungsvorschau.tooltip"),
 				IDX_PANEL_BEWEGUNGSVORSCHAU);
 
 		getPanelSplitInternebestellung(true);
@@ -156,10 +168,12 @@ public class TabbedPaneInternebestellung extends TabbedPane {
 			refreshFilterBewegungsvorschau();
 			// Stueckliste nur dann neu laden, wenn sie nicht eh schon da ist.
 			if (this.getStuecklisteDto() == null
-					|| !this.getStuecklisteDto().getIId().equals(
-							internebestellungDto.getStuecklisteIId())) {
-				this.setStuecklisteDto(DelegateFactory.getInstance()
-						.getStuecklisteDelegate().stuecklisteFindByPrimaryKey(
+					|| !this.getStuecklisteDto().getIId()
+							.equals(internebestellungDto.getStuecklisteIId())) {
+				this.setStuecklisteDto(DelegateFactory
+						.getInstance()
+						.getStuecklisteDelegate()
+						.stuecklisteFindByPrimaryKey(
 								internebestellungDto.getStuecklisteIId()));
 			}
 		}
@@ -170,7 +184,7 @@ public class TabbedPaneInternebestellung extends TabbedPane {
 			if (getPanelTabelleBewegungsvorschau(false) != null) {
 				FilterKriterium[] krit = FertigungFilterFactory.getInstance()
 						.createFKBewegungsvorschau(
-								getStuecklisteDto().getArtikelIId(),true);
+								getStuecklisteDto().getArtikelIId(), true);
 				getPanelTabelleBewegungsvorschau(true).setDefaultFilter(krit);
 			}
 		}
@@ -185,6 +199,10 @@ public class TabbedPaneInternebestellung extends TabbedPane {
 	}
 
 	public void lPEventItemChanged(ItemChangedEvent e) throws Throwable {
+		if (panelDialogKriterienInternebestellung != null) {
+			panelDialogKriterienInternebestellung.eventItemchanged(e);
+		}
+
 		if (e.getID() == ItemChangedEvent.GOTO_DETAIL_PANEL) {
 			if (e.getSource() == getPanelQueryInternebestellung(false)) {
 				// bei Doppelklick auf die Bewegungsvorschau wechseln
@@ -273,7 +291,8 @@ public class TabbedPaneInternebestellung extends TabbedPane {
 										.getLieferterminFuerArtikelOhneReservierung(),
 								getPanelDialogKriterienIB().getBVerdichten(),
 								getPanelDialogKriterienIB()
-										.getVerdichtungstage());
+										.getVerdichtungstage(),
+								getPanelDialogKriterienIB().getLosIId());
 				getPanelQueryInternebestellung(true).eventYouAreSelected(false);
 			}
 		} else if (e.getID() == ItemChangedEvent.ACTION_SPECIAL_BUTTON) {
@@ -281,70 +300,142 @@ public class TabbedPaneInternebestellung extends TabbedPane {
 			if (sAspectInfo.equals(ACTION_SPECIAL_NEUE_INTERNEBESTELLUNG)) {
 				getInternalFrame().showPanelDialog(getPanelDialogKriterienIB());
 			} else if (sAspectInfo.equals(ACTION_SPECIAL_LOSE_ANLEGEN)) {
-				// nun alle IId's der IB-Eintraege holen.dann fuer jeden ein Los
-				// anlegen.
-				// damit kurze Transaktionen.
-				Set<?> setIIds = DelegateFactory.getInstance()
-						.getFertigungDelegate()
-						.getInternebestellungIIdsEinesMandanten();
-				for (Iterator<?> iter = setIIds.iterator(); iter.hasNext();) {
-					Integer ibIId = (Integer) iter.next();
-					DelegateFactory.getInstance().getFertigungDelegate()
-							.interneBestellungUeberleiten(ibIId);
+
+				// PJ18367
+
+				Set<Integer> setIIds = null;
+
+				int indexAlle = 0;
+				int indexMarkierte = 1;
+				int iAnzahlOptionen = 2;
+
+				Object[] aOptionenVerdichten = new Object[iAnzahlOptionen];
+
+				aOptionenVerdichten[indexAlle] = LPMain
+						.getTextRespectUISPr("fert.internebestellung.loseanlegen.alle");
+				aOptionenVerdichten[indexMarkierte] = LPMain
+						.getTextRespectUISPr("fert.internebestellung.loseanlegen.markierte");
+
+				int iAuswahl = DialogFactory
+						.showModalDialog(
+								getInternalFrame(),
+								LPMain.getTextRespectUISPr("fert.internebestellung.loseanlegen.frage"),
+								LPMain.getTextRespectUISPr("lp.frage"),
+								aOptionenVerdichten, aOptionenVerdichten[0]);
+
+				if (iAuswahl == indexAlle) {
+					setIIds = DelegateFactory.getInstance()
+							.getFertigungDelegate()
+							.getInternebestellungIIdsEinesMandanten();
+				} else if (iAuswahl == indexMarkierte) {
+					setIIds = new HashSet<Integer>();
+
+					Object[] ids = getPanelQueryInternebestellung(true)
+							.getSelectedIds();
+					for (int i = 0; i < ids.length; i++) {
+						setIIds.add((Integer) ids[i]);
+					}
+
+				}
+
+				if (setIIds != null) {
+					for (Iterator<?> iter = setIIds.iterator(); iter.hasNext();) {
+						Integer ibIId = (Integer) iter.next();
+						DelegateFactory.getInstance().getFertigungDelegate()
+								.interneBestellungUeberleiten(ibIId);
+					}
 				}
 				setInternebestellungDto(null);
 				getPanelQueryInternebestellung(true).eventYouAreSelected(false);
 			} else if (sAspectInfo.equals(ACTION_SPECIAL_VERDICHTEN)) {
-				DelegateFactory.getInstance().getFertigungDelegate()
-						.verdichteInterneBestellung(null);
 
-				ArrayList<?> al = DelegateFactory.getInstance()
-						.getFertigungDelegate().pruefeOffeneRahmenmengen();
+				// PJ18367
+				int indexAlle = 0;
+				int indexMarkierte = 1;
+				int iAnzahlOptionen = 2;
 
-				Object[] aOptionen = new Object[3];
-				aOptionen[0] = "Trotzdem \u00FCbernehmen";
-				aOptionen[1] = "Restrahmen \u00FCbernehmen";
-				aOptionen[2] = "Nicht \u00FCbernehmen";
-				String nachricht ="";
-				for (int i = 0; i < al.size(); i++) {
-					Object[] oTemp = (Object[]) al.get(i);
+				Object[] aOptionenVerdichten = new Object[iAnzahlOptionen];
 
-					nachricht += "Bei "
-							+ (String) oTemp[0]
-							+ " ist "+oTemp[4]+" von "
-							+ Helper.rundeKaufmaennisch((BigDecimal) oTemp[1],
-									3)
-							+ "eingetragen. Es besteht aber " +/*kein / */"ein zu kleiner Bedarf"/* von "
-							+ Helper.rundeKaufmaennisch((BigDecimal) oTemp[2],
-									3) */+ " daf\u00FCr.\n";
+				aOptionenVerdichten[indexAlle] = LPMain
+						.getTextRespectUISPr("fert.internebestellung.verdichten.alle");
+				aOptionenVerdichten[indexMarkierte] = LPMain
+						.getTextRespectUISPr("fert.internebestellung.verdichten.markierte");
 
-					
-//					int o = DialogFactory.showModalDialog(getInternalFrame(),
-//							nachricht, LPMain.getTextRespectUISPr("lp.frage"),
-//							aOptionen, aOptionen[1]);
-//					if (o == 1 || o == 2) {
-//						InternebestellungDto dto = DelegateFactory.getInstance()
-//						.getFertigungDelegate()
-//						.internebestellungFindByPrimaryKey(
-//								(Integer) oTemp[3]);
-//
-//						if (o == 1) {
-//							dto.setNMenge((BigDecimal) oTemp[2]);
-//							DelegateFactory.getInstance()
-//									.getFertigungDelegate()
-//									.updateInternebestellung(dto);
-//						} else if (o == 2) {
-//							DelegateFactory.getInstance()
-//									.getFertigungDelegate()
-//									.removeInternebestellung(dto);
-//						}
-//
-//					}
+				int iAuswahl = DialogFactory
+						.showModalDialog(
+								getInternalFrame(),
+								LPMain.getTextRespectUISPr("fert.internebestellung.verdichten.frage"),
+								LPMain.getTextRespectUISPr("lp.frage"),
+								aOptionenVerdichten, aOptionenVerdichten[0]);
 
+				if (iAuswahl == indexAlle) {
+					DelegateFactory.getInstance().getFertigungDelegate()
+							.verdichteInterneBestellung((Integer) null);
+
+					if (bInterneBestellungVerdichtenMitRahmenpruefung == true) {
+						ArrayList<?> al = DelegateFactory.getInstance()
+								.getFertigungDelegate()
+								.pruefeOffeneRahmenmengen();
+
+						Object[] aOptionen = new Object[3];
+						aOptionen[0] = "Trotzdem \u00FCbernehmen";
+						aOptionen[1] = "Restrahmen \u00FCbernehmen";
+						aOptionen[2] = "Nicht \u00FCbernehmen";
+						String nachricht = "";
+						for (int i = 0; i < al.size(); i++) {
+							Object[] oTemp = (Object[]) al.get(i);
+
+							nachricht += "Bei "
+									+ (String) oTemp[0]
+									+ " ist "
+									+ oTemp[4]
+									+ " von "
+									+ Helper.rundeKaufmaennisch(
+											(BigDecimal) oTemp[1], 3)
+									+ "eingetragen. Es besteht aber "
+									+ /* kein / */"ein zu kleiner Bedarf"/*
+																		 * von "
+																		 * +
+																		 * Helper
+																		 * .
+																		 * rundeKaufmaennisch
+																		 * ( (
+																		 * BigDecimal
+																		 * )
+																		 * oTemp
+																		 * [2],
+																		 * 3)
+																		 */
+									+ " daf\u00FCr.\n";
+
+						}
+						if (!nachricht.equals("")) {
+							DialogFactory.showModalDialog(
+									LPMain.getTextRespectUISPr("lp.hinweis"),
+									nachricht);
+						}
+					}
+
+				} else if (iAuswahl == indexMarkierte) {
+					HashSet<Integer> set = new HashSet<Integer>();
+					Object[] ids = getPanelQueryInternebestellung(true)
+							.getSelectedIds();
+					for (int i = 0; i < ids.length; i++) {
+
+						InternebestellungDto ibDto = DelegateFactory
+								.getInstance()
+								.getFertigungDelegate()
+								.internebestellungFindByPrimaryKey(
+										(Integer) ids[i]);
+
+						set.add(ibDto.getStuecklisteIId());
+
+					}
+
+					DelegateFactory.getInstance().getFertigungDelegate()
+							.verdichteInterneBestellung(set);
 				}
-				if(!nachricht.equals("")){
-					DialogFactory.showModalDialog(LPMain.getTextRespectUISPr("lp.hinweis"), nachricht);
-				}
+
 				getPanelQueryInternebestellung(true).eventYouAreSelected(false);
 			}
 		}
@@ -399,15 +490,14 @@ public class TabbedPaneInternebestellung extends TabbedPane {
 		if (panelDetailInternebestellung == null && bNeedInstantiationIfNull) {
 			panelDetailInternebestellung = new PanelInternebestellung(
 					getInternalFrame(),
-					LPMain
-							.getTextRespectUISPr("fert.tab.unten.internebestellung.title"),
+					LPMain.getTextRespectUISPr("fert.tab.unten.internebestellung.title"),
 					null, // eventuell gibt es noch keine Position
 					this);
 		}
 		return panelDetailInternebestellung;
 	}
 
-	private PanelQuery getPanelQueryInternebestellung(
+	public PanelQuery getPanelQueryInternebestellung(
 			boolean bNeedInstantiationIfNull) throws Throwable {
 		if (panelQueryInternebestellung == null && bNeedInstantiationIfNull) {
 			FilterKriterium[] fkInternebestellung = SystemFilterFactory
@@ -420,35 +510,32 @@ public class TabbedPaneInternebestellung extends TabbedPane {
 					QueryParameters.UC_ID_INTERNEBESTELLUNG,
 					aWhichButtonIUse,
 					getInternalFrame(),
-					LPMain
-							.getTextRespectUISPr("fert.title.panel.internebestellung"),
+					LPMain.getTextRespectUISPr("fert.title.panel.internebestellung"),
 					true); // flag, damit flr erst beim aufruf des panels
 							// loslaeuft
 
 			panelQueryInternebestellung
 					.createAndSaveAndShowButton(
 							"/com/lp/client/res/clipboard.png",
-							LPMain
-									.getTextRespectUISPr("fert.internebestellungdurchfuehren"),
+							LPMain.getTextRespectUISPr("fert.internebestellungdurchfuehren"),
 							ACTION_SPECIAL_NEUE_INTERNEBESTELLUNG,
 							RechteFac.RECHT_FERT_LOS_CUD);
 
-			panelQueryInternebestellung
-					.createAndSaveAndShowButton(
-							"/com/lp/client/res/branch.png",
-							LPMain
-									.getTextRespectUISPr("fert.internebestellungverdichten")
-									+ " + "
-									+ LPMain
-											.getTextRespectUISPr("fert.pruefeoffenerahmenmengen"),
-							ACTION_SPECIAL_VERDICHTEN,
-							RechteFac.RECHT_FERT_LOS_CUD);
+			String textVerdichten = LPMain
+					.getTextRespectUISPr("fert.internebestellungverdichten");
+			if (bInterneBestellungVerdichtenMitRahmenpruefung == true) {
+				textVerdichten += " + "
+						+ LPMain.getTextRespectUISPr("fert.pruefeoffenerahmenmengen");
+			}
+
+			panelQueryInternebestellung.createAndSaveAndShowButton(
+					"/com/lp/client/res/branch.png", textVerdichten,
+					ACTION_SPECIAL_VERDICHTEN, RechteFac.RECHT_FERT_LOS_CUD);
 
 			panelQueryInternebestellung
 					.createAndSaveAndShowButton(
 							"/com/lp/client/res/clipboard_next.png",
-							LPMain
-									.getTextRespectUISPr("fert.internebestellungloseanglegen"),
+							LPMain.getTextRespectUISPr("fert.internebestellungloseanglegen"),
 							ACTION_SPECIAL_LOSE_ANLEGEN,
 							RechteFac.RECHT_FERT_LOS_CUD);
 
@@ -457,6 +544,7 @@ public class TabbedPaneInternebestellung extends TabbedPane {
 
 			panelQueryInternebestellung.befuellePanelFilterkriterienDirekt(
 					fkDirekt1, null);
+			panelQueryInternebestellung.setMultipleRowSelectionEnabled(true);
 
 		}
 		return panelQueryInternebestellung;
@@ -479,8 +567,7 @@ public class TabbedPaneInternebestellung extends TabbedPane {
 		if (panelTabelleBewegungsvorschau == null && bNeedInstantiationIfNull) {
 			panelTabelleBewegungsvorschau = new PanelTabelleBewegungsvorschau(
 					QueryParameters.UC_ID_BEWEGUNGSVORSCHAU2,
-					LPMain
-							.getTextRespectUISPr("fert.tab.oben.bewegungsvorschau.title"),
+					LPMain.getTextRespectUISPr("fert.tab.oben.bewegungsvorschau.title"),
 					getInternalFrame());
 
 			setComponentAt(IDX_PANEL_BEWEGUNGSVORSCHAU,
@@ -489,7 +576,8 @@ public class TabbedPaneInternebestellung extends TabbedPane {
 				panelTabelleBewegungsvorschau
 						.setDefaultFilter(FertigungFilterFactory.getInstance()
 								.createFKBewegungsvorschau(
-										getStuecklisteDto().getArtikelIId(),true));
+										getStuecklisteDto().getArtikelIId(),
+										true));
 			}
 		}
 		return panelTabelleBewegungsvorschau;
@@ -513,8 +601,8 @@ public class TabbedPaneInternebestellung extends TabbedPane {
 	private void holeInternebestellungDto(Object key) throws Throwable {
 		if (key != null) {
 			InternebestellungDto ibDto = DelegateFactory.getInstance()
-					.getFertigungDelegate().internebestellungFindByPrimaryKey(
-							(Integer) key);
+					.getFertigungDelegate()
+					.internebestellungFindByPrimaryKey((Integer) key);
 			setInternebestellungDto(ibDto);
 			getInternalFrame().setKeyWasForLockMe(key.toString());
 			if (getPanelDetailInternebestellung(false) != null) {
@@ -535,7 +623,7 @@ public class TabbedPaneInternebestellung extends TabbedPane {
 		return panelDialogKriterienInternebestellung;
 	}
 
-	public Object getInseratDto() {
+	public Object getDto() {
 		return internebestellungDto;
 	}
 }

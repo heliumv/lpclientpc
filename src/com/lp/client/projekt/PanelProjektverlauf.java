@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -51,8 +51,10 @@ import com.lp.client.frame.dialog.DialogFactory;
 import com.lp.client.pc.LPMain;
 import com.lp.server.anfrage.service.AnfrageDto;
 import com.lp.server.angebot.service.AngebotDto;
+import com.lp.server.angebotstkl.service.AgstklDto;
 import com.lp.server.auftrag.service.AuftragDto;
 import com.lp.server.bestellung.service.BestellungDto;
+import com.lp.server.eingangsrechnung.service.EingangsrechnungAuftragszuordnungDto;
 import com.lp.server.fertigung.service.LosDto;
 import com.lp.server.lieferschein.service.LieferscheinDto;
 import com.lp.server.projekt.service.ProjektVerlaufHelperDto;
@@ -167,7 +169,7 @@ public class PanelProjektverlauf extends PanelTabelle {
 						Integer iKey = ((AngebotDto) pvDto.getBelegDto())
 								.getIId();
 						DelegateFactory.getInstance().getAngebotDelegate()
-								.erzeugeAuftragAusAngebot(iKey, false);
+								.erzeugeAuftragAusAngebot(iKey, false, false,getInternalFrame());
 						internalFrameProjekt.getTabbedPaneProjekt()
 								.projektverlauf
 								.eventYouAreSelected(false);
@@ -222,6 +224,12 @@ public class PanelProjektverlauf extends PanelTabelle {
 					} else if (pvDto.getBelegDto() instanceof AnfrageDto) {
 						iKey = ((AnfrageDto) pvDto.getBelegDto()).getIId();
 						wbuGoto.setWhereToGo(WrapperGotoButton.GOTO_ANFRAGE_AUSWAHL);
+					}else if (pvDto.getBelegDto() instanceof EingangsrechnungAuftragszuordnungDto) {
+						iKey = ((EingangsrechnungAuftragszuordnungDto) pvDto.getBelegDto()).getEingangsrechnungIId();
+						wbuGoto.setWhereToGo(WrapperGotoButton.GOTO_EINGANGSRECHNUNG_AUSWAHL);
+					}else if (pvDto.getBelegDto() instanceof AgstklDto) {
+						iKey = ((AgstklDto) pvDto.getBelegDto()).getIId();
+						wbuGoto.setWhereToGo(WrapperGotoButton.GOTO_ANGEBOTSTKL_AUSWAHL);
 					}
 
 					if (iKey != null) {

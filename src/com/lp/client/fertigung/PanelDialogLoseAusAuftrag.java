@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -56,7 +56,10 @@ import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.frame.dialog.DialogFactory;
 import com.lp.client.pc.LPMain;
 import com.lp.server.fertigung.service.LosAusAuftragDto;
+import com.lp.server.fertigung.service.LosDto;
 import com.lp.server.stueckliste.service.StuecklisteDto;
+import com.lp.server.system.service.LocaleFac;
+import com.lp.server.system.service.MandantFac;
 import com.lp.util.Helper;
 
 /*
@@ -87,6 +90,7 @@ public class PanelDialogLoseAusAuftrag extends PanelDialogKriterien {
 	private WrapperLabel[] wlaArtikelNummer = null;
 	private WrapperLabel[] wlaArtikelBezeichnung = null;
 	private WrapperNumberField[] wnfLosgroesse = null;
+	private WrapperLabel[] wlaInABLos = null;
 	private Integer auftragId = null;
 
 	private JScrollPane jspScrollPane = new JScrollPane();
@@ -112,16 +116,66 @@ public class PanelDialogLoseAusAuftrag extends PanelDialogKriterien {
 		losDtos = DelegateFactory.getInstance().getFertigungDelegate()
 				.vorschlagMitUnterlosenAusAuftrag(auftragId);
 
+		// PJ18850
+		if (LPMain
+				.getInstance()
+				.getDesktop()
+				.darfAnwenderAufZusatzfunktionZugreifen(
+						MandantFac.ZUSATZFUNKTION_STUECKLISTENFREIGABE)) {
+
+			boolean bDialogAngezeigt = false;
+			boolean bTrotzdemProduzieren = false;
+
+			ArrayList<LosAusAuftragDto> losDtosTemp = new ArrayList();
+
+			if (losDtos != null && losDtos.size() > 0) {
+				for (int i = 0; i < losDtos.size(); i++) {
+					if (losDtos.get(i).getLosDto().getStuecklisteIId() != null) {
+						StuecklisteDto stklDto = DelegateFactory
+								.getInstance()
+								.getStuecklisteDelegate()
+								.stuecklisteFindByPrimaryKey(
+										losDtos.get(i).getLosDto()
+												.getStuecklisteIId());
+
+						if (stklDto.getTFreigabe() == null) {
+
+							if (bDialogAngezeigt == false) {
+
+								bTrotzdemProduzieren = DialogFactory
+										.showModalJaNeinDialog(
+												getInternalFrame(),
+												LPMain.getTextRespectUISPr("fert.error.losanlegen.auftrag.stklnichtfreigegeben"));
+								bDialogAngezeigt = true;
+							}
+
+							if (bTrotzdemProduzieren == true) {
+								losDtosTemp.add(losDtos.get(i));
+							}
+
+						} else {
+							losDtosTemp.add(losDtos.get(i));
+						}
+					}
+
+				}
+
+				losDtos = losDtosTemp;
+
+			}
+		}
+
 		if (losDtos != null && losDtos.size() > 0) {
 
 			wlaLagerstand = new WrapperLabel[losDtos.size()];
 			wlaFehlmenge = new WrapperLabel[losDtos.size()];
 			wlaOffeneFtgMng = new WrapperLabel[losDtos.size()];
+			wlaInABLos = new WrapperLabel[losDtos.size()];
 			wlaReserviert = new WrapperLabel[losDtos.size()];
 			wlaPosNr = new WrapperLabel[losDtos.size()];
-			
+
 			wlaArtikelBezeichnung = new WrapperLabel[losDtos.size()];
-			
+
 			wlaArtikelNummer = new WrapperLabel[losDtos.size()];
 			wnfLosgroesse = new WrapperNumberField[losDtos.size()];
 			wlaVerfuegbar = new WrapperLabel[losDtos.size()];
@@ -130,68 +184,98 @@ public class PanelDialogLoseAusAuftrag extends PanelDialogKriterien {
 
 			for (int i = 0; i < losDtos.size(); i++) {
 
-				LosAusAuftragDto laDto = losDtos.get(i);
+				BigDecimal bdBereitsFuerAuftragInFertigung = BigDecimal.ZERO;
 
-				
-				BigDecimal verfuegbar=new BigDecimal(0);
-				
-				
+				LosAusAuftragDto laDto = losDtos.get(i);
+				String sLabelVorhandene = "<html>";
+				if (laDto.getBereitsVorhandeneLose() != null) {
+
+					for (int k = 0; k < laDto.getBereitsVorhandeneLose().length; k++) {
+
+						LosDto losDto = laDto.getBereitsVorhandeneLose()[k];
+
+						if (!losDto.getStatusCNr().equals(
+								LocaleFac.STATUS_STORNIERT)) {
+
+							sLabelVorhandene += losDto.getCNr()
+									+ " "
+									+ losDto.getStatusCNr()
+									+ " "
+									+ Helper.formatZahl(
+											losDto.getNLosgroesse(), LPMain
+													.getTheClient().getLocUi())
+									+ "<br>";
+							bdBereitsFuerAuftragInFertigung = bdBereitsFuerAuftragInFertigung
+									.add(losDto.getNLosgroesse());
+						}
+					}
+
+				}
+
+				sLabelVorhandene += "</html>";
+
+				BigDecimal verfuegbar = new BigDecimal(0);
+
 				if (laDto.getLagerstand() != null) {
-					wlaLagerstand[i] = new WrapperLabel(Helper.formatZahl(laDto
-							.getLagerstand(), 2, LPMain.getTheClient()
-							.getLocUi()));
-					verfuegbar=laDto
-					.getLagerstand();
+					wlaLagerstand[i] = new WrapperLabel(
+							Helper.formatZahlWennUngleichNull(laDto
+									.getLagerstand(), 2, LPMain.getTheClient()
+									.getLocUi()));
+					verfuegbar = laDto.getLagerstand();
 				} else {
 					wlaLagerstand[i] = new WrapperLabel("");
 				}
-				
+
 				if (laDto.getReservierungen() != null) {
-					wlaReserviert[i] = new WrapperLabel(Helper.formatZahl(laDto
-							.getReservierungen(), 2, LPMain.getTheClient()
-							.getLocUi()));
-				}else {
+					wlaReserviert[i] = new WrapperLabel(
+							Helper.formatZahlWennUngleichNull(laDto
+									.getReservierungen(), 2, LPMain
+									.getTheClient().getLocUi()));
+				} else {
 					wlaReserviert[i] = new WrapperLabel("");
 				}
 
 				if (laDto.getFehlmengen() != null) {
-					wlaFehlmenge[i] = new WrapperLabel(Helper.formatZahl(laDto
-							.getFehlmengen(), 2, LPMain.getTheClient()
-							.getLocUi()));
-					
-					verfuegbar=verfuegbar.subtract(laDto
-							.getFehlmengen());
-					
-				}else {
+					wlaFehlmenge[i] = new WrapperLabel(
+							Helper.formatZahlWennUngleichNull(laDto
+									.getFehlmengen(), 2, LPMain.getTheClient()
+									.getLocUi()));
+
+					verfuegbar = verfuegbar.subtract(laDto.getFehlmengen());
+
+				} else {
 					wlaFehlmenge[i] = new WrapperLabel("");
 				}
 				if (laDto.getOffeneFertigungsmenge() != null) {
-					wlaOffeneFtgMng[i] = new WrapperLabel(Helper.formatZahl(laDto.getOffeneFertigungsmenge(), 2, LPMain.getTheClient()
-							.getLocUi()));
-					
-					verfuegbar=verfuegbar.add(laDto
+					wlaOffeneFtgMng[i] = new WrapperLabel(
+							Helper.formatZahlWennUngleichNull(laDto
+									.getOffeneFertigungsmenge(), 2, LPMain
+									.getTheClient().getLocUi()));
+
+					verfuegbar = verfuegbar.add(laDto
 							.getOffeneFertigungsmenge());
-					
-				}else {
+
+				} else {
 					wlaOffeneFtgMng[i] = new WrapperLabel("");
 				}
 				if (laDto.getAuftragspositionsnummer() != null) {
-					wlaPosNr[i] = new WrapperLabel(laDto
-							.getAuftragspositionsnummer()
-							+ "");
+					wlaPosNr[i] = new WrapperLabel(
+							laDto.getAuftragspositionsnummer() + "");
 				} else {
 					wlaPosNr[i] = new WrapperLabel("U");
 				}
 
-				
-				wlaVerfuegbar[i] = new WrapperLabel(Helper.formatZahl(verfuegbar, 2, LPMain.getTheClient()
-						.getLocUi()));
-				
+				wlaVerfuegbar[i] = new WrapperLabel(
+						Helper.formatZahlWennUngleichNull(verfuegbar, 2, LPMain
+								.getTheClient().getLocUi()));
+
 				wlaArtikelNummer[i] = new WrapperLabel("Materialliste");
-				wlaArtikelBezeichnung[i] = new WrapperLabel(losDtos.get(i).getLosDto().getCProjekt());
+				wlaArtikelBezeichnung[i] = new WrapperLabel(losDtos.get(i)
+						.getLosDto().getCProjekt());
 
 				if (losDtos.get(i).getLosDto().getStuecklisteIId() != null) {
-					StuecklisteDto stklDto = DelegateFactory.getInstance()
+					StuecklisteDto stklDto = DelegateFactory
+							.getInstance()
 							.getStuecklisteDelegate()
 							.stuecklisteFindByPrimaryKey(
 									losDtos.get(i).getLosDto()
@@ -205,7 +289,7 @@ public class PanelDialogLoseAusAuftrag extends PanelDialogKriterien {
 				wlaArtikelNummer[i].setHorizontalAlignment(SwingConstants.LEFT);
 				wlaArtikelBezeichnung[i]
 						.setHorizontalAlignment(SwingConstants.LEFT);
-				
+
 				WrapperDateField wdf = new WrapperDateField();
 				wdf.setDate(laDto.getLosDto().getTProduktionsbeginn());
 				wdf.setMandatoryField(true);
@@ -216,18 +300,26 @@ public class PanelDialogLoseAusAuftrag extends PanelDialogKriterien {
 				wdf.setMandatoryField(true);
 				wlaEnde[i] = wdf;
 
+				wlaInABLos[i] = new WrapperLabel(
+						Helper.formatZahlWennUngleichNull(
+								bdBereitsFuerAuftragInFertigung, 2, LPMain
+										.getTheClient().getLocUi()));
+
 				WrapperNumberField wnf = new WrapperNumberField();
-				wnf.setBigDecimal(laDto.getLosDto().getNLosgroesse());
+				wnf.setBigDecimal(laDto.getLosDto().getNLosgroesse()
+						.subtract(bdBereitsFuerAuftragInFertigung));
+
 				wnf.setMandatoryField(true);
 				wnfLosgroesse[i] = wnf;
 
-				
-				if(laDto.isBDatumVerschoben()){
+				if (laDto.isBDatumVerschoben()) {
 					wlaPosNr[i].setForeground(Color.RED);
 					wlaArtikelNummer[i].setForeground(Color.RED);
 					wlaArtikelBezeichnung[i].setForeground(Color.RED);
 				}
-				
+
+				wlaArtikelNummer[i].setToolTipText(sLabelVorhandene);
+
 			}
 
 		}
@@ -240,68 +332,83 @@ public class PanelDialogLoseAusAuftrag extends PanelDialogKriterien {
 				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
 
-		WrapperLabel wlaStueckliste = new WrapperLabel(LPMain
-				.getTextRespectUISPr("stkl.stueckliste"));
+		WrapperLabel wlaStueckliste = new WrapperLabel(
+				LPMain.getTextRespectUISPr("stkl.stueckliste"));
 
 		wlaStueckliste.setHorizontalAlignment(SwingConstants.LEFT);
 
 		jpaWorkingOn.add(wlaStueckliste, new GridBagConstraints(1, iZeile, 1,
 				1, 1, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		WrapperLabel wlaBezeichnung = new WrapperLabel(LPMain
-				.getTextRespectUISPr("lp.bezeichnung"));
+		WrapperLabel wlaBezeichnung = new WrapperLabel(
+				LPMain.getTextRespectUISPr("lp.bezeichnung"));
 
 		wlaBezeichnung.setHorizontalAlignment(SwingConstants.LEFT);
 
 		jpaWorkingOn.add(wlaBezeichnung, new GridBagConstraints(2, iZeile, 1,
 				1, 1, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(new WrapperLabel(LPMain
-				.getTextRespectUISPr("lp.lagerstand")), new GridBagConstraints(
-				3, iZeile, 1, 1, 0.1, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		
-		jpaWorkingOn.add(new WrapperLabel(LPMain
-				.getTextRespectUISPr("fert.loseausauftrag.offenftgmng")), new GridBagConstraints(
-				4, iZeile, 1, 1, 0.1, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		
-
-		jpaWorkingOn.add(new WrapperLabel(LPMain
-				.getTextRespectUISPr("lp.reserviert")), new GridBagConstraints(
-				5, iZeile, 1, 1, 0.1, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-
-		jpaWorkingOn.add(new WrapperLabel(LPMain
-				.getTextRespectUISPr("fert.tab.oben.fehlmengen.title")),
-				new GridBagConstraints(6, iZeile, 1, 1, 0.3, 0.0,
+		jpaWorkingOn.add(
+				new WrapperLabel(LPMain.getTextRespectUISPr("lp.lagerstand")),
+				new GridBagConstraints(3, iZeile, 1, 1, 0.1, 0.0,
 						GridBagConstraints.CENTER,
 						GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2),
 						0, 0));
-		jpaWorkingOn.add(new WrapperLabel(LPMain
-				.getTextRespectUISPr("lp.verfuegbar")),
+
+		jpaWorkingOn
+				.add(new WrapperLabel(LPMain
+						.getTextRespectUISPr("fert.loseausauftrag.offenftgmng")),
+						new GridBagConstraints(4, iZeile, 1, 1, 0.1, 0.0,
+								GridBagConstraints.CENTER,
+								GridBagConstraints.HORIZONTAL, new Insets(2, 2,
+										2, 2), 0, 0));
+
+		jpaWorkingOn.add(
+				new WrapperLabel(LPMain.getTextRespectUISPr("lp.reserviert")),
+				new GridBagConstraints(5, iZeile, 1, 1, 0.1, 0.0,
+						GridBagConstraints.CENTER,
+						GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2),
+						0, 0));
+
+		jpaWorkingOn
+				.add(new WrapperLabel(LPMain
+						.getTextRespectUISPr("fert.tab.oben.fehlmengen.title")),
+						new GridBagConstraints(6, iZeile, 1, 1, 0.3, 0.0,
+								GridBagConstraints.CENTER,
+								GridBagConstraints.HORIZONTAL, new Insets(2, 2,
+										2, 2), 0, 0));
+		jpaWorkingOn.add(
+				new WrapperLabel(LPMain.getTextRespectUISPr("lp.verfuegbar")),
 				new GridBagConstraints(7, iZeile, 1, 1, 0.3, 0.0,
 						GridBagConstraints.CENTER,
 						GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2),
 						0, 0));
-		WrapperLabel wlaBeginnLbl = new WrapperLabel(LPMain
-				.getTextRespectUISPr("lp.beginn"));
+		WrapperLabel wlaBeginnLbl = new WrapperLabel(
+				LPMain.getTextRespectUISPr("lp.beginn"));
 		wlaBeginnLbl.setHorizontalAlignment(SwingConstants.LEFT);
 		jpaWorkingOn.add(wlaBeginnLbl, new GridBagConstraints(8, iZeile, 1, 1,
 				0.1, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		WrapperLabel wlaEndeLbl = new WrapperLabel(LPMain
-				.getTextRespectUISPr("lp.ende"));
+		WrapperLabel wlaEndeLbl = new WrapperLabel(
+				LPMain.getTextRespectUISPr("lp.ende"));
 		wlaEndeLbl.setHorizontalAlignment(SwingConstants.LEFT);
 		jpaWorkingOn.add(wlaEndeLbl, new GridBagConstraints(9, iZeile, 1, 1,
 				0.1, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(new WrapperLabel(LPMain
-				.getTextRespectUISPr("label.losgroesse")),
-				new GridBagConstraints(10, iZeile, 1, 1, 0, 0.0,
-						GridBagConstraints.CENTER,
-						GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2),
-						0, 0));
+		jpaWorkingOn
+				.add(new WrapperLabel(LPMain
+						.getTextRespectUISPr("fert.los.losausauftrag.inablos")),
+						new GridBagConstraints(10, iZeile, 1, 1, 0, 0.0,
+								GridBagConstraints.CENTER,
+								GridBagConstraints.HORIZONTAL, new Insets(2, 2,
+										2, 2), 0, 0));
+		jpaWorkingOn
+				.add(new WrapperLabel(LPMain
+						.getTextRespectUISPr("label.losgroesse")),
+						new GridBagConstraints(11, iZeile, 1, 1, 0, 0.0,
+								GridBagConstraints.CENTER,
+								GridBagConstraints.HORIZONTAL, new Insets(2, 2,
+										2, 2), 0, 0));
 
 		iZeile++;
 		for (int i = 0; i < losDtos.size(); i++) {
@@ -334,9 +441,9 @@ public class PanelDialogLoseAusAuftrag extends PanelDialogKriterien {
 			jpaWorkingOn.add(wlaFehlmenge[i], new GridBagConstraints(6, iZeile,
 					1, 1, 1.0, 0.0, GridBagConstraints.CENTER,
 					GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-			
-			jpaWorkingOn.add(wlaVerfuegbar[i], new GridBagConstraints(7, iZeile,
-					1, 1, 1.0, 0.0, GridBagConstraints.CENTER,
+
+			jpaWorkingOn.add(wlaVerfuegbar[i], new GridBagConstraints(7,
+					iZeile, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER,
 					GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
 			jpaWorkingOn.add(wlaBeginn[i], new GridBagConstraints(8, iZeile, 1,
 					1, 0, 0.0, GridBagConstraints.CENTER,
@@ -344,7 +451,34 @@ public class PanelDialogLoseAusAuftrag extends PanelDialogKriterien {
 			jpaWorkingOn.add(wlaEnde[i], new GridBagConstraints(9, iZeile, 1,
 					1, 0, 0.0, GridBagConstraints.CENTER,
 					GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-			jpaWorkingOn.add(wnfLosgroesse[i], new GridBagConstraints(10,
+
+			jpaWorkingOn.add(wlaInABLos[i], new GridBagConstraints(10, iZeile,
+					1, 1, 1.0, 0.0, GridBagConstraints.CENTER,
+					GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+
+			BigDecimal bdBereitsFuerAuftragInFertigung = BigDecimal.ZERO;
+
+			if (losDtos.get(i).getBereitsVorhandeneLose() != null) {
+				for (int k = 0; k < losDtos.get(i).getBereitsVorhandeneLose().length; k++) {
+					LosDto losDto = losDtos.get(i).getBereitsVorhandeneLose()[k];
+
+					if (!losDto.getStatusCNr().equals(
+							LocaleFac.STATUS_STORNIERT)) {
+						bdBereitsFuerAuftragInFertigung = bdBereitsFuerAuftragInFertigung
+								.add(losDto.getNLosgroesse());
+					}
+				}
+
+			}
+
+			if (wnfLosgroesse[i].getBigDecimal().doubleValue() < 0) {
+				wnfLosgroesse[i].setBackground(Color.MAGENTA);
+			} else if (bdBereitsFuerAuftragInFertigung.doubleValue() > 0
+					&& wnfLosgroesse[i].getBigDecimal().doubleValue() > 0) {
+				wnfLosgroesse[i].setBackground(Color.GREEN);
+			}
+
+			jpaWorkingOn.add(wnfLosgroesse[i], new GridBagConstraints(11,
 					iZeile, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER,
 					GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), -120, 0));
 
@@ -367,17 +501,18 @@ public class PanelDialogLoseAusAuftrag extends PanelDialogKriterien {
 
 			if (allMandatoryFieldsSetDlg()) {
 				for (int i = 0; i < losDtos.size(); i++) {
-					losDtos.get(i).getLosDto().setNLosgroesse(
-							wnfLosgroesse[i].getBigDecimal());
-					losDtos.get(i).getLosDto().setTProduktionsbeginn(
-							wlaBeginn[i].getDate());
-					losDtos.get(i).getLosDto().setTProduktionsende(
-							wlaEnde[i].getDate());
+					losDtos.get(i).getLosDto()
+							.setNLosgroesse(wnfLosgroesse[i].getBigDecimal());
+					losDtos.get(i).getLosDto()
+							.setTProduktionsbeginn(wlaBeginn[i].getDate());
+					losDtos.get(i).getLosDto()
+							.setTProduktionsende(wlaEnde[i].getDate());
 				}
 				int i = DelegateFactory.getInstance().getFertigungDelegate()
 						.loseAusAuftragAnlegen(losDtos, auftragId);
-				DialogFactory.showModalDialog(LPMain
-						.getTextRespectUISPr("lp.info"), i + " Lose angelegt.");
+				DialogFactory.showModalDialog(
+						LPMain.getTextRespectUISPr("lp.info"), i
+								+ " Lose angelegt.");
 				getInternalFrame().closePanelDialog();
 			}
 

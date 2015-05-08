@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -40,9 +40,11 @@ import javax.naming.InitialContext;
 
 import com.lp.client.frame.ExceptionLP;
 import com.lp.client.pc.LPMain;
+import com.lp.server.bestellung.service.EinstandspreiseEinesWareneingangsDto;
 import com.lp.server.bestellung.service.WareneingangDto;
 import com.lp.server.bestellung.service.WareneingangFac;
 import com.lp.server.bestellung.service.WareneingangspositionDto;
+import com.lp.server.system.service.TheClientDto;
 
 public class WareneingangDelegate extends Delegate {
 	private Context context;
@@ -176,13 +178,13 @@ public class WareneingangDelegate extends Delegate {
 		return weposIId;
 	}
 
-	public BigDecimal getBerechnetenEinstandspreisEinerWareneingangsposition(
-			Integer weposIId) throws ExceptionLP {
+	public EinstandspreiseEinesWareneingangsDto getBerechnetenEinstandspreisEinerWareneingangsposition(
+			Integer wareneingangIId) throws ExceptionLP {
 
 		try {
 			return wareneingangFac
 					.getBerechnetenEinstandspreisEinerWareneingangsposition(
-							weposIId, LPMain.getTheClient());
+							wareneingangIId, LPMain.getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 			return null;

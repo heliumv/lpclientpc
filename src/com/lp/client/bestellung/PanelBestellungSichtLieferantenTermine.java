@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -127,6 +127,7 @@ public class PanelBestellungSichtLieferantenTermine extends PanelBasis {
 	private WrapperTextField wtfZusatzBezeichnung = null;
 
 	private WrapperLabel wlaLieferterminbestaetigt = new WrapperLabel();
+	private WrapperLabel wlaLieferterminausBestellposition = new WrapperLabel();
 	
 	private static final String ACTION_SPECIAL_ABTERMIN_AENDERN = "action_special_abtermin_aendern";
 	private static final String ACTION_SPECIAL_LIEFERTERMIN_BESTAETIGT = "action_special_liefertermin_bestaetigt";
@@ -355,6 +356,13 @@ public class PanelBestellungSichtLieferantenTermine extends PanelBasis {
 			wlaLieferterminbestaetigt.setText(s);
 			
 		}
+		if(getBestellpositionDto().getTUebersteuerterLiefertermin()!=null){
+			String s=LPMain
+			.getTextRespectUISPr("label.liefertermin")+" "+Helper.formatDatum(getBestellpositionDto().getTUebersteuerterLiefertermin(), LPMain.getTheClient().getLocUi());
+			
+			wlaLieferterminausBestellposition.setText(s);
+			
+		}
 		
 		String sPositionsart = getBestellpositionDto()
 				.getPositionsartCNr();
@@ -549,7 +557,7 @@ public class PanelBestellungSichtLieferantenTermine extends PanelBasis {
 		jpaWorkingOn.add(wbuArtikelGoto, new GridBagConstraints(0, iZeile, 1,
 				1, 0.2, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(this.wtfIdent, new GridBagConstraints(1, iZeile, 5, 1,
+		jpaWorkingOn.add(this.wtfIdent, new GridBagConstraints(1, iZeile, 3, 1,
 				0.0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
 		iZeile++;
@@ -557,8 +565,15 @@ public class PanelBestellungSichtLieferantenTermine extends PanelBasis {
 				1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
 		jpaWorkingOn.add(this.wtfBezeichnung, new GridBagConstraints(1, iZeile,
-				5, 1, 1.0, 0.0, GridBagConstraints.CENTER,
+				3, 1, 1.0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		
+		jpaWorkingOn.add(wlaLieferterminausBestellposition,
+				new GridBagConstraints(4, iZeile, 2, 1, 0, 0.0,
+						GridBagConstraints.CENTER,
+						GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2,
+								2), 250, 0));
+		
 		iZeile++;
 		jpaWorkingOn.add(this.wlaZusatzBezeichnung, new GridBagConstraints(0,
 				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
@@ -628,6 +643,7 @@ public class PanelBestellungSichtLieferantenTermine extends PanelBasis {
 		getInternalFrameBestellung().getTabbedPaneBestellung().setTitle();
 		Object key = getKeyWhenDetailPanel();
 		wlaLieferterminbestaetigt.setText(null);
+		wlaLieferterminausBestellposition.setText(null);
 		if (key != null && !key.equals(LPMain.getLockMeForNew())) {
 			setBestellpositionDto(DelegateFactory.getInstance()
 					.getBestellungDelegate().bestellpositionFindByPrimaryKey(

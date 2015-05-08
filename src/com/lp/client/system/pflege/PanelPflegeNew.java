@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -78,6 +78,8 @@ public class PanelPflegeNew extends PanelBasis implements PflegeEventListener,
 
 		tree.register(new DokumentenpfadeErneuern());
 		tree.register(new DokumenteImportieren());
+		tree.register(new ZwsMinusRabatteKorrigieren2276()) ;
+		tree.register(new PflegeHvDirekthilfe());
 //		tree.register(new PflegeMock());
 
 	}
@@ -97,7 +99,9 @@ public class PanelPflegeNew extends PanelBasis implements PflegeEventListener,
 				textBeschreibung.setVisible(!pflege.getBeschreibung().isEmpty());
 			}
 			
-			panelControl.setProgress(((PflegefunktionSupportsProgressBar)pflege).getProgress());
+			panelControl.setVisible(pflege.supportsProgressBar());
+			if(pflege.supportsProgressBar())
+				panelControl.setProgress(((PflegefunktionSupportsProgressBar)pflege).getProgress());
 			pflege.eventYouAreSelected();
 			updateControlPanel();
 		} else {
@@ -225,6 +229,7 @@ public class PanelPflegeNew extends PanelBasis implements PflegeEventListener,
 		if(pflege!=null) {
 			panelControl.setStartEnabled(pflege.isStartable());
 			panelControl.setCancelEnabled(pflege.isRunning());
+			panelControl.setRunning(pflege.isRunning()) ;
 		} else {
 			panelControl.disableAll();
 		}

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -379,9 +379,7 @@ public class PanelBestellungKonditionen extends PanelKonditionen {
 		boolean bEnable = (cNrStatus
 				.equals(BestellungFac.BESTELLSTATUS_ANGELEGT) || cNrStatus
 				.equals(BestellungFac.BESTELLSTATUS_OFFEN))
-				&& (DelegateFactory.getInstance().getWareneingangDelegate()
-						.getAnzahlWE(tpBestellung.getBesDto().getIId())
-						.intValue() <= 0) && !isLocked();
+				 && !isLocked();
 
 		// Update-Button
 		LPButtonAction item = (LPButtonAction) getHmOfButtons().get(

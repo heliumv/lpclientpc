@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -119,7 +119,7 @@ public class ReportLohndatenexport extends ReportZeiterfassung implements
 	}
 
 	protected void eventActionSpecial(ActionEvent e) throws Throwable {
-
+		super.eventActionSpecial(e);
 		if (e.getSource() != null && e.getSource().equals(wbuExport)) {
 
 			exportiereReportNachZielprogramm();
@@ -450,7 +450,7 @@ public class ReportLohndatenexport extends ReportZeiterfassung implements
 								false,
 								new java.sql.Date(System.currentTimeMillis()),
 								getPersonAuswahl(), iSortierung,
-								mitVersteckten());
+								mitVersteckten(), nurAnwesende());
 			} else {
 				jasperPrint = DelegateFactory
 						.getInstance()
@@ -459,7 +459,7 @@ public class ReportLohndatenexport extends ReportZeiterfassung implements
 								(Integer) wspJahr.getValue(),
 								(Integer) wcoMonat.getKeyOfSelectedItem(),
 								true, null, getPersonAuswahl(), iSortierung,
-								mitVersteckten());
+								mitVersteckten(),nurAnwesende());
 			}
 
 			wbuExport.setEnabled(true);

@@ -1,33 +1,33 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
- * 
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
+ *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published 
- * by the Free Software Foundation, either version 3 of theLicense, or 
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of theLicense, or
  * (at your option) any later version.
- * 
- * According to sec. 7 of the GNU Affero General Public License, version 3, 
+ *
+ * According to sec. 7 of the GNU Affero General Public License, version 3,
  * the terms of the AGPL are supplemented with the following terms:
- * 
- * "HELIUM V" and "HELIUM 5" are registered trademarks of 
- * HELIUM V IT-Solutions GmbH. The licensing of the program under the 
+ *
+ * "HELIUM V" and "HELIUM 5" are registered trademarks of
+ * HELIUM V IT-Solutions GmbH. The licensing of the program under the
  * AGPL does not imply a trademark license. Therefore any rights, title and
  * interest in our trademarks remain entirely with us. If you want to propagate
  * modified versions of the Program under the name "HELIUM V" or "HELIUM 5",
- * you may only do so if you have a written permission by HELIUM V IT-Solutions 
+ * you may only do so if you have a written permission by HELIUM V IT-Solutions
  * GmbH (to acquire a permission please contact HELIUM V IT-Solutions
  * at trademark@heliumv.com).
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Affero General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Contact: developers@heliumv.com
  ******************************************************************************/
 package com.lp.client.rechnung;
@@ -40,6 +40,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.FocusEvent;
 import java.math.BigDecimal;
 import java.sql.Date;
+import java.sql.Timestamp;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.EventObject;
@@ -51,8 +52,8 @@ import javax.swing.JPanel;
 import com.lp.client.frame.Defaults;
 import com.lp.client.frame.ExceptionLP;
 import com.lp.client.frame.HelperClient;
-import com.lp.client.frame.component.ArtikelsetViewController;
 import com.lp.client.frame.component.FehlmengenAufloesen;
+import com.lp.client.frame.component.HvActionEvent;
 import com.lp.client.frame.component.InternalFrame;
 import com.lp.client.frame.component.ItemChangedEvent;
 import com.lp.client.frame.component.PanelBasis;
@@ -74,6 +75,7 @@ import com.lp.server.lieferschein.service.LieferscheinDto;
 import com.lp.server.rechnung.service.RechnungDto;
 import com.lp.server.rechnung.service.RechnungFac;
 import com.lp.server.rechnung.service.RechnungPositionDto;
+import com.lp.server.rechnung.service.RechnungServiceFac;
 import com.lp.server.system.service.LocaleFac;
 import com.lp.server.system.service.MwstsatzDto;
 import com.lp.server.system.service.ParameterFac;
@@ -94,14 +96,14 @@ import com.lp.util.Helper;
  * </p>
  * <p>
  * </p>
- * 
+ *
  * @author Martin Bluehweis
  * @version $Revision: 1.38 $
  */
 
 public class PanelRechnungPosition extends PanelPositionen2 {
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = 1L;
 
@@ -111,9 +113,11 @@ public class PanelRechnungPosition extends PanelPositionen2 {
 	private WrapperTextField wtfAuftragProjekt = null;
 	private WrapperTextField wtfAuftragBestellnummer = null;
 
+	private RechnungDto rechnungDto = null;
+
 	/**
 	 * Konstruktor.
-	 * 
+	 *
 	 * @param internalFrame
 	 *            der InternalFrame auf dem das Panel sitzt
 	 * @param add2TitleI
@@ -290,14 +294,62 @@ public class PanelRechnungPosition extends PanelPositionen2 {
 		panelArtikel.wtfZusatzbezeichnung.setActivatable(true);
 	}
 
-	protected void eventActionPrint(ActionEvent e) throws Throwable {
-		tpRechnung.print();
+	protected void eventActionPrint(HvActionEvent e) throws Throwable {
 
+		if (e.isMouseEvent() && e.isRightButtonPressed()) {
+
+			boolean bStatusAngelegt = tpRechnung.getRechnungDto().getStatusCNr().equals(RechnungServiceFac.RECHNUNGSSTATUS_ANGELEGT);
+			boolean bKonditionen = tpRechnung.pruefeKonditionen(tpRechnung.getRechnungDto());
+
+			if (bStatusAngelegt && bKonditionen) {
+
+				DelegateFactory.getInstance().getRechnungDelegate()
+						.berechneAktiviereBelegControlled(tpRechnung.getRechnungDto().getIId());
+
+				RechnungDto rechnungDto = DelegateFactory.getInstance().getRechnungDelegate().rechnungFindByPrimaryKey(tpRechnung.getRechnungDto().getIId());
+
+				if (tpRechnung instanceof TabbedPaneRechnung) {
+					((InternalFrameRechnung) getInternalFrame()).getTabbedPaneRechnung().setRechnungDto(rechnungDto);
+				}
+				else if (tpRechnung instanceof TabbedPaneGutschrift) {
+					((InternalFrameRechnung) getInternalFrame()).getTabbedPaneGutschrift().setRechnungDto(rechnungDto);
+				}
+				else if (tpRechnung instanceof TabbedPaneProformarechnung) {
+					((InternalFrameRechnung) getInternalFrame()).getTabbedPaneProformarechnung().setRechnungDto(rechnungDto);
+				}
+
+				eventActionRefresh(e, false);
+
+			}
+			else if (!bStatusAngelegt){
+				if (tpRechnung instanceof TabbedPaneRechnung) {
+					showDialog("rech.rechnung");
+				}
+				else if (tpRechnung instanceof TabbedPaneGutschrift) {
+					showDialog("rech.gutschrift");
+				}
+				else if (tpRechnung instanceof TabbedPaneProformarechnung) {
+					showDialog("rech.proforma");
+				}
+			}
+
+
+		} else {
+			tpRechnung.print();
+		}
+
+	}
+
+	private void showDialog(String str) throws Throwable {
+		DialogFactory.showModalDialog("Status",
+				LPMain.getMessageTextRespectUISPr("status.zustand",
+						LPMain.getTextRespectUISPr(str),
+						tpRechnung.getRechnungStatus().trim()));
 	}
 
 	/**
 	 * Behandle Ereignis Neu.
-	 * 
+	 *
 	 * @param eventObject
 	 *            Ereignis
 	 * @param bLockMeI
@@ -319,7 +371,7 @@ public class PanelRechnungPosition extends PanelPositionen2 {
 	/**
 	 * Verwerfen der aktuelle Usereingabe und zurueckgehen auf den bestehenden
 	 * Datensatz, wenn einer existiert.
-	 * 
+	 *
 	 * @param e
 	 *            Ereignis
 	 * @throws Throwable
@@ -808,7 +860,7 @@ public class PanelRechnungPosition extends PanelPositionen2 {
 
 	/**
 	 * Eine Position loeschen.
-	 * 
+	 *
 	 * @param e
 	 *            Ereignis
 	 * @param bAdministrateLockKeyI
@@ -854,13 +906,13 @@ public class PanelRechnungPosition extends PanelPositionen2 {
 					if (alRe != null && alRe.size() > 0) {
 
 						String s="";
-						
+
 						for(int i=0;i<alRe.size();i++){
 							s+=alRe.get(i).getCNr();
 							if(i<alRe.size()-1){
 								s+=", ";							}
 						}
-						
+
 						DialogFactory
 								.showModalDialog(
 										LPMain.getTextRespectUISPr("lp.info"),
@@ -959,7 +1011,7 @@ public class PanelRechnungPosition extends PanelPositionen2 {
 
 	/**
 	 * Alle Positionsdaten aus dem Panel sammeln.
-	 * 
+	 *
 	 * @throws Throwable
 	 */
 	private void components2Dto() throws Throwable {

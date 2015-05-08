@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -177,7 +177,8 @@ public class LieferscheinpositionDelegate extends Delegate {
 		try {
 			lieferscheinpositionFac
 					.lieferscheinpositionKeinLieferrestEintragen(
-							lieferscheinpositionIId, bKeinLieferrest, LPMain.getTheClient());
+							lieferscheinpositionIId, bKeinLieferrest,
+							LPMain.getTheClient());
 		} catch (Throwable t) {
 			handleThrowable(t);
 		}
@@ -232,7 +233,6 @@ public class LieferscheinpositionDelegate extends Delegate {
 		return oLieferscheinpositionDtoO;
 	}
 
-	
 	public LieferscheinpositionDto[] lieferscheinpositionFindByLieferscheinIId(
 			Integer iIdLieferscheinI) throws ExceptionLP {
 		LieferscheinpositionDto[] oLieferscheinpositionDtoO = null;
@@ -247,7 +247,6 @@ public class LieferscheinpositionDelegate extends Delegate {
 		return oLieferscheinpositionDtoO;
 	}
 
-	
 	/**
 	 * Anzahl der Positionen eines Lieferscheins bestimmen.
 	 * 
@@ -394,6 +393,17 @@ public class LieferscheinpositionDelegate extends Delegate {
 		}
 	}
 
+	public void positionenAnhandAuftragsreihenfolgeAnordnen(
+			Integer iIdLieferscheinI) throws ExceptionLP {
+		try {
+			lieferscheinpositionFac
+					.positionenAnhandAuftragsreihenfolgeAnordnen(
+							iIdLieferscheinI, LPMain.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+	}
+
 	public void updateLieferscheinpositionAusRechnung(
 			LieferscheinpositionDto oLieferscheinpositionDtoI,
 			Integer rechnungpositionIId) throws ExceptionLP {
@@ -476,6 +486,19 @@ public class LieferscheinpositionDelegate extends Delegate {
 	public Integer getLSPositionNummer(Integer reposIId) throws ExceptionLP {
 		try {
 			return lieferscheinpositionFac.getLSPositionNummer(reposIId);
+		} catch (Throwable t) {
+			handleThrowable(t);
+		}
+
+		return null;
+	}
+
+	public Integer createLieferscheinAusLieferschein(Integer lieferscheinIId,
+			boolean bUebernimmKonditionenDesKunden) throws ExceptionLP {
+		try {
+			return lieferscheinpositionFac.createLieferscheinAusLieferschein(
+					lieferscheinIId, bUebernimmKonditionenDesKunden,
+					LPMain.getTheClient());
 		} catch (Throwable t) {
 			handleThrowable(t);
 		}
@@ -630,4 +653,17 @@ public class LieferscheinpositionDelegate extends Delegate {
 
 		return new ArrayList<SeriennrChargennrMitMengeDto>();
 	}
+
+	public Integer reservierungAufloesen(Integer auftragIId,
+			LieferscheinpositionDto lsPosDto) throws ExceptionLP {
+		try {
+			return lieferscheinpositionFac.reservierungAufloesen(auftragIId, lsPosDto,
+					LPMain.getTheClient());
+		} catch (Throwable t) {
+			handleThrowable(t);
+			return null;
+		}
+
+	}
+
 }

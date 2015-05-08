@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -65,14 +65,21 @@ import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.frame.dialog.DialogFactory;
 import com.lp.client.pc.LPButtonAction;
 import com.lp.client.pc.LPMain;
+import com.lp.server.artikel.fastlanereader.generated.service.FLRFehlmengeReservierungPK;
 import com.lp.server.artikel.service.ArtikelDto;
 import com.lp.server.artikel.service.ArtikelfehlmengeDto;
+import com.lp.server.artikel.service.ArtikelreservierungDto;
 import com.lp.server.artikel.service.LagerDto;
 import com.lp.server.artikel.service.SeriennrChargennrMitMengeDto;
+import com.lp.server.auftrag.service.AuftragDto;
+import com.lp.server.auftrag.service.AuftragpositionDto;
 import com.lp.server.benutzer.service.RechteFac;
 import com.lp.server.fertigung.service.LosistmaterialDto;
 import com.lp.server.fertigung.service.LossollmaterialDto;
+import com.lp.server.lieferschein.service.LieferscheinDto;
+import com.lp.server.lieferschein.service.LieferscheinpositionDto;
 import com.lp.server.stueckliste.service.StuecklisteDto;
+import com.lp.server.system.service.LocaleFac;
 import com.lp.util.EJBExceptionLP;
 import com.lp.util.Helper;
 
@@ -127,6 +134,10 @@ public class PanelFehlmengenAufloesen extends PanelBasis {
 
 	com.lp.server.fertigung.service.LossollmaterialDto lossollmaterialDto = null;
 	com.lp.server.fertigung.service.LosDto losDto = null;
+
+	AuftragpositionDto auftragpositionDto = null;
+	AuftragDto auftragDto = null;
+
 	JDialog dialogParent = null;
 
 	public PanelFehlmengenAufloesen(InternalFrame internalFrame,
@@ -164,30 +175,64 @@ public class PanelFehlmengenAufloesen extends PanelBasis {
 		ItemChangedEvent e = (ItemChangedEvent) eI;
 		if (e.getID() == ItemChangedEvent.ITEM_CHANGED) {
 			if (e.getSource() instanceof PanelQuery) {
-				Integer key = (Integer) ((PanelQuery) e.getSource())
-						.getSelectedId();
+
+				lossollmaterialDto = null;
+				auftragpositionDto = null;
+
+				FLRFehlmengeReservierungPK key = (FLRFehlmengeReservierungPK) ((PanelQuery) e
+						.getSource()).getSelectedId();
 				if (key != null) {
-					ArtikelfehlmengeDto dto = DelegateFactory.getInstance()
-							.getFehlmengeDelegate()
-							.artikelfehlmengeFindByPrimaryKey(key);
 
-					lossollmaterialDto = DelegateFactory
-							.getInstance()
-							.getFertigungDelegate()
-							.lossollmaterialFindByPrimaryKey(
-									dto.getIBelegartpositionid());
+					if (key.getTyp().equals("F")) {
 
-					losDto = DelegateFactory
-							.getInstance()
-							.getFertigungDelegate()
-							.losFindByPrimaryKey(lossollmaterialDto.getLosIId());
+						ArtikelfehlmengeDto dto = DelegateFactory
+								.getInstance()
+								.getFehlmengeDelegate()
+								.artikelfehlmengeFindByPrimaryKey(key.getI_id());
 
-					wtfBeleg.setText(dto.getCBelegartnr().trim() + ": "
-							+ losDto.getCNr());
+						lossollmaterialDto = DelegateFactory
+								.getInstance()
+								.getFertigungDelegate()
+								.lossollmaterialFindByPrimaryKey(
+										dto.getIBelegartpositionid());
 
-					ArtikelDto artikelDto = DelegateFactory.getInstance()
-							.getArtikelDelegate()
-							.artikelFindByPrimaryKey(dto.getArtikelIId());
+						losDto = DelegateFactory
+								.getInstance()
+								.getFertigungDelegate()
+								.losFindByPrimaryKey(
+										lossollmaterialDto.getLosIId());
+
+						wtfBeleg.setText(dto.getCBelegartnr().trim() + ": "
+								+ losDto.getCNr());
+
+					} else if (key.getTyp().equals("R")) {
+
+						ArtikelreservierungDto resDto = DelegateFactory
+								.getInstance()
+								.getReservierungDelegate()
+								.artikelreservierungFindByPrimaryKey(
+										key.getI_id());
+
+						if (resDto.getCBelegartnr().equals(
+								LocaleFac.BELEGART_AUFTRAG)) {
+
+							auftragpositionDto = DelegateFactory
+									.getInstance()
+									.getAuftragpositionDelegate()
+									.auftragpositionFindByPrimaryKey(
+											resDto.getIBelegartpositionid());
+
+							auftragDto = DelegateFactory
+									.getInstance()
+									.getAuftragDelegate()
+									.auftragFindByPrimaryKey(
+											auftragpositionDto.getBelegIId());
+
+							wtfBeleg.setText(resDto.getCBelegartnr().trim()
+									+ ": " + auftragDto.getCNr());
+						}
+
+					}
 
 					wtfArtikel.setText(artikelDto
 							.formatArtikelbezeichnungMitZusatzbezeichnung());
@@ -464,6 +509,14 @@ public class PanelFehlmengenAufloesen extends PanelBasis {
 			throws Throwable {
 		// super.eventActionUpdate(e, false);
 
+		if (lossollmaterialDto == null && auftragpositionDto==null) {
+			DialogFactory.showModalDialog(LPMain.getInstance()
+					.getTextRespectUISPr("lp.error"), LPMain.getInstance()
+					.getTextRespectUISPr("artikel.fehlmengen.aufloesen.error"));
+			
+			return;
+		}
+		
 		if (lossollmaterialDto != null) {
 			BigDecimal ausgegeben = DelegateFactory.getInstance()
 					.getFertigungDelegate()
@@ -482,6 +535,27 @@ public class PanelFehlmengenAufloesen extends PanelBasis {
 			}
 
 		}
+
+		if (auftragpositionDto != null) {
+
+			BigDecimal aufposmenge = BigDecimal.ZERO;
+
+			if (auftragpositionDto.getNOffeneMenge() != null) {
+				aufposmenge = auftragpositionDto.getNOffeneMenge();
+			}
+
+			if (aufposmenge.doubleValue() < 0) {
+				wnfZubuchungsmenge.setInteger(0);
+			} else {
+				if (bdVerfuegbareMenge.doubleValue() > aufposmenge
+						.doubleValue()) {
+					wnfZubuchungsmenge.setBigDecimal(aufposmenge);
+				} else {
+					wnfZubuchungsmenge.setBigDecimal(bdVerfuegbareMenge);
+				}
+			}
+		}
+
 		if (panelQuery.getSelectedId() != null) {
 			enableAllComponents(this, true);
 			setzeButton(PanelBasis.ACTION_SAVE, true, false);
@@ -510,53 +584,144 @@ public class PanelFehlmengenAufloesen extends PanelBasis {
 			for (int i = 0; i < ids.length; i++) {
 				if (bdVerfuegbareMenge.doubleValue() > 0) {
 
-					ArtikelfehlmengeDto dto = DelegateFactory.getInstance()
-							.getFehlmengeDelegate()
-							.artikelfehlmengeFindByPrimaryKey((Integer) ids[i]);
-					LossollmaterialDto lossollmaterialDtoTemp = DelegateFactory
-							.getInstance()
-							.getFertigungDelegate()
-							.lossollmaterialFindByPrimaryKey(
-									dto.getIBelegartpositionid());
+					FLRFehlmengeReservierungPK key = (FLRFehlmengeReservierungPK) ids[i];
 
-					losDto = DelegateFactory
-							.getInstance()
-							.getFertigungDelegate()
-							.losFindByPrimaryKey(
-									lossollmaterialDtoTemp.getLosIId());
+					if (key.getTyp().equals("F")) {
 
-					LosistmaterialDto losistmaterialDto = new LosistmaterialDto();
-					losistmaterialDto
-							.setLossollmaterialIId(lossollmaterialDtoTemp
-									.getIId());
-					losistmaterialDto.setLagerIId(lagerDto.getIId());
-
-					losistmaterialDto.setBAbgang(Helper.boolean2Short(true));
-
-					BigDecimal menge = dto.getNMenge();
-					if (bdVerfuegbareMenge.doubleValue() < dto.getNMenge()
-							.doubleValue()) {
-						menge = bdVerfuegbareMenge;
-					}
-
-					losistmaterialDto.setNMenge(menge);
-
-					if (Helper.short2Boolean(artikelDto.getBChargennrtragend()) == false
-							&& Helper.short2Boolean(artikelDto
-									.getBSeriennrtragend()) == false) {
-
-						DelegateFactory
+						ArtikelfehlmengeDto dto = DelegateFactory
+								.getInstance()
+								.getFehlmengeDelegate()
+								.artikelfehlmengeFindByPrimaryKey(key.getI_id());
+						LossollmaterialDto lossollmaterialDtoTemp = DelegateFactory
 								.getInstance()
 								.getFertigungDelegate()
-								.gebeMaterialNachtraeglichAus(
-										lossollmaterialDtoTemp,
-										losistmaterialDto, null, true);
-						bdVerfuegbareMenge = bdVerfuegbareMenge.subtract(menge);
+								.lossollmaterialFindByPrimaryKey(
+										dto.getIBelegartpositionid());
 
-						FehlmengenAufloesen.addAufgeloesteFehlmenge(artikelDto,
-								lagerDto, null, losDto, menge);
+						losDto = DelegateFactory
+								.getInstance()
+								.getFertigungDelegate()
+								.losFindByPrimaryKey(
+										lossollmaterialDtoTemp.getLosIId());
+
+						LosistmaterialDto losistmaterialDto = new LosistmaterialDto();
+						losistmaterialDto
+								.setLossollmaterialIId(lossollmaterialDtoTemp
+										.getIId());
+						losistmaterialDto.setLagerIId(lagerDto.getIId());
+
+						losistmaterialDto
+								.setBAbgang(Helper.boolean2Short(true));
+
+						BigDecimal menge = dto.getNMenge();
+						if (bdVerfuegbareMenge.doubleValue() < dto.getNMenge()
+								.doubleValue()) {
+							menge = bdVerfuegbareMenge;
+						}
+
+						losistmaterialDto.setNMenge(menge);
+
+						if (Helper.short2Boolean(artikelDto
+								.getBChargennrtragend()) == false
+								&& Helper.short2Boolean(artikelDto
+										.getBSeriennrtragend()) == false) {
+
+							DelegateFactory
+									.getInstance()
+									.getFertigungDelegate()
+									.gebeMaterialNachtraeglichAus(
+											lossollmaterialDtoTemp,
+											losistmaterialDto, null, true);
+							bdVerfuegbareMenge = bdVerfuegbareMenge
+									.subtract(menge);
+
+							FehlmengenAufloesen.addAufgeloesteFehlmenge(
+									artikelDto, lagerDto, null, losDto, menge);
+
+						}
 
 					}
+					if (key.getTyp().equals("R")) {
+
+						ArtikelreservierungDto resDto = DelegateFactory
+								.getInstance()
+								.getReservierungDelegate()
+								.artikelreservierungFindByPrimaryKey(
+										key.getI_id());
+
+						if (resDto.getCBelegartnr().equals(
+								LocaleFac.BELEGART_AUFTRAG)) {
+							if (Helper.short2Boolean(artikelDto
+									.getBChargennrtragend()) == false
+									&& Helper.short2Boolean(artikelDto
+											.getBSeriennrtragend()) == false) {
+
+								AuftragpositionDto auftragpositionDtoTemp = DelegateFactory
+										.getInstance()
+										.getAuftragpositionDelegate()
+										.auftragpositionFindByPrimaryKey(resDto.getIBelegartpositionid());
+								
+								auftragDto = DelegateFactory
+										.getInstance()
+										.getAuftragDelegate()
+										.auftragFindByPrimaryKey(
+												auftragpositionDto.getBelegIId());
+								
+								LieferscheinpositionDto[] lsPosDtos = DelegateFactory
+										.getInstance()
+										.getBelegpostionkonvertierungDelegate()
+										.konvertiereNachLieferscheinpositionDto(
+												new AuftragpositionDto[] { auftragpositionDtoTemp });
+
+								if (lsPosDtos != null && lsPosDtos.length == 1) {
+
+									
+									
+									
+									LieferscheinpositionDto lsPosDto = lsPosDtos[0];
+									
+									
+									BigDecimal menge = lsPosDto.getNMenge();
+									if (bdVerfuegbareMenge.doubleValue() < lsPosDto.getNMenge()
+											.doubleValue()) {
+										menge = bdVerfuegbareMenge;
+									}
+									
+									
+									lsPosDto.setNMenge(menge);
+									lsPosDto.setAuftragpositionIId(auftragpositionDtoTemp
+											.getIId());
+
+									lsPosDto.setSeriennrChargennrMitMenge(null);
+
+								
+
+									Integer lieferscheinIId=DelegateFactory
+											.getInstance()
+											.getLieferscheinpositionDelegate()
+											.reservierungAufloesen(
+													auftragpositionDtoTemp.getBelegIId(),
+													lsPosDto);
+									
+									LieferscheinDto lsDto=DelegateFactory
+											.getInstance().getLsDelegate().lieferscheinFindByPrimaryKey(lieferscheinIId);
+
+									FehlmengenAufloesen
+											.addAufgeloesteReservierung(
+													artikelDto,
+													lagerDto,
+													SeriennrChargennrMitMengeDto
+															.erstelleStringArrayAusMehrerenSeriennummern(lsPosDto
+																	.getSeriennrChargennrMitMenge()),
+													auftragDto, lsDto, menge);
+
+								}
+								
+							}
+						}
+
+					}
+
 				}
 			}
 			panelQuery.eventYouAreSelected(false);
@@ -570,13 +735,14 @@ public class PanelFehlmengenAufloesen extends PanelBasis {
 			if (wnfZubuchungsmenge.getBigDecimal().doubleValue() > bdVerfuegbareMenge
 					.doubleValue()) {
 				DialogFactory.showModalDialog(LPMain.getInstance()
-						.getTextRespectUISPr("lp.artikel"), "Menge zu gro\u00DF.");
+						.getTextRespectUISPr("lp.artikel"),
+						"Menge zu gro\u00DF.");
 			} else {
 
 				components2Dto();
 				if (lossollmaterialDto != null) {
 
-					if (losDto.getStuecklisteIId() != null) {
+					if (losDto != null && losDto.getStuecklisteIId() != null) {
 						StuecklisteDto stklDto = DelegateFactory
 								.getInstance()
 								.getStuecklisteDelegate()
@@ -691,7 +857,73 @@ public class PanelFehlmengenAufloesen extends PanelBasis {
 						verminderSnrs(cSelectedSnrs);
 
 					}
+
+					lossollmaterialDto = null;
+
 				}
+
+				if (auftragpositionDto != null) {
+
+					LieferscheinpositionDto[] lsPosDtos = DelegateFactory
+							.getInstance()
+							.getBelegpostionkonvertierungDelegate()
+							.konvertiereNachLieferscheinpositionDto(
+									new AuftragpositionDto[] { auftragpositionDto });
+
+					if (lsPosDtos != null && lsPosDtos.length == 1) {
+
+						LieferscheinpositionDto lsPosDto = lsPosDtos[0];
+						lsPosDto.setAuftragpositionIId(auftragpositionDto
+								.getIId());
+
+						lsPosDto.setSeriennrChargennrMitMenge(null);
+
+						if (Helper.short2Boolean(artikelDto
+								.getBChargennrtragend()) == true) {
+
+							lsPosDto.setSeriennrChargennrMitMenge(SeriennrChargennrMitMengeDto
+									.erstelleDtoAusEinerChargennummer(
+											cZugebuchteSnrsChnr[0],
+											wnfZubuchungsmenge.getBigDecimal()));
+
+						} else if (Helper.short2Boolean(artikelDto
+								.getBSeriennrtragend()) == true) {
+							Helper.erzeugeSeriennummernArray(
+									wtfSnrChargennr.getText(),
+									wnfZubuchungsmenge.getBigDecimal(), true);
+							lsPosDto.setSeriennrChargennrMitMenge(SeriennrChargennrMitMengeDto
+									.erstelleSrnDtoArrayAusStringArray(cSelectedSnrs));
+
+						}
+
+						Integer lieferscheinIId=DelegateFactory
+								.getInstance()
+								.getLieferscheinpositionDelegate()
+								.reservierungAufloesen(
+										auftragpositionDto.getBelegIId(),
+										lsPosDto);
+
+						
+						LieferscheinDto lsDto=DelegateFactory
+						.getInstance().getLsDelegate().lieferscheinFindByPrimaryKey(lieferscheinIId);
+						
+						FehlmengenAufloesen
+								.addAufgeloesteReservierung(
+										artikelDto,
+										lagerDto,
+										SeriennrChargennrMitMengeDto
+												.erstelleStringArrayAusMehrerenSeriennummern(lsPosDto
+														.getSeriennrChargennrMitMenge()),
+										auftragDto,lsDto, wnfZubuchungsmenge
+												.getBigDecimal());
+
+					}
+					verminderSnrs(cSelectedSnrs);
+
+				}
+
+				auftragpositionDto = null;
+
 				panelQuery.eventYouAreSelected(false);
 				super.eventActionSave(e, true);
 				eventYouAreSelected(false);
@@ -715,6 +947,11 @@ public class PanelFehlmengenAufloesen extends PanelBasis {
 		super.eventYouAreSelected(false);
 		Object key = panelQuery.getSelectedId();
 
+		lossollmaterialDto = null;
+		auftragpositionDto = null;
+		losDto = null;
+		auftragDto = null;
+
 		if (key == null || (key.equals(LPMain.getLockMeForNew()))) {
 
 			leereAlleFelder(this);
@@ -724,24 +961,50 @@ public class PanelFehlmengenAufloesen extends PanelBasis {
 							.getInstance().getUISprLocale()) + " "
 					+ artikelDto.getEinheitCNr().trim());
 		} else {
-			ArtikelfehlmengeDto dto = DelegateFactory.getInstance()
-					.getFehlmengeDelegate()
-					.artikelfehlmengeFindByPrimaryKey((Integer) key);
-			lossollmaterialDto = DelegateFactory
-					.getInstance()
-					.getFertigungDelegate()
-					.lossollmaterialFindByPrimaryKey(
-							dto.getIBelegartpositionid());
 
-			losDto = DelegateFactory.getInstance().getFertigungDelegate()
-					.losFindByPrimaryKey(lossollmaterialDto.getLosIId());
+			FLRFehlmengeReservierungPK pk = (FLRFehlmengeReservierungPK) key;
 
-			wtfBeleg.setText(dto.getCBelegartnr().trim() + ": "
-					+ losDto.getCNr());
+			if (pk.getTyp().equals("F")) {
+				ArtikelfehlmengeDto dto = DelegateFactory.getInstance()
+						.getFehlmengeDelegate()
+						.artikelfehlmengeFindByPrimaryKey(pk.getI_id());
+				lossollmaterialDto = DelegateFactory
+						.getInstance()
+						.getFertigungDelegate()
+						.lossollmaterialFindByPrimaryKey(
+								dto.getIBelegartpositionid());
 
-			ArtikelDto artikelDto = DelegateFactory.getInstance()
-					.getArtikelDelegate()
-					.artikelFindByPrimaryKey(dto.getArtikelIId());
+				losDto = DelegateFactory.getInstance().getFertigungDelegate()
+						.losFindByPrimaryKey(lossollmaterialDto.getLosIId());
+
+				wtfBeleg.setText(dto.getCBelegartnr().trim() + ": "
+						+ losDto.getCNr());
+
+			} else if (pk.getTyp().equals("R")) {
+
+				ArtikelreservierungDto resDto = DelegateFactory.getInstance()
+						.getReservierungDelegate()
+						.artikelreservierungFindByPrimaryKey(pk.getI_id());
+
+				if (resDto.getCBelegartnr().equals(LocaleFac.BELEGART_AUFTRAG)) {
+
+					auftragpositionDto = DelegateFactory
+							.getInstance()
+							.getAuftragpositionDelegate()
+							.auftragpositionFindByPrimaryKey(
+									resDto.getIBelegartpositionid());
+
+					auftragDto = DelegateFactory
+							.getInstance()
+							.getAuftragDelegate()
+							.auftragFindByPrimaryKey(
+									auftragpositionDto.getBelegIId());
+
+					wtfBeleg.setText(resDto.getCBelegartnr().trim() + ": "
+							+ auftragDto.getCNr());
+				}
+
+			}
 
 			wtfArtikel.setText(artikelDto
 					.formatArtikelbezeichnungMitZusatzbezeichnung());
@@ -750,6 +1013,7 @@ public class PanelFehlmengenAufloesen extends PanelBasis {
 					+ Helper.formatZahl(bdVerfuegbareMenge, 3, LPMain
 							.getInstance().getUISprLocale()) + " "
 					+ artikelDto.getEinheitCNr().trim());
+
 		}
 	}
 

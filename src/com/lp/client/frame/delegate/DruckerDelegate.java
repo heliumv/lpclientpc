@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -39,6 +39,7 @@ import javax.naming.InitialContext;
 
 import com.lp.client.frame.ExceptionLP;
 import com.lp.client.pc.LPMain;
+import com.lp.server.personal.service.ZeitabschlussDto;
 import com.lp.server.system.service.DruckerFac;
 import com.lp.server.system.service.ReportkonfDto;
 import com.lp.server.system.service.ReportvarianteDto;
@@ -88,6 +89,31 @@ public class DruckerDelegate extends Delegate {
 		return iId;
 	}
 
+	public Integer updateReportvariante(ReportvarianteDto reportvarianteDto)
+			throws ExceptionLP {
+		Integer iId = null;
+		try {
+			druckerFac.updateReportvariante(reportvarianteDto, LPMain
+					.getInstance().getTheClient());
+
+		} catch (Throwable t) {
+			handleThrowable(t);
+
+		}
+		return iId;
+	}
+
+	public Integer createReportvariante(ReportvarianteDto dto)
+			throws ExceptionLP {
+		try {
+			return druckerFac.createReportvariante(dto, LPMain.getInstance()
+					.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
+
 	public void removeStandarddrucker(StandarddruckerDto standarddruckerDto)
 			throws ExceptionLP {
 		try {
@@ -98,21 +124,29 @@ public class DruckerDelegate extends Delegate {
 		}
 	}
 
-	public void saveReportKonf(Integer standarddruckerIId, ReportkonfDto[] dtos)
-			throws ExceptionLP {
+	public void removeReportvariante(ReportvarianteDto dto) throws ExceptionLP {
 		try {
-			druckerFac.saveReportKonf(standarddruckerIId, dtos, LPMain
+			druckerFac.removeReportvariante(dto, LPMain.getInstance()
 					.getTheClient());
 		} catch (Throwable t) {
 			handleThrowable(t);
 		}
 	}
 
-	public Map holeAlleVarianten(String reportname )
+	public void saveReportKonf(Integer standarddruckerIId, ReportkonfDto[] dtos)
 			throws ExceptionLP {
 		try {
-			return druckerFac.holeAlleVarianten(reportname,LPMain
-					.getTheClient());
+			druckerFac.saveReportKonf(standarddruckerIId, dtos,
+					LPMain.getTheClient());
+		} catch (Throwable t) {
+			handleThrowable(t);
+		}
+	}
+
+	public Map holeAlleVarianten(String reportname) throws ExceptionLP {
+		try {
+			return druckerFac.holeAlleVarianten(reportname,
+					LPMain.getTheClient());
 		} catch (Throwable t) {
 			handleThrowable(t);
 			return null;
@@ -121,8 +155,8 @@ public class DruckerDelegate extends Delegate {
 
 	public void deleteReportKonf(Integer standarddruckerIId) throws ExceptionLP {
 		try {
-			druckerFac.deleteReportKonf(standarddruckerIId, LPMain
-					.getTheClient());
+			druckerFac.deleteReportKonf(standarddruckerIId,
+					LPMain.getTheClient());
 		} catch (Throwable t) {
 			handleThrowable(t);
 		}
@@ -138,7 +172,7 @@ public class DruckerDelegate extends Delegate {
 			return null;
 		}
 	}
-	
+
 	public StandarddruckerDto standarddruckerFindByPcReportnameOhneVariante(
 			StandarddruckerDto standarddruckerDto) throws ExceptionLP {
 		try {
@@ -149,7 +183,6 @@ public class DruckerDelegate extends Delegate {
 			return null;
 		}
 	}
-	
 
 	public void removeReportkonf(Integer reportkonfIId) throws ExceptionLP {
 		try {
@@ -169,16 +202,15 @@ public class DruckerDelegate extends Delegate {
 			return null;
 		}
 	}
-	
-	public ReportvarianteDto reportvarianteFindByPrimaryKey(
-			Integer iId) throws ExceptionLP {
+
+	public ReportvarianteDto reportvarianteFindByPrimaryKey(Integer iId)
+			throws ExceptionLP {
 		try {
-			return druckerFac
-					.reportvarianteFindByPrimaryKey(iId);
+			return druckerFac.reportvarianteFindByPrimaryKey(iId);
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 			return null;
 		}
 	}
-	
+
 }

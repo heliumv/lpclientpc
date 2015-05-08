@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -132,13 +132,15 @@ public class DialogBucheSerienChargennrAufLos extends JDialog implements
 
 	GridBagLayout gridBagLayout2 = new GridBagLayout();
 
-	public DialogBucheSerienChargennrAufLos(Integer losIId,
+	public DialogBucheSerienChargennrAufLos(Integer losIId,String losnummer,
 			ArtikelDto artikelDto, BigDecimal gesamtmenge,
 			ArrayList alBereitsGebucht) throws Throwable {
 		super(LPMain.getInstance().getDesktop(), LPMain.getInstance()
 				.getTextRespectUISPr(
 						"artikel.handlagerbewegung.seriennrchargennr")
-				+ " " + artikelDto.formatArtikelbezeichnung(), true);
+				+ " " + artikelDto.formatArtikelbezeichnung()+ ", "+LPMain.getInstance()
+				.getTextRespectUISPr(
+						"label.losnummer") +" "+losnummer, true);
 		this.losIId = losIId;
 		this.alBereitsGebucht = alBereitsGebucht;
 		this.artikelDto = artikelDto;
@@ -151,7 +153,7 @@ public class DialogBucheSerienChargennrAufLos extends JDialog implements
 				bAbbruch = true;
 			}
 		});
-
+		
 		jbInit();
 		pack();
 

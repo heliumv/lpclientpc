@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -32,6 +32,7 @@
  ******************************************************************************/
 package com.lp.client.zeiterfassung;
 
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -47,6 +48,7 @@ import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 
 import com.lp.client.fertigung.FertigungFilterFactory;
+import com.lp.client.frame.Defaults;
 import com.lp.client.frame.LockStateValue;
 import com.lp.client.frame.component.InternalFrame;
 import com.lp.client.frame.component.PanelBasis;
@@ -76,8 +78,13 @@ public class DialogLoseEinesTechnikers extends JDialog implements
 	private GridBagLayout gridBagLayout2 = new GridBagLayout();
 	private InternalFrame internalFrame = null;
 	private boolean bAufErledigteBuchbar = false;
+	private boolean bAufAngelegteBuchbar = false;
 	private Integer selectedId = null;
 	private Integer personalIIdTechniker = null;
+
+	public PanelQuery getPanelQueryLose() {
+		return panelQueryLose;
+	}
 
 	private String FILTER_TECHNIKER = "FILTER_TECHNIKER";
 	private String FILTER_TECHNIKER_AUS_KOPFDATEN = "FILTER_TECHNIKER_AUS_KOPFDATEN";
@@ -87,11 +94,12 @@ public class DialogLoseEinesTechnikers extends JDialog implements
 
 	public DialogLoseEinesTechnikers(InternalFrame internalFrame,
 			boolean bAufErledigteBuchbar, Integer selectedId,
-			Integer personalIIdTechniker) throws Throwable {
+			Integer personalIIdTechniker,boolean bAufAngelegteBuchbar) throws Throwable {
 		super(LPMain.getInstance().getDesktop(), LPMain.getInstance()
 				.getTextRespectUISPr("lp.auswahl"), true);
 		this.internalFrame = internalFrame;
 		this.bAufErledigteBuchbar = bAufErledigteBuchbar;
+		this.bAufAngelegteBuchbar = bAufAngelegteBuchbar;
 		this.selectedId = selectedId;
 		this.personalIIdTechniker = personalIIdTechniker;
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
@@ -113,7 +121,7 @@ public class DialogLoseEinesTechnikers extends JDialog implements
 	private void jbInit() throws Throwable {
 
 		FilterKriterium[] kriterien = FertigungFilterFactory.getInstance()
-				.createFKBebuchbareLose(bAufErledigteBuchbar, true, false);
+				.createFKBebuchbareLose(bAufErledigteBuchbar, true, bAufAngelegteBuchbar);
 
 		kriterien = addFilter(kriterien, new FilterKriterium(
 				"technikerset.personal_i_id", true, personalIIdTechniker + "",
@@ -143,8 +151,27 @@ public class DialogLoseEinesTechnikers extends JDialog implements
 		}
 		panelQueryLose.befuellePanelFilterkriterienDirekt(fkDirekt1, fkDirekt2);
 
-		panelQueryLose.addDirektFilter(FertigungFilterFactory.getInstance()
-				.createFKDLosAuftagsnummer());
+		ParametermandantDto parameterLo = DelegateFactory
+				.getInstance()
+				.getParameterDelegate()
+				.getMandantparameter(
+						LPMain.getTheClient().getMandant(),
+						ParameterFac.KATEGORIE_FERTIGUNG,
+						ParameterFac.PARAMETER_LOSNUMMER_AUFTRAGSBEZOGEN);
+
+		int iLosnummerAuftragsbezogen = (Integer) parameterLo
+				.getCWertAsObject();
+
+		if (iLosnummerAuftragsbezogen >= 1) {
+			panelQueryLose.addDirektFilter(FertigungFilterFactory
+					.getInstance().createFKDVolltextsucheArtikel());
+		} else {
+			panelQueryLose.addDirektFilter(FertigungFilterFactory.getInstance()
+					.createFKDLosAuftagsnummer());
+		}
+		
+		
+		
 		panelQueryLose.addDirektFilter(FertigungFilterFactory.getInstance()
 				.createFKDLosKunde());
 
@@ -165,15 +192,13 @@ public class DialogLoseEinesTechnikers extends JDialog implements
 		wcbTechnikerfilter.setMap(m);
 
 		wcbTechnikerfilter.addActionListener(this);
+		wcbTechnikerfilter.setPreferredSize(new Dimension(Defaults.getInstance().bySizeFactor(200), 0));
+		wcbTechnikerfilter.setLightWeightPopupEnabled(false);
 
 		panelQueryLose.eventYouAreSelected(false);
 		panelQueryLose.setSelectedId(selectedId);
 
-		panelQueryLose.getPanelButtons().add(
-				wcbTechnikerfilter,
-				new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
-						GridBagConstraints.NORTHWEST, GridBagConstraints.NONE,
-						new Insets(4, 0, 0, 40), 200, 0));
+		panelQueryLose.getToolBar().getToolsPanelCenter().add(wcbTechnikerfilter);
 
 		this.getContentPane().setLayout(gridBagLayout2);
 
@@ -209,7 +234,7 @@ public class DialogLoseEinesTechnikers extends JDialog implements
 		FilterKriterium[] kriterien = null;
 		try {
 			kriterien = FertigungFilterFactory.getInstance()
-					.createFKBebuchbareLose(bAufErledigteBuchbar, true, false);
+					.createFKBebuchbareLose(bAufErledigteBuchbar, true, bAufAngelegteBuchbar);
 
 			if (wcbTechnikerfilter.getKeyOfSelectedItem().equals(
 					FILTER_TECHNIKER)) {

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -37,10 +37,12 @@ import java.awt.event.ActionEvent;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 
+import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
 
 import net.miginfocom.swing.MigLayout;
 
+import com.lp.client.fertigung.ReportLoszeiten;
 import com.lp.client.frame.Defaults;
 import com.lp.client.frame.ExceptionLP;
 import com.lp.client.frame.component.PanelTabelle;
@@ -77,9 +79,12 @@ public class PanelTabelleProjektzeiten extends PanelTabelle {
 	private WrapperLabel wlaWaehrung = null; // in Mandantenwaehrung
 
 	private WrapperKeyValueField wkvSollzeit = null;
-	
-	private  InternalFrameProjekt oInternalFrameI=null;
-	
+
+	private InternalFrameProjekt oInternalFrameI = null;
+
+	static final public String PROJEKTZEITEN_PRINT = LEAVEALONE
+			+ "PROJEKTZEITEN_PRINT";
+
 	/**
 	 * PanelTabelle.
 	 * 
@@ -96,7 +101,7 @@ public class PanelTabelleProjektzeiten extends PanelTabelle {
 			InternalFrameProjekt oInternalFrameI) throws Throwable {
 
 		super(iUsecaseIdI, sTitelTabbedPaneI, oInternalFrameI);
-		this.oInternalFrameI=oInternalFrameI;
+		this.oInternalFrameI = oInternalFrameI;
 		jbInit();
 		initComponents();
 	}
@@ -109,7 +114,7 @@ public class PanelTabelleProjektzeiten extends PanelTabelle {
 		setColumnWidth(ProjektFac.IDX_SPALTE_KOSTEN, 0); // hide Kosten
 
 		// die optionale zweite Zeile initialisieren
-		
+
 		int divLoc = Defaults.getInstance().bySizeFactor(60);
 		wkvDauer = new WrapperKeyValueField(divLoc);
 		wkvDauer.setKey(LPMain.getInstance().getTextRespectUISPr("lp.dauer"));
@@ -118,22 +123,51 @@ public class PanelTabelleProjektzeiten extends PanelTabelle {
 
 		wkvKosten = new WrapperKeyValueField(divLoc);
 		wkvKosten.setKey(LPMain.getInstance().getTextRespectUISPr("lp.kosten"));
-		
+
 		wkvSollzeit = new WrapperKeyValueField(divLoc);
-		wkvSollzeit.setKey(LPMain.getInstance().getTextRespectUISPr("lp.sollzeit"));
-		
+		wkvSollzeit.setKey(LPMain.getInstance().getTextRespectUISPr(
+				"lp.sollzeit"));
+
 		wlaWaehrung = new WrapperLabel(LPMain.getTheClient()
 				.getSMandantenwaehrung());
 		wlaWaehrung.setHorizontalAlignment(SwingConstants.LEFT);
 
-		getPanelOptionaleZweiteZeile().setLayout(new MigLayout("wrap 8", "[30%,fill|30%,fill|5%,fill|30%,fill|5%,fill]"));
+		getPanelOptionaleZweiteZeile().setLayout(
+				new MigLayout("wrap 8",
+						"[30%,fill|30%,fill|5%,fill|30%,fill|5%,fill]"));
 		getPanelOptionaleZweiteZeile().add(wkvSollzeit);
 		getPanelOptionaleZweiteZeile().add(wkvDauer);
 		getPanelOptionaleZweiteZeile().add(wlaEinheit);
 		getPanelOptionaleZweiteZeile().add(wkvKosten);
 		getPanelOptionaleZweiteZeile().add(wlaWaehrung);
+
+		getToolBar()
+				.addButtonLeft(
+						"/com/lp/client/res/printer.png",
+						LPMain.getTextRespectUISPr("lp.printer"),
+						PROJEKTZEITEN_PRINT,
+						KeyStroke.getKeyStroke('P',
+								java.awt.event.InputEvent.CTRL_MASK), null);
+		enableToolsPanelButtons(true, PROJEKTZEITEN_PRINT);
+
 	}
 
+	
+	protected void eventActionSpecial(ActionEvent e) throws Throwable {
+
+		super.eventActionSpecial(e);
+
+		if (e.getActionCommand().equals(PROJEKTZEITEN_PRINT)) {
+			String add2Title = LPMain.getInstance().getTextRespectUISPr(
+					"proj.report.projektzeiten");
+			getInternalFrame().showReportKriterien(
+					new ReportProjektzeiten(getInternalFrame(),oInternalFrameI.getTabbedPaneProjekt().getProjektDto()
+							.getIId(), add2Title));
+
+		}
+
+	}
+	
 	/**
 	 * eventActionRefresh
 	 * 
@@ -148,9 +182,10 @@ public class PanelTabelleProjektzeiten extends PanelTabelle {
 		try {
 			super.eventActionRefresh(e, bNeedNoRefreshI);
 		} catch (ExceptionLP ex) {
-			if(ex.getCause()!=null && ex.getCause().getCause() instanceof EJBExceptionLP){
-				EJBExceptionLP exp=(EJBExceptionLP)ex.getCause().getCause();
-            ArrayList<?> al = exp.getAlInfoForTheClient();
+			if (ex.getCause() != null
+					&& ex.getCause().getCause() instanceof EJBExceptionLP) {
+				EJBExceptionLP exp = (EJBExceptionLP) ex.getCause().getCause();
+				ArrayList<?> al = exp.getAlInfoForTheClient();
 				String s = "";
 				if (al != null && al.size() > 1) {
 					if (al.get(0) instanceof Integer) {
@@ -158,7 +193,8 @@ public class PanelTabelleProjektzeiten extends PanelTabelle {
 								.getPersonalDelegate()
 								.personalFindByPrimaryKey((Integer) al.get(0));
 						s += " ("
-								+ DelegateFactory.getInstance()
+								+ DelegateFactory
+										.getInstance()
 										.getPartnerDelegate()
 										.formatFixAnredeTitelName2Name1(
 												personalDto.getPartnerDto(),
@@ -170,9 +206,10 @@ public class PanelTabelleProjektzeiten extends PanelTabelle {
 					}
 					if (al.get(1) instanceof java.sql.Timestamp) {
 						s += ", "
-								+ Helper.formatDatum((java.sql.Timestamp) al
-										.get(1), LPMain.getInstance()
-										.getTheClient().getLocUi()) + ")";
+								+ Helper.formatDatum(
+										(java.sql.Timestamp) al.get(1), LPMain
+												.getInstance().getTheClient()
+												.getLocUi()) + ")";
 					}
 
 				}
@@ -212,15 +249,15 @@ public class PanelTabelleProjektzeiten extends PanelTabelle {
 		wkvDauer.setValue(Helper.formatZahl(new Double(dGesamtdauer), 2,
 				Defaults.getInstance().getLocUI()));
 
-		Double d=0D;
-		if(oInternalFrameI.getTabbedPaneProjekt().getProjektDto().getDDauer()!=null){
-			d=oInternalFrameI.getTabbedPaneProjekt().getProjektDto().getDDauer();
+		Double d = 0D;
+		if (oInternalFrameI.getTabbedPaneProjekt().getProjektDto().getDDauer() != null) {
+			d = oInternalFrameI.getTabbedPaneProjekt().getProjektDto()
+					.getDDauer();
 		}
-		
-		wkvSollzeit.setValue(Helper.formatZahl(d, 2,
-				Defaults.getInstance().getLocUI()));
 
-		
+		wkvSollzeit.setValue(Helper.formatZahl(d, 2, Defaults.getInstance()
+				.getLocUI()));
+
 		// die gesamten Kosten berechnen
 		BigDecimal bdGesamtkosten = new BigDecimal(0);
 
@@ -241,26 +278,43 @@ public class PanelTabelleProjektzeiten extends PanelTabelle {
 		String sKrit = getDefaultFilter()[ProjektFac.IDX_KRIT_AUSWERTUNG].kritName;
 
 		if (sKrit.equals(ProjektFac.KRIT_PERSONAL)) {
-			getTable().getColumnModel().getColumn(1)
+			getTable()
+					.getColumnModel()
+					.getColumn(1)
 					.setHeaderValue(
 							LPMain.getInstance().getTextRespectUISPr(
 									"lo.tabelle.psnr"));
-			getTable().getColumnModel().getColumn(2).setHeaderValue(
-					LPMain.getInstance().getTextRespectUISPr(
-							"lo.tabelle.nameident"));
-			getTable().getColumnModel().getColumn(3).setHeaderValue(
-					LPMain.getInstance().getTextRespectUISPr(
-							"lo.tabelle.beztext"));
+			getTable()
+					.getColumnModel()
+					.getColumn(2)
+					.setHeaderValue(
+							LPMain.getInstance().getTextRespectUISPr(
+									"lo.tabelle.nameident"));
+			getTable()
+					.getColumnModel()
+					.getColumn(3)
+					.setHeaderValue(
+							LPMain.getInstance().getTextRespectUISPr(
+									"lo.tabelle.beztext"));
 		} else if (sKrit.equals(ProjektFac.KRIT_IDENT)) {
-			getTable().getColumnModel().getColumn(1).setHeaderValue(
-					LPMain.getInstance()
-							.getTextRespectUISPr("lo.tabelle.ident"));
-			getTable().getColumnModel().getColumn(2).setHeaderValue(
-					LPMain.getInstance().getTextRespectUISPr(
-							"lo.tabelle.bezposnr"));
-			getTable().getColumnModel().getColumn(3).setHeaderValue(
-					LPMain.getInstance().getTextRespectUISPr(
-							"lo.tabelle.nametext"));
+			getTable()
+					.getColumnModel()
+					.getColumn(1)
+					.setHeaderValue(
+							LPMain.getInstance().getTextRespectUISPr(
+									"lo.tabelle.ident"));
+			getTable()
+					.getColumnModel()
+					.getColumn(2)
+					.setHeaderValue(
+							LPMain.getInstance().getTextRespectUISPr(
+									"lo.tabelle.bezposnr"));
+			getTable()
+					.getColumnModel()
+					.getColumn(3)
+					.setHeaderValue(
+							LPMain.getInstance().getTextRespectUISPr(
+									"lo.tabelle.nametext"));
 		}
 	}
 
@@ -279,7 +333,8 @@ public class PanelTabelleProjektzeiten extends PanelTabelle {
 								.getPersonalDelegate()
 								.personalFindByPrimaryKey((Integer) al.get(0));
 						s += " ("
-								+ DelegateFactory.getInstance()
+								+ DelegateFactory
+										.getInstance()
 										.getPartnerDelegate()
 										.formatFixAnredeTitelName2Name1(
 												personalDto.getPartnerDto(),
@@ -291,9 +346,10 @@ public class PanelTabelleProjektzeiten extends PanelTabelle {
 					}
 					if (al.get(1) instanceof java.sql.Timestamp) {
 						s += ", "
-								+ Helper.formatDatum((java.sql.Timestamp) al
-										.get(1), LPMain.getInstance()
-										.getTheClient().getLocUi()) + ")";
+								+ Helper.formatDatum(
+										(java.sql.Timestamp) al.get(1), LPMain
+												.getInstance().getTheClient()
+												.getLocUi()) + ")";
 					}
 
 				}

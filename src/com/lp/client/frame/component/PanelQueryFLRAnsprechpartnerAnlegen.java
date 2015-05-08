@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -92,6 +92,7 @@ Integer partnerIId=null;
       DialogAnsprechpartneranlegen d = new DialogAnsprechpartneranlegen(getInternalFrame(),partnerIId);
       d.setModal(true);
       d.setBounds(this.getBounds());
+      d.setBounds((int)this.getLocation().getX(), (int)this.getLocation().getY(), this.getWidth()+130, this.getHeight());
       d.setLocation(this.getLocationOnScreen());
       d.setVisible(true);
 

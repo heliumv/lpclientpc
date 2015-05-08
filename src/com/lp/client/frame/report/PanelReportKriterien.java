@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -57,7 +57,6 @@ import java.sql.Timestamp;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -92,11 +91,8 @@ import javax.swing.filechooser.FileFilter;
 import net.sf.jasperreports.engine.JRException;
 import net.sf.jasperreports.engine.JRExporterParameter;
 import net.sf.jasperreports.engine.JasperPrint;
-import net.sf.jasperreports.engine.export.FontKey;
-import net.sf.jasperreports.engine.export.JRPdfExporter;
 import net.sf.jasperreports.engine.export.JRPrintServiceExporter;
 import net.sf.jasperreports.engine.export.JRPrintServiceExporterParameter;
-import net.sf.jasperreports.engine.export.PdfFont;
 import net.sf.jasperreports.engine.type.OrientationEnum;
 import net.sf.jasperreports.engine.util.JRClassLoader;
 import net.sf.jasperreports.view.JRSaveContributor;
@@ -104,6 +100,7 @@ import net.sf.jasperreports.view.save.JRPdfSaveContributor;
 import net.sf.jasperreports.view.save.JRPrintSaveContributor;
 
 import com.lp.client.bestellung.ReportWepEtikett;
+import com.lp.client.bestellung.ReportWepEtikett2;
 import com.lp.client.eingangsrechnung.ReportEingangsrechnung;
 import com.lp.client.frame.Defaults;
 import com.lp.client.frame.DialogError;
@@ -126,6 +123,7 @@ import com.lp.client.frame.component.WrapperTextField;
 import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.frame.dialog.DialogFactory;
 import com.lp.client.pc.LPMain;
+import com.lp.client.zeiterfassung.ReportWochenabschluss;
 import com.lp.server.partner.service.PartnerDto;
 import com.lp.server.system.jcr.service.DokumentnichtarchiviertDto;
 import com.lp.server.system.jcr.service.JCRDocDto;
@@ -147,6 +145,7 @@ import com.lp.server.system.service.VersandanhangDto;
 import com.lp.server.system.service.VersandauftragDto;
 import com.lp.server.util.report.JasperPrintLP;
 import com.lp.util.EJBExceptionLP;
+import com.lp.util.HVPDFExporter;
 import com.lp.util.Helper;
 import com.lp.util.LPDatenSubreport;
 
@@ -183,13 +182,15 @@ public class PanelReportKriterien extends PanelDialog implements
 	private ReportkonfDto[] konfDtos = null;
 	boolean bVariantenInitialisiert = false;
 
-	private boolean bMitEmailFax = false;
-	private boolean bNurVorschau = false;
-	private PartnerDto partnerDtoEmpfaenger = null;
-	private Integer ansprechpartnerIId = null;
-	private boolean bDirekt = false;
+	// private boolean bMitEmailFax = false;
+	// private boolean bNurVorschau = false;
+	// private PartnerDto partnerDtoEmpfaenger = null;
+	// private Integer ansprechpartnerIId = null;
+	// private boolean bDirekt = false;
 	private StandarddruckerDto standarddruckerDto = null;
 	protected int iKopien = 0;
+
+	private PanelReportKriterienOptions options;
 
 	private static final String ACTION_SPECIAL_REPORTKRITERIEN_PREVIEW = "action_special_"
 			+ ALWAYSENABLED + "reportkriterien_preview";
@@ -220,13 +221,38 @@ public class PanelReportKriterien extends PanelDialog implements
 			PartnerDto partnerDtoEmpfaenger, Integer ansprechpartnerIId,
 			boolean bDirekt, boolean bMitEmailFax, boolean bNurVorschau)
 			throws Throwable {
-		super(internalFrame, addTitleI);
+		this(internalFrame, panelReportIf, addTitleI, partnerDtoEmpfaenger,
+				ansprechpartnerIId, bDirekt, bMitEmailFax, bNurVorschau, true);
+	}
+
+	public PanelReportKriterien(InternalFrame internalFrame,
+			PanelReportIfJRDS panelReportIf, String addTitleI,
+			PartnerDto partnerDtoEmpfaenger, Integer ansprechpartnerIId,
+			boolean bDirekt, boolean bMitEmailFax, boolean bNurVorschau,
+			boolean mitExitButton) throws Throwable {
+		super(internalFrame, addTitleI, mitExitButton);
+		options = new PanelReportKriterienOptions();
+		options.setPartnerDtoEmpfaenger(partnerDtoEmpfaenger);
+		options.setAnsprechpartnerIId(ansprechpartnerIId);
+		options.setDirekt(bDirekt);
+		options.setMitEmailFax(bMitEmailFax);
+		options.setNurVorschau(bNurVorschau);
+
+		initialize(panelReportIf);
+	}
+
+	public PanelReportKriterien(PanelReportIfJRDS panelReportIf,
+			PanelReportKriterienOptions options) throws Throwable {
+		super(options.getInternalFrame(), options.getAddTitleI(), options
+				.isMitExitButton());
+		this.options = options;
+
+		initialize(panelReportIf);
+	}
+
+	private void initialize(PanelReportIfJRDS panelReportIf) throws Throwable {
 		this.jpaPanelReportIf = panelReportIf;
-		this.partnerDtoEmpfaenger = partnerDtoEmpfaenger;
-		this.ansprechpartnerIId = ansprechpartnerIId;
-		this.bDirekt = bDirekt;
-		this.bMitEmailFax = bMitEmailFax;
-		this.bNurVorschau = bNurVorschau;
+
 		jbInitPanel();
 		initComponents();
 		LockStateValue lockstateValue = new LockStateValue(null, null,
@@ -251,13 +277,17 @@ public class PanelReportKriterien extends PanelDialog implements
 		updateLpTitle();
 	}
 
+	protected PanelReportKriterienOptions getOptions() {
+		return options;
+	}
+
 	private void jbInitPanel() throws Throwable {
 		// Button Refresh
 		createAndSaveButton("/com/lp/client/res/refresh.png",
 				LPMain.getTextRespectUISPr("lp.drucken.reportaktualisieren"),
 				ACTION_SPECIAL_REPORTKRITERIEN_PREVIEW,
 				KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0), null);
-		if (!bNurVorschau) {
+		if (!getOptions().isNurVorschau()) {
 			// Button Druckvorschau
 			createAndSaveButton("/com/lp/client/res/printer_view.png",
 					LPMain.getTextRespectUISPr("lp.drucken.vorschau"),
@@ -280,8 +310,7 @@ public class PanelReportKriterien extends PanelDialog implements
 					ACTION_COPY_TO_CLIPBOARD, null, null);
 
 			// Buttons fuer Email und Fax, falls erwuenscht
-			if (bMitEmailFax) {
-
+			if (getOptions().isMitEmailFax()) {
 				if (LPMain
 						.getInstance()
 						.getDesktop()
@@ -314,12 +343,12 @@ public class PanelReportKriterien extends PanelDialog implements
 		// Das Action-Array fuer das ToolsPanel erstellen
 		String[] aWhichButtonIUse;
 
-		if (bNurVorschau) {
+		if (getOptions().isNurVorschau()) {
 			aWhichButtonIUse = new String[] { ACTION_SPECIAL_REPORTKRITERIEN_PREVIEW };
 		}
 
 		else {
-			if (bMitEmailFax) {
+			if (getOptions().isMitEmailFax()) {
 				aWhichButtonIUse = new String[] {
 						ACTION_SPECIAL_REPORTKRITERIEN_PREVIEW,
 						ACTION_SPECIAL_REPORTKRITERIEN_FULLSCREEN,
@@ -333,7 +362,6 @@ public class PanelReportKriterien extends PanelDialog implements
 						ACTION_SPECIAL_DRUCKEN, ACTION_SPECIAL_SAVE,
 						ACTION_SPECIAL_CSV, ACTION_COPY_TO_CLIPBOARD };
 			}
-
 		}
 
 		enableToolsPanelButtons(aWhichButtonIUse);
@@ -416,12 +444,32 @@ public class PanelReportKriterien extends PanelDialog implements
 		return btns;
 	}
 
-	protected final void eventActionSpecial(ActionEvent e) throws Throwable {
-		if (e.getActionCommand().equals(PanelBasis.ESC)
-				|| e.getActionCommand()
-						.equals(ACTION_SPECIAL_CLOSE_PANELDIALOG)) {
-			FocusManager.getCurrentManager().removeVetoableChangeListener(this);
+	@Override
+	protected void onEscOrClosePanelDialog() throws Throwable {
+		// PJ18547
+		if (jpaPanelReportIf instanceof ReportWepEtikett2) {
+			ReportWepEtikett2 report = (ReportWepEtikett2) jpaPanelReportIf;
+			report.unlock();
 		}
+
+		FocusManager.getCurrentManager().removeVetoableChangeListener(this);
+		super.onEscOrClosePanelDialog();
+	}
+
+	protected void eventActionSpecial(ActionEvent e) throws Throwable {
+		// if (e.getActionCommand().equals(PanelBasis.ESC)
+		// || e.getActionCommand()
+		// .equals(ACTION_SPECIAL_CLOSE_PANELDIALOG)) {
+		//
+		// // PJ18547
+		// if (jpaPanelReportIf instanceof ReportWepEtikett2) {
+		// ReportWepEtikett2 report = (ReportWepEtikett2) jpaPanelReportIf;
+		// report.unlock();
+		//
+		// }
+		//
+		// FocusManager.getCurrentManager().removeVetoableChangeListener(this);
+		// }
 		super.eventActionSpecial(e);
 		// Refresh ... erzeugt den Report neu und zeigt ihn an
 		if (e.getActionCommand().equals(ACTION_SPECIAL_REPORTKRITERIEN_PREVIEW)) {
@@ -520,6 +568,30 @@ public class PanelReportKriterien extends PanelDialog implements
 				}
 				panelVersandEmail.setjtfAnhaengeText(sAttachments);
 			}
+		} else if (e.getActionCommand().equals(
+				PanelVersandEmail.ACTION_SPECIAL_REMOVE_ATTACHMENT)) {
+			String sAttachments = panelVersandEmail.getjtfAnhaengeText();
+
+			if (sAttachments != null) {
+				String[] teile = sAttachments.split(";");
+
+				DialogAnhaenge da = new DialogAnhaenge(teile);
+				LPMain.getInstance().getDesktop()
+						.platziereDialogInDerMitteDesFensters(da);
+				da.setVisible(true);
+				ArrayList al = da.getAnhaenge();
+
+				String sAttachmentsNeu = null;
+				for (int i = 0; i < al.size(); i++) {
+					if (sAttachmentsNeu == null) {
+						sAttachmentsNeu = "";
+					}
+					sAttachmentsNeu += al.get(i) + ";";
+				}
+
+				panelVersandEmail.setjtfAnhaengeText(sAttachmentsNeu);
+			}
+
 		}
 
 		// Report abspeichern oder CSV Export
@@ -636,21 +708,13 @@ public class PanelReportKriterien extends PanelDialog implements
 																				.getName() }),
 														"Speichern",
 														JOptionPane.OK_CANCEL_OPTION)) {
-									JRPdfExporter exporter = new JRPdfExporter();
+									HVPDFExporter exporter = new HVPDFExporter();
 									exporter.setParameter(
 											JRExporterParameter.JASPER_PRINT,
 											print.getPrint());
 									exporter.setParameter(
 											JRExporterParameter.OUTPUT_FILE,
 											file);
-
-									// PJ15464
-
-									Map<net.sf.jasperreports.engine.export.FontKey, PdfFont> fontMap = getPDFFontMap();
-
-									exporter.setParameter(
-											JRExporterParameter.FONT_MAP,
-											fontMap);
 
 									exporter.exportReport();
 								}
@@ -797,21 +861,22 @@ public class PanelReportKriterien extends PanelDialog implements
 	}
 
 	private void aktiviereBeleg() throws Throwable {
-		if(jpaPanelReportIf instanceof IAktiviereBelegReport) {
-			IAktiviereBelegReport rep = (IAktiviereBelegReport)jpaPanelReportIf;
+		if (jpaPanelReportIf instanceof IAktiviereBelegReport) {
+			IAktiviereBelegReport rep = (IAktiviereBelegReport) jpaPanelReportIf;
 			rep.aktiviereBeleg(berechnungsZeitpunkt);
 			rep.refreshPanelInBackground();
 		}
 	}
-	
+
 	private void berecheneBeleg() throws Throwable {
-		if(jpaPanelReportIf instanceof IAktiviereBelegReport)
-			berechnungsZeitpunkt = ((IAktiviereBelegReport)jpaPanelReportIf).berechneBeleg();
+		if (jpaPanelReportIf instanceof IAktiviereBelegReport)
+			berechnungsZeitpunkt = ((IAktiviereBelegReport) jpaPanelReportIf)
+					.berechneBeleg();
 	}
 
 	public void druckeArchiviereUndSetzeVersandstatusEinesBelegs()
 			throws Throwable {
-		if(berechnungsZeitpunkt == null)
+		if (berechnungsZeitpunkt == null)
 			berecheneBeleg();
 		aktiviereBeleg();
 		print();
@@ -886,11 +951,9 @@ public class PanelReportKriterien extends PanelDialog implements
 
 				ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
-				JRPdfExporter exporter = new JRPdfExporter();
+				HVPDFExporter exporter = new HVPDFExporter();
 				exporter.setParameter(JRExporterParameter.JASPER_PRINT, print);
 				exporter.setParameter(JRExporterParameter.OUTPUT_STREAM, baos);
-
-				exporter.setParameter(JRExporterParameter.FONT_MAP, getPDFFontMap());
 
 				exporter.exportReport();
 
@@ -947,9 +1010,12 @@ public class PanelReportKriterien extends PanelDialog implements
 							panelVersandEmail.setjtfAnhaengeText("");
 						}
 						if (sizeIsOk) {
-							VersandanhangDto versandanhangDto = new VersandanhangDto();
+
+							ArrayList<VersandanhangDto> alAnhaenge = new ArrayList<VersandanhangDto>();
+
 							for (int i = 0; i < sAttachments.length; i++) {
 								File f = new File(sAttachments[i]);
+								VersandanhangDto versandanhangDto = new VersandanhangDto();
 								versandanhangDto
 										.setVersandauftragIId(versandauftragDto
 												.getIId());
@@ -960,10 +1026,13 @@ public class PanelReportKriterien extends PanelDialog implements
 								fiStream.read(fileData);
 								fiStream.close();
 								versandanhangDto.setOInhalt(fileData);
-								DelegateFactory.getInstance()
-										.getVersandDelegate()
-										.createVersandanhang(versandanhangDto);
+
+								alAnhaenge.add(versandanhangDto);
+
 							}
+
+							DelegateFactory.getInstance().getVersandDelegate()
+									.createVersandanhaenge(alAnhaenge);
 						}
 					}
 
@@ -975,35 +1044,6 @@ public class PanelReportKriterien extends PanelDialog implements
 				showDialogKeineDatenZuDrucken();
 			}
 		}
-	}
-
-	private Map<net.sf.jasperreports.engine.export.FontKey, PdfFont> getPDFFontMap() {
-		Map<net.sf.jasperreports.engine.export.FontKey, PdfFont> fontMap = new HashMap<net.sf.jasperreports.engine.export.FontKey, PdfFont>();
-		// Arial is Helvetica
-		fontMap.put(new FontKey("Arial", true, false), new PdfFont(
-				"Helvetica-Bold", "Cp1252", false));
-		fontMap.put(new FontKey("Arial", false, true), new PdfFont(
-				"Helvetica-Oblique", "Cp1252", false));
-		fontMap.put(new FontKey("Arial", true, true), new PdfFont(
-				"Helvetica-BoldOblique", "Cp1252", false));
-		// Courier New wird Courier
-
-		fontMap.put(new FontKey("Courier New", false, false),
-				new PdfFont("Courier", "Cp1252", false));
-		fontMap.put(new FontKey("Courier New", true, false),
-				new PdfFont("Courier-Bold", "Cp1252", false));
-		fontMap.put(new FontKey("Courier New", false, true),
-				new PdfFont("Courier-Oblique", "Cp1252", false));
-		fontMap.put(new FontKey("Courier New", true, true),
-				new PdfFont("Courier-BoldOblique", "Cp1252", false));
-		// Times bleibt Times
-		fontMap.put(new FontKey("Times New Roman", true, false),
-				new PdfFont("Times-Bold", "Cp1252", false));
-		fontMap.put(new FontKey("Times New Roman", false, true),
-				new PdfFont("Times-Italic", "Cp1252", false));
-		fontMap.put(new FontKey("Times New Roman", true, true),
-				new PdfFont("Times-BoldItalic", "Cp1252", false));
-		return fontMap;
 	}
 
 	private void preview() throws Throwable {
@@ -1095,7 +1135,8 @@ public class PanelReportKriterien extends PanelDialog implements
 					String msg = LPMain.getInstance().getMsg(ex);
 					// CK 03.05.2006:WH moechte keine leeren Fehlermeldungen
 					// sehen
-					if (msg == null || ex.getICode()==EJBExceptionLP.FEHLER_DRUCKEN_FEHLER_IM_REPORT) {
+					if (msg == null
+							|| ex.getICode() == EJBExceptionLP.FEHLER_DRUCKEN_FEHLER_IM_REPORT) {
 						msg = "Fehlercode " + ex.getICode();
 						msg = msg + "\n" + ex.getSMsg();
 						new DialogError(LPMain.getInstance().getDesktop(), ex,
@@ -1201,15 +1242,17 @@ public class PanelReportKriterien extends PanelDialog implements
 
 			panelVersandEmail = new PanelVersandEmail(getInternalFrame(),
 					mtDto, belegartCNr, belegIId, jpaPanelReportIf, this,
-					partnerDtoEmpfaenger);
-			panelVersandEmail.setDefaultAbsender(partnerDtoEmpfaenger,
-					ansprechpartnerIId);
+					getOptions().getPartnerDtoEmpfaenger());
+			panelVersandEmail.setDefaultAbsender(getOptions()
+					.getPartnerDtoEmpfaenger(), getOptions()
+					.getAnsprechpartnerIId());
 			// Direktversand
-			if (bDirekt) {
+			if (getOptions().isDirekt()) {
 				panelVersandEmail.setEditorFieldVisible(false);
 			}
 			panelVersandEmail.getWbuSenden().addActionListener(this);
 			panelVersandEmail.getwbuAnhangWaehlen().addActionListener(this);
+			panelVersandEmail.getwbuAnhangLoeschen().addActionListener(this);
 
 			jpaTop.add(panelVersandEmail, new GridBagConstraints(0, iZeile, 1,
 					1, 1.0, 0.0, GridBagConstraints.CENTER,
@@ -1230,10 +1273,11 @@ public class PanelReportKriterien extends PanelDialog implements
 				belegIId = ((ReportBeleg) jpaPanelReportIf).getIIdBeleg();
 			}
 			panelVersandFax = new PanelVersandFax(getInternalFrame(),
-					belegartCNr, belegIId, jpaPanelReportIf, this,
-					partnerDtoEmpfaenger);
-			panelVersandFax.setDefaultAbsender(partnerDtoEmpfaenger,
-					ansprechpartnerIId);
+					belegartCNr, belegIId, jpaPanelReportIf, this, getOptions()
+							.getPartnerDtoEmpfaenger());
+			panelVersandFax.setDefaultAbsender(getOptions()
+					.getPartnerDtoEmpfaenger(), getOptions()
+					.getAnsprechpartnerIId());
 			panelVersandFax.getWbuSenden().addActionListener(this);
 			jpaTop.add(panelVersandFax, new GridBagConstraints(0, iZeile, 1, 1,
 					1.0, 0.0, GridBagConstraints.CENTER,
@@ -1397,7 +1441,7 @@ public class PanelReportKriterien extends PanelDialog implements
 					PrintRequestAttributeSet printRequestAttributeSet = new HashPrintRequestAttributeSet();
 					int printableWidth = 0;
 					int printableHeight = 0;
-					
+
 					if (print.getOrientationValue() == OrientationEnum.LANDSCAPE) {
 						printableWidth = print.getPageHeight();
 						printableHeight = print.getPageWidth();
@@ -1405,7 +1449,6 @@ public class PanelReportKriterien extends PanelDialog implements
 						printableWidth = print.getPageWidth();
 						printableHeight = print.getPageHeight();
 					}
-				
 
 					if ((printableWidth != 0) && (printableHeight != 0)) {
 						printRequestAttributeSet.add(new MediaPrintableArea(
@@ -1508,6 +1551,15 @@ public class PanelReportKriterien extends PanelDialog implements
 						.getCWertAsObject();
 
 				if (bCloseDialog && bAutomatischVerlassen == true) {
+
+					// PJ18621
+					if (jpaPanelReportIf instanceof ReportWochenabschluss) {
+						ReportWochenabschluss rw = (ReportWochenabschluss) jpaPanelReportIf;
+						if (rw.wcoInVorschauBleiben.isSelected()) {
+							return;
+						}
+					}
+
 					getInternalFrame().closePanelDialog();
 				}
 			} else {
@@ -1573,6 +1625,12 @@ public class PanelReportKriterien extends PanelDialog implements
 		panelStandardDrucker.getWbuSpeichern().setBackground(
 				b ? new Color(0, 200, 0) : null);
 		panelStandardDrucker.getWbuSpeichern().setOpaque(true);
+	}
+
+	public void refreshVarianten() throws Throwable {
+		Map m = DelegateFactory.getInstance().getDruckerDelegate()
+				.holeAlleVarianten(jpaPanelReportIf.getReportname());
+		panelStandardDrucker.getWcoVariante().setMap(m);
 	}
 
 	private void initStandarddrucker() throws Throwable {
@@ -1645,8 +1703,9 @@ public class PanelReportKriterien extends PanelDialog implements
 							standarddruckerDto.getIId());
 			druckerEinstellungenGeladen = (konfDtos != null && konfDtos.length > 0);
 			// Nun Einstellungen wieder in due Komponenenten schreiben
-			schreibeReportKonfInDieKomponentenZurueck(konfDtos);
-
+			if (druckerEinstellungenGeladen) {
+				schreibeReportKonfInDieKomponentenZurueck(konfDtos);
+			}
 		}
 
 		// Buttons anpassen
@@ -1721,8 +1780,11 @@ public class PanelReportKriterien extends PanelDialog implements
 
 						WrapperTextField wtf = (WrapperTextField) components[i];
 
-						if (wtf.isSaveReportInformation() == true) {
-							wtf.setText(dto.getCKey());
+						if (wtf.isSaveReportInformation() == true
+								&& wtf.isActivatable() == true) {
+							if (wtf.isEditable() == true) {
+								wtf.setText(dto.getCKey());
+							}
 						}
 
 					} else if (components[i] instanceof WrapperCheckBox) {
@@ -1817,10 +1879,14 @@ public class PanelReportKriterien extends PanelDialog implements
 
 						WrapperTextField wtf = (WrapperTextField) components[i];
 						if (wtf.isSaveReportInformation() == true
-								&& wtf.getText() != null) {
-							reportkonfDto.setCKey(wtf.getText());
-							reportkonfDto
-									.setCKomponententyp(DruckerFac.REPORTKONF_KOMPONENTENTYP_TEXTFIELD);
+								&& wtf.getText() != null && wtf.isActivatable()) {
+
+							if (wtf.isEditable() == true) {
+
+								reportkonfDto.setCKey(wtf.getText());
+								reportkonfDto
+										.setCKomponententyp(DruckerFac.REPORTKONF_KOMPONENTENTYP_TEXTFIELD);
+							}
 						}
 					} else if (components[i] instanceof WrapperCheckBox) {
 
@@ -2021,8 +2087,9 @@ public class PanelReportKriterien extends PanelDialog implements
 					if (oInfo.getiId() != null) {
 						iPartnerIId = oInfo.getiId();
 					} else {
-						if (partnerDtoEmpfaenger != null) {
-							iPartnerIId = partnerDtoEmpfaenger.getIId();
+						if (getOptions().getPartnerDtoEmpfaenger() != null) {
+							iPartnerIId = getOptions()
+									.getPartnerDtoEmpfaenger().getIId();
 						} else {
 							// Wenn kein Partner uebergeben dann Default
 							MandantDto mandantDto = DelegateFactory
@@ -2162,8 +2229,8 @@ public class PanelReportKriterien extends PanelDialog implements
 			DelegateFactory.getInstance().getEingangsrechnungDelegate()
 					.updateEingangsrechnungGedruckt(iIId);
 		}
-		if(jpaPanelReportIf instanceof IAktiviereBelegReport) {
-			IAktiviereBelegReport rep = (IAktiviereBelegReport)jpaPanelReportIf;
+		if (jpaPanelReportIf instanceof IAktiviereBelegReport) {
+			IAktiviereBelegReport rep = (IAktiviereBelegReport) jpaPanelReportIf;
 			rep.refreshPanelInBackground();
 		}
 
@@ -2226,6 +2293,10 @@ public class PanelReportKriterien extends PanelDialog implements
 	private void updateRefreshButton() {
 		boolean changed = checkValuesForChanges();
 		setRefreshNecessary(changed);
+	}
+
+	public PanelReportIfJRDS getPanelReportIfJRDS() {
+		return jpaPanelReportIf;
 	}
 }
 

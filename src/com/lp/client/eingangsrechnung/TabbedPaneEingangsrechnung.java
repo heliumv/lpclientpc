@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -72,6 +72,7 @@ import com.lp.server.benutzer.service.RechteFac;
 import com.lp.server.bestellung.service.BestellpositionDto;
 import com.lp.server.bestellung.service.BestellungDto;
 import com.lp.server.bestellung.service.BestellungFac;
+import com.lp.server.bestellung.service.EinstandspreiseEinesWareneingangsDto;
 import com.lp.server.bestellung.service.WareneingangDto;
 import com.lp.server.bestellung.service.WareneingangspositionDto;
 import com.lp.server.eingangsrechnung.service.EingangsrechnungDto;
@@ -194,7 +195,7 @@ public class TabbedPaneEingangsrechnung extends TabbedPane {
 		initComponents();
 	}
 
-	protected EingangsrechnungDto getEingangsrechnungDto() {
+	public EingangsrechnungDto getEingangsrechnungDto() {
 		return eingangsrechnungDto;
 	}
 
@@ -322,9 +323,9 @@ public class TabbedPaneEingangsrechnung extends TabbedPane {
 					null,
 					LPMain.getTextRespectUISPr("er.tab.oben.wareneingaenge.tooltip"),
 					iDX_WARENEINGAENGE);
-		
+
 		}
-		
+
 		// Tab 6: Uebersicht
 		tabIndex++;
 		iDX_UEBERSICHT = tabIndex;
@@ -468,6 +469,8 @@ public class TabbedPaneEingangsrechnung extends TabbedPane {
 
 			}
 
+			
+			
 			inseraterSumme.setText(LPMain
 					.getTextRespectUISPr("iv.inserate.summe")
 					+ " = "
@@ -475,6 +478,9 @@ public class TabbedPaneEingangsrechnung extends TabbedPane {
 							.getIUINachkommastellenPreiseEK(), LPMain
 							.getTheClient().getLocUi()));
 
+			//SP3347
+			bdwertInserate=Helper.rundeKaufmaennisch(bdwertInserate, 2);
+			
 			if (erBetragNetto.doubleValue() != bdwertInserate.doubleValue()) {
 				inseraterSumme.setForeground(Color.RED);
 			} else {
@@ -1569,7 +1575,7 @@ public class TabbedPaneEingangsrechnung extends TabbedPane {
 		return wmb;
 	}
 
-	public Object getInseratDto() {
+	public Object getDto() {
 		return eingangsrechnungDto;
 	}
 
@@ -1805,6 +1811,13 @@ public class TabbedPaneEingangsrechnung extends TabbedPane {
 					.wareneingangspositionFindByWareneingangIId(wareneingangDto
 							.getIId());
 			BigDecimal bdBetrag = BigDecimal.ZERO;
+
+			EinstandspreiseEinesWareneingangsDto preiseDtos = DelegateFactory
+					.getInstance()
+					.getWareneingangDelegate()
+					.getBerechnetenEinstandspreisEinerWareneingangsposition(
+							wareneingangDto.getIId());
+
 			for (int i = 0; i < wareneingangsposDto.length; i++) {
 				// PJ 17308
 				BestellpositionDto bestposDto = DelegateFactory
@@ -1812,34 +1825,42 @@ public class TabbedPaneEingangsrechnung extends TabbedPane {
 						.getBestellungDelegate()
 						.bestellpositionFindByPrimaryKey(
 								wareneingangsposDto[i].getBestellpositionIId());
-				if (bestposDto.getNFixkostengeliefert() != null) {
-					bdBetrag = bdBetrag
-							.add(bestposDto.getNFixkostengeliefert());
-				}
 
-				BigDecimal bdEinstandspreisUngerundet = DelegateFactory
-						.getInstance()
-						.getWareneingangDelegate()
-						.getBerechnetenEinstandspreisEinerWareneingangsposition(
-								wareneingangsposDto[i].getIId());
+				if (preiseDtos.getHmEinstandpreiseAllerPositionen()
+						.containsKey(wareneingangsposDto[i].getIId())) {
 
-				if (bdEinstandspreisUngerundet != null) {
-					bdBetrag = bdBetrag.add(bdEinstandspreisUngerundet
-							.multiply(wareneingangsposDto[i]
-									.getNGeliefertemenge()));
-				} else {
-					bdBetrag = bdBetrag.add(wareneingangsposDto[i]
-							.getNGelieferterpreis().multiply(
-									wareneingangsposDto[i]
-											.getNGeliefertemenge()));
+					BigDecimal bdEinstandspreisUngerundet = preiseDtos
+							.getHmEinstandpreiseAllerPositionen().get(
+									wareneingangsposDto[i].getIId());
+
+					if (bdEinstandspreisUngerundet != null) {
+						bdBetrag = bdBetrag.add(bdEinstandspreisUngerundet
+								.multiply(wareneingangsposDto[i]
+										.getNGeliefertemenge()));
+					} else {
+						bdBetrag = bdBetrag.add(wareneingangsposDto[i]
+								.getNGelieferterpreis().multiply(
+										wareneingangsposDto[i]
+												.getNGeliefertemenge()));
+						// SP2514 Fixkosten duerfen nur hinzugefuegt werden,
+						// wenn es nur einen geliefert-Preis gibt, wenns bereits
+						// einen Einstandspreis gibt, dann ist dieser bereits
+						// eingerechnet
+						if (bestposDto.getNFixkostengeliefert() != null) {
+							bdBetrag = bdBetrag.add(bestposDto
+									.getNFixkostengeliefert());
+						}
+
+					}
 				}
 
 			}
 
-			// PJ 15885 MWST hinzufuegen:
-			bdBetrag = bdBetrag.add(Helper.getProzentWert(bdBetrag,
-					new BigDecimal(mwst.getFMwstsatz()), 4));
-
+			// SP 2239: Wird jetzt vom PanelEingangsrechnungKopfdaten selbst
+			// gerechnet
+			// gilt nicht mehr: // PJ 15885 MWST hinzufuegen:
+			// bdBetrag = bdBetrag.add(Helper.getProzentWert(bdBetrag,
+			// new BigDecimal(mwst.getFMwstsatz()), 4));
 			eingangsrechnungDto.setNBetragfw(bdBetrag);
 			eingangsrechnungDto.setNBetrag(bdBetrag
 					.multiply(eingangsrechnungDto.getNKurs()));
@@ -1883,6 +1904,7 @@ public class TabbedPaneEingangsrechnung extends TabbedPane {
 					.getWaehrungCNr());
 			pErKHelper.wlaWaehrung2.setText(eingangsrechnungDto
 					.getWaehrungCNr());
+			pErKHelper.setNettoBetrag(bdBetrag);
 
 		}
 	}

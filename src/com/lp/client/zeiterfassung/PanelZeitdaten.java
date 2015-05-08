@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -33,6 +33,7 @@
 package com.lp.client.zeiterfassung;
 
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -42,6 +43,8 @@ import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.math.BigDecimal;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.text.DateFormatSymbols;
 import java.text.MessageFormat;
 import java.util.Calendar;
@@ -50,7 +53,6 @@ import java.util.EventObject;
 import java.util.GregorianCalendar;
 import java.util.Map;
 
-import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JOptionPane;
@@ -68,11 +70,11 @@ import com.lp.client.fertigung.FertigungFilterFactory;
 import com.lp.client.frame.ExceptionLP;
 import com.lp.client.frame.HelperClient;
 import com.lp.client.frame.component.DialogQuery;
+import com.lp.client.frame.component.IHvValueHolderListener;
 import com.lp.client.frame.component.ISourceEvent;
 import com.lp.client.frame.component.InternalFrame;
 import com.lp.client.frame.component.ItemChangedEvent;
 import com.lp.client.frame.component.PanelBasis;
-import com.lp.client.frame.component.PanelQuery;
 import com.lp.client.frame.component.PanelQueryFLR;
 import com.lp.client.frame.component.WrapperButton;
 import com.lp.client.frame.component.WrapperCheckBox;
@@ -82,9 +84,9 @@ import com.lp.client.frame.component.WrapperEditorField;
 import com.lp.client.frame.component.WrapperEditorFieldKommentar;
 import com.lp.client.frame.component.WrapperGotoButton;
 import com.lp.client.frame.component.WrapperLabel;
-import com.lp.client.frame.component.WrapperRadioButton;
 import com.lp.client.frame.component.WrapperTextField;
 import com.lp.client.frame.component.WrapperTimeField;
+import com.lp.client.frame.component.durationfield.WrapperDurationField;
 import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.frame.dialog.DialogFactory;
 import com.lp.client.pc.LPButtonAction;
@@ -110,9 +112,11 @@ import com.lp.server.personal.service.PersonalverfuegbarkeitDto;
 import com.lp.server.personal.service.PersonalzeitmodellDto;
 import com.lp.server.personal.service.SonderzeitenDto;
 import com.lp.server.personal.service.TaetigkeitDto;
+import com.lp.server.personal.service.VonBisErfassungTagesdatenDto;
 import com.lp.server.personal.service.ZeitdatenDto;
 import com.lp.server.personal.service.ZeiterfassungFac;
 import com.lp.server.personal.service.ZeitmodellDto;
+import com.lp.server.personal.service.ZeitmodelltagDto;
 import com.lp.server.personal.service.ZeitverteilungDto;
 import com.lp.server.projekt.service.ProjektDto;
 import com.lp.server.system.service.LocaleFac;
@@ -150,8 +154,11 @@ public class PanelZeitdaten extends PanelBasis implements
 	private boolean bDarfKommtGehtAendern = true;
 	private WrapperLabel wlaZeit = new WrapperLabel();
 	private WrapperTimeField wtfZeit = new WrapperTimeField();
+	private WrapperTimeField wtfZeit_Bis = new WrapperTimeField();
+	private WrapperDurationField wdfDauer = new WrapperDurationField();
+	private WrapperLabel wlaDauer;
 	private WrapperComboBox wcoSonderTaetigkeit = new WrapperComboBox();
-	private WrapperComboBox wcoBeleg = new WrapperComboBox();
+
 	private WrapperLabel wlaDatum = new WrapperLabel();
 	private WrapperLabel wlaBetriebskalender = new WrapperLabel();
 	private WrapperLabel wlaSonderzeiten = new WrapperLabel();
@@ -160,23 +167,46 @@ public class PanelZeitdaten extends PanelBasis implements
 	private JButton wbuNaechsterTag = new JButton();
 	private WrapperCheckBox wcbRelativ = new WrapperCheckBox();
 	static final public String ACTION_SPECIAL_TAETIGKEIT_FROM_LISTE = "action_taetigkeit_from_liste";
-	static final public String ACTION_SPECIAL_BELEG_FROM_LISTE = "action_beleg_from_liste";
+
+	static final public String ACTION_SPECIAL_AUFTRAG_FROM_LISTE = "action_auftrag_from_liste";
+	static final public String ACTION_SPECIAL_ANGEBOT_FROM_LISTE = "action_angebot_from_liste";
+	static final public String ACTION_SPECIAL_LOS_FROM_LISTE = "action_los_from_liste";
+	static final public String ACTION_SPECIAL_PROJEKT_FROM_LISTE = "action_projekt_from_liste";
+
 	static final public String ACTION_SPECIAL_POSITION_FROM_LISTE = "action_position_from_liste";
 	static final public String ACTION_SPECIAL_ZEITMODELL_FROM_LISTE = "ACTION_SPECIAL_ZEITMODELL_FROM_LISTE";
+
+	static final public String ACTION_SPECIAL_KOMMT = "action_special_kommt";
+	static final public String ACTION_SPECIAL_GEHT = "action_special_geht";
+	static final public String ACTION_SPECIAL_UNTER = "action_special_unter";
+	static final public String ACTION_SPECIAL_ENDE = "action_special_ende";
+
 	private WrapperLabel wlaKalenderwochewochentag = new WrapperLabel();
 	private WrapperLabel wlaTagesarbeitszeit = new WrapperLabel();
 	private WrapperGotoButton wbuBeleg = new WrapperGotoButton(-1);
+
+	private WrapperLabel wlaBeleg = new WrapperLabel();
+
 	private WrapperButton wbuPosition = new WrapperButton();
 	private WrapperTextField wtfBeleg = new WrapperTextField();
 	private WrapperTextField wtfPosition = new WrapperTextField();
 	private Integer selectedBeleg = null;
-	private WrapperRadioButton wrbSondertaetigkeit = new WrapperRadioButton();
-	private WrapperRadioButton wrbAuftragszeit = new WrapperRadioButton();
-	private ButtonGroup buttonGroup1 = new ButtonGroup();
+	private String selectedBelegart = null;
+
 	private WrapperButton wbuTaetigkeit = new WrapperButton();
 	private WrapperTextField wtfTaetigkeit = new WrapperTextField();
 	private WrapperLabel wlaBemerkung = new WrapperLabel();
 	private WrapperTextField wtfBemerkung = new WrapperTextField();
+
+	private JButton wbuKommt = new WrapperButton();
+	private JButton wbuGeht = new WrapperButton();
+	private JButton wbuUnter = new WrapperButton();
+	private JButton wbuEnde = new WrapperButton();
+
+	private JButton wbuProjekt = new WrapperButton();
+	private JButton wbuAngebot = new WrapperButton();
+	private JButton wbuAuftrag = new WrapperButton();
+	private JButton wbuLos = new WrapperButton();
 
 	private WrapperLabel wlaErfuellungsgrad = new WrapperLabel();
 
@@ -200,6 +230,7 @@ public class PanelZeitdaten extends PanelBasis implements
 	Integer taetigkeitIIdKommt = null;
 	Integer taetigkeitIIdUnter = null;
 	Integer taetigkeitIIdGeht = null;
+	Integer taetigkeitIIdEnde = null;
 
 	private Map<Integer, String> sondertaetigkeitenOhneVersteckt;
 	private Map<Integer, String> sondertaetigkeitenMitVersteckt;
@@ -256,6 +287,9 @@ public class PanelZeitdaten extends PanelBasis implements
 				.getZeiterfassungDelegate()
 				.taetigkeitFindByCNr(ZeiterfassungFac.TAETIGKEIT_UNTER)
 				.getIId();
+		taetigkeitIIdEnde = DelegateFactory.getInstance()
+				.getZeiterfassungDelegate()
+				.taetigkeitFindByCNr(ZeiterfassungFac.TAETIGKEIT_ENDE).getIId();
 		jbInit();
 		setDefaults();
 		initComponents();
@@ -290,32 +324,80 @@ public class PanelZeitdaten extends PanelBasis implements
 		}
 	}
 
+	public boolean isHeute() {
+
+		java.sql.Timestamp ts = wdfDatum.getTimestamp();
+		ts = Helper.cutTimestamp(ts);
+
+		java.sql.Timestamp tHeute = Helper.cutTimestamp(new java.sql.Timestamp(
+				System.currentTimeMillis()));
+
+		if (tHeute.getTime() == ts.getTime()) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
 	public void eventYouAreSelected(boolean bNeedNoYouAreSelectedI)
 			throws Throwable {
 		super.eventYouAreSelected(false);
 		Object key = getKeyWhenDetailPanel();
 		wlaErfuellungsgrad.setText(null);
+		wlaBeleg.setText(null);
+		// Wenn nicht heute
+		if (isHeute()) {
+			wbuKommt.setEnabled(true);
+			wbuGeht.setEnabled(true);
+			wbuUnter.setEnabled(true);
+			wbuEnde.setEnabled(true);
+
+			wbuAngebot.setEnabled(true);
+			wbuAuftrag.setEnabled(true);
+			wbuProjekt.setEnabled(true);
+			wbuLos.setEnabled(true);
+		} else {
+
+			wbuKommt.setEnabled(false);
+			wbuGeht.setEnabled(false);
+			wbuUnter.setEnabled(false);
+			wbuEnde.setEnabled(false);
+
+			wbuAngebot.setEnabled(false);
+			wbuAuftrag.setEnabled(false);
+			wbuProjekt.setEnabled(false);
+			wbuLos.setEnabled(false);
+		}
 
 		if (key == null || (key.equals(LPMain.getLockMeForNew()))) {
+
+			if (key != null && key.equals(LPMain.getLockMeForNew())) {
+
+				wcoSonderTaetigkeit.setKeyOfSelectedItem(null);
+
+			}
+
 			clearStatusbar();
 			wtfBeleg.setText("");
 			wtfPosition.setText("");
 			wtfTaetigkeit.setText("");
 			wtfBemerkung.setText("");
 			if (bDarfKommtGehtAendern == false) {
-				if (wcoSonderTaetigkeit.getKeyOfSelectedItem().equals(
-						taetigkeitIIdGeht)
-						|| wcoSonderTaetigkeit.getKeyOfSelectedItem().equals(
-								taetigkeitIIdKommt)
-						|| wcoSonderTaetigkeit.getKeyOfSelectedItem().equals(
-								taetigkeitIIdUnter)) {
-					wtfZeit.setEnabled(false);
-				} else {
-					wtfZeit.setEnabled(true);
+				if (wcoSonderTaetigkeit.getKeyOfSelectedItem() != null) {
+					if (wcoSonderTaetigkeit.getKeyOfSelectedItem().equals(
+							taetigkeitIIdGeht)
+							|| wcoSonderTaetigkeit.getKeyOfSelectedItem()
+									.equals(taetigkeitIIdKommt)
+							|| wcoSonderTaetigkeit.getKeyOfSelectedItem()
+									.equals(taetigkeitIIdUnter)) {
+						wtfZeit.setEnabled(false);
+					} else {
+						wtfZeit.setEnabled(true);
+					}
 				}
 
 			}
-			if (wrbAuftragszeit.isSelected()) {
+			if (wcoSonderTaetigkeit.getKeyOfSelectedItem() == null) {
 				wcbRelativ.setEnabled(true);
 			} else {
 				wcbRelativ.setEnabled(false);
@@ -328,10 +410,31 @@ public class PanelZeitdaten extends PanelBasis implements
 							(Integer) getKeyWhenDetailPanel());
 
 			if (zeitdatenDto.getCBelegartnr() != null) {
-				wcbRelativ.setVisible(true);
-			} else {
-				wcbRelativ.setVisible(false);
 
+				if (internalFrameZeiterfassung.getTabbedPaneZeiterfassung()
+						.isBVonBisErfassung()) {
+					enableBisZeit(true);
+				} else {
+					wcbRelativ.setVisible(true);
+				}
+
+			} else {
+				if (internalFrameZeiterfassung.getTabbedPaneZeiterfassung()
+						.isBVonBisErfassung()) {
+
+					if (wcoSonderTaetigkeit.getKeyOfSelectedItem() != null
+							&& (wcoSonderTaetigkeit.getKeyOfSelectedItem()
+									.equals(taetigkeitIIdKommt) || wcoSonderTaetigkeit
+									.getKeyOfSelectedItem().equals(
+											taetigkeitIIdGeht))) {
+
+						enableBisZeit(false);
+					} else {
+						enableBisZeit(true);
+					}
+				} else {
+					wcbRelativ.setVisible(false);
+				}
 			}
 
 			dto2Components();
@@ -342,12 +445,8 @@ public class PanelZeitdaten extends PanelBasis implements
 
 				if (zeitdatenDto.getTaetigkeitIId() != null) {
 
-					if (zeitdatenDto.getTaetigkeitIId().equals(
-							taetigkeitIIdGeht)
-							|| zeitdatenDto.getTaetigkeitIId().equals(
-									taetigkeitIIdKommt)
-							|| zeitdatenDto.getTaetigkeitIId().equals(
-									taetigkeitIIdUnter)) {
+					if (!zeitdatenDto.getTaetigkeitIId().equals(
+							taetigkeitIIdEnde)) {
 						LPButtonAction o = getHmOfButtons().get(
 								PanelBasis.ACTION_UPDATE);
 						if (o != null) {
@@ -368,16 +467,54 @@ public class PanelZeitdaten extends PanelBasis implements
 
 	}
 
+	private void enableBisZeit(boolean b) {
+		wtfZeit_Bis.setVisible(b);
+		wtfZeit_Bis.setMandatoryField(b);
+		wdfDauer.setVisible(b);
+		wdfDauer.setMandatoryField(b);
+		wlaDauer.setVisible(b);
+	}
+
+	public void erstelleVorschlagFuerZeitbuchung(Integer zeitdatenIId)
+			throws Throwable {
+		zeitdatenDto = DelegateFactory.getInstance().getZeiterfassungDelegate()
+				.zeitdatenFindByPrimaryKey(zeitdatenIId);
+
+		java.sql.Timestamp ts = wdfDatum.getTimestamp();
+		ts = Helper.cutTimestamp(ts);
+
+		Calendar cDatum = Calendar.getInstance();
+		cDatum.setTimeInMillis(ts.getTime());
+
+		Calendar cZeit = Calendar.getInstance();
+		cZeit.setTimeInMillis(wtfZeit.getTime().getTime());
+
+		cDatum.set(Calendar.HOUR_OF_DAY, cZeit.get(Calendar.HOUR_OF_DAY));
+		cDatum.set(Calendar.MINUTE, cZeit.get(Calendar.MINUTE));
+		cDatum.set(Calendar.SECOND, cZeit.get(Calendar.SECOND));
+		cDatum.set(Calendar.MILLISECOND, cZeit.get(Calendar.MILLISECOND));
+		ts.setTime(cDatum.getTimeInMillis());
+		zeitdatenDto.setTZeit(ts);
+		zeitdatenDto.setTAnlegen(new Timestamp(System.currentTimeMillis()));
+		zeitdatenDto.setTAendern(new Timestamp(System.currentTimeMillis()));
+		dto2Components();
+
+		zeitdatenDto.setIId(null);
+
+	}
+
 	protected void dto2Components() throws Throwable {
 		wtfZeit.setTime(new java.sql.Time(zeitdatenDto.getTZeit().getTime()));
 		wefKommentar.setText(zeitdatenDto.getXKommentar());
 
-		if (zeitdatenDto.getTaetigkeitIId() != null) {
-			wrbSondertaetigkeit.setSelected(true);
+		if (zeitdatenDto.gettZeit_Bis() != null) {
+			wtfZeit_Bis.setTime(new java.sql.Time(zeitdatenDto.gettZeit_Bis()
+					.getTime()));
+			wdfDauer.setDuration(zeitdatenDto.gettZeit_Bis().getTime()
+					- zeitdatenDto.getTZeit().getTime());
+		}
 
-			wcoBeleg.setVisible(false);
-			wcoBeleg.setMandatoryField(false);
-			wcoSonderTaetigkeit.setVisible(true);
+		if (zeitdatenDto.getTaetigkeitIId() != null) {
 
 			jpaWorkingOn.repaint();
 
@@ -400,17 +537,17 @@ public class PanelZeitdaten extends PanelBasis implements
 			wtfPosition.setMandatoryField(false);
 			wtfBeleg.setMandatoryField(false);
 			wtfTaetigkeit.setMandatoryField(false);
-			wcoSonderTaetigkeit.setActivatable(true);
+
 			wbuBeleg.setActivatable(false);
-			wcoBeleg.setActivatable(false);
 			wcbRelativ.setActivatable(false);
 			wbuPosition.setActivatable(false);
 			wbuTaetigkeit.setActivatable(false);
 			wtfBemerkung.setText(zeitdatenDto.getCBemerkungZuBelegart());
 		} else {
-			wcoBeleg.setKeyOfSelectedItem(zeitdatenDto.getCBelegartnr());
+			selectedBelegart = zeitdatenDto.getCBelegartnr();
 			wbuBeleg.setOKey(zeitdatenDto.getIBelegartid());
-			wrbAuftragszeit.setSelected(true);
+			wcoSonderTaetigkeit.setKeyOfSelectedItem(null);
+
 			if (wcbRelativ.isSelected()) {
 				java.sql.Time zeit = DelegateFactory
 						.getInstance()
@@ -421,10 +558,6 @@ public class PanelZeitdaten extends PanelBasis implements
 				wtfZeit.setTime(zeit);
 			}
 
-			wcoSonderTaetigkeit.setVisible(false);
-			wcoBeleg.setVisible(true);
-			wcoBeleg.setMandatoryField(true);
-			jpaWorkingOn.repaint();
 			ArtikelDto artikelDto = DelegateFactory.getInstance()
 					.getArtikelDelegate()
 					.artikelFindByPrimaryKey(zeitdatenDto.getArtikelIId());
@@ -434,6 +567,7 @@ public class PanelZeitdaten extends PanelBasis implements
 
 			if (zeitdatenDto.getCBelegartnr()
 					.equals(LocaleFac.BELEGART_AUFTRAG)) {
+				wtfPosition.setText(null);
 
 				AuftragpositionDto auftragpositionDto = null;
 				try {
@@ -472,9 +606,11 @@ public class PanelZeitdaten extends PanelBasis implements
 						.kundeFindByPrimaryKey(
 								auftragDto.getKundeIIdAuftragsadresse())
 						.getPartnerDto().formatTitelAnrede();
-
-				wtfBeleg.setText(auftragDto.getCNr() + sProjBez + ", " + kunde);
+				wlaBeleg.setText("AB" + auftragDto.getCNr());
+				wtfBeleg.setText("->" + sProjBez + ", " + kunde);
 				selectedBeleg = auftragDto.getIId();
+				selectedBelegart = LocaleFac.BELEGART_AUFTRAG;
+				wbuBeleg.setWhereToGo(WrapperGotoButton.GOTO_AUFTRAG_AUSWAHL);
 				if (auftragpositionDto != null) {
 					zeitdatenDto.setIBelegartpositionid(auftragpositionDto
 							.getIId());
@@ -491,17 +627,17 @@ public class PanelZeitdaten extends PanelBasis implements
 				wtfPosition.setMandatoryField(true);
 				wtfBeleg.setMandatoryField(true);
 				wtfTaetigkeit.setMandatoryField(true);
-				wcoSonderTaetigkeit.setActivatable(false);
+
 				wcbRelativ.setActivatable(true);
 
 				wbuBeleg.setActivatable(true);
 
-				wcoBeleg.setActivatable(true);
 				wbuPosition.setActivatable(true);
 				wbuTaetigkeit.setActivatable(true);
 
 			} else if (zeitdatenDto.getCBelegartnr().equals(
 					LocaleFac.BELEGART_LOS)) {
+				wtfPosition.setText(null);
 
 				if (zeitdatenDto.getIBelegartpositionid() != null) {
 					LossollarbeitsplanDto lospositionDto = null;
@@ -538,6 +674,7 @@ public class PanelZeitdaten extends PanelBasis implements
 					}
 					erfuellungsgradBerechnen(lospositionDto, null);
 				} else {
+
 					erfuellungsgradBerechnen(null, null);
 				}
 				LosDto losDto = DelegateFactory.getInstance()
@@ -546,10 +683,13 @@ public class PanelZeitdaten extends PanelBasis implements
 
 				String sProjBez = "";
 				if (losDto.getCProjekt() != null) {
-					sProjBez = ", " + losDto.getCProjekt();
+					sProjBez = losDto.getCProjekt();
 				}
-				wtfBeleg.setText(losDto.getCNr() + sProjBez);
+				wlaBeleg.setText(losDto.getCNr());
+				wtfBeleg.setText("->" + sProjBez);
 				selectedBeleg = losDto.getIId();
+				selectedBelegart = LocaleFac.BELEGART_LOS;
+				wbuBeleg.setWhereToGo(WrapperGotoButton.GOTO_FERTIGUNG_AUSWAHL);
 
 				if (!hatModulStueckrueckmeldung) {
 					wtfPosition.setMandatoryField(false);
@@ -562,16 +702,17 @@ public class PanelZeitdaten extends PanelBasis implements
 				}
 				wtfBeleg.setMandatoryField(true);
 				wtfTaetigkeit.setMandatoryField(true);
-				wcoSonderTaetigkeit.setActivatable(false);
+
 				wcbRelativ.setActivatable(true);
 
 				wbuBeleg.setActivatable(true);
-				wcoBeleg.setActivatable(true);
+
 				wbuPosition.setActivatable(true);
 				wbuTaetigkeit.setActivatable(true);
 
 			} else if (zeitdatenDto.getCBelegartnr().equals(
 					LocaleFac.BELEGART_PROJEKT)) {
+				wtfPosition.setText(null);
 
 				ProjektDto projektDto = DelegateFactory.getInstance()
 						.getProjektDelegate()
@@ -579,24 +720,26 @@ public class PanelZeitdaten extends PanelBasis implements
 
 				String sProjBez = "";
 				if (projektDto.getCTitel() != null) {
-					sProjBez = ", " + projektDto.getCTitel();
+					sProjBez = projektDto.getCTitel();
 				}
-				wtfBeleg.setText(projektDto.getCNr() + sProjBez);
+				wlaBeleg.setText("PJ" + projektDto.getCNr());
+				wtfBeleg.setText("->" + sProjBez);
 				selectedBeleg = projektDto.getIId();
+				selectedBelegart = LocaleFac.BELEGART_PROJEKT;
+				wbuBeleg.setWhereToGo(WrapperGotoButton.GOTO_PROJEKT_AUSWAHL);
 
 				wtfPosition.setMandatoryField(false);
 				wtfBeleg.setMandatoryField(true);
 				wtfTaetigkeit.setMandatoryField(true);
-				wcoSonderTaetigkeit.setActivatable(false);
+
 				wcbRelativ.setActivatable(true);
 
-				wbuBeleg.setActivatable(true);
-				wcoBeleg.setActivatable(true);
-				wbuPosition.setActivatable(true);
+				wbuPosition.setActivatable(false);
 				wbuTaetigkeit.setActivatable(true);
 
 			} else if (zeitdatenDto.getCBelegartnr().equals(
 					LocaleFac.BELEGART_ANGEBOT)) {
+				wtfPosition.setText(null);
 
 				if (zeitdatenDto.getIBelegartpositionid() != null) {
 					AngebotpositionDto angebotpositionDto = null;
@@ -643,25 +786,27 @@ public class PanelZeitdaten extends PanelBasis implements
 
 				String sProjBez = "";
 				if (angebotDto.getCBez() != null) {
-					sProjBez = ", " + angebotDto.getCBez();
+					sProjBez = angebotDto.getCBez();
 				}
-				wtfBeleg.setText(angebotDto.getCNr() + sProjBez);
+
+				wlaBeleg.setText("AG" + angebotDto.getCNr());
+				wtfBeleg.setText("->" + sProjBez);
 				selectedBeleg = angebotDto.getIId();
+				selectedBelegart = LocaleFac.BELEGART_ANGEBOT;
+				wbuBeleg.setWhereToGo(WrapperGotoButton.GOTO_ANGEBOT_AUSWAHL);
 
 				wtfPosition.setMandatoryField(false);
 				wtfBeleg.setMandatoryField(true);
 				wtfTaetigkeit.setMandatoryField(true);
-				wcoSonderTaetigkeit.setActivatable(false);
+
 				wcbRelativ.setActivatable(true);
 
-				wbuBeleg.setActivatable(true);
-				wcoBeleg.setActivatable(true);
 				wbuPosition.setActivatable(true);
 				wbuTaetigkeit.setActivatable(true);
-
 			}
-
 		}
+		updatePosAndTaetigkeitFelder(zeitdatenDto.getCBelegartnr(),
+				zeitdatenDto.getTaetigkeitIId());
 
 		this.setStatusbarPersonalIIdAendern(zeitdatenDto
 				.getPersonalIIdAendern());
@@ -671,7 +816,54 @@ public class PanelZeitdaten extends PanelBasis implements
 		this.setStatusbarTAendern(zeitdatenDto.getTAendern());
 	}
 
-	void dialogQueryArtikelFromListe(ActionEvent e) throws Throwable {
+	private void updatePosAndTaetigkeitFelder(String belegartCNr,
+			Object sonderTaetigkeitIId) {
+		if (sonderTaetigkeitIId != null) {
+			wtfPosition.setMandatoryField(false);
+			wtfTaetigkeit.setMandatoryField(false);
+			wbuPosition.setActivatable(false);
+			wbuTaetigkeit.setActivatable(false);
+			return;
+		}
+		if (LocaleFac.BELEGART_AUFTRAG.equals(belegartCNr)) {
+			wtfPosition.setMandatoryField(true);
+			wtfTaetigkeit.setMandatoryField(true);
+			wbuPosition.setActivatable(true);
+			wbuTaetigkeit.setActivatable(true);
+			return;
+		}
+		if (LocaleFac.BELEGART_LOS.equals(belegartCNr)) {
+			if (!hatModulStueckrueckmeldung) {
+				wtfPosition.setMandatoryField(false);
+			} else {
+				wtfPosition.setMandatoryField(!bLosbuchungOhnePositionbezug);
+			}
+			wtfTaetigkeit.setMandatoryField(true);
+			wbuPosition.setActivatable(true);
+			wbuTaetigkeit.setActivatable(true);
+			return;
+		}
+		if (LocaleFac.BELEGART_PROJEKT.equals(belegartCNr)) {
+			wtfPosition.setMandatoryField(false);
+			wtfTaetigkeit.setMandatoryField(true);
+			wbuPosition.setActivatable(false);
+			wbuTaetigkeit.setActivatable(true);
+			return;
+		}
+		if (LocaleFac.BELEGART_ANGEBOT.equals(belegartCNr)) {
+			wtfPosition.setMandatoryField(false);
+			wtfTaetigkeit.setMandatoryField(true);
+			wbuPosition.setActivatable(true);
+			wbuTaetigkeit.setActivatable(true);
+			return;
+		}
+		wbuPosition.setActivatable(true);
+		wbuTaetigkeit.setActivatable(true);
+		wtfPosition.setMandatoryField(true);
+		wtfTaetigkeit.setMandatoryField(true);
+	}
+
+	private void dialogQueryArtikelFromListe(ActionEvent e) throws Throwable {
 		String[] aWhichButtonIUse = { PanelBasis.ACTION_REFRESH };
 		if (bArbeitszeitartikelauspersonalverfuegbarkeit) {
 			panelQueryFLRArtikel = new PanelQueryFLR(null,
@@ -750,13 +942,24 @@ public class PanelZeitdaten extends PanelBasis implements
 				AuftragFilterFactory.getInstance().createFKVAuftrag());
 		panelQueryFLRAuftrag.addDirektFilter(AuftragFilterFactory.getInstance()
 				.createFKDProjekt());
-		panelQueryFLRAuftrag.setSelectedId(zeitdatenDto.getIBelegartid());
+
+		Integer selectedBelegIId = null;
+		if (zeitdatenDto != null) {
+			selectedBelegIId = zeitdatenDto.getIBelegartid();
+		}
+
+		panelQueryFLRAuftrag.setSelectedId(selectedBelegIId);
 
 		new DialogQuery(panelQueryFLRAuftrag);
 
 	}
 
 	void dialogQueryLosFromListe(ActionEvent e) throws Throwable {
+
+		Integer selectedBelegIId = null;
+		if (zeitdatenDto != null) {
+			selectedBelegIId = zeitdatenDto.getIBelegartid();
+		}
 
 		ParametermandantDto parameter = (ParametermandantDto) DelegateFactory
 				.getInstance()
@@ -772,8 +975,9 @@ public class PanelZeitdaten extends PanelBasis implements
 			// Dialog'Wiedervorlage erstellen
 			getInternalFrameZeiterfassung().dialogLoseEinesTechnikers = new DialogLoseEinesTechnikers(
 					getInternalFrame(), bZeitdatenAufErledigteBuchbar,
-					zeitdatenDto.getIBelegartid(),
-					getInternalFrameZeiterfassung().getPersonalDto().getIId());
+					selectedBelegIId, getInternalFrameZeiterfassung()
+							.getPersonalDto().getIId(),
+					bZeitdatenAufAngelegteLoseBuchbar);
 
 			LPMain.getInstance()
 					.getDesktop()
@@ -785,8 +989,9 @@ public class PanelZeitdaten extends PanelBasis implements
 		} else {
 			panelQueryFLRLos = FertigungFilterFactory.getInstance()
 					.createPanelFLRBebuchbareLose(getInternalFrame(),
-							bZeitdatenAufErledigteBuchbar, true, bZeitdatenAufAngelegteLoseBuchbar,
-							zeitdatenDto.getIBelegartid(), false);
+							bZeitdatenAufErledigteBuchbar, true,
+							bZeitdatenAufAngelegteLoseBuchbar,
+							selectedBelegIId, false);
 			// PJ17681
 
 			Map<?, ?> mEingeschraenkteFertigungsgruppen = DelegateFactory
@@ -817,14 +1022,24 @@ public class PanelZeitdaten extends PanelBasis implements
 
 	void dialogQueryProjektFromListe(ActionEvent e) throws Throwable {
 
+		Integer selectedBelegIId = null;
+		if (zeitdatenDto != null) {
+			selectedBelegIId = zeitdatenDto.getIBelegartid();
+		}
+
 		panelQueryFLRProjekt = ProjektFilterFactory.getInstance()
-				.createPanelFLRProjekt(getInternalFrame(),
-						zeitdatenDto.getIBelegartid(), false);
+				.createPanelFLRProjekt(getInternalFrame(), selectedBelegIId,
+						false);
 		new DialogQuery(panelQueryFLRProjekt);
 
 	}
 
 	void dialogQueryAngebotFromListe(ActionEvent e) throws Throwable {
+
+		Integer selectedBelegIId = null;
+		if (zeitdatenDto != null) {
+			selectedBelegIId = zeitdatenDto.getIBelegartid();
+		}
 
 		panelQueryFLRAngebot = AngebotFilterFactory.getInstance()
 				.createPanelFLRAngebot(
@@ -832,8 +1047,7 @@ public class PanelZeitdaten extends PanelBasis implements
 						false,
 						false,
 						AngebotFilterFactory.getInstance()
-								.createFKAngebotOffene(),
-						zeitdatenDto.getIBelegartid());
+								.createFKAngebotOffene(), selectedBelegIId);
 		new DialogQuery(panelQueryFLRAngebot);
 
 	}
@@ -921,11 +1135,7 @@ public class PanelZeitdaten extends PanelBasis implements
 						this));
 		wcbRelativ.setVisible(false);
 		wlaZeit.setText(LPMain.getTextRespectUISPr("lp.zeit"));
-		wcoSonderTaetigkeit.setMandatoryField(true);
-		wcoBeleg.setMandatoryField(true);
-		wcoBeleg.addActionListener(new PanelZeitdaten_wcoBeleg_actionAdapter(
-				this));
-		wcoBeleg.setVisible(false);
+
 		wcoSonderTaetigkeit
 				.addActionListener(new PanelZeitdaten_wcoSonderTaetigkeit_actionAdapter(
 						this));
@@ -939,16 +1149,25 @@ public class PanelZeitdaten extends PanelBasis implements
 
 		wtfPosition.setColumnsMax(Facade.MAX_UNBESCHRAENKT);
 
-		java.sql.Timestamp t = DelegateFactory
-				.getInstance()
-				.getZeiterfassungDelegate()
-				.pruefeObAmLetztenBuchungstagKommtUndGehtGebuchtWurde(
-						internalFrameZeiterfassung.getPersonalDto().getIId());
-		if (t != null) {
-			wdfDatum.setTimestamp(t);
-		} else {
+		if (internalFrameZeiterfassung.getTabbedPaneZeiterfassung()
+				.isBVonBisErfassung() == true
+				&& internalFrameZeiterfassung.getTabbedPaneZeiterfassung()
+						.isBKommtGehtBuchen() == false) {
 			wdfDatum.setTimestamp(new java.sql.Timestamp(System
 					.currentTimeMillis()));
+		} else {
+			java.sql.Timestamp t = DelegateFactory
+					.getInstance()
+					.getZeiterfassungDelegate()
+					.pruefeObAmLetztenBuchungstagKommtUndGehtGebuchtWurde(
+							internalFrameZeiterfassung.getPersonalDto()
+									.getIId());
+			if (t != null) {
+				wdfDatum.setTimestamp(t);
+			} else {
+				wdfDatum.setTimestamp(new java.sql.Timestamp(System
+						.currentTimeMillis()));
+			}
 		}
 
 		wdfDatum.getDisplay().addPropertyChangeListener(this);
@@ -981,7 +1200,7 @@ public class PanelZeitdaten extends PanelBasis implements
 		if (parameter.getCWert() != null && parameter.getCWert().equals("1")) {
 			bZeitdatenAufErledigteBuchbar = true;
 		}
-		
+
 		parameter = (ParametermandantDto) DelegateFactory
 				.getInstance()
 				.getParameterDelegate()
@@ -993,7 +1212,6 @@ public class PanelZeitdaten extends PanelBasis implements
 		if (parameter.getCWert() != null && parameter.getCWert().equals("1")) {
 			bZeitdatenAufAngelegteLoseBuchbar = true;
 		}
-		
 
 		parameter = (ParametermandantDto) DelegateFactory
 				.getInstance()
@@ -1018,13 +1236,11 @@ public class PanelZeitdaten extends PanelBasis implements
 				.setText(LPMain
 						.getTextRespectUISPr("zeiterfassung.zeitdaten.tagesarbeitszeit"));
 
-		wbuBeleg.setText(LPMain.getTextRespectUISPr("lp.beleg") + "...");
-		wbuBeleg.setActionCommand(PanelZeitdaten.ACTION_SPECIAL_BELEG_FROM_LISTE);
-		wbuBeleg.addActionListener(this);
 		wbuPosition.setText(LPMain.getTextRespectUISPr("lp.position") + "...");
 		wbuPosition
 				.setActionCommand(PanelZeitdaten.ACTION_SPECIAL_POSITION_FROM_LISTE);
 		wbuPosition.addActionListener(this);
+		wbuPosition.setMnemonic('O');
 		wtfBeleg.setActivatable(false);
 		wtfBeleg.setText("");
 		wtfBeleg.setColumnsMax(com.lp.server.util.Facade.MAX_UNBESCHRAENKT);
@@ -1032,34 +1248,42 @@ public class PanelZeitdaten extends PanelBasis implements
 		wtfPosition.setText("");
 		wtfBemerkung.setColumnsMax(ZeiterfassungFac.MAX_ZEITDATEN_BEMERKUNG);
 		wtfZeit.setMandatoryField(true);
-		wrbSondertaetigkeit
-				.setText(LPMain
-						.getTextRespectUISPr("zeiterfassung.zeitdaten.sondertaetigkeit"));
+
 		wcbRelativ.setText(LPMain
 				.getTextRespectUISPr("zeiterfassung.relativezeitbuchung"));
-		wrbSondertaetigkeit
-				.addActionListener(new PanelZeitdaten_wrbSondertaetigkeit_actionAdapter(
-						this));
-		wrbAuftragszeit.setText(LPMain
-				.getTextRespectUISPr("zeiterfassung.zeitdaten.auftragszeit"));
-		wrbAuftragszeit
-				.addActionListener(new PanelZeitdaten_wrbAuftragszeit_actionAdapter(
-						this));
+
 		wbuTaetigkeit.setText(LPMain.getTextRespectUISPr("lp.taetigkeit")
 				+ "...");
 		wbuTaetigkeit
 				.setActionCommand(PanelZeitdaten.ACTION_SPECIAL_TAETIGKEIT_FROM_LISTE);
 		wbuTaetigkeit.addActionListener(this);
+		wbuTaetigkeit.setMnemonic('I');
 
-		wrbSondertaetigkeit.setSelected(true);
 		wlaBemerkung.setText(LPMain.getTextRespectUISPr("lp.bemerkung"));
+
+		wlaBemerkung.setDisplayedMnemonic('B');
+		wlaBemerkung.setLabelFor(wtfBemerkung);
+
+		wlaZeit.setDisplayedMnemonic('Z');
+		wlaZeit.setLabelFor(wtfZeit);
+
+		wcbRelativ.setMnemonic('R');
+
+		wlaDatum.setDisplayedMnemonic('D');
+		wlaDatum.setLabelFor(wdfDatum);
 
 		wbuZeitmodell.setText(LPMain.getTextRespectUISPr("lp.zeitmodell")
 				+ "...");
 		wbuZeitmodell
 				.setActionCommand(PanelZeitdaten.ACTION_SPECIAL_ZEITMODELL_FROM_LISTE);
 		wbuZeitmodell.addActionListener(this);
+		wbuZeitmodell.setMnemonic('M');
 
+		wlaDauer = new WrapperLabel(LPMain.getTextRespectUISPr("lp.dauer"));
+		VonBisDauerListener vbdListener = new VonBisDauerListener();
+		wdfDauer.addValueChangedListener(vbdListener);
+		wtfZeit.addValueChangedListener(vbdListener);
+		wtfZeit_Bis.addValueChangedListener(vbdListener);
 
 		String[] aWhichButtonIUse = null;
 
@@ -1073,67 +1297,197 @@ public class PanelZeitdaten extends PanelBasis implements
 		}
 
 		enableToolsPanelButtons(aWhichButtonIUse);
-		buttonGroup1.add(wrbSondertaetigkeit);
-		buttonGroup1.add(wrbAuftragszeit);
-		
-		jpaWorkingOn = new JPanel(new MigLayout("wrap 7, hidemode 3", "[10%,fill|50!,fill|fill|50!,fill|30%,fill|20%,fill|30%,fill]"));
-		
-		this.add(jpaButtonAction, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(0, 0, 0, 0), 0, 0));
-		this.add(jpaWorkingOn, new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0, GridBagConstraints.NORTH, GridBagConstraints.BOTH, new Insets(0, 0, 9, 0), 0, 0));
-		this.add(getPanelStatusbar(), new GridBagConstraints(0, 2, 1, 1, 1.0, 0.0, GridBagConstraints.SOUTH, GridBagConstraints.BOTH, new Insets(0, 0, 0, 0), 0, 0));
-		
-		jpaWorkingOn.add(wlaBetriebskalender, "skip 4");
+
+		jpaWorkingOn = new JPanel(
+				new MigLayout("wrap 7, hidemode 3",
+						"[12.5%,fill|12.5%,fill|12.5%,fill|12.5%,fill|12.5%,fill|12.5%,fill|25%,fill]"));
+
+		this.add(jpaButtonAction, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(0,
+						0, 0, 0), 0, 0));
+		this.add(jpaWorkingOn, new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0,
+				GridBagConstraints.NORTH, GridBagConstraints.BOTH, new Insets(
+						0, 0, 9, 0), 0, 0));
+		this.add(getPanelStatusbar(), new GridBagConstraints(0, 2, 1, 1, 1.0,
+				0.0, GridBagConstraints.SOUTH, GridBagConstraints.BOTH,
+				new Insets(0, 0, 0, 0), 0, 0));
+
+		jpaWorkingOn.add(wlaBetriebskalender, "skip 3, span 2");
 		jpaWorkingOn.add(wlaSonderzeiten, "span");
 
 		jpaWorkingOn.add(wlaDatum);
-		jpaWorkingOn.add(wbuTagZurueck);
-		jpaWorkingOn.add(wdfDatum, "grow, center");
-		jpaWorkingOn.add(wbuNaechsterTag);
-		jpaWorkingOn.add(wlaKalenderwochewochentag);
+		JPanel panelDatum = new JPanel(new MigLayout("wrap 3, insets 0",
+				"[fill||fill]"));
+		panelDatum.add(wbuTagZurueck);
+		panelDatum.add(wdfDatum, "w 0:pref:max");
+		panelDatum.add(wbuNaechsterTag);
+		jpaWorkingOn.add(panelDatum, "span 3");
+		jpaWorkingOn.add(wlaKalenderwochewochentag, "span 2");
 		jpaWorkingOn.add(wlaErfuellungsgrad, "span");
-		
+
 		jpaWorkingOn.add(wlaZeit);
-		jpaWorkingOn.add(wtfZeit, "skip");
-		jpaWorkingOn.add(wcbRelativ, "hidemode 0, span 2");
-		jpaWorkingOn.add(wlaTagesarbeitszeit, "span");
+		jpaWorkingOn.add(wtfZeit, "split, span 3, grow 50");
 
-		jpaWorkingOn.add(wrbSondertaetigkeit, "span 2");
-		jpaWorkingOn.add(wrbAuftragszeit, "span 2");
+		if (internalFrameZeiterfassung.getTabbedPaneZeiterfassung()
+				.isBVonBisErfassung()) {
+			jpaWorkingOn.add(new WrapperLabel("-"), "grow 0, c");
+			jpaWorkingOn.add(wtfZeit_Bis, "grow 50, hidemode 0");
+			jpaWorkingOn.add(wlaDauer, "skip, hidemode 0");
+			jpaWorkingOn.add(wdfDauer, "hidemode 0");
+			jpaWorkingOn.add(wlaTagesarbeitszeit, "span, wrap");
+		} else {
+			jpaWorkingOn.add(wcbRelativ, "hidemode 0, grow");
+			jpaWorkingOn.add(wlaTagesarbeitszeit, "skip, span, wrap");
+		}
+
+		wbuKommt.setText(DelegateFactory.getInstance()
+				.getZeiterfassungDelegate()
+				.taetigkeitFindByPrimaryKey(taetigkeitIIdKommt)
+				.getBezeichnung());
+		wbuKommt.setActionCommand(PanelZeitdaten.ACTION_SPECIAL_KOMMT);
+		wbuKommt.addActionListener(this);
+		wbuKommt.setMnemonic('K');
+
+		wbuUnter.setText(DelegateFactory.getInstance()
+				.getZeiterfassungDelegate()
+				.taetigkeitFindByPrimaryKey(taetigkeitIIdUnter)
+				.getBezeichnung());
+		wbuUnter.setActionCommand(PanelZeitdaten.ACTION_SPECIAL_UNTER);
+		wbuUnter.addActionListener(this);
+		wbuUnter.setMnemonic('U');
+
+		wbuEnde.setText(DelegateFactory.getInstance()
+				.getZeiterfassungDelegate()
+				.taetigkeitFindByPrimaryKey(taetigkeitIIdEnde).getBezeichnung());
+		wbuEnde.setActionCommand(PanelZeitdaten.ACTION_SPECIAL_ENDE);
+		wbuEnde.addActionListener(this);
+		wbuEnde.setMnemonic('E');
+
+		wbuGeht.setText(DelegateFactory.getInstance()
+				.getZeiterfassungDelegate()
+				.taetigkeitFindByPrimaryKey(taetigkeitIIdGeht).getBezeichnung());
+		wbuGeht.setActionCommand(PanelZeitdaten.ACTION_SPECIAL_GEHT);
+		wbuGeht.addActionListener(this);
+		wbuGeht.setMnemonic('G');
+
+		if (internalFrameZeiterfassung.getTabbedPaneZeiterfassung()
+				.isBKommtGehtBuchen() == false
+				&& internalFrameZeiterfassung.getTabbedPaneZeiterfassung()
+						.isBVonBisErfassung() == true) {
+			jpaWorkingOn.add(new WrapperLabel(""));
+		} else {
+			jpaWorkingOn.add(wbuKommt);
+		}
+
+		if (internalFrameZeiterfassung.getTabbedPaneZeiterfassung()
+				.isBVonBisErfassung()) {
+			jpaWorkingOn.add(new WrapperLabel(""));
+		} else {
+			jpaWorkingOn.add(wbuUnter);
+		}
+
+		if (internalFrameZeiterfassung.getTabbedPaneZeiterfassung()
+				.isBKommtGehtBuchen() == false
+				&& internalFrameZeiterfassung.getTabbedPaneZeiterfassung()
+						.isBVonBisErfassung() == true) {
+			jpaWorkingOn.add(new WrapperLabel(""));
+		} else {
+			jpaWorkingOn.add(wbuGeht);
+		}
+
+		if (getInternalFrameZeiterfassung().getTabbedPaneZeiterfassung()
+				.isBVonBisErfassung()) {
+			jpaWorkingOn.add(new WrapperLabel(""));
+		} else {
+			jpaWorkingOn.add(wbuEnde);
+		}
+
 		jpaWorkingOn.add(wcoSonderTaetigkeit);
-		jpaWorkingOn.add(wcoBeleg);
 
-		JComponent jcZeitmodell;
 		if (DelegateFactory
 				.getInstance()
 				.getTheJudgeDelegate()
 				.hatRecht(
 						RechteFac.RECHT_PERS_ZEITERFASSUNG_ZEITMODELL_TAGEWEISE_AENDERN)) {
-			jcZeitmodell = wbuZeitmodell;
+			jpaWorkingOn.add(wbuZeitmodell);
 		} else {
-			jcZeitmodell = new WrapperLabel(
-					LPMain.getTextRespectUISPr("lp.zeitmodell"));
+			jpaWorkingOn.add(new WrapperLabel(LPMain
+					.getTextRespectUISPr("lp.zeitmodell")));
 		}
-		jpaWorkingOn.add(jcZeitmodell);
+
 		jpaWorkingOn.add(wtfZeitmodell, "span");
 
-		jpaWorkingOn.add(wbuBeleg, "span 2");
-		jpaWorkingOn.add(wtfBeleg, "span 3");
-		jpaWorkingOn.add(wefKommentar, "grow, span 3 5");
+		wbuProjekt.setText(LPMain.getTextRespectUISPr("label.projekt"));
+		wbuProjekt
+				.setActionCommand(PanelZeitdaten.ACTION_SPECIAL_PROJEKT_FROM_LISTE);
+		wbuProjekt.addActionListener(this);
+		wbuProjekt.setMnemonic('P');
 
-		jpaWorkingOn.add(wbuPosition, "span 2");
-		jpaWorkingOn.add(wtfPosition, "span 3");
+		wbuAngebot.setText(LPMain.getTextRespectUISPr("angb.angebot"));
+		wbuAngebot
+				.setActionCommand(PanelZeitdaten.ACTION_SPECIAL_ANGEBOT_FROM_LISTE);
+		wbuAngebot.addActionListener(this);
+		wbuAngebot.setMnemonic('T');
 
-		jpaWorkingOn.add(wbuTaetigkeit, "span 2");
-		jpaWorkingOn.add(wtfTaetigkeit, "span 3");
+		wbuAuftrag.setText(LPMain.getTextRespectUISPr("auft.auftrag"));
+		wbuAuftrag
+				.setActionCommand(PanelZeitdaten.ACTION_SPECIAL_AUFTRAG_FROM_LISTE);
+		wbuAuftrag.addActionListener(this);
+		wbuAuftrag.setMnemonic('A');
 
-		jpaWorkingOn.add(wlaBemerkung, "span 2, top");
-		jpaWorkingOn.add(wtfBemerkung, "span 3, top");
+		wbuLos.setText(LPMain.getTextRespectUISPr("fert.tab.unten.los.title"));
+		wbuLos.setActionCommand(PanelZeitdaten.ACTION_SPECIAL_LOS_FROM_LISTE);
+		wbuLos.addActionListener(this);
+		wbuLos.setMnemonic('L');
+
+		Map<?, ?> m = DelegateFactory.getInstance().getZeiterfassungDelegate()
+				.getBebuchbareBelegarten();
+		if (m.containsKey(LocaleFac.BELEGART_PROJEKT)) {
+			jpaWorkingOn.add(wbuProjekt);
+		} else {
+			jpaWorkingOn.add(new WrapperLabel(""));
+		}
+
+		if (m.containsKey(LocaleFac.BELEGART_ANGEBOT)) {
+			jpaWorkingOn.add(wbuAngebot);
+		} else {
+			jpaWorkingOn.add(new WrapperLabel(""));
+		}
+
+		if (m.containsKey(LocaleFac.BELEGART_AUFTRAG)) {
+			jpaWorkingOn.add(wbuAuftrag);
+		} else {
+			jpaWorkingOn.add(new WrapperLabel(""));
+		}
+
+		if (m.containsKey(LocaleFac.BELEGART_LOS)) {
+			jpaWorkingOn.add(wbuLos);
+		} else {
+			jpaWorkingOn.add(new WrapperLabel(""));
+		}
+
+		jpaWorkingOn
+				.add(wefKommentar, "skip, span 3 5, wrap, w 0:0:max, pushx");
+
+		jpaWorkingOn.add(wlaBeleg);
+		jpaWorkingOn.add(wbuBeleg.getWrapperButtonGoTo(),
+				"split 2, grow 5, span 4");
+		jpaWorkingOn.add(wtfBeleg, "grow");
+
+		jpaWorkingOn.add(wbuPosition);
+		jpaWorkingOn.add(wtfPosition, "span 4");
+
+		jpaWorkingOn.add(wbuTaetigkeit);
+		jpaWorkingOn.add(wtfTaetigkeit, "span 4");
+
+		jpaWorkingOn.add(wlaBemerkung, " top");
+		jpaWorkingOn.add(wtfBemerkung, "span 4, top");
 
 		wlaFehlerInZeitdaten.setForeground(Color.RED);
-		wlaFehlerInZeitdaten.setMinimumSize(new Dimension(200, HelperClient
+		wlaFehlerInZeitdaten.setMinimumSize(new Dimension(400, HelperClient
 				.getToolsPanelButtonDimension().height));
-		wlaFehlerInZeitdaten.setPreferredSize(new Dimension(200,
-				HelperClient.getToolsPanelButtonDimension().height));
+		wlaFehlerInZeitdaten.setPreferredSize(new Dimension(400, HelperClient
+				.getToolsPanelButtonDimension().height));
 		jpaButtonAction.add(wlaFehlerInZeitdaten);
 		wlaOffeneZeitverteilung.setMinimumSize(new Dimension(200, HelperClient
 				.getToolsPanelButtonDimension().height));
@@ -1162,6 +1516,29 @@ public class PanelZeitdaten extends PanelBasis implements
 		c.set(Calendar.MILLISECOND, 0);
 		c.set(Calendar.SECOND, 0);
 		wtfZeit.setTime(new java.sql.Time(c.getTimeInMillis()));
+
+		wtfPosition.setMandatoryField(true);
+		wtfBeleg.setMandatoryField(true);
+		wtfTaetigkeit.setMandatoryField(true);
+		if (internalFrameZeiterfassung.getTabbedPaneZeiterfassung()
+				.isBVonBisErfassung()) {
+
+			// PJ18440
+			Timestamp tsLetzteZeit = DelegateFactory
+					.getInstance()
+					.getZeiterfassungDelegate()
+					.getLetzteGebuchteZeit(
+							internalFrameZeiterfassung.getPersonalDto()
+									.getIId(), ts);
+
+			if (tsLetzteZeit != null) {
+				wtfZeit.setTime(new java.sql.Time(tsLetzteZeit.getTime()));
+				wtfZeit_Bis.setTime(new java.sql.Time(tsLetzteZeit.getTime()));
+			} else {
+				wtfZeit_Bis.setTime(new java.sql.Time(c.getTimeInMillis()));
+			}
+
+		}
 		wcbRelativ.setVisible(true);
 
 		wbuNaechsterTag.setEnabled(false);
@@ -1172,50 +1549,6 @@ public class PanelZeitdaten extends PanelBasis implements
 		Object key = wcoSonderTaetigkeit.getKeyOfSelectedItem();
 		wcoSonderTaetigkeit.setMap(sondertaetigkeitenOhneVersteckt);
 		wcoSonderTaetigkeit.setKeyOfSelectedItem(key);
-		if (wrbAuftragszeit.isSelected()) {
-			wbuBeleg.setEnabled(true);
-			wcoBeleg.setEnabled(true);
-			wbuPosition.setEnabled(true);
-			wbuTaetigkeit.setEnabled(true);
-
-			wcbRelativ.setEnabled(true);
-
-			wtfBeleg.setMandatoryField(true);
-			wtfPosition.setMandatoryField(true);
-			wtfTaetigkeit.setMandatoryField(true);
-			wcoSonderTaetigkeit.setEnabled(false);
-
-			wcoSonderTaetigkeit.setVisible(false);
-			wcoBeleg.setVisible(true);
-			wcoBeleg.setMandatoryField(true);
-
-			wcoBeleg.setFocusable(true);
-			jpaWorkingOn.repaint();
-			// LPMain.getInstance().getDesktop().repaint();
-
-		}
-		if (wrbSondertaetigkeit.isSelected()) {
-			wbuBeleg.setActivatable(false);
-			wcoBeleg.setActivatable(false);
-
-			wbuPosition.setActivatable(false);
-			wbuTaetigkeit.setActivatable(false);
-			wcbRelativ.setEnabled(false);
-			wcbRelativ.setSelected(false);
-
-			wtfBeleg.setMandatoryField(false);
-			wtfPosition.setMandatoryField(false);
-			wtfTaetigkeit.setMandatoryField(false);
-			wcoSonderTaetigkeit.setActivatable(true);
-			wcoSonderTaetigkeit.setEnabled(true);
-
-			wcoBeleg.setVisible(false);
-			wcoBeleg.setMandatoryField(false);
-
-			wcoSonderTaetigkeit.setVisible(true);
-			jpaWorkingOn.repaint();
-
-		}
 
 		if (internalFrameZeiterfassung.getTabbedPaneZeiterfassung()
 				.getPanelQueryZeitdaten().getSelectedId() == null) {
@@ -1236,39 +1569,272 @@ public class PanelZeitdaten extends PanelBasis implements
 
 	}
 
+	private ZeitdatenDto neuesZeitdatenDtoFuerHeuteTaetigkeitVorbesetzen(
+			Integer taetigkeitIId) throws Throwable {
+		ZeitdatenDto zDto = new ZeitdatenDto();
+		zDto.setTaetigkeitIId(taetigkeitIId);
+		zDto.setPersonalIId(internalFrameZeiterfassung.getPersonalDto()
+				.getIId());
+
+		Calendar c = Calendar.getInstance();
+		c.setTimeInMillis(System.currentTimeMillis());
+		c.set(Calendar.SECOND, 0);
+		c.set(Calendar.MILLISECOND, 0);
+
+		java.sql.Timestamp tsHeute = new Timestamp(c.getTimeInMillis());
+
+		zDto.setTZeit(tsHeute);
+		zDto.setCBemerkungZuBelegart(wtfBemerkung.getText());
+
+		zDto.setCWowurdegebucht("Client: " + Helper.getPCName());
+
+		zDto.setXKommentar(wefKommentar.getText());
+		zDto.setTaetigkeitIId(taetigkeitIId);
+
+		return zDto;
+	}
+
+	private void neuesZeitdatenDtoFuerHeuteBelegSpeichern(String belegartCNr,
+			Integer belegIId, Integer belegpositionIId) throws Throwable {
+		ZeitdatenDto zDto = new ZeitdatenDto();
+		zDto.setCBelegartnr(belegartCNr);
+		zDto.setIBelegartid(belegIId);
+		zDto.setIBelegartpositionid(belegpositionIId);
+		zDto.setPersonalIId(internalFrameZeiterfassung.getPersonalDto()
+				.getIId());
+
+		Calendar c = Calendar.getInstance();
+		c.setTimeInMillis(System.currentTimeMillis());
+		c.set(Calendar.SECOND, 0);
+		c.set(Calendar.MILLISECOND, 0);
+
+		java.sql.Timestamp tsHeute = new Timestamp(c.getTimeInMillis());
+		zDto.setTZeit(tsHeute);
+		zDto.setCBemerkungZuBelegart(wtfBemerkung.getText());
+
+		zDto.setCWowurdegebucht("Client: " + Helper.getPCName());
+
+		zDto.setXKommentar(wefKommentar.getText());
+
+		if (belegartCNr.equals(LocaleFac.BELEGART_AUFTRAG)) {
+			com.lp.server.auftrag.service.AuftragpositionDto[] auftragpositionDtos = DelegateFactory
+					.getInstance().getAuftragpositionDelegate()
+					.auftragpositionFindByAuftrag(belegIId);
+
+			if (auftragpositionDtos != null && auftragpositionDtos.length > 0) {
+				for (int i = 0; i < auftragpositionDtos.length; i++) {
+					AuftragpositionDto dto = auftragpositionDtos[i];
+
+					if (dto.getAuftragpositionstatusCNr() != null) {
+						zDto.setIBelegartpositionid(auftragpositionDtos[0]
+								.getIId());
+						if (auftragpositionDtos[0].getArtikelIId() != null
+								&& auftragpositionDtos[0].getCBez() == null) {
+							zDto.setArtikelIId(auftragpositionDtos[0]
+									.getArtikelIId());
+							break;
+						}
+					}
+				}
+
+			} else {
+				DialogFactory
+						.showModalDialog(
+								LPMain.getTextRespectUISPr("lp.error"),
+								LPMain.getTextRespectUISPr("zeiterfassung.auftragkeinepositionen"));
+				return;
+			}
+		}
+
+		// AZ-Artikel
+
+		if (bArbeitszeitartikelauspersonalverfuegbarkeit) {
+			Integer artikelIId = DelegateFactory
+					.getInstance()
+					.getPersonalDelegate()
+					.getArtikelIIdHoechsterWertPersonalverfuegbarkeit(
+							internalFrameZeiterfassung.getPersonalDto()
+									.getIId());
+			if (artikelIId != null) {
+				ArtikelDto artikelDto = DelegateFactory.getInstance()
+						.getArtikelDelegate()
+						.artikelFindByPrimaryKey(artikelIId);
+
+				zDto.setArtikelIId(artikelDto.getIId());
+			}
+		}
+
+		if (zDto.getArtikelIId() == null) {
+			// DEFAULT-AZ-Artikel
+			ParametermandantDto parameter = (ParametermandantDto) DelegateFactory
+					.getInstance()
+					.getParameterDelegate()
+					.getParametermandant(
+							ParameterFac.PARAMETER_DEFAULT_ARBEITSZEITARTIKEL,
+							ParameterFac.KATEGORIE_ALLGEMEIN,
+							LPMain.getTheClient().getMandant());
+
+			if (parameter.getCWert() != null
+					&& !parameter.getCWertAsObject().equals("")) {
+				try {
+					ArtikelDto artikelDto = DelegateFactory.getInstance()
+							.getArtikelDelegate()
+							.artikelFindByCNr(parameter.getCWert());
+
+					zDto.setArtikelIId(artikelDto.getIId());
+				} catch (Throwable ex) {
+					throw new ExceptionLP(
+							EJBExceptionLP.FEHLER_DEFAULT_ARBEITSZEITARTIKEL_NICHT_DEFINIERT,
+							new Exception(
+									"FEHLER_DEFAULT_ARBEITSZEITARTIKEL_NICHT_DEFINIERT"));
+				}
+			}
+		}
+		try {
+			Integer iId = DelegateFactory.getInstance()
+					.getZeiterfassungDelegate().createZeitdaten(zDto);
+			setKeyWhenDetailPanel(iId);
+			internalFrameZeiterfassung.getTabbedPaneZeiterfassung()
+					.getPanelQueryZeitdaten().eventYouAreSelected(false);
+			internalFrameZeiterfassung.getTabbedPaneZeiterfassung()
+					.getPanelQueryZeitdaten().setSelectedId(iId);
+			internalFrameZeiterfassung.getTabbedPaneZeiterfassung()
+					.getPanelQueryZeitdaten().eventYouAreSelected(false);
+		} catch (ExceptionLP ex) {
+			// Wenn Kommt vorher, dann keine Nachfrage
+
+			if (ex.getICode() == EJBExceptionLP.FEHLER_DUPLICATE_UNIQUE) {
+
+				ZeitdatenDto zDto_Vorhanden = DelegateFactory
+						.getInstance()
+						.getZeiterfassungDelegate()
+						.zeitdatenFindByPersonalIIdTZeit(zDto.getPersonalIId(),
+								zDto.getTZeit());
+
+				if (zDto_Vorhanden != null
+						&& zDto_Vorhanden.getTaetigkeitIId() != null
+						&& zDto_Vorhanden.getTaetigkeitIId().equals(
+								taetigkeitIIdKommt)) {
+					zDto.setTZeit(new java.sql.Timestamp(zDto_Vorhanden
+							.getTZeit().getTime() + 10));
+
+					Integer iId = DelegateFactory.getInstance()
+							.getZeiterfassungDelegate().createZeitdaten(zDto);
+					setKeyWhenDetailPanel(iId);
+					internalFrameZeiterfassung.getTabbedPaneZeiterfassung()
+							.getPanelQueryZeitdaten()
+							.eventYouAreSelected(false);
+					internalFrameZeiterfassung.getTabbedPaneZeiterfassung()
+							.getPanelQueryZeitdaten().setSelectedId(iId);
+					internalFrameZeiterfassung.getTabbedPaneZeiterfassung()
+							.getPanelQueryZeitdaten()
+							.eventYouAreSelected(false);
+
+				}
+
+			} else {
+				handleException(ex, false);
+				return;
+			}
+
+		}
+
+	}
+
 	protected void eventActionSpecial(ActionEvent e) throws Throwable {
+
+		int lockstate = getLockedstateDetailMainKey().getIState();
+
 		if (e.getActionCommand().equals(ACTION_SPECIAL_TAETIGKEIT_FROM_LISTE)) {
 			dialogQueryArtikelFromListe(e);
-		} else if (e.getActionCommand().equals(ACTION_SPECIAL_BELEG_FROM_LISTE)) {
-			if (wcoBeleg.getKeyOfSelectedItem().equals(
-					LocaleFac.BELEGART_AUFTRAG)) {
-				dialogQueryAuftragFromListe(e);
-			} else if (wcoBeleg.getKeyOfSelectedItem().equals(
-					LocaleFac.BELEGART_LOS)) {
-				dialogQueryLosFromListe(e);
-			} else if (wcoBeleg.getKeyOfSelectedItem().equals(
-					LocaleFac.BELEGART_ANGEBOT)) {
-				dialogQueryAngebotFromListe(e);
-			} else if (wcoBeleg.getKeyOfSelectedItem().equals(
-					LocaleFac.BELEGART_PROJEKT)) {
-				dialogQueryProjektFromListe(e);
-			}
+		} else if (e.getActionCommand().equals(
+				ACTION_SPECIAL_PROJEKT_FROM_LISTE)) {
+			dialogQueryProjektFromListe(e);
+
+		} else if (e.getActionCommand().equals(
+				ACTION_SPECIAL_AUFTRAG_FROM_LISTE)) {
+
+			dialogQueryAuftragFromListe(e);
+
+		} else if (e.getActionCommand().equals(ACTION_SPECIAL_LOS_FROM_LISTE)) {
+
+			dialogQueryLosFromListe(e);
+
+		} else if (e.getActionCommand().equals(
+				ACTION_SPECIAL_ANGEBOT_FROM_LISTE)) {
+
+			dialogQueryAngebotFromListe(e);
+
 		} else if (e.getActionCommand().equals(
 				ACTION_SPECIAL_ZEITMODELL_FROM_LISTE)) {
 			dialogQueryZeitmodellFromListe(e);
+		} else if (e.getActionCommand().equals(ACTION_SPECIAL_KOMMT)
+				|| e.getActionCommand().equals(ACTION_SPECIAL_GEHT)
+				|| e.getActionCommand().equals(ACTION_SPECIAL_UNTER)
+				|| e.getActionCommand().equals(ACTION_SPECIAL_ENDE)) {
+
+			wtfPosition.setMandatoryField(false);
+			wtfBeleg.setMandatoryField(false);
+			wtfTaetigkeit.setMandatoryField(false);
+
+			Integer taetigkeitIId = null;
+			if (e.getActionCommand().equals(ACTION_SPECIAL_KOMMT)) {
+				taetigkeitIId = taetigkeitIIdKommt;
+			} else if (e.getActionCommand().equals(ACTION_SPECIAL_GEHT)) {
+				taetigkeitIId = taetigkeitIIdGeht;
+			} else if (e.getActionCommand().equals(ACTION_SPECIAL_UNTER)) {
+				taetigkeitIId = taetigkeitIIdUnter;
+			} else if (e.getActionCommand().equals(ACTION_SPECIAL_ENDE)) {
+				taetigkeitIId = taetigkeitIIdEnde;
+			}
+
+			// Wenn NICHT-Aendern-Modus
+
+			if (lockstate == PanelBasis.LOCK_IS_NOT_LOCKED
+					|| lockstate == PanelBasis.LOCK_FOR_EMPTY) {
+				ZeitdatenDto zDto = neuesZeitdatenDtoFuerHeuteTaetigkeitVorbesetzen(taetigkeitIId);
+				zDto.setCBemerkungZuBelegart(null);
+				Integer iId = DelegateFactory.getInstance()
+						.getZeiterfassungDelegate().createZeitdaten(zDto);
+				setKeyWhenDetailPanel(iId);
+				internalFrameZeiterfassung.getTabbedPaneZeiterfassung()
+						.getPanelQueryZeitdaten().eventYouAreSelected(false);
+				internalFrameZeiterfassung.getTabbedPaneZeiterfassung()
+						.getPanelQueryZeitdaten().setSelectedId(iId);
+				setKeyWhenDetailPanel(iId);
+				eventYouAreSelected(false);
+			} else if (lockstate == PanelBasis.LOCK_FOR_NEW
+					|| lockstate == PanelBasis.LOCK_IS_LOCKED_BY_ME) {
+				wcoSonderTaetigkeit.setKeyOfSelectedItem(taetigkeitIId);
+
+				if (bRechtNurBuchen == true
+						|| (bRechtNurBuchen == false && bDarfKommtGehtAendern == false)) {
+
+					if (!taetigkeitIId.equals(taetigkeitIIdEnde)) {
+
+						// Zeit auf jetzt setzen
+						Calendar c = Calendar.getInstance();
+						c.setTimeInMillis(System.currentTimeMillis());
+						c.set(Calendar.MILLISECOND, 0);
+						wtfZeit.setTime(new java.sql.Time(c.getTimeInMillis()));
+					}
+
+				}
+
+				eventActionSave(null, true);
+
+			}
+
 		} else if (e.getActionCommand().equals(
 				ACTION_SPECIAL_POSITION_FROM_LISTE)) {
 
-			if (selectedBeleg != null) {
-				if (wcoBeleg.getKeyOfSelectedItem().equals(
-						LocaleFac.BELEGART_AUFTRAG)) {
+			if (selectedBeleg != null && selectedBelegart != null) {
+				if (selectedBelegart.equals(LocaleFac.BELEGART_AUFTRAG)) {
 
 					dialogQueryAuftragpositionFromListe(e);
-				} else if (wcoBeleg.getKeyOfSelectedItem().equals(
-						LocaleFac.BELEGART_LOS)) {
+				} else if (selectedBelegart.equals(LocaleFac.BELEGART_LOS)) {
 					dialogQueryLospositionFromListe(e);
-				} else if (wcoBeleg.getKeyOfSelectedItem().equals(
-						LocaleFac.BELEGART_ANGEBOT)) {
+				} else if (selectedBelegart.equals(LocaleFac.BELEGART_ANGEBOT)) {
 					dialogQueryAngebotpositionFromListe(e);
 				}
 			} else {
@@ -1299,6 +1865,55 @@ public class PanelZeitdaten extends PanelBasis implements
 					.getZeiterfassungDelegate()
 					.getAllSprSondertaetigkeitenOhneVersteckt();
 		}
+
+		if (getInternalFrameZeiterfassung().getTabbedPaneZeiterfassung()
+				.isBVonBisErfassung()) {
+			// Ende entfernen
+			Integer taetigkeitIId_Ende = DelegateFactory.getInstance()
+					.getZeiterfassungDelegate()
+					.taetigkeitFindByCNr(ZeiterfassungFac.TAETIGKEIT_ENDE)
+					.getIId();
+
+			if (getInternalFrameZeiterfassung().getTabbedPaneZeiterfassung()
+					.isBKommtGehtBuchen() == false) {
+				// Ende entfernen
+				Integer taetigkeitIId_Kommt = DelegateFactory.getInstance()
+						.getZeiterfassungDelegate()
+						.taetigkeitFindByCNr(ZeiterfassungFac.TAETIGKEIT_KOMMT)
+						.getIId();
+				// Ende entfernen
+				Integer taetigkeitIId_Geht = DelegateFactory.getInstance()
+						.getZeiterfassungDelegate()
+						.taetigkeitFindByCNr(ZeiterfassungFac.TAETIGKEIT_GEHT)
+						.getIId();
+
+				if (sondertaetigkeitenMitVersteckt
+						.containsKey(taetigkeitIId_Kommt)) {
+					sondertaetigkeitenMitVersteckt.remove(taetigkeitIId_Kommt);
+				}
+				if (sondertaetigkeitenOhneVersteckt
+						.containsKey(taetigkeitIId_Kommt)) {
+					sondertaetigkeitenOhneVersteckt.remove(taetigkeitIId_Kommt);
+				}
+				if (sondertaetigkeitenMitVersteckt
+						.containsKey(taetigkeitIId_Geht)) {
+					sondertaetigkeitenMitVersteckt.remove(taetigkeitIId_Geht);
+				}
+				if (sondertaetigkeitenOhneVersteckt
+						.containsKey(taetigkeitIId_Geht)) {
+					sondertaetigkeitenOhneVersteckt.remove(taetigkeitIId_Geht);
+				}
+
+			}
+
+			if (sondertaetigkeitenMitVersteckt.containsKey(taetigkeitIId_Ende)) {
+				sondertaetigkeitenMitVersteckt.remove(taetigkeitIId_Ende);
+			}
+			if (sondertaetigkeitenOhneVersteckt.containsKey(taetigkeitIId_Ende)) {
+				sondertaetigkeitenOhneVersteckt.remove(taetigkeitIId_Ende);
+			}
+		}
+
 		wcoSonderTaetigkeit.setMap(sondertaetigkeitenMitVersteckt);
 
 		boolean bHatAngebotszeiterfassung = false;
@@ -1328,9 +1943,10 @@ public class PanelZeitdaten extends PanelBasis implements
 				&& !LPMain.getInstance().getDesktop()
 						.darfAnwenderAufModulZugreifen(LocaleFac.BELEGART_LOS)
 				&& !bHatAngebotszeiterfassung && !bHatProjektzeiterfassung) {
-			wrbAuftragszeit.setVisible(false);
 
+			wlaBeleg.setVisible(false);
 			wbuBeleg.setVisible(false);
+			wbuBeleg.getWrapperButtonGoTo().setVisible(false);
 			wtfBeleg.setVisible(false);
 			wbuPosition.setVisible(false);
 			wtfPosition.setVisible(false);
@@ -1338,9 +1954,6 @@ public class PanelZeitdaten extends PanelBasis implements
 			wtfTaetigkeit.setVisible(false);
 
 		}
-
-		wcoBeleg.setMap(DelegateFactory.getInstance()
-				.getZeiterfassungDelegate().getBebuchbareBelegarten());
 
 		wefKommentar.setText(null);
 	}
@@ -1361,7 +1974,16 @@ public class PanelZeitdaten extends PanelBasis implements
 		cDatum.set(Calendar.MINUTE, cZeit.get(Calendar.MINUTE));
 		cDatum.set(Calendar.SECOND, cZeit.get(Calendar.SECOND));
 		cDatum.set(Calendar.MILLISECOND, cZeit.get(Calendar.MILLISECOND));
-		ts.setTime(cDatum.getTimeInMillis());
+
+		if (internalFrameZeiterfassung.getTabbedPaneZeiterfassung()
+				.isBVonBisErfassung()) {
+
+			ts.setTime(cDatum.getTimeInMillis() + 10);
+
+		} else {
+			ts.setTime(cDatum.getTimeInMillis());
+		}
+
 		zeitdatenDto.setTZeit(ts);
 		zeitdatenDto.setCBemerkungZuBelegart(wtfBemerkung.getText());
 
@@ -1369,7 +1991,33 @@ public class PanelZeitdaten extends PanelBasis implements
 
 		zeitdatenDto.setXKommentar(wefKommentar.getText());
 
-		if (wrbSondertaetigkeit.isSelected()) {
+		zeitdatenDto.setCBelegartnr(selectedBelegart);
+		zeitdatenDto.setIBelegartid(selectedBeleg);
+
+		// Bis
+
+		if (internalFrameZeiterfassung.getTabbedPaneZeiterfassung()
+				.isBVonBisErfassung()) {
+			java.sql.Timestamp tsBis = wdfDatum.getTimestamp();
+			tsBis = Helper.cutTimestamp(tsBis);
+
+			Calendar cDatumBis = Calendar.getInstance();
+			cDatumBis.setTimeInMillis(tsBis.getTime());
+
+			Calendar cZeitBis = Calendar.getInstance();
+			cZeitBis.setTimeInMillis(wtfZeit_Bis.getTime().getTime());
+
+			cDatumBis.set(Calendar.HOUR_OF_DAY,
+					cZeitBis.get(Calendar.HOUR_OF_DAY));
+			cDatumBis.set(Calendar.MINUTE, cZeitBis.get(Calendar.MINUTE));
+			cDatumBis.set(Calendar.SECOND, cZeitBis.get(Calendar.SECOND));
+			cDatumBis.set(Calendar.MILLISECOND,
+					cZeitBis.get(Calendar.MILLISECOND));
+			tsBis.setTime(cDatumBis.getTimeInMillis());
+			zeitdatenDto.settZeit_Bis(tsBis);
+		}
+
+		if (wcoSonderTaetigkeit.getKeyOfSelectedItem() != null) {
 			zeitdatenDto.setCBelegartnr(null);
 			zeitdatenDto.setIBelegartpositionid(null);
 			zeitdatenDto.setTaetigkeitIId((Integer) wcoSonderTaetigkeit
@@ -1386,8 +2034,7 @@ public class PanelZeitdaten extends PanelBasis implements
 		wbuNaechsterTag.setEnabled(false);
 		wbuZeitmodell.setEnabled(false);
 
-		if (wrbSondertaetigkeit.isSelected()
-				&& wcoSonderTaetigkeit.getKeyOfSelectedItem() != null) {
+		if (zeitdatenDto.getTaetigkeitIId() != null) {
 			Integer telefonIId = DelegateFactory.getInstance()
 					.getZeiterfassungDelegate()
 					.taetigkeitFindByCNr(ZeiterfassungFac.TAETIGKEIT_TELEFON)
@@ -1401,6 +2048,15 @@ public class PanelZeitdaten extends PanelBasis implements
 			}
 		}
 		super.eventActionUpdate(aE, bNeedNoUpdateI);
+
+		wbuKommt.setEnabled(false);
+		wbuGeht.setEnabled(false);
+		wbuUnter.setEnabled(false);
+		wbuEnde.setEnabled(false);
+
+		wcoSonderTaetigkeit.setKeyOfSelectedItem(zeitdatenDto
+				.getTaetigkeitIId());
+
 	}
 
 	protected void eventActionDelete(ActionEvent e,
@@ -1409,8 +2065,7 @@ public class PanelZeitdaten extends PanelBasis implements
 
 		if (pruefeObBuchungMoeglich()) {
 
-			if (wrbSondertaetigkeit.isSelected()
-					&& wcoSonderTaetigkeit.getKeyOfSelectedItem() != null) {
+			if (zeitdatenDto.getTaetigkeitIId() != null) {
 				Integer telefonIId = DelegateFactory
 						.getInstance()
 						.getZeiterfassungDelegate()
@@ -1438,14 +2093,51 @@ public class PanelZeitdaten extends PanelBasis implements
 			throws Throwable {
 		if (allMandatoryFieldsSetDlg()) {
 			components2Dto();
-			//
+
+			if (internalFrameZeiterfassung.getTabbedPaneZeiterfassung()
+					.isBVonBisErfassung()) {
+
+				if (wcoSonderTaetigkeit.getKeyOfSelectedItem() == null
+						&& zeitdatenDto.gettZeit_Bis() != null
+						&& zeitdatenDto.gettZeit_Bis().before(
+								zeitdatenDto.getTZeit())) {
+					DialogFactory
+							.showModalDialog(
+									LPMain.getTextRespectUISPr("lp.error"),
+									LPMain.getTextRespectUISPr("zeiterfassung.error.bisvorvon"));
+					return;
+				}
+
+				if (wcoSonderTaetigkeit.getKeyOfSelectedItem() != null) {
+
+					if (wcoSonderTaetigkeit.getKeyOfSelectedItem().equals(
+							taetigkeitIIdKommt)
+							|| wcoSonderTaetigkeit.getKeyOfSelectedItem()
+									.equals(taetigkeitIIdGeht)) {
+
+					} else {
+						if (zeitdatenDto.gettZeit_Bis().before(
+								zeitdatenDto.getTZeit())) {
+
+							DialogFactory
+									.showModalDialog(
+											LPMain.getTextRespectUISPr("lp.error"),
+											LPMain.getTextRespectUISPr("zeiterfassung.error.bisvorvon"));
+							return;
+						}
+
+					}
+
+				}
+
+			}
+
 			if (pruefeObBuchungMoeglich()) {
 
 				//
 				try {
 
-					if (wrbSondertaetigkeit.isSelected()
-							&& wcoSonderTaetigkeit.getKeyOfSelectedItem() != null) {
+					if (zeitdatenDto.getTaetigkeitIId() != null) {
 						Integer telefonIId = DelegateFactory
 								.getInstance()
 								.getZeiterfassungDelegate()
@@ -1464,7 +2156,10 @@ public class PanelZeitdaten extends PanelBasis implements
 
 					if (zeitdatenDto.getIId() == null) {
 
-						if (Helper.short2boolean(wcbRelativ.getShort())) {
+						if (Helper.short2boolean(wcbRelativ.getShort())
+								&& internalFrameZeiterfassung
+										.getTabbedPaneZeiterfassung()
+										.isBVonBisErfassung() == false) {
 							try {
 								zeitdatenDto.setIId(DelegateFactory
 										.getInstance()
@@ -1536,6 +2231,8 @@ public class PanelZeitdaten extends PanelBasis implements
 																	.getTime() + 10));
 										} else if (iOption == JOptionPane.CANCEL_OPTION) {
 											return;
+										} else if (iOption == JOptionPane.CLOSED_OPTION) {
+											return;
 										}
 									} else {
 										handleException(ex, false);
@@ -1546,12 +2243,12 @@ public class PanelZeitdaten extends PanelBasis implements
 							setKeyWhenDetailPanel(zeitdatenDto.getIId());
 						}
 					} else {
-						boolean bGespreichert = false;
-						while (bGespreichert == false) {
+						boolean bGespeichert = false;
+						while (bGespeichert == false) {
 							try {
 								if (Helper.short2boolean(wcbRelativ.getShort())
 										&& zeitdatenDto.getCBelegartnr() != null) {
-									bGespreichert = true;
+									bGespeichert = true;
 									DelegateFactory
 											.getInstance()
 											.getZeiterfassungDelegate()
@@ -1562,7 +2259,7 @@ public class PanelZeitdaten extends PanelBasis implements
 									DelegateFactory.getInstance()
 											.getZeiterfassungDelegate()
 											.updateZeitdaten(zeitdatenDto);
-									bGespreichert = true;
+									bGespeichert = true;
 
 								}
 							} catch (ExceptionLP ex) {
@@ -1643,6 +2340,42 @@ public class PanelZeitdaten extends PanelBasis implements
 	}
 
 	private boolean pruefeObBuchungMoeglich() throws ExceptionLP, Throwable {
+
+		// SP3285
+		if (LPMain
+				.getInstance()
+				.getDesktop()
+				.darfAnwenderAufZusatzfunktionZugreifen(
+						MandantFac.ZUSATZFUNKTION_ZEITEN_ABSCHLIESSEN)
+				&& zeitdatenDto.getTZeit() != null
+				&& zeitdatenDto.getPersonalIId() != null) {
+
+			java.sql.Timestamp t = DelegateFactory
+					.getInstance()
+					.getZeiterfassungDelegate()
+					.gibtEsBereitseinenZeitabschlussBisZurKW(
+							zeitdatenDto.getPersonalIId(),
+							zeitdatenDto.getTZeit());
+
+			if (t != null) {
+				MessageFormat mf = new MessageFormat(
+						LPMain.getTextRespectUISPr("pers.zeiterfassung.zeitenbereitsabgeschlossen.bis"));
+				mf.setLocale(LPMain.getTheClient().getLocUi());
+
+				Calendar c = Calendar.getInstance();
+				c.setTimeInMillis(t.getTime());
+				c.get(Calendar.WEEK_OF_YEAR);
+				Object pattern[] = { c.get(Calendar.WEEK_OF_YEAR) };
+
+				String sMsg = mf.format(pattern);
+
+				DialogFactory.showModalDialog(
+						LPMain.getTextRespectUISPr("lp.error"), sMsg);
+				return false;
+			}
+
+		}
+
 		boolean bRechtChefbuchhalter = DelegateFactory.getInstance()
 				.getTheJudgeDelegate()
 				.hatRecht(RechteFac.RECHT_FB_CHEFBUCHHALTER);
@@ -1727,11 +2460,14 @@ public class PanelZeitdaten extends PanelBasis implements
 		zeitdatenDto.setCBelegartnr(belegart);
 		zeitdatenDto.setIBelegartid(belegIId);
 		zeitdatenDto.setArtikelIId(null);
+		wtfTaetigkeit.setText(null);
 		zeitdatenDto.setIBelegartpositionid(null);
 	}
 
 	protected void eventItemchanged(EventObject eI) throws Throwable {
 		ItemChangedEvent e = (ItemChangedEvent) eI;
+		int lockstate = getLockedstateDetailMainKey().getIState();
+
 		if (e.getID() == ItemChangedEvent.GOTO_DETAIL_PANEL) {
 			if (e.getSource() == panelQueryFLRArtikel) {
 				Integer key = (Integer) ((ISourceEvent) e.getSource())
@@ -1750,12 +2486,22 @@ public class PanelZeitdaten extends PanelBasis implements
 				}
 				zeitdatenDto.setArtikelIId(artikelDto.getIId());
 				wtfTaetigkeit.setText(artikelDto.formatArtikelbezeichnung());
+
 			} else if (e.getSource() == panelQueryFLRAuftrag) {
 				Integer key = (Integer) ((ISourceEvent) e.getSource())
 						.getIdSelected();
-				if (key != null) {
-					AuftragDto auftragDto = null;
-					auftragDto = DelegateFactory.getInstance()
+				wcoSonderTaetigkeit.setKeyOfSelectedItem(null);
+
+				wtfBeleg.setMandatoryField(true);
+				wtfTaetigkeit.setMandatoryField(true);
+
+				if (lockstate == PanelBasis.LOCK_IS_NOT_LOCKED
+						|| lockstate == PanelBasis.LOCK_FOR_EMPTY) {
+					neuesZeitdatenDtoFuerHeuteBelegSpeichern(
+							LocaleFac.BELEGART_AUFTRAG, key, null);
+				} else {
+
+					AuftragDto auftragDto = DelegateFactory.getInstance()
 							.getAuftragDelegate().auftragFindByPrimaryKey(key);
 					setZeitdatenDtoBelegart(LocaleFac.BELEGART_AUFTRAG,
 							auftragDto.getIId());
@@ -1766,9 +2512,10 @@ public class PanelZeitdaten extends PanelBasis implements
 					wtfPosition.setText(null);
 					// zeitdatenDto.setIBelegartpositionid(null);
 
-					String projBez = ", "
-							+ auftragDto.getCBezProjektbezeichnung();
-
+					String projBez = auftragDto.getCBezProjektbezeichnung();
+					if (projBez == null) {
+						projBez = "";
+					}
 					String kunde = DelegateFactory
 							.getInstance()
 							.getKundeDelegate()
@@ -1776,9 +2523,12 @@ public class PanelZeitdaten extends PanelBasis implements
 									auftragDto.getKundeIIdAuftragsadresse())
 							.getPartnerDto().formatTitelAnrede();
 
-					wtfBeleg.setText(auftragDto.getCNr() + projBez + ", "
-							+ kunde);
+					wlaBeleg.setText("AB" + auftragDto.getCNr());
+					wtfBeleg.setText("->" + projBez + ", " + kunde);
 					selectedBeleg = key;
+					selectedBelegart = LocaleFac.BELEGART_AUFTRAG;
+					wbuBeleg.setWhereToGo(WrapperGotoButton.GOTO_AUFTRAG_AUSWAHL);
+					wbuBeleg.setOKey(selectedBeleg);
 
 					com.lp.server.auftrag.service.AuftragpositionDto[] auftragpositionDtos = DelegateFactory
 							.getInstance().getAuftragpositionDelegate()
@@ -1815,6 +2565,7 @@ public class PanelZeitdaten extends PanelBasis implements
 								.showModalDialog(
 										LPMain.getTextRespectUISPr("lp.error"),
 										LPMain.getTextRespectUISPr("zeiterfassung.auftragkeinepositionen"));
+						return;
 					}
 					if (zeitdatenDto.getArtikelIId() == null) {
 						if (bArbeitszeitartikelauspersonalverfuegbarkeit) {
@@ -1832,7 +2583,10 @@ public class PanelZeitdaten extends PanelBasis implements
 										.formatArtikelbezeichnung());
 								zeitdatenDto.setArtikelIId(artikelDto.getIId());
 							}
-						} else {
+						}
+
+						if (zeitdatenDto.getArtikelIId() == null) {
+
 							// DEFAULT-AZ-Artikel
 							ParametermandantDto parameter = (ParametermandantDto) DelegateFactory
 									.getInstance()
@@ -1865,39 +2619,70 @@ public class PanelZeitdaten extends PanelBasis implements
 						}
 					}
 					erfuellungsgradBerechnen(null, null);
+
 				}
+
+				enableBisZeit(true);
+
 			} else if (e.getSource() == panelQueryFLRLos
-					|| (e.getSource() instanceof PanelQuery && ((PanelQuery) eI
-							.getSource()).getIdUsecase() == QueryParameters.UC_ID_LOS)) {
+					|| (getInternalFrameZeiterfassung().dialogLoseEinesTechnikers != null && e
+							.getSource() == getInternalFrameZeiterfassung().dialogLoseEinesTechnikers
+							.getPanelQueryLose())) {
 				Integer key = (Integer) ((ISourceEvent) e.getSource())
 						.getIdSelected();
-				if (key != null) {
-					LosDto losDto = null;
-					losDto = DelegateFactory.getInstance()
-							.getFertigungDelegate().losFindByPrimaryKey(key);
-					setZeitdatenDtoBelegart(LocaleFac.BELEGART_LOS,
-							losDto.getIId());
-					// zeitdatenDto.setCBelegartnr(LocaleFac.BELEGART_LOS);
-					// zeitdatenDto.setIBelegartid(losDto.getIId());
-					// zeitdatenDto.setArtikelIId(null) ;
 
-					if (!hatModulStueckrueckmeldung) {
+				wcoSonderTaetigkeit.setKeyOfSelectedItem(null);
+				wtfBeleg.setMandatoryField(true);
+				wtfTaetigkeit.setMandatoryField(true);
+				if (!hatModulStueckrueckmeldung) {
+					wtfPosition.setMandatoryField(false);
+				} else {
+					if (bLosbuchungOhnePositionbezug == true) {
 						wtfPosition.setMandatoryField(false);
 					} else {
-						if (bLosbuchungOhnePositionbezug == true) {
-							wtfPosition.setMandatoryField(false);
-						}
+						wtfPosition.setMandatoryField(true);
 					}
-					wtfPosition.setText(null);
-					// zeitdatenDto.setIBelegartpositionid(null);
+				}
+				wtfPosition.setText(null);
+
+				if (wtfPosition.isMandatoryField() == false
+						&& (lockstate == PanelBasis.LOCK_IS_NOT_LOCKED || lockstate == PanelBasis.LOCK_FOR_EMPTY)) {
+
+					neuesZeitdatenDtoFuerHeuteBelegSpeichern(
+							LocaleFac.BELEGART_LOS, key, null);
+
+					if (getInternalFrameZeiterfassung().dialogLoseEinesTechnikers != null) {
+						getInternalFrameZeiterfassung().dialogLoseEinesTechnikers
+								.dispose();
+						getInternalFrameZeiterfassung().dialogLoseEinesTechnikers = null;
+					}
+				} else {
+
+					if (lockstate == PanelBasis.LOCK_IS_NOT_LOCKED
+							|| lockstate == PanelBasis.LOCK_FOR_EMPTY) {
+						zeitdatenDto = new ZeitdatenDto();
+					}
+
+					LosDto losDto = DelegateFactory.getInstance()
+							.getFertigungDelegate().losFindByPrimaryKey(key);
+
+					wbuBeleg.setWhereToGo(WrapperGotoButton.GOTO_AUFTRAG_AUSWAHL);
+					wbuBeleg.setOKey(selectedBeleg);
+
+					setZeitdatenDtoBelegart(LocaleFac.BELEGART_LOS,
+							losDto.getIId());
 
 					String projBez = losDto.getCProjekt();
 					if (projBez == null) {
 						projBez = "";
 					}
+					wlaBeleg.setText("LO" + losDto.getCNr());
+					wtfBeleg.setText("->" + projBez);
 
-					wtfBeleg.setText(losDto.getCNr() + ", " + projBez);
 					selectedBeleg = key;
+					selectedBelegart = LocaleFac.BELEGART_LOS;
+					wbuBeleg.setWhereToGo(WrapperGotoButton.GOTO_FERTIGUNG_AUSWAHL);
+					wbuBeleg.setOKey(selectedBeleg);
 
 					if (zeitdatenDto.getArtikelIId() == null) {
 						if (bArbeitszeitartikelauspersonalverfuegbarkeit) {
@@ -1946,36 +2731,65 @@ public class PanelZeitdaten extends PanelBasis implements
 						}
 					}
 					erfuellungsgradBerechnen(null, null);
-				}
 
-				if (getInternalFrameZeiterfassung().dialogLoseEinesTechnikers != null) {
-					getInternalFrameZeiterfassung().dialogLoseEinesTechnikers
-							.dispose();
-					getInternalFrameZeiterfassung().dialogLoseEinesTechnikers = null;
+					if (getInternalFrameZeiterfassung().dialogLoseEinesTechnikers != null) {
+						getInternalFrameZeiterfassung().dialogLoseEinesTechnikers
+								.dispose();
+						getInternalFrameZeiterfassung().dialogLoseEinesTechnikers = null;
+					}
+
+					if (wtfPosition.isMandatoryField() == true
+							&& (lockstate == PanelBasis.LOCK_IS_NOT_LOCKED || lockstate == PanelBasis.LOCK_FOR_EMPTY)) {
+						dialogQueryLospositionFromListe(null);
+					}
+
 				}
+				enableBisZeit(true);
 			} else if (e.getSource() == panelQueryFLRAngebot) {
 				Integer key = (Integer) ((ISourceEvent) e.getSource())
 						.getIdSelected();
-				if (key != null) {
-					AngebotDto angebotDto = null;
-					angebotDto = DelegateFactory.getInstance()
+				wcoSonderTaetigkeit.setKeyOfSelectedItem(null);
+				wtfBeleg.setMandatoryField(true);
+				wtfTaetigkeit.setMandatoryField(true);
+				if (lockstate == PanelBasis.LOCK_IS_NOT_LOCKED
+						|| lockstate == PanelBasis.LOCK_FOR_EMPTY) {
+					neuesZeitdatenDtoFuerHeuteBelegSpeichern(
+							LocaleFac.BELEGART_ANGEBOT, key, null);
+				} else {
+					AngebotDto angebotDto = DelegateFactory.getInstance()
 							.getAngebotDelegate().angebotFindByPrimaryKey(key);
 					setZeitdatenDtoBelegart(LocaleFac.BELEGART_ANGEBOT,
 							angebotDto.getIId());
-					// zeitdatenDto.setCBelegartnr(LocaleFac.BELEGART_ANGEBOT);
-					// zeitdatenDto.setIBelegartid(angebotDto.getIId());
-
 					wtfPosition.setMandatoryField(false);
 					wtfPosition.setText(null);
-					// zeitdatenDto.setIBelegartpositionid(null);
 
 					String projBez = angebotDto.getCBez();
 					if (projBez == null) {
 						projBez = "";
 					}
-
-					wtfBeleg.setText(angebotDto.getCNr() + ", " + projBez);
+					wlaBeleg.setText("AG" + angebotDto.getCNr());
+					wtfBeleg.setText("->" + projBez);
 					selectedBeleg = key;
+					selectedBelegart = LocaleFac.BELEGART_ANGEBOT;
+					wbuBeleg.setWhereToGo(WrapperGotoButton.GOTO_ANGEBOT_AUSWAHL);
+					wbuBeleg.setOKey(selectedBeleg);
+
+					if (bArbeitszeitartikelauspersonalverfuegbarkeit) {
+						Integer artikelIId = DelegateFactory
+								.getInstance()
+								.getPersonalDelegate()
+								.getArtikelIIdHoechsterWertPersonalverfuegbarkeit(
+										internalFrameZeiterfassung
+												.getPersonalDto().getIId());
+						if (artikelIId != null) {
+							ArtikelDto artikelDto = DelegateFactory
+									.getInstance().getArtikelDelegate()
+									.artikelFindByPrimaryKey(artikelIId);
+							wtfTaetigkeit.setText(artikelDto
+									.formatArtikelbezeichnung());
+							zeitdatenDto.setArtikelIId(artikelDto.getIId());
+						}
+					}
 
 					if (zeitdatenDto.getArtikelIId() == null) {
 						// DEFAULT-AZ-Artikel
@@ -2001,20 +2815,29 @@ public class PanelZeitdaten extends PanelBasis implements
 							}
 						}
 					}
+
 				}
+				enableBisZeit(true);
 			}
 
 			else if (e.getSource() == panelQueryFLRProjekt) {
 				Integer key = (Integer) ((ISourceEvent) e.getSource())
 						.getIdSelected();
-				if (key != null) {
-					ProjektDto projektDto = null;
-					projektDto = DelegateFactory.getInstance()
+				wcoSonderTaetigkeit.setKeyOfSelectedItem(null);
+				wtfBeleg.setMandatoryField(true);
+				wtfTaetigkeit.setMandatoryField(true);
+				if (lockstate == PanelBasis.LOCK_IS_NOT_LOCKED
+						|| lockstate == PanelBasis.LOCK_FOR_EMPTY) {
+					neuesZeitdatenDtoFuerHeuteBelegSpeichern(
+							LocaleFac.BELEGART_PROJEKT, key, null);
+				} else {
+
+					ProjektDto projektDto = DelegateFactory.getInstance()
 							.getProjektDelegate().projektFindByPrimaryKey(key);
 					setZeitdatenDtoBelegart(LocaleFac.BELEGART_PROJEKT,
 							projektDto.getIId());
-					// zeitdatenDto.setCBelegartnr(LocaleFac.BELEGART_PROJEKT);
-					// zeitdatenDto.setIBelegartid(projektDto.getIId());
+
+					wlaBeleg.setText("PJ" + projektDto.getCNr());
 
 					wtfPosition.setMandatoryField(false);
 					wtfPosition.setText(null);
@@ -2025,8 +2848,28 @@ public class PanelZeitdaten extends PanelBasis implements
 						projBez = "";
 					}
 
-					wtfBeleg.setText(projektDto.getCNr() + ", " + projBez);
+					wtfBeleg.setText("->" + projBez);
 					selectedBeleg = key;
+					selectedBelegart = LocaleFac.BELEGART_PROJEKT;
+					wbuBeleg.setWhereToGo(WrapperGotoButton.GOTO_PROJEKT_AUSWAHL);
+					wbuBeleg.setOKey(selectedBeleg);
+
+					if (bArbeitszeitartikelauspersonalverfuegbarkeit) {
+						Integer artikelIId = DelegateFactory
+								.getInstance()
+								.getPersonalDelegate()
+								.getArtikelIIdHoechsterWertPersonalverfuegbarkeit(
+										internalFrameZeiterfassung
+												.getPersonalDto().getIId());
+						if (artikelIId != null) {
+							ArtikelDto artikelDto = DelegateFactory
+									.getInstance().getArtikelDelegate()
+									.artikelFindByPrimaryKey(artikelIId);
+							wtfTaetigkeit.setText(artikelDto
+									.formatArtikelbezeichnung());
+							zeitdatenDto.setArtikelIId(artikelDto.getIId());
+						}
+					}
 
 					if (zeitdatenDto.getArtikelIId() == null) {
 						// DEFAULT-AZ-Artikel
@@ -2052,7 +2895,9 @@ public class PanelZeitdaten extends PanelBasis implements
 							}
 						}
 					}
+
 				}
+				enableBisZeit(true);
 			}
 
 			else if (e.getSource() == panelQueryFLRAuftragposition) {
@@ -2082,20 +2927,28 @@ public class PanelZeitdaten extends PanelBasis implements
 				Integer key = (Integer) ((ISourceEvent) e.getSource())
 						.getIdSelected();
 
-				LossollarbeitsplanDto auftragpositionDto = null;
-				auftragpositionDto = DelegateFactory.getInstance()
-						.getFertigungDelegate()
-						.lossollarbeitsplanFindByPrimaryKey(key);
-				zeitdatenDto
-						.setIBelegartpositionid(auftragpositionDto.getIId());
-				wtfPosition.setText(DelegateFactory
-						.getInstance()
-						.getArtikelDelegate()
-						.artikelFindByPrimaryKey(
-								auftragpositionDto.getArtikelIIdTaetigkeit())
-						.formatArtikelbezeichnung());
+				if (lockstate == PanelBasis.LOCK_IS_NOT_LOCKED
+						|| lockstate == PanelBasis.LOCK_FOR_EMPTY) {
+					neuesZeitdatenDtoFuerHeuteBelegSpeichern(
+							LocaleFac.BELEGART_LOS,
+							zeitdatenDto.getIBelegartid(), key);
+				} else {
 
-				erfuellungsgradBerechnen(auftragpositionDto, null);
+					LossollarbeitsplanDto auftragpositionDto = DelegateFactory
+							.getInstance().getFertigungDelegate()
+							.lossollarbeitsplanFindByPrimaryKey(key);
+					zeitdatenDto.setIBelegartpositionid(auftragpositionDto
+							.getIId());
+					wtfPosition.setText(DelegateFactory
+							.getInstance()
+							.getArtikelDelegate()
+							.artikelFindByPrimaryKey(
+									auftragpositionDto
+											.getArtikelIIdTaetigkeit())
+							.formatArtikelbezeichnung());
+
+					erfuellungsgradBerechnen(auftragpositionDto, null);
+				}
 
 			} else if (e.getSource() == panelQueryFLRAngebotposition) {
 				Integer key = (Integer) ((ISourceEvent) e.getSource())
@@ -2130,6 +2983,8 @@ public class PanelZeitdaten extends PanelBasis implements
 								wdfDatum.getDate());
 
 			}
+			updatePosAndTaetigkeitFelder(selectedBelegart,
+					wcoSonderTaetigkeit.getKeyOfSelectedItem());
 
 		} else if (e.getID() == ItemChangedEvent.ACTION_LEEREN) {
 			if (e.getSource() == panelQueryFLRAuftrag) {
@@ -2352,8 +3207,7 @@ public class PanelZeitdaten extends PanelBasis implements
 		}
 		setzteKalenderWochewochentag();
 
-		if (bRechtNurBuchen == true
-				|| (bRechtNurBuchen == false && bDarfKommtGehtAendern == false)) {
+		if (bRechtNurBuchen == true) {
 			LPButtonAction o = (LPButtonAction) getInternalFrameZeiterfassung()
 					.getTabbedPaneZeiterfassung().getPanelQueryZeitdaten()
 					.getHmOfButtons().get(PanelBasis.ACTION_NEW);
@@ -2440,15 +3294,33 @@ public class PanelZeitdaten extends PanelBasis implements
 	protected void berechneTageszeit() throws Throwable {
 		java.sql.Date dDate = wdfDatum.getDate();
 		String sZeit = null;
+		Double dTagesarbeitszeit = null;
 		try {
 
-			Double d = DelegateFactory
-					.getInstance()
-					.getZeiterfassungDelegate()
-					.berechneTagesArbeitszeit(
-							internalFrameZeiterfassung.getPersonalDto()
-									.getIId(), dDate);
-			java.math.BigDecimal bd = new java.math.BigDecimal(d.doubleValue());
+			if (internalFrameZeiterfassung.getTabbedPaneZeiterfassung()
+					.isBVonBisErfassung() == true
+					&& internalFrameZeiterfassung.getTabbedPaneZeiterfassung()
+							.isBKommtGehtBuchen() == false) {
+				VonBisErfassungTagesdatenDto vbDto = DelegateFactory
+						.getInstance()
+						.getZeiterfassungDelegate()
+						.berechneTagesArbeitszeitVonBisZeiterfassungOhneKommtGeht(
+								internalFrameZeiterfassung.getPersonalDto()
+										.getIId(), dDate);
+
+				dTagesarbeitszeit = vbDto.getdIst();
+
+			} else {
+				dTagesarbeitszeit = DelegateFactory
+						.getInstance()
+						.getZeiterfassungDelegate()
+						.berechneTagesArbeitszeit(
+								internalFrameZeiterfassung.getPersonalDto()
+										.getIId(), dDate);
+			}
+
+			java.math.BigDecimal bd = new java.math.BigDecimal(
+					dTagesarbeitszeit.doubleValue());
 			bd = Helper.rundeKaufmaennisch(bd, 2);
 
 			sZeit = bd.doubleValue() + "";
@@ -2476,95 +3348,142 @@ public class PanelZeitdaten extends PanelBasis implements
 						internalFrameZeiterfassung.getPersonalDto().getIId());
 
 		wlaOffeneZeitverteilung.setVisible(zv != null && zv.length > 0);
-	}
 
-	public void wrbSondertaetigkeit_actionPerformed(ActionEvent e) {
-		if (wrbSondertaetigkeit.isSelected()) {
-			wbuBeleg.setEnabled(false);
-			wcoBeleg.setEnabled(false);
-			wbuPosition.setEnabled(false);
-			wbuTaetigkeit.setEnabled(false);
+		// PJ18736
+		ParametermandantDto parameter = (ParametermandantDto) DelegateFactory
+				.getInstance()
+				.getParameterDelegate()
+				.getParametermandant(
+						ParameterFac.PARAMETER_AUTOMATISCHE_PAUSEN_NUR_WARNUNG,
+						ParameterFac.KATEGORIE_PERSONAL,
+						LPMain.getTheClient().getMandant());
 
-			wcbRelativ.setEnabled(false);
-			wcbRelativ.setSelected(false);
+		boolean bNurWarnung = (Boolean) parameter.getCWertAsObject();
+		if (bNurWarnung == true
+				&& (wlaFehlerInZeitdaten.getText() == null || wlaFehlerInZeitdaten
+						.getText().isEmpty())) {
+			wlaFehlerInZeitdaten.setText(DelegateFactory
+					.getInstance()
+					.getZeiterfassungDelegate()
+					.getMeldungFehlenderMindestpauste(
+							wdfDatum.getTimestamp(),
+							internalFrameZeiterfassung.getPersonalDto()
+									.getIId()));
 
-			wtfBeleg.setMandatoryField(false);
-			wtfPosition.setMandatoryField(false);
-			wtfTaetigkeit.setMandatoryField(false);
-			wcoSonderTaetigkeit.setEnabled(true);
+			ZeitmodelltagDto zmtagDto = DelegateFactory
+					.getInstance()
+					.getZeiterfassungDelegate()
+					.getZeitmodelltagZuDatum(
+							internalFrameZeiterfassung.getPersonalDto()
+									.getIId(),
+							wdfDatum.getTimestamp(),
+							DelegateFactory
+									.getInstance()
+									.getZeiterfassungDelegate()
+									.tagesartFindByCNr(
+											ZeiterfassungFac.TAGESART_FEIERTAG)
+									.getIId(),
+							DelegateFactory
+									.getInstance()
+									.getZeiterfassungDelegate()
+									.tagesartFindByCNr(
+											ZeiterfassungFac.TAGESART_HALBTAG)
+									.getIId());
 
-			wcoBeleg.setVisible(false);
-			wcoBeleg.setMandatoryField(false);
-			wcoSonderTaetigkeit.setVisible(true);
-			jpaWorkingOn.repaint();
+			if (zmtagDto != null && zmtagDto.getZeitmodellIId() != null) {
 
-			int iLoc = getInternalFrameZeiterfassung()
-					.getTabbedPaneZeiterfassung().getPanelSplitZeitdaten()
-					.getPanelSplit().getDividerLocation();
+				// Fehler Tagesmaximum
+				if (wlaFehlerInZeitdaten.getText() == null
+						|| wlaFehlerInZeitdaten.getText().isEmpty()) {
+					if (zmtagDto.getUErlaubteanwesenheitszeit() != null
+							&& zmtagDto.getUErlaubteanwesenheitszeit()
+									.getTime() != -3600000) {
 
-			getInternalFrameZeiterfassung().getTabbedPaneZeiterfassung()
-					.getPanelSplitZeitdaten().getPanelSplit()
-					.setDividerLocation(iLoc + 1);
-			getInternalFrameZeiterfassung().getTabbedPaneZeiterfassung()
-					.getPanelSplitZeitdaten().getPanelSplit()
-					.setDividerLocation(iLoc);
+						double dMaxAnwesenheit = Helper.time2Double(zmtagDto
+								.getUErlaubteanwesenheitszeit());
+						if (dTagesarbeitszeit != null
+								&& dTagesarbeitszeit > dMaxAnwesenheit) {
+							// Fehler anzeigen
 
-			if (bDarfKommtGehtAendern == false) {
+							MessageFormat mf = new MessageFormat(
+									LPMain.getTextRespectUISPr("pers.zeitdaten.fehler.tagesmaximum"));
+							mf.setLocale(LPMain.getTheClient().getLocUi());
 
-				if (wcoSonderTaetigkeit.getKeyOfSelectedItem() != null) {
+							Object pattern[] = {
+									Helper.formatZahl(dMaxAnwesenheit, 2,
+											LPMain.getTheClient().getLocUi()),
+									Helper.formatZahl(dTagesarbeitszeit
+											- dMaxAnwesenheit, 2, LPMain
+											.getTheClient().getLocUi()) };
+							String sMsg = mf.format(pattern);
 
-					try {
+							wlaFehlerInZeitdaten.setText(sMsg);
 
-						if (wcoSonderTaetigkeit.getKeyOfSelectedItem().equals(
-								taetigkeitIIdGeht)
-								|| wcoSonderTaetigkeit.getKeyOfSelectedItem()
-										.equals(taetigkeitIIdKommt)
-								|| wcoSonderTaetigkeit.getKeyOfSelectedItem()
-										.equals(taetigkeitIIdUnter)) {
-							wtfZeit.setEnabled(false);
-							Calendar c = Calendar.getInstance();
-							c.setTimeInMillis(System.currentTimeMillis());
-							c.set(Calendar.MILLISECOND, 0);
-							c.set(Calendar.SECOND, 0);
-							wtfZeit.setTime(new java.sql.Time(c
-									.getTimeInMillis()));
-						} else {
-							wtfZeit.setEnabled(true);
 						}
-					} catch (Throwable e1) {
-						handleException(e1, true);
+
+					}
+				}
+
+			}
+
+			PersonalzeitmodellDto dto = DelegateFactory
+					.getInstance()
+					.getPersonalDelegate()
+					.personalzeitmodellFindZeitmodellZuDatum(
+							internalFrameZeiterfassung.getPersonalDto()
+									.getIId(),
+							Helper.cutTimestamp(wdfDatum.getTimestamp()));
+			// Fehler Wochenmaximum
+			if (dto != null
+					&& dto.getZeitmodellIId() != null
+					&& (wlaFehlerInZeitdaten.getText() == null || wlaFehlerInZeitdaten
+							.getText().isEmpty())) {
+
+				ZeitmodellDto zmDto = DelegateFactory.getInstance()
+						.getZeiterfassungDelegate()
+						.zeitmodellFindByPrimaryKey(dto.getZeitmodellIId());
+
+				if (zmDto.getNMaximalesWochenist() != null
+						&& zmDto.getNMaximalesWochenist().doubleValue() > 0) {
+					Timestamp[] tVonBisEinerKW = Helper
+							.getTimestampVonBisEinerKW(wdfDatum.getTimestamp());
+					Double d = DelegateFactory
+							.getInstance()
+							.getZeiterfassungDelegate()
+							.berechneArbeitszeitImZeitraum(
+									internalFrameZeiterfassung.getPersonalDto()
+											.getIId(),
+									new java.sql.Date(tVonBisEinerKW[0]
+											.getTime()),
+									new java.sql.Date(wdfDatum.getDate()
+											.getTime() + (24 * 3600000)), false);
+
+					if (d != null
+							&& d > zmDto.getNMaximalesWochenist().doubleValue()) {
+						// Fehler anzeigen
+
+						MessageFormat mf = new MessageFormat(
+								LPMain.getTextRespectUISPr("pers.zeitdaten.fehler.wochenmaximum"));
+						mf.setLocale(LPMain.getTheClient().getLocUi());
+
+						Object pattern[] = {
+								Helper.formatZahl(
+										zmDto.getNMaximalesWochenist()
+												.doubleValue(), 2, LPMain
+												.getTheClient().getLocUi()),
+								Helper.formatZahl(d
+										- zmDto.getNMaximalesWochenist()
+												.doubleValue(), 2, LPMain
+										.getTheClient().getLocUi()) };
+						String sMsg = mf.format(pattern);
+
+						wlaFehlerInZeitdaten.setText(sMsg);
+
 					}
 
 				}
 
 			}
-
-		}
-	}
-
-	public void wrbAuftragszeit_actionPerformed(ActionEvent e) {
-		if (wrbAuftragszeit.isSelected()) {
-			wbuBeleg.setEnabled(true);
-			wcoBeleg.setEnabled(true);
-			wbuPosition.setEnabled(true);
-			wbuTaetigkeit.setEnabled(true);
-			wcbRelativ.setEnabled(true);
-
-			wtfBeleg.setMandatoryField(true);
-			wtfPosition.setMandatoryField(true);
-			wtfTaetigkeit.setMandatoryField(true);
-			if (bRechtNurBuchen == false) {
-				wtfZeit.setEnabled(true);
-			}
-			wcoSonderTaetigkeit.setEnabled(false);
-
-			wcoSonderTaetigkeit.setVisible(false);
-			wcoBeleg.setVisible(true);
-			wcoBeleg.setMandatoryField(true);
-
-			wcoBeleg.setFocusable(true);
-			jpaWorkingOn.repaint();
-			LPMain.getInstance().getDesktop().repaint();
 
 		}
 
@@ -2606,28 +3525,134 @@ public class PanelZeitdaten extends PanelBasis implements
 		wtfZeit.requestFocus();
 	}
 
-	public void wcoBeleg_actionPerformed(ActionEvent e) {
-		wtfBeleg.setText(null);
-		wtfPosition.setText(null);
-		wtfTaetigkeit.setText(null);
-		selectedBeleg = null;
+	public void wcoSonderTaetigkeit_actionPerformed(ActionEvent e) {
 
-		if (wcoBeleg.getKeyOfSelectedItem().equals(LocaleFac.BELEGART_ANGEBOT)) {
-			wbuBeleg.setWhereToGo(WrapperGotoButton.GOTO_ANGEBOT_AUSWAHL);
-		} else if (wcoBeleg.getKeyOfSelectedItem().equals(
-				LocaleFac.BELEGART_LOS)) {
-			wbuBeleg.setWhereToGo(WrapperGotoButton.GOTO_FERTIGUNG_AUSWAHL);
-		} else if (wcoBeleg.getKeyOfSelectedItem().equals(
-				LocaleFac.BELEGART_AUFTRAG)) {
-			wbuBeleg.setWhereToGo(WrapperGotoButton.GOTO_AUFTRAG_AUSWAHL);
-		} else if (wcoBeleg.getKeyOfSelectedItem().equals(
-				LocaleFac.BELEGART_PROJEKT)) {
-			wbuBeleg.setWhereToGo(WrapperGotoButton.GOTO_PROJEKT_AUSWAHL);
+		int lockstate = -99;
+		try {
+			lockstate = getLockedstateDetailMainKey().getIState();
+
+		} catch (Throwable e1) {
+			handleException(e1, false);
 		}
 
-	}
+		if (wcoSonderTaetigkeit.getKeyOfSelectedItem() != null) {
 
-	public void wcoSonderTaetigkeit_actionPerformed(ActionEvent e) {
+			wbuKommt.setEnabled(true);
+			wbuGeht.setEnabled(true);
+			wbuUnter.setEnabled(true);
+			wbuEnde.setEnabled(true);
+
+			wbuAngebot.setEnabled(true);
+			wbuAuftrag.setEnabled(true);
+			wbuProjekt.setEnabled(true);
+			wbuLos.setEnabled(true);
+			wbuPosition.setEnabled(false);
+			wbuTaetigkeit.setEnabled(false);
+
+			wtfPosition.setMandatoryField(false);
+			wtfBeleg.setMandatoryField(false);
+			wtfTaetigkeit.setMandatoryField(false);
+			if (zeitdatenDto != null) {
+				zeitdatenDto.setCBelegartnr(null);
+				zeitdatenDto.setIBelegartpositionid(null);
+				zeitdatenDto.setIBelegartid(null);
+				zeitdatenDto.setArtikelIId(null);
+			}
+
+			wtfBeleg.setText(null);
+			wtfPosition.setText(null);
+			wlaBeleg.setText(null);
+			wtfTaetigkeit.setText(null);
+
+			// wtfBeleg.setMandatoryField(false);
+			// wtfPosition.setMandatoryField(false);
+			// wtfTaetigkeit.setMandatoryField(false);
+
+			wcbRelativ.setVisible(false);
+
+			// Nur Wenn Kommt geht nicht sichtbar
+
+			if (wcoSonderTaetigkeit.getKeyOfSelectedItem().equals(
+					taetigkeitIIdKommt)
+					|| wcoSonderTaetigkeit.getKeyOfSelectedItem().equals(
+							taetigkeitIIdGeht)) {
+				enableBisZeit(false);
+			} else {
+				enableBisZeit(true);
+			}
+
+		} else {
+			wtfPosition.setMandatoryField(true);
+			wtfBeleg.setMandatoryField(true);
+			wtfTaetigkeit.setMandatoryField(true);
+
+			if (bDarfKommtGehtAendern == false
+					&& isHeute() == false
+					&& (lockstate == PanelBasis.LOCK_IS_LOCKED_BY_ME || lockstate == PanelBasis.LOCK_FOR_NEW)) {
+				wbuKommt.setEnabled(false);
+				wbuGeht.setEnabled(false);
+				wbuUnter.setEnabled(false);
+				wcoSonderTaetigkeit.setEnabled(false);
+			} else {
+				wbuKommt.setEnabled(true);
+				wbuGeht.setEnabled(true);
+				wbuUnter.setEnabled(true);
+			}
+
+			wbuEnde.setEnabled(true);
+
+			wbuAngebot.setEnabled(true);
+			wbuAuftrag.setEnabled(true);
+			wbuProjekt.setEnabled(true);
+			wbuLos.setEnabled(true);
+			// hier relativ UND bisZeit sichtbar machen?
+			wcbRelativ.setVisible(true);
+			// wtfZeit_Bis.setVisible(true);
+			enableBisZeit(true);
+
+			if (lockstate == PanelBasis.LOCK_FOR_NEW
+					|| lockstate == PanelBasis.LOCK_IS_LOCKED_BY_ME) {
+				wbuPosition.setEnabled(true);
+				wbuTaetigkeit.setEnabled(true);
+			}
+		}
+
+		if (lockstate == PanelBasis.LOCK_IS_NOT_LOCKED
+				|| lockstate == PanelBasis.LOCK_FOR_EMPTY) {
+
+			if (isHeute()) {
+
+				wbuKommt.setEnabled(true);
+				wbuGeht.setEnabled(true);
+				wbuUnter.setEnabled(true);
+				wbuEnde.setEnabled(true);
+
+				if (!getInternalFrameZeiterfassung()
+						.getTabbedPaneZeiterfassung().isBVonBisErfassung()) {
+
+					wbuAngebot.setEnabled(true);
+					wbuAuftrag.setEnabled(true);
+					wbuProjekt.setEnabled(true);
+					wbuLos.setEnabled(true);
+				} else {
+					wbuAngebot.setEnabled(false);
+					wbuAuftrag.setEnabled(false);
+					wbuProjekt.setEnabled(false);
+					wbuLos.setEnabled(false);
+				}
+			} else {
+				wbuKommt.setEnabled(false);
+				wbuGeht.setEnabled(false);
+				wbuUnter.setEnabled(false);
+				wbuEnde.setEnabled(false);
+
+				wbuAngebot.setEnabled(false);
+				wbuAuftrag.setEnabled(false);
+				wbuProjekt.setEnabled(false);
+				wbuLos.setEnabled(false);
+			}
+
+		}
 
 		if (bDarfKommtGehtAendern == false) {
 
@@ -2635,13 +3660,11 @@ public class PanelZeitdaten extends PanelBasis implements
 
 				try {
 
-					if (wcoSonderTaetigkeit.getKeyOfSelectedItem().equals(
-							taetigkeitIIdGeht)
-							|| wcoSonderTaetigkeit.getKeyOfSelectedItem()
-									.equals(taetigkeitIIdKommt)
-							|| wcoSonderTaetigkeit.getKeyOfSelectedItem()
-									.equals(taetigkeitIIdUnter)) {
+					if (!wcoSonderTaetigkeit.getKeyOfSelectedItem().equals(
+							taetigkeitIIdEnde)) {
 						wtfZeit.setEnabled(false);
+						wtfZeit.setTime(new java.sql.Time(System
+								.currentTimeMillis()));
 					} else {
 						wtfZeit.setEnabled(true);
 					}
@@ -2652,20 +3675,43 @@ public class PanelZeitdaten extends PanelBasis implements
 			}
 
 		}
+		updatePosAndTaetigkeitFelder(selectedBelegart,
+				wcoSonderTaetigkeit.getKeyOfSelectedItem());
+
 	}
 
-}
-
-class PanelZeitdaten_wcoBeleg_actionAdapter implements ActionListener {
-	private PanelZeitdaten adaptee;
-
-	PanelZeitdaten_wcoBeleg_actionAdapter(PanelZeitdaten adaptee) {
-		this.adaptee = adaptee;
+	protected void calcBis() throws ExceptionLP {
+		long time = wtfZeit.getTime().getTime() + wdfDauer.getDuration();
+		wtfZeit_Bis.setTime(new Time(time));
+		if (wtfZeit_Bis.getTime().before(wtfZeit.getTime()))
+			wdfDauer.setDuration(0);
 	}
 
-	public void actionPerformed(ActionEvent e) {
-		adaptee.wcoBeleg_actionPerformed(e);
+	protected void calcDauer() throws ExceptionLP {
+		long duration = wtfZeit_Bis.getTime().getTime()
+				- wtfZeit.getTime().getTime();
+		duration = Math.round(duration / 60000f) * 60000;
+		wdfDauer.setDuration(duration);
 	}
+
+	private class VonBisDauerListener implements IHvValueHolderListener {
+
+		@Override
+		public void valueChanged(Component reference, Object oldValue,
+				Object newValue) {
+			try {
+				if (reference == wdfDauer || reference == wtfZeit) {
+					calcBis();
+				} else if (reference == wtfZeit_Bis) {
+					calcDauer();
+				}
+			} catch (ExceptionLP e) {
+				handleException(e, true);
+			}
+		}
+
+	}
+
 }
 
 class PanelZeitdaten_wcoSonderTaetigkeit_actionAdapter implements
@@ -2739,30 +3785,5 @@ class PanelZeitdaten_wbuTagZurueck_actionAdapter implements ActionListener {
 
 	public void actionPerformed(ActionEvent e) {
 		adaptee.wbuTagZurueck_actionPerformed(e);
-	}
-}
-
-class PanelZeitdaten_wrbAuftragszeit_actionAdapter implements ActionListener {
-	private PanelZeitdaten adaptee;
-
-	PanelZeitdaten_wrbAuftragszeit_actionAdapter(PanelZeitdaten adaptee) {
-		this.adaptee = adaptee;
-	}
-
-	public void actionPerformed(ActionEvent e) {
-		adaptee.wrbAuftragszeit_actionPerformed(e);
-	}
-}
-
-class PanelZeitdaten_wrbSondertaetigkeit_actionAdapter implements
-		ActionListener {
-	private PanelZeitdaten adaptee;
-
-	PanelZeitdaten_wrbSondertaetigkeit_actionAdapter(PanelZeitdaten adaptee) {
-		this.adaptee = adaptee;
-	}
-
-	public void actionPerformed(ActionEvent e) {
-		adaptee.wrbSondertaetigkeit_actionPerformed(e);
 	}
 }

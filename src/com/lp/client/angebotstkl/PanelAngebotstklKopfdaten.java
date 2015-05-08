@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -65,6 +65,8 @@ import com.lp.client.frame.component.WrapperDateField;
 import com.lp.client.frame.component.WrapperGotoButton;
 import com.lp.client.frame.component.WrapperLabel;
 import com.lp.client.frame.component.WrapperNumberField;
+import com.lp.client.frame.component.WrapperRadioButton;
+import com.lp.client.frame.component.WrapperSelectField;
 import com.lp.client.frame.component.WrapperTextArea;
 import com.lp.client.frame.component.WrapperTextField;
 import com.lp.client.frame.delegate.DelegateFactory;
@@ -72,9 +74,13 @@ import com.lp.client.frame.dialog.DialogFactory;
 import com.lp.client.partner.PartnerFilterFactory;
 import com.lp.client.pc.LPMain;
 import com.lp.server.angebotstkl.service.AgstklDto;
+import com.lp.server.angebotstkl.service.AngebotstklFac;
 import com.lp.server.partner.service.AnsprechpartnerDto;
 import com.lp.server.partner.service.KundeDto;
+import com.lp.server.partner.service.PartnerDto;
 import com.lp.server.partner.service.PartnerFac;
+import com.lp.server.projekt.service.ProjektDto;
+import com.lp.server.system.service.MandantFac;
 import com.lp.server.system.service.ParameterFac;
 import com.lp.server.system.service.ParametermandantDto;
 import com.lp.server.system.service.WaehrungDto;
@@ -98,7 +104,16 @@ public class PanelAngebotstklKopfdaten extends PanelBasis {
 	private PanelQueryFLR panelQueryFLRKunde = null;
 	private PanelQueryFLR panelQueryFLRAnsprechpartner = null;
 
+	private WrapperLabel wlaEkpreisbasis = new WrapperLabel();
+	private ButtonGroup bgEkpreisbasis = new ButtonGroup();
+
+	private WrapperRadioButton wrbEkpreisbasisLief1Preis = new WrapperRadioButton();
+	private WrapperRadioButton wrbEkpreisbasisNettopreis = new WrapperRadioButton();
+
 	private WrapperTextArea wtaAngebot = new WrapperTextArea();
+
+	private WrapperSelectField wsfProjekt = new WrapperSelectField(
+			WrapperSelectField.PROJEKT, getInternalFrame(), true);
 
 	private ButtonGroup buttonGroup1 = new ButtonGroup();
 	private WrapperGotoButton jpaKunde = new WrapperGotoButton(
@@ -163,10 +178,24 @@ public class PanelAngebotstklKopfdaten extends PanelBasis {
 			dto2Components();
 
 			String cBez = "";
+
+			if (getInternalFrameAngebotstkl().getAgstklDto().getKundeIId() != null) {
+
+				KundeDto kundeDto = DelegateFactory
+						.getInstance()
+						.getKundeDelegate()
+						.kundeFindByPrimaryKey(
+								getInternalFrameAngebotstkl().getAgstklDto()
+										.getKundeIId());
+
+				cBez = kundeDto.getPartnerDto().formatFixTitelName1Name2();
+			}
+
 			if (getInternalFrameAngebotstkl().getAgstklDto() != null) {
 				if (getInternalFrameAngebotstkl().getAgstklDto().getCBez() != null) {
-					cBez = getInternalFrameAngebotstkl().getAgstklDto()
-							.getCBez();
+					cBez += " "
+							+ getInternalFrameAngebotstkl().getAgstklDto()
+									.getCBez();
 				}
 			}
 			getInternalFrame().setLpTitle(
@@ -180,6 +209,23 @@ public class PanelAngebotstklKopfdaten extends PanelBasis {
 					.setDate(new java.sql.Date(System.currentTimeMillis()));
 			wcoWaehrung.setKeyOfSelectedItem(LPMain.getInstance()
 					.getTheClient().getSMandantenwaehrung());
+
+			ParametermandantDto parametermandantDtoTagen = DelegateFactory
+					.getInstance()
+					.getParameterDelegate()
+					.getMandantparameter(
+							LPMain.getInstance().getTheClient().getMandant(),
+							ParameterFac.KATEGORIE_ANGEBOTSSTUECKLISTE,
+							ParameterFac.PARAMETER_EK_PREISBASIS);
+			int iEkpreisbasis = ((Integer) parametermandantDtoTagen
+					.getCWertAsObject()).intValue();
+
+			if (iEkpreisbasis == AngebotstklFac.EK_PREISBASIS_LIEF1PREIS) {
+				wrbEkpreisbasisLief1Preis.setSelected(true);
+			} else {
+				wrbEkpreisbasisNettopreis.setSelected(true);
+			}
+
 		}
 
 	}
@@ -200,6 +246,7 @@ public class PanelAngebotstklKopfdaten extends PanelBasis {
 	 */
 	protected void dto2Components() throws Throwable {
 
+		wsfProjekt.setKey(agstklDto.getProjektIId());
 		wtfProjekt.setText(agstklDto.getCBez());
 		wcoWaehrung.setKeyOfSelectedItem(agstklDto.getWaehrungCNr());
 		wnfKurs.setDouble(agstklDto
@@ -226,6 +273,13 @@ public class PanelAngebotstklKopfdaten extends PanelBasis {
 		setVerwendeteAngebote();
 
 		wdfBelegdatum.setTimestamp(agstklDto.getTBelegdatum());
+
+		if (agstklDto.getIEkpreisbasis().intValue() == AngebotstklFac.EK_PREISBASIS_LIEF1PREIS) {
+			wrbEkpreisbasisLief1Preis.setSelected(true);
+		} else {
+			wrbEkpreisbasisNettopreis.setSelected(true);
+		}
+
 		this.setStatusbarPersonalIIdAendern(agstklDto.getPersonalIIdAendern());
 		this.setStatusbarPersonalIIdAnlegen(agstklDto.getPersonalIIdAnlegen());
 		this.setStatusbarTAnlegen(agstklDto.getTAnlegen());
@@ -289,6 +343,16 @@ public class PanelAngebotstklKopfdaten extends PanelBasis {
 		wlaProjekt.setText(LPMain.getInstance().getTextRespectUISPr(
 				"label.projekt"));
 
+		wlaEkpreisbasis.setText(LPMain.getInstance().getTextRespectUISPr(
+				"as.agstkl.mengenstaffel.ekpreisbasis"));
+
+		wrbEkpreisbasisLief1Preis.setText(LPMain.getInstance()
+				.getTextRespectUISPr(
+						"as.agstkl.mengenstaffel.ekpreisbasis.lief1preis"));
+		wrbEkpreisbasisNettopreis.setText(LPMain.getInstance()
+				.getTextRespectUISPr(
+						"as.agstkl.mengenstaffel.ekpreisbasis.nettopreis"));
+
 		wlaAngebote.setText(LPMain.getInstance().getTextRespectUISPr(
 				"as.agstkl.verwendeteangebote"));
 		wlaAngebote.setHorizontalAlignment(SwingConstants.LEFT);
@@ -310,6 +374,9 @@ public class PanelAngebotstklKopfdaten extends PanelBasis {
 		wcoWaehrung
 				.addActionListener(new PanelAngebotstklKopfdaten_wcoWaehrung_actionAdapter(
 						this));
+
+		bgEkpreisbasis.add(wrbEkpreisbasisLief1Preis);
+		bgEkpreisbasis.add(wrbEkpreisbasisNettopreis);
 
 		wdfBelegdatum.setMandatoryField(true);
 		ParametermandantDto parametermandantDtoTagen = DelegateFactory
@@ -366,9 +433,52 @@ public class PanelAngebotstklKopfdaten extends PanelBasis {
 		jpaWorkingOn.add(wlaProjekt, new GridBagConstraints(0, 3, 1, 1, 0.1,
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wtfProjekt, new GridBagConstraints(1, 3, 3, 1, 0.1,
-				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
-				new Insets(2, 2, 2, 2), 0, 0));
+
+		if (LPMain
+				.getInstance()
+				.getDesktop()
+				.darfAnwenderAufZusatzfunktionZugreifen(
+						MandantFac.ZUSATZFUNKTION_PROJEKTKLAMMER)) {
+
+			ParametermandantDto parametermandantDto = DelegateFactory
+					.getInstance()
+					.getParameterDelegate()
+					.getMandantparameter(
+							LPMain.getInstance().getTheClient().getMandant(),
+							ParameterFac.KATEGORIE_ALLGEMEIN,
+							ParameterFac.PARAMETER_PROJEKT_IST_PFLICHTFELD);
+			boolean bProjektIstPflichtfeld = ((Boolean) parametermandantDto
+					.getCWertAsObject());
+			if (bProjektIstPflichtfeld) {
+				wsfProjekt.setMandatoryField(true);
+			}
+
+			jpaWorkingOn.add(wtfProjekt,
+					new GridBagConstraints(1, 3, 1, 1, 0.1, 0.0,
+							GridBagConstraints.CENTER,
+							GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2,
+									2), 0, 0));
+
+			jpaWorkingOn.add(wsfProjekt.getWrapperGotoButton(),
+					new GridBagConstraints(2, 3, 1, 1, 0, 0.0,
+							GridBagConstraints.CENTER,
+							GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2,
+									2), 50, 0));
+			jpaWorkingOn.add(wsfProjekt.getWrapperTextField(),
+					new GridBagConstraints(3, 3, 1, 1, 0, 0.0,
+							GridBagConstraints.CENTER,
+							GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2,
+									2), 0, 0));
+
+		} else {
+
+			jpaWorkingOn.add(wtfProjekt,
+					new GridBagConstraints(1, 3, 3, 1, 0.1, 0.0,
+							GridBagConstraints.CENTER,
+							GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2,
+									2), 0, 0));
+		}
+
 		jpaWorkingOn.add(wlaWaehrung, new GridBagConstraints(0, 4, 1, 1, 0.1,
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 2, 2, 2), 0, 0));
@@ -383,13 +493,24 @@ public class PanelAngebotstklKopfdaten extends PanelBasis {
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 2, 2, 2), 0, 0));
 
-		jpaWorkingOn.add(wlaAngebote, new GridBagConstraints(0, 5, 4, 1, 0.1,
+		// PJ18725
+		jpaWorkingOn.add(wlaEkpreisbasis, new GridBagConstraints(0, 5, 1, 1,
+				0.1, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wrbEkpreisbasisLief1Preis, new GridBagConstraints(1,
+				5, 1, 1, 0.1, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wrbEkpreisbasisNettopreis, new GridBagConstraints(1,
+				6, 1, 1, 0.1, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+
+		jpaWorkingOn.add(wlaAngebote, new GridBagConstraints(0, 7, 4, 1, 0.1,
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(50, 2, 2, 2), 0, 0));
 
 		JScrollPane scrollPane = new JScrollPane(wtaAngebot);
 
-		jpaWorkingOn.add(scrollPane, new GridBagConstraints(0, 6, 4, 1, 0.1,
+		jpaWorkingOn.add(scrollPane, new GridBagConstraints(0, 8, 4, 1, 0.1,
 				1.0, GridBagConstraints.NORTH, GridBagConstraints.BOTH,
 				new Insets(2, 2, 2, 2), 0, 0));
 
@@ -436,13 +557,21 @@ public class PanelAngebotstklKopfdaten extends PanelBasis {
 		agstklDto.setCBez(wtfProjekt.getText());
 		agstklDto.setTBelegdatum(wdfBelegdatum.getTimestamp());
 		agstklDto.setWaehrungCNr((String) wcoWaehrung.getSelectedItem());
+		agstklDto.setProjektIId(wsfProjekt.getIKey());
+
+		if (wrbEkpreisbasisLief1Preis.isSelected()) {
+			agstklDto.setIEkpreisbasis(AngebotstklFac.EK_PREISBASIS_LIEF1PREIS);
+		} else {
+			agstklDto.setIEkpreisbasis(AngebotstklFac.EK_PREISBASIS_NETTOPREIS);
+		}
+
 	}
 
 	protected void eventActionDelete(ActionEvent e,
 			boolean bAdministrateLockKeyI, boolean bNeedNoDeleteI)
 			throws Throwable {
-		DelegateFactory.getInstance().getAngebotstklDelegate().removeAgstkl(
-				agstklDto);
+		DelegateFactory.getInstance().getAngebotstklDelegate()
+				.removeAgstkl(agstklDto);
 		super.eventActionDelete(e, true, true);
 	}
 
@@ -455,8 +584,8 @@ public class PanelAngebotstklKopfdaten extends PanelBasis {
 						.getAngebotstklDelegate().createAgstkl(agstklDto));
 				setKeyWhenDetailPanel(agstklDto.getIId());
 				agstklDto = DelegateFactory.getInstance()
-						.getAngebotstklDelegate().agstklFindByPrimaryKey(
-								agstklDto.getIId());
+						.getAngebotstklDelegate()
+						.agstklFindByPrimaryKey(agstklDto.getIId());
 				kundeDto = DelegateFactory.getInstance().getKundeDelegate()
 						.kundeFindByPrimaryKey(agstklDto.getKundeIId());
 				internalFrameAngebotstkl.setAgstklDto(agstklDto);
@@ -475,7 +604,74 @@ public class PanelAngebotstklKopfdaten extends PanelBasis {
 
 			agstklDto = DelegateFactory.getInstance().getAngebotstklDelegate()
 					.agstklFindByPrimaryKey(agstklDto.getIId());
+			internalFrameAngebotstkl.setAgstklDto(agstklDto);
 		}
+	}
+
+	public void setDefaultsAusProjekt(Integer projektIId) throws Throwable {
+		ProjektDto projektDto = DelegateFactory.getInstance()
+				.getProjektDelegate().projektFindByPrimaryKey(projektIId);
+
+		wtfProjekt.setText(projektDto.getCTitel());
+		wsfProjekt.setKey(projektDto.getIId());
+
+		KundeDto kundeDto = DelegateFactory
+				.getInstance()
+				.getKundeDelegate()
+				.kundeFindByiIdPartnercNrMandantOhneExc(
+						projektDto.getPartnerIId(),
+						LPMain.getInstance().getTheClient().getMandant());
+		if (kundeDto == null) {
+			// Dann Kunde zuerst anlegen
+
+			PartnerDto pDto = DelegateFactory.getInstance()
+					.getPartnerDelegate()
+					.partnerFindByPrimaryKey(projektDto.getPartnerIId());
+
+			boolean b = DialogFactory.showModalJaNeinDialog(
+					getInternalFrame(),
+					LPMain.getInstance().getTextRespectUISPr(
+							"lp.kunde.auspartner.anlegen.teil1")
+							+ pDto.formatFixTitelName1Name2()
+							+ LPMain.getInstance().getTextRespectUISPr(
+									"lp.kunde.auspartner.anlegen.teil2"));
+
+			if (b == true) {
+				Integer kundeIId = DelegateFactory.getInstance()
+						.getKundeDelegate()
+						.createKundeAusPartner(projektDto.getPartnerIId());
+				kundeDto = DelegateFactory.getInstance().getKundeDelegate()
+						.kundeFindByPrimaryKey(kundeIId);
+
+			} else {
+				return;
+			}
+
+		} else {
+			kundeDto = DelegateFactory.getInstance().getKundeDelegate()
+					.kundeFindByPrimaryKey(kundeDto.getIId());
+		}
+
+		DelegateFactory.getInstance().getKundeDelegate()
+				.pruefeKunde(kundeDto.getIId(),null,getInternalFrame());
+
+		wtfKunde.setText(kundeDto.getPartnerDto().formatTitelAnrede());
+
+		agstklDto.setKundeIId(kundeDto.getIId());
+
+		if (projektDto.getAnsprechpartnerIId() != null) {
+			AnsprechpartnerDto ansprechpartnerDto = DelegateFactory
+					.getInstance()
+					.getAnsprechpartnerDelegate()
+					.ansprechpartnerFindByPrimaryKey(
+							projektDto.getAnsprechpartnerIId());
+
+			agstklDto.setAnsprechpartnerIIdKunde(ansprechpartnerDto.getIId());
+
+			wtfAnsprechpartner.setText(ansprechpartnerDto.getPartnerDto()
+					.formatTitelAnrede());
+		}
+
 	}
 
 	protected void eventItemchanged(EventObject eI) throws Throwable {
@@ -557,7 +753,10 @@ public class PanelAngebotstklKopfdaten extends PanelBasis {
 						.getIId());
 			}
 		} else if (e.getID() == ItemChangedEvent.ACTION_LEEREN) {
-
+			if (e.getSource() == panelQueryFLRAnsprechpartner) {
+				wtfAnsprechpartner.setText(null);
+				agstklDto.setAnsprechpartnerIIdKunde(null);
+			}
 		}
 	}
 

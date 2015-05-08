@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -44,6 +44,7 @@ import java.awt.event.ItemEvent;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -55,6 +56,8 @@ public class MultipleImageViewer extends JPanel implements ActionListener {
 	JButton nextButton, prevButton;
 
 	JLabel counter = new JLabel();
+	JLabel textpdf_vorhanden = new JLabel(new ImageIcon(getClass().getResource(
+			"/com/lp/client/res/notebook.png")));
 
 	JPanel buttonPanel;
 	JPanel imagePanel;
@@ -77,9 +80,9 @@ public class MultipleImageViewer extends JPanel implements ActionListener {
 		imagePanel.removeAll();
 		if (image != null) {
 			imageCounter = 0;
-			
+
 			counter.setText("1/1");
-			
+
 			pi = new ImageViewer[1];
 			pi[0] = new ImageViewer(image);
 			imagePanel.add(pi[0], new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
@@ -96,8 +99,8 @@ public class MultipleImageViewer extends JPanel implements ActionListener {
 		imagePanel.removeAll();
 		if (image != null && image.size() > 0) {
 			imagePanel.removeAll();
-			counter.setText("1/"+image.size());
-			
+			counter.setText("1/" + image.size());
+
 			pi = new ImageViewer[image.size()];
 
 			for (int i = 0; i < image.size(); i++) {
@@ -108,47 +111,44 @@ public class MultipleImageViewer extends JPanel implements ActionListener {
 					new Insets(2, 2, 2, 2), 0, 0));
 		} else {
 			counter.setText("0/0");
-			
+
 			pi = new ImageViewer[0];
-			
+
 		}
 	}
 
+	public void setTextPDFVorhandenVisible(boolean bVisible){
+		textpdf_vorhanden.setVisible(bVisible);
+	}
+	
 	public void init(byte[] image) throws IOException {
 
 		setLayout(new BorderLayout());
 
-		
-
-		
 		buttonPanel = new JPanel();
 		prevButton = new JButton("<<");
 		defineFont(prevButton);
 		prevButton.addActionListener(this);
 		buttonPanel.add(prevButton);
-		
-		
+
 		nextButton = new JButton(">>");
 		defineFont(nextButton);
 		nextButton.addActionListener(this);
 		buttonPanel.add(nextButton);
 
-	
-		
-		
 		buttonPanel.add(counter);
-
+		buttonPanel.add(textpdf_vorhanden);
 		
+		setTextPDFVorhandenVisible(false);
 
 		add(BorderLayout.NORTH, buttonPanel);
-		
+
 		imagePanel = new JPanel();
 		layout = new GridBagLayout();
 		imagePanel.setLayout(layout);
 		add(BorderLayout.CENTER, imagePanel);
-		
-		
-		//setSize(getPreferredSize());
+
+		// setSize(getPreferredSize());
 	}
 
 	void defineFont(Component c) {
@@ -180,9 +180,9 @@ public class MultipleImageViewer extends JPanel implements ActionListener {
 						GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
 				imagePanel.repaint();
 			}
-			
-			counter.setText((imageCounter+1)+"/"+pi.length);
-			
+
+			counter.setText((imageCounter + 1) + "/" + pi.length);
+
 		}
 	}
 

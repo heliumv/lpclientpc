@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -148,13 +148,66 @@ public class FertigungFilterFactory {
 	 * @throws Throwable
 	 */
 	public FilterKriteriumDirekt createFKDLosnummer() throws Throwable {
+		
+		
+		String losnummer=LPMain.getTextRespectUISPr("fert.los.direktfilter.losnr");
+		
+		ParametermandantDto parameterLo = DelegateFactory
+				.getInstance()
+				.getParameterDelegate()
+				.getMandantparameter(
+						LPMain.getTheClient().getMandant(),
+						ParameterFac.KATEGORIE_FERTIGUNG,
+						ParameterFac.PARAMETER_LOSNUMMER_AUFTRAGSBEZOGEN);
+
+		int iLosnummerAuftragsbezogen = (Integer) parameterLo
+				.getCWertAsObject();
+
+		if (iLosnummerAuftragsbezogen >= 1) {
+			losnummer=LPMain.getTextRespectUISPr("fert.los.direktfilter.losnrauftragnr");
+		}
+				
+				
+				
+		
 		return new FilterKriteriumDirekt("flrlos." + FertigungFac.FLR_LOS_C_NR,
-				"", FilterKriterium.OPERATOR_LIKE, "Los Nr.",
+				"", FilterKriterium.OPERATOR_LIKE, losnummer,
 				FilterKriteriumDirekt.PROZENT_LEADING, // Auswertung als '%XX'
 				true, // wrapWithSingleQuotes
 				false, Facade.MAX_UNBESCHRAENKT);
 	}
 
+	public FilterKriteriumDirekt createFKDLosnummerOffeneAGs() throws Throwable {
+		
+		
+		String losnummer=LPMain.getTextRespectUISPr("fert.los.direktfilter.losnr");
+		
+		ParametermandantDto parameterLo = DelegateFactory
+				.getInstance()
+				.getParameterDelegate()
+				.getMandantparameter(
+						LPMain.getTheClient().getMandant(),
+						ParameterFac.KATEGORIE_FERTIGUNG,
+						ParameterFac.PARAMETER_LOSNUMMER_AUFTRAGSBEZOGEN);
+
+		int iLosnummerAuftragsbezogen = (Integer) parameterLo
+				.getCWertAsObject();
+
+		if (iLosnummerAuftragsbezogen >= 1) {
+			losnummer=LPMain.getTextRespectUISPr("fert.los.direktfilter.losnrauftragnr");
+		}
+				
+				
+				
+		
+		return new FilterKriteriumDirekt("flroffeneags.flrlos." + FertigungFac.FLR_LOS_C_NR,
+				"", FilterKriterium.OPERATOR_LIKE, losnummer,
+				FilterKriteriumDirekt.PROZENT_LEADING, // Auswertung als '%XX'
+				true, // wrapWithSingleQuotes
+				false, Facade.MAX_UNBESCHRAENKT);
+	}
+
+	
 	public FilterKriteriumDirekt createFKDProjektDesLoses() throws Throwable {
 		return new FilterKriteriumDirekt("flrlos."
 				+ FertigungFac.FLR_LOS_C_PROJEKT, "",
@@ -171,6 +224,35 @@ public class FertigungFilterFactory {
 				FilterKriterium.OPERATOR_LIKE,
 				LPMain.getTextRespectUISPr("label.auftragnummer"),
 				FilterKriteriumDirekt.PROZENT_LEADING, // Auswertung als '%XX'
+				true, // wrapWithSingleQuotes
+				true, Facade.MAX_UNBESCHRAENKT);
+	}
+	public FilterKriteriumDirekt createFKDVolltextsucheArtikel() throws Throwable {
+		return new FilterKriteriumDirekt(
+				ArtikelFac.FLR_ARTIKELLISTE_C_VOLLTEXT, "",
+				FilterKriterium.OPERATOR_LIKE, LPMain.getInstance()
+						.getTextRespectUISPr("fertigung.textsuche.artikel"),
+				FilterKriteriumDirekt.EXTENDED_SEARCH, false, true,
+				Facade.MAX_UNBESCHRAENKT); // wrapWithSingleQuotes
+	}
+	
+
+	
+	public FilterKriteriumDirekt createFKDLosProjektnummerAusAuftrag() throws Throwable {
+		return new FilterKriteriumDirekt("flrlos."
+				+ FertigungFac.FLR_LOSREPORT_FLRAUFTRAG + ".flrprojekt.c_nr", "",
+				FilterKriterium.OPERATOR_LIKE,
+				LPMain.getTextRespectUISPr("fert.los.filter.projektnummer"),
+				FilterKriteriumDirekt.PROZENT_LEADING, // Auswertung als '%XX'
+				true, // wrapWithSingleQuotes
+				true, Facade.MAX_UNBESCHRAENKT);
+	}
+	public FilterKriteriumDirekt createFKDLosProjektbezeichnung() throws Throwable {
+		return new FilterKriteriumDirekt("flrlos."
+				+ FertigungFac.FLR_LOS_C_PROJEKT, "",
+				FilterKriterium.OPERATOR_LIKE,
+				LPMain.getTextRespectUISPr("fert.los.projekt"),
+				FilterKriteriumDirekt.PROZENT_BOTH, 
 				true, // wrapWithSingleQuotes
 				true, Facade.MAX_UNBESCHRAENKT);
 	}
@@ -225,13 +307,35 @@ public class FertigungFilterFactory {
 
 	public FilterKriterium[] createFKBebuchbareLose(boolean bMitErledigten,
 			boolean bMitAusgegebenen, boolean bMitAngelegten) throws Throwable {
-		// Handartikel nicht anzeigen
 		FilterKriterium[] kriterien = new FilterKriterium[2];
 
 		kriterien[0] = new FilterKriterium("flrlos.mandant_c_nr", true, "'"
 				+ LPMain.getTheClient().getMandant() + "'",
 				FilterKriterium.OPERATOR_EQUAL, false);
+		kriterien[1] = createFKBebuchbareLosStatus(bMitErledigten, bMitAusgegebenen, bMitAngelegten) ;
+//		
+//		String s = "('";
+//		if (bMitAngelegten == false) {
+//			s += FertigungFac.STATUS_ANGELEGT + "','";
+//		}
+//		if (bMitAusgegebenen == false) {
+//			s += FertigungFac.STATUS_AUSGEGEBEN + "','";
+//		}
+//		s += FertigungFac.STATUS_GESTOPPT + "','";
+//		if (bMitErledigten == false) {
+//			s += FertigungFac.STATUS_ERLEDIGT + "','";
+//		}
+//		s += FertigungFac.STATUS_STORNIERT + "')";
+//
+//		kriterien[1] = new FilterKriterium("flrlos."
+//				+ FertigungFac.FLR_LOS_STATUS_C_NR, true, s,
+//				FilterKriterium.OPERATOR_NOT_IN, false);
 
+		return kriterien;
+	}
+
+	public FilterKriterium createFKBebuchbareLosStatus(boolean bMitErledigten,
+			boolean bMitAusgegebenen, boolean bMitAngelegten) throws Throwable {
 		String s = "('";
 		if (bMitAngelegten == false) {
 			s += FertigungFac.STATUS_ANGELEGT + "','";
@@ -245,11 +349,9 @@ public class FertigungFilterFactory {
 		}
 		s += FertigungFac.STATUS_STORNIERT + "')";
 
-		kriterien[1] = new FilterKriterium("flrlos."
+		return new FilterKriterium("flrlos."
 				+ FertigungFac.FLR_LOS_STATUS_C_NR, true, s,
-				FilterKriterium.OPERATOR_NOT_IN, false);
-
-		return kriterien;
+				FilterKriterium.OPERATOR_NOT_IN, false) ;		
 	}
 
 	public FilterKriterium[] createFKLosKey(Integer artikelIId)
@@ -323,8 +425,31 @@ public class FertigungFilterFactory {
 					.createFKDArtikelnummer();
 		}
 		panelQueryLose.befuellePanelFilterkriterienDirekt(fkDirekt1, fkDirekt2);
-		panelQueryLose.addDirektFilter(FertigungFilterFactory.getInstance()
-				.createFKDLosAuftagsnummer());
+		
+		
+		
+		ParametermandantDto parameterLo = DelegateFactory
+				.getInstance()
+				.getParameterDelegate()
+				.getMandantparameter(
+						LPMain.getTheClient().getMandant(),
+						ParameterFac.KATEGORIE_FERTIGUNG,
+						ParameterFac.PARAMETER_LOSNUMMER_AUFTRAGSBEZOGEN);
+
+		int iLosnummerAuftragsbezogen = (Integer) parameterLo
+				.getCWertAsObject();
+
+		if (iLosnummerAuftragsbezogen >= 1) {
+			panelQueryLose.addDirektFilter(FertigungFilterFactory
+					.getInstance().createFKDVolltextsucheArtikel());
+		} else {
+			panelQueryLose.addDirektFilter(FertigungFilterFactory.getInstance()
+					.createFKDLosAuftagsnummer());
+		}
+		
+		
+		
+	
 		panelQueryLose.addDirektFilter(FertigungFilterFactory.getInstance()
 				.createFKDLosKunde());
 
@@ -340,7 +465,9 @@ public class FertigungFilterFactory {
 		PanelQueryFLR panelQueryLose = new PanelQueryFLR(null,
 				createFKBebuchbareLose(bMitErledigten, bMitAusgegebenen,
 						bMitAngelegten), QueryParameters.UC_ID_LOS, null,
-				internalFrameI, LPMain.getTextRespectUISPr("lp.auswahl"));
+				internalFrameI, LPMain.getTextRespectUISPr("lp.auswahl"),
+				createFKVLoseEinesTechnikers(personalIIdTechniker),
+				LPMain.getTextRespectUISPr("fert.los.allelose"));
 
 		FilterKriteriumDirekt fkDirekt1 = FertigungFilterFactory.getInstance()
 				.createFKDLosnummer();
@@ -360,13 +487,28 @@ public class FertigungFilterFactory {
 			fkDirekt2 = FertigungFilterFactory.getInstance()
 					.createFKDArtikelnummer();
 		}
-		panelQueryLose.befuellePanelFilterkriterienDirektUndVersteckte(
-				fkDirekt1, fkDirekt2,
-				createFKVLoseEinesTechnikers(personalIIdTechniker),
-				LPMain.getTextRespectUISPr("fert.los.allelose"));
+		panelQueryLose.befuellePanelFilterkriterienDirekt(
+				fkDirekt1, fkDirekt2);
 
-		panelQueryLose.addDirektFilter(FertigungFilterFactory.getInstance()
-				.createFKDLosAuftagsnummer());
+		
+		ParametermandantDto parameterLo = DelegateFactory
+				.getInstance()
+				.getParameterDelegate()
+				.getMandantparameter(
+						LPMain.getTheClient().getMandant(),
+						ParameterFac.KATEGORIE_FERTIGUNG,
+						ParameterFac.PARAMETER_LOSNUMMER_AUFTRAGSBEZOGEN);
+
+		int iLosnummerAuftragsbezogen = (Integer) parameterLo
+				.getCWertAsObject();
+
+		if (iLosnummerAuftragsbezogen >= 1) {
+			panelQueryLose.addDirektFilter(FertigungFilterFactory
+					.getInstance().createFKDVolltextsucheArtikel());
+		} else {
+			panelQueryLose.addDirektFilter(FertigungFilterFactory.getInstance()
+					.createFKDLosAuftagsnummer());
+		}
 		panelQueryLose.addDirektFilter(FertigungFilterFactory.getInstance()
 				.createFKDLosKunde());
 
@@ -456,8 +598,28 @@ public class FertigungFilterFactory {
 		}
 
 		panelQueryLose.befuellePanelFilterkriterienDirekt(fkDirekt1, fkDirekt2);
-		panelQueryLose.addDirektFilter(FertigungFilterFactory.getInstance()
-				.createFKDLosAuftagsnummer());
+		
+		
+		ParametermandantDto parameterLo = DelegateFactory
+				.getInstance()
+				.getParameterDelegate()
+				.getMandantparameter(
+						LPMain.getTheClient().getMandant(),
+						ParameterFac.KATEGORIE_FERTIGUNG,
+						ParameterFac.PARAMETER_LOSNUMMER_AUFTRAGSBEZOGEN);
+
+		int iLosnummerAuftragsbezogen = (Integer) parameterLo
+				.getCWertAsObject();
+
+		if (iLosnummerAuftragsbezogen >= 1) {
+			panelQueryLose.addDirektFilter(FertigungFilterFactory.getInstance()
+					.createFKDVolltextsucheArtikel());
+		}else {
+			panelQueryLose.addDirektFilter(FertigungFilterFactory.getInstance()
+					.createFKDLosAuftagsnummer());
+		}
+		
+	
 		panelQueryLose.addDirektFilter(FertigungFilterFactory.getInstance()
 				.createFKDLosKunde());
 
@@ -485,7 +647,7 @@ public class FertigungFilterFactory {
 			throws Throwable {
 		FilterKriterium[] filters = new FilterKriterium[1];
 		filters[0] = new FilterKriterium(
-				FertigungFac.FLR_LOSZUSATZSTATUS_LOS_I_ID, true, +losIId + "",
+				FertigungFac.FLR_LOSZUSATZSTATUS_LOS_I_ID, true, losIId + "",
 				FilterKriterium.OPERATOR_EQUAL, false);
 		return filters;
 	}

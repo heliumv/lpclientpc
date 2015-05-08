@@ -1,33 +1,33 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
- * 
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
+ *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published 
- * by the Free Software Foundation, either version 3 of theLicense, or 
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of theLicense, or
  * (at your option) any later version.
- * 
- * According to sec. 7 of the GNU Affero General Public License, version 3, 
+ *
+ * According to sec. 7 of the GNU Affero General Public License, version 3,
  * the terms of the AGPL are supplemented with the following terms:
- * 
- * "HELIUM V" and "HELIUM 5" are registered trademarks of 
- * HELIUM V IT-Solutions GmbH. The licensing of the program under the 
+ *
+ * "HELIUM V" and "HELIUM 5" are registered trademarks of
+ * HELIUM V IT-Solutions GmbH. The licensing of the program under the
  * AGPL does not imply a trademark license. Therefore any rights, title and
  * interest in our trademarks remain entirely with us. If you want to propagate
  * modified versions of the Program under the name "HELIUM V" or "HELIUM 5",
- * you may only do so if you have a written permission by HELIUM V IT-Solutions 
+ * you may only do so if you have a written permission by HELIUM V IT-Solutions
  * GmbH (to acquire a permission please contact HELIUM V IT-Solutions
  * at trademark@heliumv.com).
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Affero General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Contact: developers@heliumv.com
  ******************************************************************************/
 package com.lp.client.frame.component;
@@ -61,12 +61,12 @@ public class ToolBar {
 	/**
 	 * Erzeugt eine neue Toolbar. Sie k&uuml;mmert sich um die Buttons in den Panels
 	 * wie zB.: ACTION_NEW, ACTION_UPDATE, usw.
-	 * 
+	 *
 	 * @param panelBasis
 	 *            Das Panel in dem die Toolbar sich befindet
 	 */
 	public ToolBar(PanelBasis panelBasis) {
-		this.panelBasis = panelBasis;		
+		this.panelBasis = panelBasis;
 	}
 
 	public JPanel getToolsPanel() {
@@ -79,7 +79,8 @@ public class ToolBar {
 					GridBagConstraints.NONE, new Insets(0, 0, 0, 0), 0, 0));
 			panelButtonAction.add(getToolsPanelCenter(),
 					new GridBagConstraints(1, 0, 1, 1, 1.0, 0,
-							GridBagConstraints.CENTER, GridBagConstraints.NONE,
+//							GridBagConstraints.CENTER, GridBagConstraints.NONE,
+							GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 							new Insets(0, 0, 0, 0), 0, 0));
 			panelButtonAction.add(getToolsPanelRight(), new GridBagConstraints(
 					2, 0, 1, 1, 1.0, 0, GridBagConstraints.EAST,
@@ -93,7 +94,7 @@ public class ToolBar {
 			panelButtonActionLeft = new JPanel();
 			FlowLayout flowLayout = new FlowLayout(FlowLayout.LEFT);
 			panelButtonActionLeft.setLayout(flowLayout);
-			
+
 			// Hack fuer QF-Test damit wir kompatibel zum aufgenommen QF-Test bleiben
 			panelButtonActionLeft.setName("panelButtonAction") ;
 		}
@@ -103,9 +104,16 @@ public class ToolBar {
 	public JPanel getToolsPanelCenter() {
 		if (panelButtonActionCenter == null) {
 			panelButtonActionCenter = new JPanel();
-			FlowLayout flowLayout = new FlowLayout(FlowLayout.CENTER);
-			panelButtonActionCenter.setLayout(flowLayout);
+			GridBagLayout gbl = new GridBagLayout();
+			panelButtonActionCenter.setLayout(gbl);
 		}
+
+//	public JPanel getToolsPanelCenter() {
+//		if (panelButtonActionCenter == null) {
+//			panelButtonActionCenter = new JPanel();
+//			FlowLayout flowLayout = new FlowLayout(FlowLayout.CENTER);
+//			panelButtonActionCenter.setLayout(flowLayout);
+//		}
 
 		return panelButtonActionCenter;
 	}
@@ -123,8 +131,8 @@ public class ToolBar {
 	public HashMap<String, LPButtonAction> getHmOfButtons() {
 		return hmOfButtons;
 	}
-	
-	
+
+
 	/**
 	 * Gibt den Button mit dem entsprechenden actionCommand zur&uuml;ck
 	 * @param actionCommand ActionCommand des Buttons
@@ -135,7 +143,7 @@ public class ToolBar {
 
 	/**
 	 * Mache einen Button und f&uuml;ge ihn links im ToolsPanel hinzu.
-	 * 
+	 *
 	 * @param rechtCNrI
 	 *            String: erforderliches Benutzerrecht. (null = kein
 	 *            zusaetzliches Recht erforderlich)
@@ -150,7 +158,7 @@ public class ToolBar {
 
 	/**
 	 * Mache einen Button und f&uuml;ge ihn mittig im ToolsPanel hinzu.
-	 * 
+	 *
 	 * @param rechtCNrI
 	 *            String: erforderliches Benutzerrecht. (null = kein
 	 *            zusaetzliches Recht erforderlich)
@@ -165,7 +173,7 @@ public class ToolBar {
 
 	/**
 	 * Mache einen Button und f&uuml;ge ihn rechts im ToolsPanel hinzu.
-	 * 
+	 *
 	 * @param rechtCNrI
 	 *            String: erforderliches Benutzerrecht. (null = kein
 	 *            zusaetzliches Recht erforderlich)
@@ -187,7 +195,7 @@ public class ToolBar {
 
 	/**
 	 * Aktiviere aWhichButtons Buttons.
-	 * 
+	 *
 	 * @param aWhichButtons
 	 *            String[]; zB. ACTION_SAVE, ACTION_LOCK
 	 * @throws Throwable
@@ -211,7 +219,7 @@ public class ToolBar {
 
 	/**
 	 * Aktiviere aWhichButtons Buttons.
-	 * 
+	 *
 	 * @param aWhichButtons
 	 *            String[]; zB. ACTION_SAVE, ACTION_LOCK
 	 * @throws ExceptionForLPClients
@@ -238,7 +246,7 @@ public class ToolBar {
 
 	/**
 	 * Enable oder disable Buttons, auch solche, die nicht LEAVEALONE sind!
-	 * 
+	 *
 	 * @param enable
 	 * @param which
 	 *            die ActionCommands der Buttons
@@ -255,7 +263,7 @@ public class ToolBar {
 
 	/**
 	 * Enable oder disable der LeaveAlone-Buttons.
-	 * 
+	 *
 	 * @param aButtonStringI
 	 *            die Bezeichnungen der Buttons
 	 * @param bEnableI
@@ -283,7 +291,7 @@ public class ToolBar {
 	/**
 	 * Einen Button aufgrund seines ActionCommand vom Panel entfernen. <br>
 	 * Der Button muss existieren!
-	 * 
+	 *
 	 * @param ac
 	 *            ActionCommand UW->JO
 	 * @throws Exception
@@ -298,7 +306,7 @@ public class ToolBar {
 
 	/**
 	 * Mache einen Button und merke ihn dir.
-	 * 
+	 *
 	 * @param sIconPathI
 	 *            String
 	 * @param sTooltipI

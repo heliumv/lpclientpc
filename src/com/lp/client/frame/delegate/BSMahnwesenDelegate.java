@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -47,7 +47,7 @@ import com.lp.server.bestellung.service.BSMahntextDto;
 import com.lp.server.bestellung.service.BSMahnungDto;
 import com.lp.server.bestellung.service.BSMahnwesenFac;
 
-@SuppressWarnings("static-access") 
+
 public class BSMahnwesenDelegate
     extends Delegate
 {
@@ -69,7 +69,7 @@ public class BSMahnwesenDelegate
   public BSMahnungDto createBSMahnung(BSMahnungDto bSMahnungDto)
       throws ExceptionLP {
     try {
-      bSMahnwesenFac.createBSMahnung(bSMahnungDto, LPMain.getInstance().getTheClient());
+      bSMahnwesenFac.createBSMahnung(bSMahnungDto, LPMain.getTheClient());
       return bSMahnungDto;
 
     }
@@ -83,7 +83,7 @@ public class BSMahnwesenDelegate
   public void removeBSMahnung(BSMahnungDto bSMahnungDto)
       throws ExceptionLP {
     try {
-      bSMahnwesenFac.removeBSMahnung(bSMahnungDto, LPMain.getInstance().getTheClient());
+      bSMahnwesenFac.removeBSMahnung(bSMahnungDto, LPMain.getTheClient());
     }
     catch (Throwable ex) {
       handleThrowable(ex);
@@ -94,7 +94,7 @@ public class BSMahnwesenDelegate
   public void removeBSMahnung(Integer iId)
       throws ExceptionLP {
     try {
-      bSMahnwesenFac.removeBSMahnung(iId, LPMain.getInstance().getTheClient());
+      bSMahnwesenFac.removeBSMahnung(iId, LPMain.getTheClient());
     }
     catch (Throwable ex) {
       handleThrowable(ex);
@@ -108,11 +108,11 @@ public class BSMahnwesenDelegate
     try {
       if (bSMahnungDto.getIId() != null) {
         return bSMahnwesenFac.updateBSMahnung(bSMahnungDto,
-                                              LPMain.getInstance().getTheClient());
+                                              LPMain.getTheClient());
       }
       else {
         return bSMahnwesenFac.createBSMahnung(bSMahnungDto,
-                                              LPMain.getInstance().getTheClient());
+                                              LPMain.getTheClient());
       }
     }
     catch (Throwable ex) {
@@ -125,7 +125,7 @@ public class BSMahnwesenDelegate
   public void updateBSMahnungs(BSMahnungDto[] bSMahnungDtos)
       throws ExceptionLP {
     try {
-      bSMahnwesenFac.updateBSMahnungs(bSMahnungDtos, LPMain.getInstance().getTheClient());
+      bSMahnwesenFac.updateBSMahnungs(bSMahnungDtos, LPMain.getTheClient());
     }
     catch (Throwable ex) {
       handleThrowable(ex);
@@ -164,7 +164,7 @@ public class BSMahnwesenDelegate
       throws ExceptionLP {
     try {
       bSMahnwesenFac.mahneBSMahnungRueckgaengig(mahnungIId,
-                                                LPMain.getInstance().getTheClient());
+                                                LPMain.getTheClient());
     }
     catch (Throwable ex) {
       handleThrowable(ex);
@@ -175,7 +175,7 @@ public class BSMahnwesenDelegate
   public void mahneBSMahnung(Integer mahnungIId)
       throws ExceptionLP {
     try {
-      bSMahnwesenFac.mahneBSMahnung(mahnungIId, LPMain.getInstance().getTheClient());
+      bSMahnwesenFac.mahneBSMahnung(mahnungIId, LPMain.getTheClient());
     }
     catch (Throwable ex) {
       handleThrowable(ex);
@@ -187,7 +187,7 @@ public class BSMahnwesenDelegate
   public Integer createBSMahnlauf(BSMahnlaufDto bSMahnlaufDto)
       throws ExceptionLP {
     try {
-      bSMahnwesenFac.createBSMahnlauf(bSMahnlaufDto, LPMain.getInstance().getTheClient());
+      bSMahnwesenFac.createBSMahnlauf(bSMahnlaufDto, LPMain.getTheClient());
     }
     catch (Throwable ex) {
       handleThrowable(ex);
@@ -199,7 +199,7 @@ public class BSMahnwesenDelegate
   public void removeBSMahnlauf(BSMahnlaufDto bSMahnlaufDto)
       throws ExceptionLP {
     try {
-      bSMahnwesenFac.removeBSMahnlauf(bSMahnlaufDto, LPMain.getInstance().getTheClient());
+      bSMahnwesenFac.removeBSMahnlauf(bSMahnlaufDto, LPMain.getTheClient());
     }
     catch (Throwable ex) {
       handleThrowable(ex);
@@ -211,7 +211,7 @@ public class BSMahnwesenDelegate
   public void updateBSMahnlauf(BSMahnlaufDto bSMahnlaufDto)
       throws ExceptionLP {
     try {
-      bSMahnwesenFac.updateBSMahnlauf(bSMahnlaufDto, LPMain.getInstance().getTheClient());
+      bSMahnwesenFac.updateBSMahnlauf(bSMahnlaufDto, LPMain.getTheClient());
     }
     catch (Throwable ex) {
       handleThrowable(ex);
@@ -223,7 +223,7 @@ public class BSMahnwesenDelegate
   public void updateBSMahnlaufs(BSMahnlaufDto[] bSMahnlaufDtos)
       throws ExceptionLP {
     try {
-      bSMahnwesenFac.updateBSMahnlaufs(bSMahnlaufDtos, LPMain.getInstance().getTheClient());
+      bSMahnwesenFac.updateBSMahnlaufs(bSMahnlaufDtos, LPMain.getTheClient());
     }
     catch (Throwable ex) {
       handleThrowable(ex);
@@ -249,7 +249,7 @@ public class BSMahnwesenDelegate
       throws ExceptionLP {
     try {
       bSMahnwesenFac.mahneBSMahnlaufRueckgaengig(bsmahnlaufIId,
-                                                 LPMain.getInstance().getTheClient());
+                                                 LPMain.getTheClient());
     }
     catch (Throwable ex) {
       handleThrowable(ex);
@@ -260,7 +260,7 @@ public class BSMahnwesenDelegate
   public void mahneBSMahnlauf(Integer bsmahnlaufIId)
       throws ExceptionLP {
     try {
-      bSMahnwesenFac.mahneBSMahnlauf(bsmahnlaufIId, LPMain.getInstance().getTheClient());
+      bSMahnwesenFac.mahneBSMahnlauf(bsmahnlaufIId, LPMain.getTheClient());
     }
     catch (Throwable ex) {
       handleThrowable(ex);
@@ -271,13 +271,12 @@ public class BSMahnwesenDelegate
   public Boolean bGibtEsEinenOffenenBSMahnlauf()
       throws ExceptionLP {
     try {
-      return bSMahnwesenFac.bGibtEsEinenOffenenBSMahnlauf(LPMain.getInstance().
-          getTheClient().
-          getMandant(), LPMain.getInstance().getTheClient());
+      return bSMahnwesenFac.bGibtEsEinenOffenenBSMahnlauf(LPMain.getTheClient().
+          getMandant(), LPMain.getTheClient());
     }
     catch (Throwable ex) {
       handleThrowable(ex);
-      return null;
+      return Boolean.FALSE;
     }
   }
 
@@ -285,8 +284,7 @@ public class BSMahnwesenDelegate
   public BSMahnlaufDto createBSMahnlaufEchteLiefermahnungen()
       throws ExceptionLP {
     try {
-      return bSMahnwesenFac.createBSMahnlaufEchteLiefermahnungen(LPMain.getInstance().
-          getTheClient());
+      return bSMahnwesenFac.createBSMahnlaufEchteLiefermahnungen(LPMain.getTheClient());
     }
     catch (Throwable ex) {
       handleThrowable(ex);
@@ -298,7 +296,7 @@ public class BSMahnwesenDelegate
   public BSMahnlaufDto createBSMahnlaufABMahnungen()
       throws ExceptionLP {
     try {
-      return bSMahnwesenFac.createBSMahnlaufABMahnungen(LPMain.getInstance().getTheClient());
+      return bSMahnwesenFac.createBSMahnlaufABMahnungen(LPMain.getTheClient());
     }
     catch (Throwable ex) {
       handleThrowable(ex);
@@ -309,7 +307,7 @@ public class BSMahnwesenDelegate
   public BSMahnlaufDto createBSMahnlaufLiefererinnerung()
       throws ExceptionLP {
     try {
-      return bSMahnwesenFac.createBSMahnlaufLiefererinnerung(LPMain.getInstance().getTheClient());
+      return bSMahnwesenFac.createBSMahnlaufLiefererinnerung(LPMain.getTheClient());
     }
     catch (Throwable ex) {
       handleThrowable(ex);
@@ -321,8 +319,7 @@ public class BSMahnwesenDelegate
   public BSMahnlaufDto createABMahnungenUndLieferMahnungenUndLiefererinnerungen()
       throws ExceptionLP {
     try {
-      return bSMahnwesenFac.createABMahnungenUndLieferMahnungenUndLiefererinnerungen(LPMain.getInstance().
-          getTheClient());
+      return bSMahnwesenFac.createABMahnungenUndLieferMahnungenUndLiefererinnerungen(LPMain.getTheClient());
     }
     catch (Throwable ex) {
       handleThrowable(ex);
@@ -337,7 +334,7 @@ public class BSMahnwesenDelegate
     Integer iId = null;
     try {
       iId = bSMahnwesenFac.createBSMahntext(bSMahntextDto,
-                                            LPMain.getInstance().getTheClient());
+                                            LPMain.getTheClient());
     }
     catch (Throwable ex) {
       handleThrowable(ex);
@@ -349,7 +346,7 @@ public class BSMahnwesenDelegate
   public void removeBSMahntext(BSMahntextDto bSMahntextDto)
       throws ExceptionLP {
     try {
-      bSMahnwesenFac.removeBSMahntext(bSMahntextDto, LPMain.getInstance().getTheClient());
+      bSMahnwesenFac.removeBSMahntext(bSMahntextDto, LPMain.getTheClient());
     }
     catch (Throwable ex) {
       handleThrowable(ex);
@@ -361,7 +358,7 @@ public class BSMahnwesenDelegate
   public void updateBSMahntext(BSMahntextDto bSMahntextDto)
       throws ExceptionLP {
     try {
-      bSMahnwesenFac.updateBSMahntext(bSMahntextDto, LPMain.getInstance().getTheClient());
+      bSMahnwesenFac.updateBSMahntext(bSMahntextDto, LPMain.getTheClient());
     }
     catch (Throwable ex) {
       handleThrowable(ex);
@@ -373,7 +370,7 @@ public class BSMahnwesenDelegate
   public void updateBSMahntexts(BSMahntextDto[] bSMahntextDtos)
       throws ExceptionLP {
     try {
-      bSMahnwesenFac.updateBSMahntexts(bSMahntextDtos, LPMain.getInstance().getTheClient());
+      bSMahnwesenFac.updateBSMahntexts(bSMahntextDtos, LPMain.getTheClient());
     }
     catch (Throwable ex) {
       handleThrowable(ex);
@@ -399,8 +396,8 @@ public class BSMahnwesenDelegate
       Integer bsmahnstufeIId)
       throws ExceptionLP {
     try {
-      return bSMahnwesenFac.bsmahntextFindByMandantLocaleCNr(LPMain.getInstance().
-          getTheClient().getMandant(), localeCNr, bsmahnstufeIId);
+      return bSMahnwesenFac.bsmahntextFindByMandantLocaleCNr(
+    		  LPMain.getTheClient().getMandant(), localeCNr, bsmahnstufeIId);
     }
     catch (Throwable ex) {
       handleThrowable(ex);
@@ -416,7 +413,7 @@ public class BSMahnwesenDelegate
 
     try {
       oBSMahntextDto = bSMahnwesenFac.createDefaultBSMahntext(
-          bsmahnstufeIId, sTextinhaltI, LPMain.getInstance().getTheClient());
+          bsmahnstufeIId, sTextinhaltI, LPMain.getTheClient());
     }
     catch (Throwable ex) {
       handleThrowable(ex);
@@ -430,7 +427,7 @@ public class BSMahnwesenDelegate
   public Integer createBSMahnstufe(BSMahnstufeDto bSMahnstufeDto)
       throws ExceptionLP {
     try {
-      bSMahnwesenFac.createBSMahnstufe(bSMahnstufeDto, LPMain.getInstance().getTheClient());
+      bSMahnwesenFac.createBSMahnstufe(bSMahnstufeDto, LPMain.getTheClient());
     }
     catch (Throwable ex) {
       handleThrowable(ex);
@@ -442,7 +439,7 @@ public class BSMahnwesenDelegate
   public void removeBSMahnstufe(BSMahnstufeDto bSMahnstufeDto)
       throws ExceptionLP {
     try {
-      bSMahnwesenFac.removeBSMahnstufe(bSMahnstufeDto, LPMain.getInstance().getTheClient());
+      bSMahnwesenFac.removeBSMahnstufe(bSMahnstufeDto, LPMain.getTheClient());
     }
     catch (Throwable ex) {
       handleThrowable(ex);
@@ -454,7 +451,7 @@ public class BSMahnwesenDelegate
   public void updateBSMahnstufe(BSMahnstufeDto bSMahnstufeDto)
       throws ExceptionLP {
     try {
-      bSMahnwesenFac.updateBSMahnstufe(bSMahnstufeDto, LPMain.getInstance().getTheClient());
+      bSMahnwesenFac.updateBSMahnstufe(bSMahnstufeDto, LPMain.getTheClient());
     }
     catch (Throwable ex) {
       handleThrowable(ex);
@@ -466,7 +463,7 @@ public class BSMahnwesenDelegate
   public void updateBSMahnstufes(BSMahnstufeDto[] bSMahnstufeDtos)
       throws ExceptionLP {
     try {
-      bSMahnwesenFac.updateBSMahnstufes(bSMahnstufeDtos, LPMain.getInstance().getTheClient());
+      bSMahnwesenFac.updateBSMahnstufes(bSMahnstufeDtos, LPMain.getTheClient());
     }
     catch (Throwable ex) {
     	handleThrowable(ex);
@@ -477,7 +474,7 @@ public class BSMahnwesenDelegate
   public BSMahnungDto[] bsmahnungFindByBSMahnlaufIIdLieferantIId(Integer mahnlaufIId,Integer lieferantIId)
 	throws ExceptionLP {
 	  try {
-		return bSMahnwesenFac.bsmahnungFindByBSMahnlaufIIdLieferantIId(mahnlaufIId, lieferantIId, LPMain.getInstance().
+		return bSMahnwesenFac.bsmahnungFindByBSMahnlaufIIdLieferantIId(mahnlaufIId, lieferantIId, LPMain.
 		          getTheClient().getMandant());
 	} catch (Throwable e) {
 		handleThrowable(e);
@@ -490,7 +487,7 @@ public class BSMahnwesenDelegate
       throws ExceptionLP {
     try {
       return bSMahnwesenFac.bsmahnstufeFindByPrimaryKeyOhneExc(new BsmahnstufePK(iId,
-          LPMain.getInstance().getTheClient().getMandant()));
+          LPMain.getTheClient().getMandant()));
     }
     catch (Throwable ex) {
       handleThrowable(ex);
@@ -504,15 +501,13 @@ public class BSMahnwesenDelegate
       throws ExceptionLP {
     try {
       return bSMahnwesenFac.getAllBSMahnstufen(
-          LPMain.getInstance().getTheClient().getMandant(),
-          LPMain.getInstance().getTheClient());
+          LPMain.getTheClient().getMandant(),
+          LPMain.getTheClient());
     }
     catch (Throwable ex) {
       handleThrowable(ex);
       return null;
     }
   }
-  
-  
 
 }

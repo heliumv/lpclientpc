@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -47,6 +47,8 @@ import com.lp.server.personal.service.ZeiterfassungFac;
 import com.lp.server.projekt.service.ProjektFac;
 import com.lp.server.projekt.service.ProjektServiceFac;
 import com.lp.server.system.service.LocaleFac;
+import com.lp.server.system.service.ParameterFac;
+import com.lp.server.system.service.ParametermandantDto;
 import com.lp.server.system.service.SystemFac;
 import com.lp.server.util.Facade;
 import com.lp.server.util.fastlanereader.service.query.FilterKriterium;
@@ -86,16 +88,14 @@ public class ProjektFilterFactory {
 
 	public PanelQueryFLR createPanelFLRProjekt(InternalFrame internalFrameI)
 			throws Throwable {
-		return createPanelFLRProjekt(internalFrameI, null,false);
+		return createPanelFLRProjekt(internalFrameI, null, false);
 	}
 
 	public PanelQueryFLR createPanelFLRProjekt(InternalFrame internalFrameI,
 			Integer selectedId, boolean bMitLeerenButton) throws Throwable {
 
-		
 		String[] aWhichButtonIUse = SystemFilterFactory.getInstance()
-		.createButtonArray(true, bMitLeerenButton);
-		
+				.createButtonArray(true, bMitLeerenButton);
 
 		QueryType[] querytypes = ProjektFilterFactory.getInstance()
 				.createQTPanelProjektAuswahl();
@@ -107,18 +107,17 @@ public class ProjektFilterFactory {
 
 		plProjekt.setFilterComboBox(DelegateFactory.getInstance()
 				.getProjektServiceDelegate().getAllBereich(),
-				new FilterKriterium(ProjektFac.FLR_PROJEKT_BEREICH_I_ID,
-						true, "" + "", FilterKriterium.OPERATOR_EQUAL,
-						false), true);
-		
+				new FilterKriterium(ProjektFac.FLR_PROJEKT_BEREICH_I_ID, true,
+						"" + "", FilterKriterium.OPERATOR_EQUAL, false), true);
+
 		FilterKriteriumDirekt fkDirekt1 = ProjektFilterFactory.getInstance()
 				.createFKDPartnerIId();
 
 		FilterKriteriumDirekt fkDirekt2 = ProjektFilterFactory.getInstance()
 				.createFKDTitelVolltextsuche();
 
-		plProjekt.befuellePanelFilterkriterienDirektUndVersteckte(ProjektFilterFactory.getInstance()
-				.createFKDProjektnummer(),
+		plProjekt.befuellePanelFilterkriterienDirektUndVersteckte(
+				ProjektFilterFactory.getInstance().createFKDProjektnummer(),
 				fkDirekt1, createFKVAlleOffene(),
 				LPMain.getTextRespectUISPr("proj.alle"));
 		plProjekt.addDirektFilter(fkDirekt2);
@@ -139,7 +138,8 @@ public class ProjektFilterFactory {
 				.createButtonArray(bShowFilterButton, bShowLeerenButton);
 
 		PanelQueryFLR panelQueryFLRErledigungsgrund = new PanelQueryFLR(null,
-				ProjektFilterFactory.getInstance().createFKMandantCNr(), QueryParameters.UC_ID_PROJEKTERLEDIGUNGSGRUND,
+				ProjektFilterFactory.getInstance().createFKMandantCNr(),
+				QueryParameters.UC_ID_PROJEKTERLEDIGUNGSGRUND,
 				aWhichButtonIUse, internalFrameI, LPMain.getInstance()
 						.getTextRespectUISPr("proj.erledigungsgrund"));
 
@@ -237,7 +237,7 @@ public class ProjektFilterFactory {
 
 	public FilterKriterium[] createFKMeineOffene() throws Throwable {
 
-		FilterKriterium[] kriterien = new FilterKriterium[6];
+		FilterKriterium[] kriterien = new FilterKriterium[4];
 
 		FilterKriterium krit0 = new FilterKriterium(
 				ProjektFac.FLR_PROJEKT_MANDANT_C_NR, true, "'"
@@ -250,39 +250,26 @@ public class ProjektFilterFactory {
 						+ "'", FilterKriterium.OPERATOR_EQUAL, false);
 
 		FilterKriterium krit2 = new FilterKriterium(
-				ProjektFac.FLR_PROJEKT_STATUS_C_NR, true, "'"
-						+ LocaleFac.STATUS_ERLEDIGT + "'",
-				FilterKriterium.OPERATOR_NOT_EQUAL, false);
+				ProjektFac.FLR_PROJEKT_FLRPROJEKTSTATUS + ".b_erledigt", true,
+				"0", FilterKriterium.OPERATOR_EQUAL, false);
 
 		FilterKriterium krit3 = new FilterKriterium(
 				ProjektFac.FLR_PROJEKT_STATUS_C_NR, true, "'"
-						+ LocaleFac.STATUS_FERTIG + "'",
-				FilterKriterium.OPERATOR_NOT_EQUAL, false);
-
-		FilterKriterium krit4 = new FilterKriterium(
-				ProjektFac.FLR_PROJEKT_STATUS_C_NR, true, "'"
-						+ ProjektServiceFac.PROJEKT_STATUS_GETESTET + "'",
-				FilterKriterium.OPERATOR_NOT_EQUAL, false);
-
-		
-		FilterKriterium krit5 = new FilterKriterium(
-				ProjektFac.FLR_PROJEKT_STATUS_C_NR, true, "'"
 						+ ProjektServiceFac.PROJEKT_STATUS_STORNIERT + "'",
 				FilterKriterium.OPERATOR_NOT_EQUAL, false);
-		
+
 		kriterien[0] = krit0;
 		kriterien[1] = krit1;
 		kriterien[2] = krit2;
 		kriterien[3] = krit3;
-		kriterien[4] = krit4;
-		kriterien[5] = krit5;
+
 		return kriterien;
 
 	}
 
 	public FilterKriterium[] createFKAlleOffene() throws Throwable {
 
-		FilterKriterium[] kriterien = new FilterKriterium[5];
+		FilterKriterium[] kriterien = new FilterKriterium[3];
 
 		FilterKriterium krit0 = new FilterKriterium(
 				ProjektFac.FLR_PROJEKT_MANDANT_C_NR, true, "'"
@@ -290,20 +277,10 @@ public class ProjektFilterFactory {
 						+ "'", FilterKriterium.OPERATOR_EQUAL, false);
 
 		FilterKriterium krit1 = new FilterKriterium(
-				ProjektFac.FLR_PROJEKT_STATUS_C_NR, true, "'"
-						+ LocaleFac.STATUS_FERTIG + "'",
-				FilterKriterium.OPERATOR_NOT_EQUAL, false);
+				ProjektFac.FLR_PROJEKT_FLRPROJEKTSTATUS + ".b_erledigt", true,
+				"0", FilterKriterium.OPERATOR_EQUAL, false);
 
 		FilterKriterium krit2 = new FilterKriterium(
-				ProjektFac.FLR_PROJEKT_STATUS_C_NR, true, "'"
-						+ LocaleFac.STATUS_ERLEDIGT + "'",
-				FilterKriterium.OPERATOR_NOT_EQUAL, false);
-
-		FilterKriterium krit3 = new FilterKriterium(
-				ProjektFac.FLR_PROJEKT_STATUS_C_NR, true, "'"
-						+ ProjektServiceFac.PROJEKT_STATUS_GETESTET + "'",
-				FilterKriterium.OPERATOR_NOT_EQUAL, false);
-		FilterKriterium krit4 = new FilterKriterium(
 				ProjektFac.FLR_PROJEKT_STATUS_C_NR, true, "'"
 						+ ProjektServiceFac.PROJEKT_STATUS_STORNIERT + "'",
 				FilterKriterium.OPERATOR_NOT_EQUAL, false);
@@ -311,8 +288,6 @@ public class ProjektFilterFactory {
 		kriterien[0] = krit0;
 		kriterien[1] = krit1;
 		kriterien[2] = krit2;
-		kriterien[3] = krit3;
-		kriterien[4] = krit4;
 
 		return kriterien;
 
@@ -322,7 +297,8 @@ public class ProjektFilterFactory {
 
 		FilterKriterium krit1 = new FilterKriterium(
 				ProjektFac.FLR_PROJEKT_STATUS_C_NR, true, "('"
-						+ LocaleFac.STATUS_FERTIG + "','"+ LocaleFac.STATUS_STORNIERT + "','"
+						+ LocaleFac.STATUS_FERTIG + "','"
+						+ LocaleFac.STATUS_STORNIERT + "','"
 						+ LocaleFac.STATUS_ERLEDIGT + "','"
 						+ ProjektServiceFac.PROJEKT_STATUS_GETESTET + "')",
 				FilterKriterium.OPERATOR_NOT_IN, false);
@@ -357,16 +333,14 @@ public class ProjektFilterFactory {
 
 		return kriterien;
 	}
+
 	public FilterKriterium[] createFKProjektTelefonzeiten(Integer projektIId) {
 		FilterKriterium[] kriterien = new FilterKriterium[1];
-		FilterKriterium krit1 = new FilterKriterium(
-				"projekt_i_id", true, ""
-						+ projektIId.toString() + "",
-				FilterKriterium.OPERATOR_EQUAL, false);
-	
+		FilterKriterium krit1 = new FilterKriterium("projekt_i_id", true, ""
+				+ projektIId.toString() + "", FilterKriterium.OPERATOR_EQUAL,
+				false);
 
 		kriterien[0] = krit1;
-		
 
 		return kriterien;
 	}
@@ -445,7 +419,7 @@ public class ProjektFilterFactory {
 	 * 
 	 * @return QueryType[]
 	 */
-	public QueryType[] createQTPanelProjektAuswahl() {
+	public QueryType[] createQTPanelProjektAuswahl() throws Throwable {
 		QueryType[] types = new QueryType[9];
 
 		FilterKriterium f1 = new FilterKriterium(
@@ -457,11 +431,26 @@ public class ProjektFilterFactory {
 				new String[] { FilterKriterium.OPERATOR_EQUAL }, true, // wrapValueWithSingleQuotes
 				true);
 
-		FilterKriterium f2 = new FilterKriterium(
-				ProjektFac.FLR_PROJEKT_FLRPERSONALERZEUGER + "."
-						+ PersonalFac.FLR_PERSONAL_FLRPARTNER + "."
-						+ PartnerFac.FLR_PARTNER_NAME1NACHNAMEFIRMAZEILE1,
-				true, "", FilterKriterium.OPERATOR_LIKE, true);
+		ParametermandantDto parameter = (ParametermandantDto) DelegateFactory
+				.getInstance()
+				.getParameterDelegate()
+				.getParametermandant(
+						ParameterFac.PARAMETER_KURZZEICHEN_STATT_NAME_IN_AUSWAHLLISTE,
+						ParameterFac.KATEGORIE_PROJEKT,
+						LPMain.getTheClient().getMandant());
+		boolean bKurzzeichenStattName = (Boolean) parameter.getCWertAsObject();
+
+		FilterKriterium f2 = null;
+		if (bKurzzeichenStattName) {
+			f2 = new FilterKriterium(ProjektFac.FLR_PROJEKT_FLRPERSONALERZEUGER
+					+ "." + PersonalFac.FLR_PERSONAL_C_KURZZEICHEN, true, "",
+					FilterKriterium.OPERATOR_LIKE, true);
+		} else {
+			f2 = new FilterKriterium(ProjektFac.FLR_PROJEKT_FLRPERSONALERZEUGER
+					+ "." + PersonalFac.FLR_PERSONAL_FLRPARTNER + "."
+					+ PartnerFac.FLR_PARTNER_NAME1NACHNAMEFIRMAZEILE1, true,
+					"", FilterKriterium.OPERATOR_LIKE, true);
+		}
 
 		types[1] = new QueryType(LPMain.getInstance().getTextRespectUISPr(
 				"proj.personal.erzeuger"), f2,
@@ -478,11 +467,19 @@ public class ProjektFilterFactory {
 																		// 10.12.2004
 				true, true);
 
-		FilterKriterium f4 = new FilterKriterium(
-				ProjektFac.FLR_PROJEKT_FLRPERSONALZUGEWIESENER + "."
-						+ PersonalFac.FLR_PERSONAL_FLRPARTNER + "."
-						+ PartnerFac.FLR_PARTNER_NAME1NACHNAMEFIRMAZEILE1,
-				true, "", FilterKriterium.OPERATOR_LIKE, true);
+		FilterKriterium f4 = null;
+		if (bKurzzeichenStattName) {
+			f4 = new FilterKriterium(
+					ProjektFac.FLR_PROJEKT_FLRPERSONALZUGEWIESENER + "."
+							+ PersonalFac.FLR_PERSONAL_C_KURZZEICHEN, true, "",
+					FilterKriterium.OPERATOR_LIKE, true);
+		} else {
+			f4 = new FilterKriterium(
+					ProjektFac.FLR_PROJEKT_FLRPERSONALZUGEWIESENER + "."
+							+ PersonalFac.FLR_PERSONAL_FLRPARTNER + "."
+							+ PartnerFac.FLR_PARTNER_NAME1NACHNAMEFIRMAZEILE1,
+					true, "", FilterKriterium.OPERATOR_LIKE, true);
+		}
 
 		types[3] = new QueryType(LPMain.getInstance().getTextRespectUISPr(
 				"proj.personal.fuer"), f4,

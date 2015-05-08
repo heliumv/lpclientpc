@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -161,19 +161,19 @@ public PanelQuery getPanelQueryTagessatz(){
           QueryParameters.UC_ID_DIAETENTAGESSATZ,
           aWhichButtonIUse,
           getInternalFrame(),
-          LPMain.getInstance().getTextRespectUISPr(
+          LPMain.getTextRespectUISPr(
               "pers.zeiterfassung.diaeten.tagessaetze"), true);
 
       panelBottomDiaetentagessatz = new PanelDiaetentagessatz(
           getInternalFrame(),
-          LPMain.getInstance().getTextRespectUISPr(
+          LPMain.getTextRespectUISPr(
               "pers.zeiterfassung.diaeten.tagessaetze"), null);
 
       panelSplitDiaetentagessatz = new PanelSplit(
           getInternalFrame(),
           panelBottomDiaetentagessatz,
           panelQueryDiaetentagessatz,
-          320);
+          300);
 
       setComponentAt(IDX_PANEL_TAGESSATZ, panelSplitDiaetentagessatz);
     }

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -44,6 +44,7 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JSeparator;
+import javax.swing.KeyStroke;
 import javax.swing.event.ChangeEvent;
 
 import jxl.Cell;
@@ -72,16 +73,23 @@ import com.lp.client.frame.component.WrapperMenuItem;
 import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.frame.dialog.DialogFactory;
 import com.lp.client.pc.LPMain;
+import com.lp.client.personal.DialogUrlaubsantrag;
 import com.lp.client.personal.PanelBereitschaft;
 import com.lp.client.personal.PersonalFilterFactory;
+import com.lp.client.personal.ReportUrlaubsantrag;
 import com.lp.client.projekt.ProjektFilterFactory;
-import com.lp.client.system.ReportEntitylog;
 import com.lp.server.benutzer.service.RechteFac;
 import com.lp.server.personal.service.PersonalDto;
+import com.lp.server.personal.service.PersonalFac;
+import com.lp.server.personal.service.SonderzeitenDto;
 import com.lp.server.personal.service.SonderzeitenImportDto;
-import com.lp.server.system.service.HvDtoLogClass;
+import com.lp.server.personal.service.ZeitdatenDto;
+import com.lp.server.personal.service.ZeiterfassungFac;
 import com.lp.server.system.service.LocaleFac;
 import com.lp.server.system.service.MandantFac;
+import com.lp.server.system.service.ParameterFac;
+import com.lp.server.system.service.ParametermandantDto;
+import com.lp.server.system.service.VersandauftragDto;
 import com.lp.server.util.fastlanereader.service.query.FilterKriterium;
 import com.lp.server.util.fastlanereader.service.query.QueryParameters;
 import com.lp.util.Helper;
@@ -102,6 +110,10 @@ public class TabbedPaneZeiterfassung extends TabbedPane {
 	private PanelBasis panelBottomSonderzeiten = null;
 	private PanelSplit panelSplitSonderzeiten = null;
 
+	private PanelQuery panelQueryZeitabschluss = null;
+	private PanelBasis panelBottomZeitabschluss = null;
+	private PanelSplit panelSplitZeitabschluss = null;
+
 	private PanelQuery panelQueryBereitschaft = null;
 	private PanelBasis panelBottomBereitschaft = null;
 	private PanelSplit panelSplitBereitschaft = null;
@@ -111,7 +123,7 @@ public class TabbedPaneZeiterfassung extends TabbedPane {
 	private PanelSplit panelSplitReisezeiten = null;
 
 	private PanelQuery panelQueryTelefonzeiten = null;
-	private PanelBasis panelBottomTelefonzeiten = null;
+	private PanelTelefonzeiten panelBottomTelefonzeiten = null;
 	private PanelSplit panelSplitTelefonzeiten = null;
 
 	private PanelQueryFLR panelQueryFLRLosQuelle = null;
@@ -120,15 +132,18 @@ public class TabbedPaneZeiterfassung extends TabbedPane {
 
 	private PanelQuery panelQueryQueue = null;
 
+	private PanelQueryFLR panelQueryFLRFavoriten = null;
+
 	private PanelDialogAutomatikbuchungen pdKriterienAutomatikbuchungen = null;
 
-	private int IDX_PANEL_AUSWHAL = -1;
-	private int IDX_PANEL_ZEITDATEN = -1;
-	private int IDX_PANEL_SONDERZEITEN = -1;
-	private int IDX_PANEL_BEREITSCHAFT = -1;
-	private int IDX_PANEL_REISEZEITEN = -1;
-	private int IDX_PANEL_TELEFONZEITEN = -1;
-	private int IDX_PANEL_PROJEKTQUEUE = -1;
+	public static int IDX_PANEL_AUSWHAL = -1;
+	public static int IDX_PANEL_ZEITDATEN = -1;
+	public static int IDX_PANEL_SONDERZEITEN = -1;
+	public static int IDX_PANEL_BEREITSCHAFT = -1;
+	public static int IDX_PANEL_REISEZEITEN = -1;
+	public static int IDX_PANEL_TELEFONZEITEN = -1;
+	public static int IDX_PANEL_PROJEKTQUEUE = -1;
+	public static int IDX_PANEL_ZEITABSCHLUSS = -1;
 
 	private final static String MENUE_ACTION_ZEITDATEN = "MENUE_ACTION_ZEITDATRN";
 	private final static String MENUE_ACTION_MONATSABRECHNUNG = "MENUE_ACTION_MONATSABRECHNUNG";
@@ -151,12 +166,41 @@ public class TabbedPaneZeiterfassung extends TabbedPane {
 	private final static String MENUE_ACTION_MASCHINENERFOLG = "MENUE_ACTION_MASCHINENERFOLG";
 	private final static String MENUE_ACTION_LOHNDATENEXPORT = "MENUE_ACTION_LOHNDATENEXPORT";
 	private final static String MENUE_ACTION_SONDERZEITEN_IMPORT = "MENUE_ACTION_SONDERZEITEN_IMPORT";
+	private final static String MENUE_ACTION_ABGESCHLOSSENE_ZEITEN = "MENUE_ACTION_ABGESCHLOSSENE_ZEITEN";
+	private final static String MENUE_ACTION_WOCHENABSCHLUSS = "MENUE_ACTION_WOCHENABSCHLUSS";
 
 	private final String MENU_INFO_AENDERUNGEN = "MENU_INFO_AENDERUNGEN";
 
 	public final static String AUS_QUEUE_ENTFERNEN = "aus_queue_entfernen";
 	public final static String MY_OWN_NEW_AUS_QUEUE_ENTFERNEN = PanelBasis.ACTION_MY_OWN_NEW
 			+ AUS_QUEUE_ENTFERNEN;
+
+	public final static String FAVORITELISTE = "favoritenliste";
+	public final static String MY_OWN_NEW_FAVORITENLISTE = PanelBasis.ACTION_MY_OWN_NEW
+			+ FAVORITELISTE;
+
+	public final static String URLAUBSANTRAG = "urlaubsantrag";
+	public final static String MY_OWN_NEW_URLAUBSANTRAG = PanelBasis.ACTION_MY_OWN_NEW
+			+ URLAUBSANTRAG;
+
+	public final static String LEAVEALONE_WANDLE_URLAUBSANTRAG_UM = PanelBasis.LEAVEALONE
+			+ "_action_special_umwandeln";
+
+	public final static String MY_OWN_NEW_FAVORIT_UEBERNEHMEN = PanelBasis.ACTION_MY_OWN_NEW
+			+ "MY_OWN_FAVORIT_UEBERNEHMEN";
+	public final static String MY_OWN_NEW_FAVORIT_SOFORT_ANLEGEN = PanelBasis.ACTION_MY_OWN_NEW
+			+ "MY_OWN_FAVORIT_SOFORT_ANLEGEN";
+
+	private boolean bVonBisErfassung = false;
+	private boolean bKommtGehtBuchen = false;
+
+	public boolean isBKommtGehtBuchen() {
+		return bKommtGehtBuchen;
+	}
+
+	public boolean isBVonBisErfassung() {
+		return bVonBisErfassung;
+	}
 
 	public PanelQuery getPanelQueryZeitdaten() {
 		return panelQueryZeitdaten;
@@ -174,6 +218,24 @@ public class TabbedPaneZeiterfassung extends TabbedPane {
 			throws Throwable {
 		super(internalFrameI, LPMain
 				.getTextRespectUISPr("zeiterfassung.modulname"));
+
+		ParametermandantDto parameter = DelegateFactory
+				.getInstance()
+				.getParameterDelegate()
+				.getMandantparameter(LPMain.getTheClient().getMandant(),
+						ParameterFac.KATEGORIE_PERSONAL,
+						ParameterFac.PARAMETER_VON_BIS_ERFASSUNG);
+		bVonBisErfassung = (java.lang.Boolean) parameter.getCWertAsObject();
+
+		parameter = DelegateFactory
+				.getInstance()
+				.getParameterDelegate()
+				.getMandantparameter(
+						LPMain.getTheClient().getMandant(),
+						ParameterFac.KATEGORIE_PERSONAL,
+						ParameterFac.PARAMETER_VON_BIS_ERFASSUNG_KOMMT_GEHT_BUCHEN);
+		bKommtGehtBuchen = (java.lang.Boolean) parameter.getCWertAsObject();
+
 		jbInit();
 		initComponents();
 	}
@@ -233,31 +295,40 @@ public class TabbedPaneZeiterfassung extends TabbedPane {
 			String[] aWhichStandardButtonIUse = { PanelBasis.ACTION_NEW,
 					PanelBasis.ACTION_PREVIOUS, PanelBasis.ACTION_NEXT, };
 
-			java.sql.Timestamp t = DelegateFactory
-					.getInstance()
-					.getZeiterfassungDelegate()
-					.pruefeObAmLetztenBuchungstagKommtUndGehtGebuchtWurde(
-							iIdPersonaIl);
-			if (t != null) {
+			if (isBVonBisErfassung() == true && isBKommtGehtBuchen() == false) {
+				// Keine Ueberpruefung
+			} else {
+				java.sql.Timestamp t = DelegateFactory
+						.getInstance()
+						.getZeiterfassungDelegate()
+						.pruefeObAmLetztenBuchungstagKommtUndGehtGebuchtWurde(
+								iIdPersonaIl);
+				if (t != null) {
 
-				DialogFactory
-						.showModalDialog(
-								LPMain.getTextRespectUISPr("lp.error"),
-								LPMain.getTextRespectUISPr("zeiterfassung.error.buchungenunvollstaendig")
-										+ " "
-										+ Helper.formatDatum(t, LPMain
-												.getTheClient().getLocUi()));
+					DialogFactory
+							.showModalDialog(
+									LPMain.getTextRespectUISPr("lp.error"),
+									LPMain.getTextRespectUISPr("zeiterfassung.error.buchungenunvollstaendig")
+											+ " "
+											+ Helper.formatDatum(t, LPMain
+													.getTheClient().getLocUi()));
 
-				dateI = Helper.cutDate(new Date(t.getTime()));
+					dateI = Helper.cutDate(new Date(t.getTime()));
 
+				}
 			}
 
+			int ucId = QueryParameters.UC_ID_ZEITDATEN;
+
+			if (bVonBisErfassung) {
+				ucId = QueryParameters.UC_ID_ZEITDATEN_VON_BIS;
+			}
 			panelQueryZeitdaten = new PanelQuery(
 					null,
 					ZeiterfassungFilterFactory.getInstance()
 							.createFKZeitdatenZuPersonalUndDatum(iIdPersonaIl,
 									dateI),
-					QueryParameters.UC_ID_ZEITDATEN,
+					ucId,
 					aWhichStandardButtonIUse,
 					getInternalFrame(),
 					LPMain.getTextRespectUISPr("zeiterfassung.title.tab.zeitdaten"),
@@ -275,6 +346,13 @@ public class TabbedPaneZeiterfassung extends TabbedPane {
 
 			panelSplitZeitdaten = new PanelSplit(getInternalFrame(),
 					panelBottomZeitdaten, panelQueryZeitdaten, 190);
+
+			panelQueryZeitdaten
+					.createAndSaveAndShowButton(
+							"/com/lp/client/res/index_view.png",
+							LPMain.getTextRespectUISPr("pers.zeiterfassung.favoritenliste"),
+							MY_OWN_NEW_FAVORITENLISTE,
+							RechteFac.RECHT_PERS_ZEITEREFASSUNG_CUD);
 
 			setComponentAt(IDX_PANEL_ZEITDATEN, panelSplitZeitdaten);
 		} else {
@@ -395,11 +473,69 @@ public class TabbedPaneZeiterfassung extends TabbedPane {
 			panelSplitSonderzeiten = new PanelSplit(getInternalFrame(),
 					panelBottomSonderzeiten, panelQuerySonderzeiten, 300);
 
+			ParametermandantDto parameter = DelegateFactory
+					.getInstance()
+					.getParameterDelegate()
+					.getMandantparameter(LPMain.getTheClient().getMandant(),
+							ParameterFac.KATEGORIE_PERSONAL,
+							ParameterFac.PARAMETER_URLAUBSANTRAG);
+			boolean bUrlaubsantrag = (java.lang.Boolean) parameter
+					.getCWertAsObject();
+
+			if (bUrlaubsantrag == true) {
+				panelQuerySonderzeiten.setMultipleRowSelectionEnabled(true);
+				panelQuerySonderzeiten
+						.createAndSaveAndShowButton(
+								"/com/lp/client/res/step_new.png",
+								LPMain.getTextRespectUISPr("pers.sonderzeiten.urlaubsantrag"),
+								MY_OWN_NEW_URLAUBSANTRAG, null);
+
+				panelQuerySonderzeiten
+						.createAndSaveAndShowButton(
+								"/com/lp/client/res/step.png",
+								LPMain.getTextRespectUISPr("pers.sonderzeiten.urlaubsantragumwandeln"),
+								LEAVEALONE_WANDLE_URLAUBSANTRAG_UM, null);
+
+				panelQuerySonderzeiten.getHmOfButtons()
+						.get(LEAVEALONE_WANDLE_URLAUBSANTRAG_UM).getButton()
+						.setEnabled(true);
+
+			}
+
 			setComponentAt(IDX_PANEL_SONDERZEITEN, panelSplitSonderzeiten);
 		} else {
 			// filter refreshen.
 			panelQuerySonderzeiten.setDefaultFilter(ZeiterfassungFilterFactory
 					.getInstance().createFKSonderzeiten(key));
+		}
+	}
+
+	private void createZeitabschluss(Integer key) throws Throwable {
+
+		if (panelQueryZeitabschluss == null) {
+			String[] aWhichStandardButtonIUse = { PanelBasis.ACTION_NEW,
+					PanelBasis.ACTION_PREVIOUS, PanelBasis.ACTION_NEXT, };
+			panelQueryZeitabschluss = new PanelQuery(
+					null,
+					PersonalFilterFactory.getInstance().createFKPersonal(key),
+					QueryParameters.UC_ID_ZEITABSCHLUSS,
+					aWhichStandardButtonIUse,
+					getInternalFrame(),
+					LPMain.getTextRespectUISPr("zeiterfassung.title.tab.zeitabschluss"),
+					true);
+			panelBottomZeitabschluss = new PanelZeitabschluss(
+					getInternalFrame(),
+					LPMain.getTextRespectUISPr("zeiterfassung.title.tab.zeitabschluss"),
+					null);
+
+			panelSplitZeitabschluss = new PanelSplit(getInternalFrame(),
+					panelBottomZeitabschluss, panelQueryZeitabschluss, 350);
+
+			setComponentAt(IDX_PANEL_ZEITABSCHLUSS, panelSplitZeitabschluss);
+		} else {
+			// filter refreshen.
+			panelQueryZeitabschluss.setDefaultFilter(ZeiterfassungFilterFactory
+					.getInstance().createFKZeitabschluss(key));
 		}
 	}
 
@@ -452,6 +588,22 @@ public class TabbedPaneZeiterfassung extends TabbedPane {
 					null,
 					LPMain.getTextRespectUISPr("zeiterfassung.title.tab.sonderzeiten"),
 					IDX_PANEL_SONDERZEITEN);
+		}
+
+		if (LPMain
+				.getInstance()
+				.getDesktop()
+				.darfAnwenderAufZusatzfunktionZugreifen(
+						MandantFac.ZUSATZFUNKTION_ZEITEN_ABSCHLIESSEN)) {
+
+			tabIndex++;
+			IDX_PANEL_ZEITABSCHLUSS = tabIndex;
+			insertTab(
+					LPMain.getTextRespectUISPr("zeiterfassung.title.tab.zeitabschluss"),
+					null,
+					null,
+					LPMain.getTextRespectUISPr("zeiterfassung.title.tab.zeitabschluss"),
+					IDX_PANEL_ZEITABSCHLUSS);
 		}
 
 		if (LPMain
@@ -689,7 +841,6 @@ public class TabbedPaneZeiterfassung extends TabbedPane {
 			}
 			File f = files[0];
 			Workbook workbook = Workbook.getWorkbook(f);
-
 			HashMap<Integer, ArrayList<SonderzeitenImportDto>> hmPersonen = new HashMap<Integer, ArrayList<SonderzeitenImportDto>>();
 
 			HashMap taetigkeitenMitImportkennzeichen = DelegateFactory
@@ -833,6 +984,15 @@ public class TabbedPaneZeiterfassung extends TabbedPane {
 							getInternalFrameZeiterfassung(), add2Title),
 					bDarfNurVorschauSehen);
 
+		} else if (e.getActionCommand().equals(
+				MENUE_ACTION_ABGESCHLOSSENE_ZEITEN)) {
+			String add2Title = LPMain
+					.getTextRespectUISPr("zeiterfassung.report.abgeschlossenezeitbuchungen");
+			getInternalFrame().showReportKriterien(
+					new ReportAbgeschlosseneZeiten(
+							getInternalFrameZeiterfassung(), add2Title),
+					bDarfNurVorschauSehen);
+
 		} else if (e.getActionCommand().equals(MENUE_ACTION_SONDERZEITENLISTE)) {
 			String add2Title = LPMain
 					.getTextRespectUISPr("zeiterfassung.report.sonderzeitenliste");
@@ -849,6 +1009,13 @@ public class TabbedPaneZeiterfassung extends TabbedPane {
 					new ReportAuftragszeitstatistik(
 							getInternalFrameZeiterfassung(), add2Title),
 					bDarfNurVorschauSehen);
+
+		} else if (e.getActionCommand().equals(MENUE_ACTION_WOCHENABSCHLUSS)) {
+			String add2Title = LPMain
+					.getTextRespectUISPr("pers.report.wochenabschluss");
+			getInternalFrame().showReportKriterien(
+					new ReportWochenabschluss(getInternalFrameZeiterfassung(),
+							add2Title), bDarfNurVorschauSehen);
 
 		} else if (e.getActionCommand().equals(
 				MENUE_ACTION_PRODUKTIVITAETSSTATISTIK)) {
@@ -928,11 +1095,8 @@ public class TabbedPaneZeiterfassung extends TabbedPane {
 			String add2Title = LPMain
 					.getTextRespectUISPr("lp.report.aenderungen");
 			getInternalFrame().showReportKriterien(
-					new ReportEntitylog(HvDtoLogClass.ZEITDATEN,
-							getPanelQueryPersonal().getSelectedId() + "",
-							getInternalFrame(), add2Title,
-							getInternalFrameZeiterfassung().getPersonalDto()
-									.formatFixName1Name2()));
+					new ReportAenderungenZeiterfassung(
+							getInternalFrameZeiterfassung(), add2Title));
 		}
 	}
 
@@ -974,24 +1138,45 @@ public class TabbedPaneZeiterfassung extends TabbedPane {
 
 				losIId_Quelle = null;
 
+			} else if (e.getSource() == panelQueryFLRFavoriten) {
+				erstelleZeitdatenAusVorschlag((Integer) panelQueryFLRFavoriten
+						.getSelectedId());
+
 			}
+
 		} else if (e.getID() == ItemChangedEvent.ACTION_DISCARD) {
 			if (e.getSource() == panelBottomZeitdaten) {
 				panelSplitZeitdaten.eventYouAreSelected(false);
 			} else if (e.getSource() == panelBottomSonderzeiten) {
 				panelSplitSonderzeiten.eventYouAreSelected(false);
+				if (panelQuerySonderzeiten.getHmOfButtons().get(
+						LEAVEALONE_WANDLE_URLAUBSANTRAG_UM) != null) {
+					panelQuerySonderzeiten.getHmOfButtons()
+							.get(LEAVEALONE_WANDLE_URLAUBSANTRAG_UM)
+							.getButton().setEnabled(true);
+				}
+
 			} else if (e.getSource() == panelBottomBereitschaft) {
 				panelSplitBereitschaft.eventYouAreSelected(false);
 			} else if (e.getSource() == panelBottomReisezeiten) {
 				panelSplitReisezeiten.eventYouAreSelected(false);
 			} else if (e.getSource() == panelBottomTelefonzeiten) {
 				panelSplitTelefonzeiten.eventYouAreSelected(false);
+			} else if (e.getSource() == panelBottomZeitabschluss) {
+				panelSplitZeitabschluss.eventYouAreSelected(false);
 			}
 
 		} else if (e.getID() == ItemChangedEvent.ACTION_UPDATE) {
 			if (e.getSource() == panelBottomSonderzeiten) {
 				panelQuerySonderzeiten.updateButtons(new LockStateValue(
 						PanelBasis.LOCK_FOR_NEW));
+				if (panelQuerySonderzeiten.getHmOfButtons().get(
+						LEAVEALONE_WANDLE_URLAUBSANTRAG_UM) != null) {
+					panelQuerySonderzeiten.getHmOfButtons()
+							.get(LEAVEALONE_WANDLE_URLAUBSANTRAG_UM)
+							.getButton().setEnabled(false);
+				}
+
 			} else if (e.getSource() == panelBottomZeitdaten) {
 				panelQueryZeitdaten.updateButtons(new LockStateValue(
 						PanelBasis.LOCK_FOR_NEW));
@@ -1003,6 +1188,9 @@ public class TabbedPaneZeiterfassung extends TabbedPane {
 						PanelBasis.LOCK_FOR_NEW));
 			} else if (e.getSource() == panelBottomTelefonzeiten) {
 				panelQueryTelefonzeiten.updateButtons(new LockStateValue(
+						PanelBasis.LOCK_FOR_NEW));
+			} else if (e.getSource() == panelBottomZeitabschluss) {
+				panelQueryZeitabschluss.updateButtons(new LockStateValue(
 						PanelBasis.LOCK_FOR_NEW));
 			}
 		}
@@ -1018,6 +1206,13 @@ public class TabbedPaneZeiterfassung extends TabbedPane {
 				panelQuerySonderzeiten.eventYouAreSelected(false);
 				panelQuerySonderzeiten.setSelectedId(oKey);
 				panelSplitSonderzeiten.eventYouAreSelected(false);
+				if (panelQuerySonderzeiten.getHmOfButtons().get(
+						LEAVEALONE_WANDLE_URLAUBSANTRAG_UM) != null) {
+					panelQuerySonderzeiten.getHmOfButtons()
+							.get(LEAVEALONE_WANDLE_URLAUBSANTRAG_UM)
+							.getButton().setEnabled(true);
+				}
+
 			} else if (e.getSource() == panelBottomBereitschaft) {
 				Object oKey = panelBottomBereitschaft.getKeyWhenDetailPanel();
 				panelQueryBereitschaft.eventYouAreSelected(false);
@@ -1033,6 +1228,11 @@ public class TabbedPaneZeiterfassung extends TabbedPane {
 				panelQueryTelefonzeiten.eventYouAreSelected(false);
 				panelQueryTelefonzeiten.setSelectedId(oKey);
 				panelSplitTelefonzeiten.eventYouAreSelected(false);
+			} else if (e.getSource() == panelBottomZeitabschluss) {
+				Object oKey = panelBottomZeitabschluss.getKeyWhenDetailPanel();
+				panelQueryZeitabschluss.eventYouAreSelected(false);
+				panelQueryZeitabschluss.setSelectedId(oKey);
+				panelSplitZeitabschluss.eventYouAreSelected(false);
 			}
 
 		} else if (e.getID() == ItemChangedEvent.ITEM_CHANGED) {
@@ -1072,6 +1272,13 @@ public class TabbedPaneZeiterfassung extends TabbedPane {
 				panelBottomSonderzeiten.setKeyWhenDetailPanel(iId);
 				panelBottomSonderzeiten.eventYouAreSelected(false);
 				panelQuerySonderzeiten.updateButtons();
+				if (panelQuerySonderzeiten.getHmOfButtons().get(
+						LEAVEALONE_WANDLE_URLAUBSANTRAG_UM) != null) {
+					panelQuerySonderzeiten.getHmOfButtons()
+							.get(LEAVEALONE_WANDLE_URLAUBSANTRAG_UM)
+							.getButton().setEnabled(true);
+				}
+
 			} else if (e.getSource() == panelQueryBereitschaft) {
 				Integer iId = (Integer) panelQueryBereitschaft.getSelectedId();
 				panelBottomBereitschaft.setKeyWhenDetailPanel(iId);
@@ -1087,6 +1294,11 @@ public class TabbedPaneZeiterfassung extends TabbedPane {
 				panelBottomTelefonzeiten.setKeyWhenDetailPanel(iId);
 				panelBottomTelefonzeiten.eventYouAreSelected(false);
 				panelQueryTelefonzeiten.updateButtons();
+			} else if (e.getSource() == panelQueryZeitabschluss) {
+				Integer iId = (Integer) panelQueryZeitabschluss.getSelectedId();
+				panelBottomZeitabschluss.setKeyWhenDetailPanel(iId);
+				panelBottomZeitabschluss.eventYouAreSelected(false);
+				panelQueryZeitabschluss.updateButtons();
 			} else if (e.getSource() == panelQueryQueue) {
 				if (panelQueryPersonal.getSelectedId() != null) {
 					Double dGesamt = DelegateFactory
@@ -1109,7 +1321,11 @@ public class TabbedPaneZeiterfassung extends TabbedPane {
 				if (panelBottomZeitdaten.getKeyWhenDetailPanel() == null) {
 					Object oNaechster = panelQueryZeitdaten
 							.getId2SelectAfterDelete();
-					panelQueryZeitdaten.setSelectedId(oNaechster);
+
+					if (!isBVonBisErfassung()) {
+						panelQueryZeitdaten.setSelectedId(oNaechster);
+					}
+
 				}
 				panelSplitZeitdaten.eventYouAreSelected(false);
 			} else if (e.getSource() == panelBottomSonderzeiten) {
@@ -1144,6 +1360,14 @@ public class TabbedPaneZeiterfassung extends TabbedPane {
 					panelQueryTelefonzeiten.setSelectedId(oNaechster);
 				}
 				panelSplitTelefonzeiten.eventYouAreSelected(false);
+			} else if (e.getSource() == panelBottomZeitabschluss) {
+				setKeyWasForLockMe();
+				if (panelBottomZeitabschluss.getKeyWhenDetailPanel() == null) {
+					Object oNaechster = panelQueryZeitabschluss
+							.getId2SelectAfterDelete();
+					panelQueryZeitabschluss.setSelectedId(oNaechster);
+				}
+				panelSplitZeitabschluss.eventYouAreSelected(false);
 			}
 
 		} else if (e.getID() == ItemChangedEvent.ACTION_YOU_ARE_SELECTED) {
@@ -1160,6 +1384,13 @@ public class TabbedPaneZeiterfassung extends TabbedPane {
 				panelBottomSonderzeiten.eventActionNew(e, true, false);
 				panelBottomSonderzeiten.eventYouAreSelected(false);
 				this.setSelectedComponent(panelSplitSonderzeiten);
+				if (panelQuerySonderzeiten.getHmOfButtons().get(
+						LEAVEALONE_WANDLE_URLAUBSANTRAG_UM) != null) {
+					panelQuerySonderzeiten.getHmOfButtons()
+							.get(LEAVEALONE_WANDLE_URLAUBSANTRAG_UM)
+							.getButton().setEnabled(false);
+				}
+
 			} else if (e.getSource() == panelQueryBereitschaft) {
 				panelBottomBereitschaft.eventActionNew(e, true, false);
 				panelBottomBereitschaft.eventYouAreSelected(false);
@@ -1172,6 +1403,10 @@ public class TabbedPaneZeiterfassung extends TabbedPane {
 				panelBottomTelefonzeiten.eventActionNew(e, true, false);
 				panelBottomTelefonzeiten.eventYouAreSelected(false);
 				this.setSelectedComponent(panelSplitTelefonzeiten);
+			} else if (e.getSource() == panelQueryZeitabschluss) {
+				panelBottomZeitabschluss.eventActionNew(e, true, false);
+				panelBottomZeitabschluss.eventYouAreSelected(false);
+				this.setSelectedComponent(panelSplitZeitabschluss);
 			}
 		} else if (e.getID() == ItemChangedEvent.ACTION_KRITERIEN_HAVE_BEEN_SELECTED) {
 
@@ -1236,8 +1471,348 @@ public class TabbedPaneZeiterfassung extends TabbedPane {
 						panelQueryQueue.eventYouAreSelected(false);
 					}
 				}
-			}
+			} else if (e.getSource() == panelQueryZeitdaten) {
+				if (sAspectInfo.equals(MY_OWN_NEW_FAVORITENLISTE)) {
 
+					dialogQueryFavoritenliste(null);
+
+				}
+			} else if (e.getSource() == panelQuerySonderzeiten) {
+
+				if (sAspectInfo.equals(MY_OWN_NEW_URLAUBSANTRAG)) {
+
+					DialogUrlaubsantrag d = new DialogUrlaubsantrag();
+					d.setTitle(LPMain
+							.getTextRespectUISPr("pers.sonderzeiten.urlaubsantrag.vonbis"));
+					LPMain.getInstance().getDesktop()
+							.platziereDialogInDerMitteDesFensters(d);
+					d.setVisible(true);
+
+					if (d.datumVon != null && d.datumBis != null) {
+						SonderzeitenDto szDto = new SonderzeitenDto();
+						szDto.setPersonalIId((Integer) getPanelQueryPersonal()
+								.getSelectedId());
+						szDto.setTaetigkeitIId(DelegateFactory
+								.getInstance()
+								.getZeiterfassungDelegate()
+								.taetigkeitFindByCNr(
+										ZeiterfassungFac.TAETIGKEIT_URLAUBSANTRAG)
+								.getIId());
+						if (d.wcbHalbtag.isSelected()) {
+							szDto.setBTag(Helper.boolean2Short(false));
+							szDto.setBHalbtag(Helper.boolean2Short(true));
+						} else {
+
+							szDto.setBTag(Helper.boolean2Short(true));
+							szDto.setBHalbtag(Helper.boolean2Short(false));
+						}
+
+						java.sql.Timestamp[] buchungenVorhanden = DelegateFactory
+								.getInstance()
+								.getZeiterfassungDelegate()
+								.sindIstZeitenVorhandenWennUrlaubGebuchtWird(
+										szDto,
+										new java.sql.Timestamp(d.datumVon
+												.getTime()),
+										new java.sql.Timestamp(d.datumBis
+												.getTime()));
+
+						DelegateFactory
+								.getInstance()
+								.getZeiterfassungDelegate()
+								.createSonderzeitenVonBis(
+										szDto,
+										new java.sql.Timestamp(d.datumVon
+												.getTime()),
+										new java.sql.Timestamp(d.datumBis
+												.getTime()), buchungenVorhanden);
+
+						panelSplitSonderzeiten.eventYouAreSelected(false);
+						panelSplitSonderzeiten.updateButtons();
+
+						// PJ18441 Mail an Abteilungsleiter bzw. GF
+
+						PersonalDto personalDto_Selektiert = DelegateFactory
+								.getInstance()
+								.getPersonalDelegate()
+								.personalFindByPrimaryKey(
+										(Integer) getPanelQueryPersonal()
+												.getSelectedId());
+
+						String cEmpfaenger = null;
+
+						if (personalDto_Selektiert.getPersonalfunktionCNr() != null
+								&& (personalDto_Selektiert
+										.getPersonalfunktionCNr()
+										.equals(PersonalFac.PERSONALFUNKTION_ABTEILUNGSLEITER) || personalDto_Selektiert
+										.getPersonalfunktionCNr()
+										.equals(PersonalFac.PERSONALFUNKTION_GESCHAEFTSFUEHRER))) {
+
+							// Wenn ich Abteilungsleiter/GF bin, dann Mail an GF
+
+							PersonalDto[] aGeschaeftsfDto = DelegateFactory
+									.getInstance()
+									.getPersonalDelegate()
+									.personalFindByMandantCNrPersonalfunktionCNr(
+											LPMain.getTheClient().getMandant(),
+											PersonalFac.PERSONALFUNKTION_GESCHAEFTSFUEHRER);
+
+							if (aGeschaeftsfDto != null
+									&& aGeschaeftsfDto.length > 0) {
+								if (aGeschaeftsfDto[0] != null) {
+									cEmpfaenger = aGeschaeftsfDto[0]
+											.getCEmail();
+								}
+							}
+
+						} else {
+							// Mail an Abteilungsleiter, wenn vorhanden
+
+							PersonalDto[] aAbteilungsleiterDto = DelegateFactory
+									.getInstance()
+									.getPersonalDelegate()
+									.personalFindByMandantCNrPersonalfunktionCNr(
+											LPMain.getTheClient().getMandant(),
+											PersonalFac.PERSONALFUNKTION_ABTEILUNGSLEITER);
+
+							if (aAbteilungsleiterDto != null
+									&& aAbteilungsleiterDto.length > 0) {
+
+								for (int i = 0; i < aAbteilungsleiterDto.length; i++) {
+
+									if (aAbteilungsleiterDto[i]
+											.getKostenstelleIIdAbteilung() != null) {
+
+										if (aAbteilungsleiterDto[i]
+												.getKostenstelleIIdAbteilung()
+												.equals(personalDto_Selektiert
+														.getKostenstelleIIdAbteilung())) {
+											cEmpfaenger = aAbteilungsleiterDto[i]
+													.getCEmail();
+											break;
+										}
+
+									}
+
+								}
+
+							}
+
+							// SP2782 Wenn kein Abteilungsleiter gefunden, dann
+							// an GF
+							if (cEmpfaenger == null) {
+								PersonalDto[] aGeschaeftsfDto = DelegateFactory
+										.getInstance()
+										.getPersonalDelegate()
+										.personalFindByMandantCNrPersonalfunktionCNr(
+												LPMain.getTheClient()
+														.getMandant(),
+												PersonalFac.PERSONALFUNKTION_GESCHAEFTSFUEHRER);
+
+								if (aGeschaeftsfDto != null
+										&& aGeschaeftsfDto.length > 0) {
+									if (aGeschaeftsfDto[0] != null) {
+										cEmpfaenger = aGeschaeftsfDto[0]
+												.getCEmail();
+									}
+								}
+							}
+
+						}
+
+						if (cEmpfaenger != null) {
+							VersandauftragDto dto = new VersandauftragDto();
+							dto.setCEmpfaenger(cEmpfaenger);
+
+							dto.setCAbsenderadresse(personalDto_Selektiert
+									.getCEmail());
+
+							String sBetreff = "Neuer Urlaubsantrag von "
+									+ personalDto_Selektiert.getPartnerDto()
+											.formatFixName1Name2();
+
+							dto.setCBetreff(sBetreff);
+
+							String text = "Zeitraum: "
+									+ Helper.formatDatum(d.datumVon, LPMain
+											.getTheClient().getLocUi())
+									+ "-"
+									+ Helper.formatDatum(d.datumBis, LPMain
+											.getTheClient().getLocUi());
+
+							dto.setCText(text);
+							dto = DelegateFactory.getInstance()
+									.getVersandDelegate()
+									.updateVersandauftrag(dto, false);
+
+						} else {
+
+							DialogFactory
+									.showModalDialog(
+											LPMain.getTextRespectUISPr("lp.error"),
+											LPMain.getTextRespectUISPr("pers.urlaubsantrag.fehlender.empfaenger"));
+						}
+
+					}
+
+				}
+
+			} else if (e.getSource() == panelQueryFLRFavoriten) {
+
+				if (panelQueryFLRFavoriten.getSelectedId() != null) {
+					if (sAspectInfo.equals(MY_OWN_NEW_FAVORIT_UEBERNEHMEN)) {
+
+						erstelleZeitdatenAusVorschlag((Integer) panelQueryFLRFavoriten
+								.getSelectedId());
+
+					} else if (sAspectInfo
+							.equals(MY_OWN_NEW_FAVORIT_SOFORT_ANLEGEN)) {
+
+						ZeitdatenDto zDto = DelegateFactory
+								.getInstance()
+								.getZeiterfassungDelegate()
+								.zeitdatenFindByPrimaryKey(
+										(Integer) panelQueryFLRFavoriten
+												.getSelectedId());
+						zDto.setTZeit(new Timestamp(System.currentTimeMillis()));
+						zDto.setTAnlegen(new Timestamp(System
+								.currentTimeMillis()));
+						zDto.setTAendern(new Timestamp(System
+								.currentTimeMillis()));
+						zDto.setIId(null);
+						zDto.setCWowurdegebucht("Client: " + Helper.getPCName());
+
+						Integer iIdNeu = DelegateFactory.getInstance()
+								.getZeiterfassungDelegate()
+								.createZeitdaten(zDto);
+
+						panelBottomZeitdaten.getWdfDatum().setTimestamp(
+								new Timestamp(System.currentTimeMillis()));
+
+						panelSplitZeitdaten.eventYouAreSelected(false);
+						panelQueryZeitdaten.setSelectedId(iIdNeu);
+						panelSplitZeitdaten.eventYouAreSelected(false);
+
+					}
+					panelQueryFLRFavoriten.getDialog().setVisible(false);
+
+				}
+			}
+		} else if (e.getID() == ItemChangedEvent.ACTION_SPECIAL_BUTTON) {
+
+			String sAspectInfo = ((ISourceEvent) e.getSource()).getAspect();
+			if (e.getSource() == panelQuerySonderzeiten) {
+				if (sAspectInfo.equals(LEAVEALONE_WANDLE_URLAUBSANTRAG_UM)) {
+
+					PersonalDto personalDto_Angemeldet = DelegateFactory
+							.getInstance()
+							.getPersonalDelegate()
+							.personalFindByPrimaryKey(
+									LPMain.getTheClient().getIDPersonal());
+
+					boolean bDarfUmwandeln = false;
+					// Wenn ich GF oder Lohnverrechnung bin, dann darf immer
+					// umgewandelt werden
+					if (personalDto_Angemeldet.getPersonalfunktionCNr() != null
+							&& (personalDto_Angemeldet
+									.getPersonalfunktionCNr()
+									.equals(PersonalFac.PERSONALFUNKTION_GESCHAEFTSFUEHRER) || personalDto_Angemeldet
+									.getPersonalfunktionCNr()
+									.equals(PersonalFac.PERSONALFUNKTION_LOHNVERRECHNUNG))) {
+
+						bDarfUmwandeln = true;
+					} else {
+
+						if (personalDto_Angemeldet.getPersonalfunktionCNr() != null
+								&& (personalDto_Angemeldet
+										.getPersonalfunktionCNr()
+										.equals(PersonalFac.PERSONALFUNKTION_ABTEILUNGSLEITER))) {
+
+							if (personalDto_Angemeldet.getIId().equals(
+									getInternalFrameZeiterfassung()
+											.getPersonalDto().getIId())) {
+								// Der eigene Urlaubsantrag darf nur vom GF
+								// umgewandelt werden
+								DialogFactory
+										.showModalDialog(
+												LPMain.getTextRespectUISPr("lp.info"),
+												LPMain.getTextRespectUISPr("pers.sonderzeiten.urlaubsantragumwandeln.error.keinrecht2"));
+
+							} else {
+								// Wenn die Person in der Abteilung des
+								// Angemeldeten Benutzers ist, dann darf
+								// umgewandelt werden
+
+								if (personalDto_Angemeldet
+										.getKostenstelleDto_Abteilung() != null
+										&& personalDto_Angemeldet
+												.getKostenstelleDto_Abteilung()
+												.equals(getInternalFrameZeiterfassung()
+														.getPersonalDto()
+														.getKostenstelleDto_Abteilung())) {
+									bDarfUmwandeln = true;
+								} else {
+									DialogFactory
+											.showModalDialog(
+													LPMain.getTextRespectUISPr("lp.info"),
+													LPMain.getTextRespectUISPr("pers.sonderzeiten.urlaubsantragumwandeln.error.keinrecht3"));
+								}
+
+							}
+
+						} else {
+							// Wenn kein Abteilungsleiter, dann darf er auch
+							// nicht umwandeln
+
+							DialogFactory
+									.showModalDialog(
+											LPMain.getTextRespectUISPr("lp.info"),
+											LPMain.getTextRespectUISPr("pers.sonderzeiten.urlaubsantragumwandeln.error.keinrecht"));
+
+						}
+
+					}
+
+					if (bDarfUmwandeln) {
+						Object[] ids = panelQuerySonderzeiten.getSelectedIds();
+
+						Integer[] integerIIds = new Integer[ids.length];
+						for (int i = 0; i < ids.length; i++) {
+							integerIIds[i] = (Integer) ids[i];
+						}
+
+						// Report oeffnen
+
+						DialogUrlaubsantragGenehmigen d = new DialogUrlaubsantragGenehmigen();
+						LPMain.getInstance().getDesktop()
+								.platziereDialogInDerMitteDesFensters(d);
+						d.setVisible(true);
+						if (d.isbAbbruch() == false) {
+
+							String add2Title = LPMain
+									.getTextRespectUISPr("pers.sonderzeiten.urlaubsantrag");
+							getInternalFrame().showReportKriterien(
+									new ReportUrlaubsantrag(getInternalFrame(),
+											(Integer) getPanelQueryPersonal()
+													.getSelectedId(),
+											integerIIds, d.getSVoraussetzung(),
+											d.bGenehmigt, add2Title));
+
+							if (d.bGenehmigt == true) {
+								DelegateFactory
+										.getInstance()
+										.getZeiterfassungDelegate()
+										.wandleUrlaubsantragInUrlaubUm(
+												integerIIds);
+								panelSplitSonderzeiten
+										.eventYouAreSelected(false);
+							}
+
+						}
+
+					}
+				}
+			}
 		} else if (e.getID() == ItemChangedEvent.ACTION_POSITION_VONNNACHNMINUS1) {
 			if (e.getSource() == panelQueryQueue) {
 				int iPos = panelQueryQueue.getTable().getSelectedRow();
@@ -1284,6 +1859,56 @@ public class TabbedPaneZeiterfassung extends TabbedPane {
 
 	}
 
+	public void erstelleZeitdatenAusVorschlag(Integer zeitdatenIId)
+			throws Throwable {
+
+		panelBottomZeitdaten.eventActionNew(null, true, false);
+		panelBottomZeitdaten.eventYouAreSelected(false);
+		panelBottomZeitdaten.getWdfDatum().setEnabled(false);
+		panelBottomZeitdaten.erstelleVorschlagFuerZeitbuchung(zeitdatenIId);
+		this.setSelectedComponent(panelSplitZeitdaten);
+
+	}
+
+	void dialogQueryFavoritenliste(ActionEvent e) throws Throwable {
+		String[] aWhichButtonIUse = { PanelBasis.ACTION_REFRESH };
+
+		FilterKriterium[] kriterien = null;
+
+		kriterien = new FilterKriterium[1];
+		FilterKriterium krit1 = new FilterKriterium(
+				ZeiterfassungFac.FLR_ZEITDATEN_PERSONAL_I_ID, true,
+				panelQueryPersonal.getSelectedId() + "",
+				FilterKriterium.OPERATOR_EQUAL, false);
+
+		kriterien[0] = krit1;
+
+		panelQueryFLRFavoriten = new PanelQueryFLR(null, kriterien,
+				QueryParameters.UC_ID_ZEITERFASSUNG_FAVORITEN,
+				aWhichButtonIUse, getInternalFrame(),
+				LPMain.getTextRespectUISPr("pers.zeiterfassung.favoritenliste"));
+
+		panelQueryFLRFavoriten
+				.createAndSaveAndShowButton(
+						"/com/lp/client/res/document_time.png",
+						LPMain.getTextRespectUISPr("pers.zeiterfassung.favoritenliste.vorbesetzten"),
+						MY_OWN_NEW_FAVORIT_UEBERNEHMEN, null);
+
+		if (!isBVonBisErfassung()) {
+
+			panelQueryFLRFavoriten
+					.createAndSaveAndShowButton(
+							"/com/lp/client/res/document_ok.png",
+							LPMain.getTextRespectUISPr("pers.zeiterfassung.favoritenliste.uebernehmen"),
+							MY_OWN_NEW_FAVORIT_SOFORT_ANLEGEN,
+							KeyStroke.getKeyStroke('S',
+									java.awt.event.InputEvent.CTRL_MASK), null);
+		}
+
+		new DialogQuery(panelQueryFLRFavoriten);
+
+	}
+
 	/**
 	 * Behandle ChangeEvent; zB Tabwechsel oben.
 	 * 
@@ -1326,6 +1951,10 @@ public class TabbedPaneZeiterfassung extends TabbedPane {
 			createProjektQueue((Integer) panelQueryPersonal.getSelectedId());
 			panelQueryQueue.eventYouAreSelected(false);
 			panelQueryQueue.updateButtons();
+		} else if (selectedIndex == IDX_PANEL_ZEITABSCHLUSS) {
+			createZeitabschluss((Integer) panelQueryPersonal.getSelectedId());
+			panelQueryZeitabschluss.eventYouAreSelected(false);
+			panelQueryZeitabschluss.updateButtons();
 		}
 
 		refreshTitle();
@@ -1474,6 +2103,20 @@ public class TabbedPaneZeiterfassung extends TabbedPane {
 		menuItemProduktivitaetstagesstatistik
 				.setActionCommand(MENUE_ACTION_PRODUKTIVITAETSTAGESSTATISTIK);
 		menuInfo.add(menuItemProduktivitaetstagesstatistik);
+		if (LPMain
+				.getInstance()
+				.getDesktop()
+				.darfAnwenderAufZusatzfunktionZugreifen(
+						MandantFac.ZUSATZFUNKTION_ZEITEN_ABSCHLIESSEN)) {
+			JMenuItem menuItemWochenabschluss = new JMenuItem(
+					LPMain.getTextRespectUISPr("pers.report.wochenabschluss"));
+
+			menuItemWochenabschluss.addActionListener(this);
+
+			menuItemWochenabschluss
+					.setActionCommand(MENUE_ACTION_WOCHENABSCHLUSS);
+			menuInfo.add(menuItemWochenabschluss);
+		}
 		menuInfo.addSeparator();
 
 		JMenuItem menuItemMitarbeiteruebersicht = new JMenuItem(
@@ -1558,6 +2201,21 @@ public class TabbedPaneZeiterfassung extends TabbedPane {
 			modulJournal.add(menuItemAnwesenheitsListe);
 			modulJournal.add(menuItemArbeitszeitstatistik);
 			modulJournal.add(menuItemAuftragzeitstatistik);
+
+			if (LPMain
+					.getInstance()
+					.getDesktop()
+					.darfAnwenderAufZusatzfunktionZugreifen(
+							MandantFac.ZUSATZFUNKTION_ZEITEN_ABSCHLIESSEN)) {
+
+				JMenuItem menuItemAbgenschlosseneZeiten = new JMenuItem(
+						LPMain.getTextRespectUISPr("zeiterfassung.report.abgeschlossenezeitbuchungen"));
+				menuItemAbgenschlosseneZeiten.addActionListener(this);
+				menuItemAbgenschlosseneZeiten
+						.setActionCommand(MENUE_ACTION_ABGESCHLOSSENE_ZEITEN);
+				modulJournal.add(menuItemAbgenschlosseneZeiten);
+			}
+
 		}
 
 		return menuBarZeiterfassung;
@@ -1575,6 +2233,17 @@ public class TabbedPaneZeiterfassung extends TabbedPane {
 			panelQueryZeitdaten.updateButtons(new LockStateValue(
 					PanelBasis.LOCK_IS_NOT_LOCKED));
 		}
+
+	}
+
+	public void telefonzeitStarten(Integer partnerIId,
+			Integer ansprechpartnerIId, Integer projektIId) throws Throwable {
+		createTelefonzeiten(LPMain.getTheClient().getIDPersonal());
+		setSelectedComponent(panelSplitTelefonzeiten);
+		panelQueryTelefonzeiten.eventActionNew(null, true, false);
+
+		panelBottomTelefonzeiten.setzeAusWrapperTelefonField(partnerIId,
+				ansprechpartnerIId, projektIId);
 
 	}
 

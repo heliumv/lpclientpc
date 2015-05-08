@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -141,11 +141,16 @@ abstract public class PanelDialog
   }
 
 
+  protected void onEscOrClosePanelDialog() throws Throwable {
+      getInternalFrame().closePanelDialog();	  
+  }
+  
   protected void eventActionSpecial(ActionEvent e)
       throws Throwable {
     if (e.getActionCommand().equals(PanelBasis.ESC)||
         e.getActionCommand().equals(ACTION_SPECIAL_CLOSE_PANELDIALOG)) {
-      getInternalFrame().closePanelDialog();
+    	onEscOrClosePanelDialog();
+//      getInternalFrame().closePanelDialog();
     }
   }
 
@@ -174,32 +179,41 @@ abstract public class PanelDialog
                    new GridBagConstraints(0, 0, 1, 1, 1.0, 0.0, GridBagConstraints.WEST,
                                           GridBagConstraints.HORIZONTAL,
                                           new Insets(0, 0, 0, 0), 0, 0));
-    if (bShowExitButton) {
-      wbuExit = new JButton(getImageIconExit());
-      wbuExit.setActionCommand(ACTION_SPECIAL_CLOSE_PANELDIALOG);
-      // component name f. abbot/qftest
-      if(Defaults.getInstance().isComponentNamingEnabled() ||
-         Defaults.getInstance().isOldComponentNamingEnabled()) {
-        wbuExit.setName(ACTION_SPECIAL_CLOSE_PANELDIALOG);
-      }
-      wbuExit.addActionListener(this);
-      wbuExit.setMinimumSize(HelperClient.getToolsPanelButtonDimension());
-      wbuExit.setPreferredSize(HelperClient.getToolsPanelButtonDimension());
-      KeyStroke accelKey = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0);
-      wbuExit.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(accelKey,
-          ACTION_SPECIAL_CLOSE_PANELDIALOG);
-      wbuExit.getActionMap().put(ACTION_SPECIAL_CLOSE_PANELDIALOG,
-                                 new
-                                 ButtonAbstractAction(this, ACTION_SPECIAL_CLOSE_PANELDIALOG));
-      jpaToolbar.add(wbuExit,
-                     new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0, GridBagConstraints.EAST,
-                                            GridBagConstraints.HORIZONTAL,
-                                            new Insets(0, 0, 0, 0), 0,
-                                            0));
-    }
+    installExitButton(jpaToolbar);
     return jpaToolbar;
   }
-
+  
+	protected void installExitButton(JPanel jpaToolbar) {
+		if (bShowExitButton) {
+			wbuExit = new JButton(getImageIconExit());
+			wbuExit.setActionCommand(ACTION_SPECIAL_CLOSE_PANELDIALOG);
+			// component name f. abbot/qftest
+			if (Defaults.getInstance().isComponentNamingEnabled()
+					|| Defaults.getInstance().isOldComponentNamingEnabled()) {
+				wbuExit.setName(ACTION_SPECIAL_CLOSE_PANELDIALOG);
+			}
+			wbuExit.addActionListener(this);
+			wbuExit.setMinimumSize(HelperClient.getToolsPanelButtonDimension());
+			wbuExit.setPreferredSize(HelperClient
+					.getToolsPanelButtonDimension());
+			KeyStroke accelKey = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0);
+			wbuExit.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(
+					accelKey, ACTION_SPECIAL_CLOSE_PANELDIALOG);
+			wbuExit.getActionMap().put(
+					ACTION_SPECIAL_CLOSE_PANELDIALOG,
+					new ButtonAbstractAction(this,
+							ACTION_SPECIAL_CLOSE_PANELDIALOG));
+			jpaToolbar.add(wbuExit,
+					new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
+							GridBagConstraints.EAST,
+							GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0,
+									0), 0, 0));
+		}
+	}
+	
+	public JButton getExitButton() {
+		return wbuExit ;
+	}
 
   private ImageIcon getImageIconExit() {
     if (imageIconExit == null) {

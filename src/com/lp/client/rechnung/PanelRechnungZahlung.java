@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -60,6 +60,8 @@ import com.lp.server.rechnung.service.RechnungDto;
 import com.lp.server.rechnung.service.RechnungFac;
 import com.lp.server.rechnung.service.RechnungzahlungDto;
 import com.lp.server.system.service.WechselkursDto;
+import com.lp.server.system.service.ZahlungszielDto;
+import com.lp.util.Helper;
 
 
 /*
@@ -72,11 +74,9 @@ import com.lp.server.system.service.WechselkursDto;
  * @version $Revision: 1.28 $
  */
 public class PanelRechnungZahlung extends PanelZahlung {
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L;
-	private TabbedPaneRechnungAll tabbedPaneRechnungAll = null;
+
+//	private TabbedPaneRechnungAll tabbedPaneRechnungAll = null;
 	protected RechnungDto gutschriftDto;
 	protected RechnungzahlungDto gutschriftZahlungDto;
 	protected EingangsrechnungDto eingangsrechnungDto;
@@ -87,13 +87,14 @@ public class PanelRechnungZahlung extends PanelZahlung {
 	public PanelRechnungZahlung(InternalFrame internalFrame, String add2TitleI,
 			TabbedPaneRechnungAll tabbedPaneRechnungAll) throws Throwable {
 		super(internalFrame, tabbedPaneRechnungAll, add2TitleI);
-		this.tabbedPaneRechnungAll = tabbedPaneRechnungAll;
+//		this.tabbedPaneRechnungAll = tabbedPaneRechnungAll;
 		jbInit();
 		initComponents();
 	}
 
 	private TabbedPaneRechnungAll getTabbedPaneRechnungAll() {
-		return tabbedPaneRechnungAll;
+		return (TabbedPaneRechnungAll) tabbedPane;
+//		return tabbedPaneRechnungAll ;
 	}
 
 	/**
@@ -102,8 +103,6 @@ public class PanelRechnungZahlung extends PanelZahlung {
 	 * @throws Throwable
 	 */
 	private void jbInit() throws Throwable {
-
-
 	}
 
 	protected RechnungzahlungDto getRechnungzahlungDto() {
@@ -173,6 +172,7 @@ public class PanelRechnungZahlung extends PanelZahlung {
 						.rechnungFindByPrimaryKey(
 								zahlungDto.getRechnungIIdGutschrift());
 				wtfGutschrift.setText(gutschriftDto.getCNr());
+				wcbErledigtGutschrift.setSelected(gutschriftDto.getStatusCNr().equals(RechnungFac.STATUS_BEZAHLT));
 			} else if (zahlungsartCNr
 					.equalsIgnoreCase(RechnungFac.ZAHLUNGSART_GEGENVERRECHNUNG)) {
 
@@ -355,6 +355,7 @@ public class PanelRechnungZahlung extends PanelZahlung {
 		if (allMandatoryFieldsSetDlg()) {
 			boolean bErledigt = wcbErledigt.isSelected();
 			// damit der offene neu gerechnet wird
+			myLogger.info("Zahlung Erledigt == " + wcbErledigt.isSelected() + ".");
 			focusLostWnfBetrag();
 
 			components2Dto();
@@ -363,14 +364,16 @@ public class PanelRechnungZahlung extends PanelZahlung {
 					&& wcoZahlungsart.getKeyOfSelectedItem().equals(
 							RechnungFac.ZAHLUNGSART_GUTSCHRIFT)) {
 
-				DialogFactory.showModalDialog(LPMain.getTextRespectUISPr("lp.error"), LPMain.getTextRespectUISPr("rech.zahlung.gutschrift.error"));
+				DialogFactory.showModalDialog(
+						LPMain.getTextRespectUISPr("lp.error"), 
+						LPMain.getTextRespectUISPr("rech.zahlung.gutschrift.error"));
 				return;
 
 			}
 
 			boolean bSpeichern = true;
 			if (wnfOffen.getBigDecimal() != null
-					&& wnfOffen.getBigDecimal().compareTo(new BigDecimal(0)) < 0) {
+					&& wnfOffen.getBigDecimal().signum() < 0) {
 				bSpeichern = DialogFactory
 						.showModalJaNeinDialog(
 								getInternalFrame(),
@@ -381,7 +384,7 @@ public class PanelRechnungZahlung extends PanelZahlung {
 			}
 			if (bErledigt
 					&& wnfOffen.getBigDecimal() != null
-					&& wnfOffen.getBigDecimal().compareTo(new BigDecimal(0)) > 0) {
+					&& wnfOffen.getBigDecimal().signum() > 0) {
 				bSpeichern = DialogFactory
 						.showModalJaNeinDialog(
 								getInternalFrame(),
@@ -391,8 +394,7 @@ public class PanelRechnungZahlung extends PanelZahlung {
 										"lp.frage"));
 			}
 			if (bSpeichern) {
-				if (zahlungDto.getZahlungsartCNr().equals(
-						RechnungFac.RECHNUNGART_GUTSCHRIFT)) {
+				if (zahlungDto.isGutschrift()) {
 					if (gutschriftZahlungDto == null) {
 						// neue Zahlung auf gutschrift
 						gutschriftZahlungDto = new RechnungzahlungDto();
@@ -402,10 +404,7 @@ public class PanelRechnungZahlung extends PanelZahlung {
 								.getPersonalIIdAnlegen());
 					}
 					gutschriftZahlungDto.setRechnungIId(gutschriftDto.getIId());
-					// Bei einer Gutschrift wird der FK auf die Gutschrift fuer
-					// Die zugehoerige Rechnung verwendet
-					gutschriftZahlungDto.setRechnungIIdGutschrift(zahlungDto
-							.getRechnungIId());
+					gutschriftZahlungDto.setRechnungIIdGutschrift(getRechnungDto().getIId());
 					gutschriftZahlungDto.setDZahldatum(zahlungDto
 							.getDZahldatum());
 					gutschriftZahlungDto
@@ -426,55 +425,63 @@ public class PanelRechnungZahlung extends PanelZahlung {
 							.getInstance().getTime().getTime()));
 					gutschriftZahlungDto.setPersonalIIdAendern(zahlungDto
 							.getPersonalIIdAendern());
-					BigDecimal bdBereitsBezahlt = DelegateFactory
-							.getInstance()
-							.getRechnungDelegate()
-							.getBereitsBezahltWertVonRechnungFw(
-									gutschriftDto.getIId(), null);
 
-					BigDecimal bdWertGutschrift = new BigDecimal(0);
-					if (gutschriftDto.getNWertfw() != null) {
-						bdWertGutschrift = gutschriftDto.getNWertfw();
-					}
+//					BigDecimal bdBereitsBezahlt = DelegateFactory
+//							.getInstance()
+//							.getRechnungDelegate()
+//							.getBereitsBezahltWertVonRechnungFw(
+//									gutschriftDto.getIId(), null);
+//
+//					BigDecimal bdWertGutschrift = new BigDecimal(0);
+//					if (gutschriftDto.getNWertfw() != null) {
+//						bdWertGutschrift = gutschriftDto.getNWertfw();
+//					}
+//					
+//					boolean gutschriftErledigt = wcbErledigtGutschrift.isVisible() && wcbErledigtGutschrift.isSelected();
 
-					if (gutschriftZahlungDto.getIId() == null) {
-						gutschriftZahlungDto = getRechnungDelegate()
-								.createZahlung(gutschriftZahlungDto, false);
-					} else {
-						getRechnungDelegate().updateZahlung(
-								gutschriftZahlungDto, false);
-					}
+//					if (gutschriftZahlungDto.getIId() == null) {
+//						gutschriftZahlungDto = getRechnungDelegate()
+//								.createZahlung(gutschriftZahlungDto, gutschriftErledigt);
+//					} else {
+//						getRechnungDelegate().updateZahlung(
+//								gutschriftZahlungDto, gutschriftErledigt);
+//					}
 
-					if (gutschriftZahlungDto.getNBetrag().doubleValue() >= bdWertGutschrift
-							.subtract(bdBereitsBezahlt).doubleValue()) {
-
-						getRechnungDelegate().updateRechnungStatus(
-								gutschriftDto.getIId(),
-								RechnungFac.STATUS_BEZAHLT,
-								zahlungDto.getDZahldatum());
-						gutschriftDto.setStatusCNr(RechnungFac.STATUS_BEZAHLT);
-
-					} else {
-
-						getRechnungDelegate().updateRechnungStatus(
-								gutschriftDto.getIId(),
-								RechnungFac.STATUS_TEILBEZAHLT, null);
-						gutschriftDto
-								.setStatusCNr(RechnungFac.STATUS_TEILBEZAHLT);
-					}
-
-					zahlungDto
-							.setRechnungzahlungIIdGutschrift(gutschriftZahlungDto
-									.getIId());
-					zahlungDto.setRechnungIIdGutschrift(gutschriftDto.getIId());
+////					if (gutschriftZahlungDto.getNBetrag().doubleValue() >= bdWertGutschrift
+////							.subtract(bdBereitsBezahlt).doubleValue()
+////							|| wcbErledigtGutschrift.isVisible() && wcbErledigtGutschrift.isSelected()) {
+////
+////						getRechnungDelegate().updateRechnungStatus(
+////								gutschriftDto.getIId(),
+////								RechnungFac.STATUS_BEZAHLT,
+////								zahlungDto.getDZahldatum());
+////						gutschriftDto.setStatusCNr(RechnungFac.STATUS_BEZAHLT);
+////
+////					} else {
+////
+////						getRechnungDelegate().updateRechnungStatus(
+////								gutschriftDto.getIId(),
+////								RechnungFac.STATUS_TEILBEZAHLT, null);
+////						gutschriftDto
+////								.setStatusCNr(RechnungFac.STATUS_TEILBEZAHLT);
+////					}
+//
+//					zahlungDto.setRechnungzahlungIIdGutschrift(gutschriftZahlungDto.getIId());
+//					zahlungDto.setRechnungIIdGutschrift(gutschriftDto.getIId());
 				}
 
-				if (zahlungDto.getIId() == null) {
-					zahlungDto = getRechnungDelegate().createZahlung(
-							zahlungDto, bErledigt);
-				} else {
-					getRechnungDelegate().updateZahlung(zahlungDto, bErledigt);
-				}
+				boolean gutschriftErledigt = wcbErledigtGutschrift.isVisible() && wcbErledigtGutschrift.isSelected();
+				zahlungDto = getRechnungDelegate().createUpdateZahlung(
+						zahlungDto, bErledigt, 
+						zahlungDto.isGutschrift() ? gutschriftZahlungDto : null, gutschriftErledigt) ;
+				
+//				myLogger.info("Zahlung mit IId " + zahlungDto.getIId() + " speichern. bErledigt = " + bErledigt + ".");
+//				if (zahlungDto.getIId() == null) {
+//					zahlungDto = getRechnungDelegate().createZahlung(
+//							zahlungDto, bErledigt);
+//				} else {
+//					getRechnungDelegate().updateZahlung(zahlungDto, bErledigt);
+//				}
 
 				setKeyWhenDetailPanel(getRechnungDto().getIId());
 				super.eventActionSave(e, true);
@@ -625,7 +632,6 @@ public class PanelRechnungZahlung extends PanelZahlung {
 				dialogQueryEingangsrechnung(e, eingangsrechnungDto.getIId(),
 						null);
 			}
-
 		}
 	}
 
@@ -640,7 +646,19 @@ public class PanelRechnungZahlung extends PanelZahlung {
 						.rechnungFindByPrimaryKey((Integer) key);
 				wtfGutschrift.setText(gutschriftDto.getCNr());
 				BigDecimal bdBezahlt;
-
+				
+				ZahlungszielDto zahlungszielDto = DelegateFactory.getInstance()
+						.getMandantDelegate()
+						.zahlungszielFindByPrimaryKey(gutschriftDto.getZahlungszielIId());
+				boolean skonto = zahlungszielDto != null && !new Integer(0).equals(zahlungszielDto.getSkontoAnzahlTage1());
+				
+				if(skonto && zahlungszielDto.getIId().equals(this.getZahlungszielIId()))
+					skonto = DialogFactory.showModalJaNeinDialog(getInternalFrame(),
+							LPMain.getMessageTextRespectUISPr("rech.zahlung.frage.gutschriftmitskonto", zahlungszielDto.getCBez()));
+				else skonto = false;
+				
+				wcbErledigtGutschrift.setSelected(skonto);
+				
 				if (gutschriftZahlungDto != null) {
 					bdBezahlt = DelegateFactory
 							.getInstance()
@@ -667,10 +685,12 @@ public class PanelRechnungZahlung extends PanelZahlung {
 									gutschriftDto.getIId(), null));
 
 				}
-				if (gutschriftDto.getNWert() != null
-						&& gutschriftDto.getNWertust() != null) {
-					BigDecimal bdBruttoGutschrift = gutschriftDto.getNWert()
-							.add(gutschriftDto.getNWertust());
+				if (gutschriftDto.getNWertfw() != null
+						&& gutschriftDto.getNWertustfw() != null) {
+					BigDecimal bdBruttoGutschrift = gutschriftDto.getNWertfw()
+							.add(gutschriftDto.getNWertustfw());
+					if(skonto)
+						bdBruttoGutschrift = berechneSkonto(bdBruttoGutschrift, zahlungszielDto.getSkontoProzentsatz1());
 					BigDecimal offenGS = bdBruttoGutschrift.subtract(bdBezahlt);
 					
 					BigDecimal bdOffenER = getWertGesamtOffenExklusiveZahlung();
@@ -896,5 +916,23 @@ public class PanelRechnungZahlung extends PanelZahlung {
 	@Override
 	protected boolean isGutschriftErlaubt() {
 		return !getRechnungDto().getRechnungartCNr().equals(RechnungFac.RECHNUNGART_ANZAHLUNG);
+	}
+
+	@Override
+	protected boolean darfManuellErledigen() throws Throwable {
+		if(!RechnungFac.RECHNUNGART_ANZAHLUNG.equals(getRechnungDto().getRechnungartCNr()))
+			return true;
+		RechnungDto[] rechArray = DelegateFactory.getInstance().getRechnungDelegate()
+			.findByAuftragIId(getRechnungDto().getAuftragIId());
+		for (RechnungDto rech : rechArray) {
+			if (RechnungFac.RECHNUNGART_SCHLUSSZAHLUNG.equals(rech
+					.getRechnungartCNr())
+					&& !Helper.isOneOf(rech.getStatusCNr(),
+							RechnungFac.STATUS_ANGELEGT,
+							RechnungFac.STATUS_STORNIERT)) {
+				return false;
+			}
+		}
+		return true;
 	}
 }

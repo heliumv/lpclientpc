@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -46,6 +46,7 @@ import javax.naming.InitialContext;
 import javax.swing.table.TableModel;
 
 import com.lp.client.frame.ExceptionLP;
+import com.lp.client.frame.component.InternalFrame;
 import com.lp.client.frame.dialog.DialogFactory;
 import com.lp.client.pc.LPMain;
 import com.lp.server.angebot.service.AngebotDto;
@@ -59,6 +60,7 @@ import com.lp.server.rechnung.service.RechnungReportFac;
 import com.lp.server.rechnung.service.RechnungkontierungDto;
 import com.lp.server.rechnung.service.RechnungzahlungDto;
 import com.lp.server.rechnung.service.ReportRechnungJournalKriterienDto;
+import com.lp.server.system.service.BelegPruefungDto;
 import com.lp.server.system.service.LocaleFac;
 import com.lp.server.util.report.JasperPrintLP;
 import com.lp.service.Artikelset;
@@ -189,6 +191,18 @@ public class RechnungDelegate extends Delegate {
 			handleThrowable(ex);
 		}
 		return null;
+	}
+
+	public int getAnzahlMengenbehafteteRechnungpositionen(Integer rechnungIId)
+			throws ExceptionLP {
+		try {
+			return rechnungFac.getAnzahlMengenbehafteteRechnungpositionen(
+					rechnungIId, LPMain.getTheClient());
+
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+		return 0;
 	}
 
 	public RechnungDto rechnungFindByCNr(String cNr) throws ExceptionLP {
@@ -596,7 +610,8 @@ public class RechnungDelegate extends Delegate {
 	 */
 	public Integer createRechnungAusLieferschein(Integer lieferscheinIId,
 			RechnungDto rechnungDto, String rechnungstypCNr,
-			java.sql.Date neuDatum) throws ExceptionLP {
+			java.sql.Date neuDatum, InternalFrame internalFrame)
+			throws ExceptionLP {
 		try {
 			if (lieferscheinIId != null) {
 
@@ -617,8 +632,11 @@ public class RechnungDelegate extends Delegate {
 				Iterator<Integer> it = hmKunden.keySet().iterator();
 
 				while (it.hasNext()) {
-					DelegateFactory.getInstance().getKundeDelegate()
-							.pruefeKunde(it.next());
+					DelegateFactory
+							.getInstance()
+							.getKundeDelegate()
+							.pruefeKunde(it.next(),
+									LocaleFac.BELEGART_RECHNUNG, internalFrame);
 				}
 
 			}
@@ -633,14 +651,17 @@ public class RechnungDelegate extends Delegate {
 	}
 
 	public Integer createRechnungAusRechnung(Integer rechnungIId,
-			java.sql.Date neuDatum, boolean bUebernimmKonditionenDesKunden)
-			throws ExceptionLP {
+			java.sql.Date neuDatum, boolean bUebernimmKonditionenDesKunden,
+			InternalFrame internalFrame) throws ExceptionLP {
 		try {
 			if (rechnungIId != null) {
 				RechnungDto reDto = rechnungFindByPrimaryKey(rechnungIId);
 
-				DelegateFactory.getInstance().getKundeDelegate()
-						.pruefeKunde(reDto.getKundeIId());
+				DelegateFactory
+						.getInstance()
+						.getKundeDelegate()
+						.pruefeKunde(reDto.getKundeIId(),
+								LocaleFac.BELEGART_RECHNUNG, internalFrame);
 
 			}
 
@@ -653,15 +674,19 @@ public class RechnungDelegate extends Delegate {
 	}
 
 	public Integer createRechnungAusAngebot(Integer angebotIId,
-			java.sql.Date neuDatum) throws ExceptionLP {
+			java.sql.Date neuDatum, InternalFrame internalFrame)
+			throws ExceptionLP {
 		try {
 			if (angebotIId != null) {
 				AngebotDto agDto = DelegateFactory.getInstance()
 						.getAngebotDelegate()
 						.angebotFindByPrimaryKey(angebotIId);
 
-				DelegateFactory.getInstance().getKundeDelegate()
-						.pruefeKunde(agDto.getKundeIIdAngebotsadresse());
+				DelegateFactory
+						.getInstance()
+						.getKundeDelegate()
+						.pruefeKunde(agDto.getKundeIIdAngebotsadresse(),
+								LocaleFac.BELEGART_RECHNUNG, internalFrame);
 
 			}
 
@@ -686,7 +711,8 @@ public class RechnungDelegate extends Delegate {
 	 */
 	public Integer createRechnungAusMehrereLieferscheine(Object[] keys,
 			RechnungDto rechnungDto, String rechnungstypCNr,
-			java.sql.Date neuDatum) throws ExceptionLP {
+			java.sql.Date neuDatum, InternalFrame internalFrame)
+			throws ExceptionLP {
 		try {
 			HashMap<Integer, Integer> hmKunden = new HashMap<Integer, Integer>();
 			for (int i = 0; i < keys.length; i++) {
@@ -712,8 +738,11 @@ public class RechnungDelegate extends Delegate {
 			Iterator<Integer> it = hmKunden.keySet().iterator();
 
 			while (it.hasNext()) {
-				DelegateFactory.getInstance().getKundeDelegate()
-						.pruefeKunde(it.next());
+				DelegateFactory
+						.getInstance()
+						.getKundeDelegate()
+						.pruefeKunde(it.next(), LocaleFac.BELEGART_RECHNUNG,
+								internalFrame);
 			}
 
 			return rechnungFac.createRechnungAusMehrereLieferscheine(keys,
@@ -734,7 +763,8 @@ public class RechnungDelegate extends Delegate {
 	 * @throws ExceptionLP
 	 */
 	public Integer createRechnungAusAuftrag(Integer auftragIId,
-			java.sql.Date neuDatum) throws ExceptionLP {
+			java.sql.Date neuDatum, InternalFrame internalFrame)
+			throws ExceptionLP {
 		try {
 
 			if (auftragIId != null) {
@@ -760,8 +790,11 @@ public class RechnungDelegate extends Delegate {
 				Iterator<Integer> it = hmKunden.keySet().iterator();
 
 				while (it.hasNext()) {
-					DelegateFactory.getInstance().getKundeDelegate()
-							.pruefeKunde(it.next());
+					DelegateFactory
+							.getInstance()
+							.getKundeDelegate()
+							.pruefeKunde(it.next(),
+									LocaleFac.BELEGART_RECHNUNG, internalFrame);
 				}
 
 			}
@@ -788,6 +821,26 @@ public class RechnungDelegate extends Delegate {
 		try {
 			return rechnungFac.createGutschriftAusRechnung(rechnungIId,
 					dBelegdatum, LPMain.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
+
+	/**
+	 * Eine GS aus einer RE erstellen.
+	 * 
+	 * @return Id der neuen Rechnung
+	 * @param rechnungIId
+	 *            Integer
+	 * @throws ExceptionLP
+	 */
+	public Integer createGutschriftAusRechnung(Integer rechnungIId,
+			java.sql.Date dBelegdatum, String gutschriftartCnr)
+			throws ExceptionLP {
+		try {
+			return rechnungFac.createGutschriftAusRechnung(rechnungIId,
+					dBelegdatum, gutschriftartCnr, LPMain.getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 			return null;
@@ -1192,35 +1245,52 @@ public class RechnungDelegate extends Delegate {
 		}
 	}
 
-	public void aktiviereBelegControlled(Integer iid, Timestamp t) throws ExceptionLP {
+	public void aktiviereBelegControlled(Integer iid, Timestamp t)
+			throws ExceptionLP {
 		try {
-			rechnungFac.aktiviereBelegControlled(iid, t, LPMain.getTheClient());
-			// SP1881
-			DelegateFactory
-					.getInstance()
-					.getSystemDelegate()
-					.enthaeltEinVKBelegUmsatzsteuerObwohlKundeSteuerfrei(
-							LocaleFac.BELEGART_RECHNUNG, iid);
+			BelegPruefungDto pruefungDto = rechnungFac.aktiviereBelegControlled(iid, t, LPMain.getTheClient());
+			dialogBelegpruefung(pruefungDto) ;
+//			// SP1881
+//			DelegateFactory
+//					.getInstance()
+//					.getSystemDelegate()
+//					.enthaeltEinVKBelegUmsatzsteuerObwohlKundeSteuerfrei(
+//							LocaleFac.BELEGART_RECHNUNG, iid);
 		} catch (Throwable t1) {
 			handleThrowable(t1);
 		}
 	}
-	
+
 	public Timestamp berechneBelegControlled(Integer iid) throws ExceptionLP {
 		try {
-			Timestamp t = rechnungFac.berechneBelegControlled(iid, LPMain.getTheClient());
+			BelegPruefungDto pruefungDto = rechnungFac.berechneBelegControlled(iid,
+					LPMain.getTheClient());
+			dialogBelegpruefung(pruefungDto) ;
+			return pruefungDto.getBerechnungsZeitpunkt() ;
+			
 			// SP1881
-			DelegateFactory
-					.getInstance()
-					.getSystemDelegate()
-					.enthaeltEinVKBelegUmsatzsteuerObwohlKundeSteuerfrei(
-							LocaleFac.BELEGART_RECHNUNG, iid);
-			return t;
+//			DelegateFactory
+//					.getInstance()
+//					.getSystemDelegate()
+//					.enthaeltEinVKBelegUmsatzsteuerObwohlKundeSteuerfrei(
+//							LocaleFac.BELEGART_RECHNUNG, iid);
 		} catch (Throwable t1) {
 			handleThrowable(t1);
 		}
 		return null;
 	}
+
+	public Timestamp berechneAktiviereBelegControlled(Integer iid)
+			throws ExceptionLP {
+		try {
+			BelegPruefungDto pruefungDto = rechnungFac.berechneAktiviereBelegControlled(iid, LPMain.getTheClient());
+			dialogBelegpruefung(pruefungDto) ;
+			return pruefungDto.getBerechnungsZeitpunkt() ;
+		} catch (Throwable t1) {
+			handleThrowable(t1);
+		}
+		return null ;
+	}	
 
 	public void storniereRechnung(Integer rechnungIId) throws ExceptionLP {
 		try {
@@ -1422,20 +1492,10 @@ public class RechnungDelegate extends Delegate {
 	 *            PK der Rechnung
 	 * @param iIdAuftragI
 	 *            Integer
+	 * @param artikelsets
 	 * @throws ExceptionLP
 	 *             Ausnahme
 	 */
-	public void uebernimmAlleOffenenAuftragpositionenOhneBenutzerinteraktion(
-			Integer iIdRechnungI, Integer iIdAuftragI) throws ExceptionLP {
-		try {
-			rechnungFac
-					.uebernimmAlleOffenenAuftragpositionenOhneBenutzerinteraktion(
-							iIdRechnungI, iIdAuftragI, LPMain.getTheClient());
-		} catch (Throwable t) {
-			handleThrowable(t);
-		}
-	}
-
 	public void uebernimmAlleOffenenAuftragpositionenOhneBenutzerinteraktionNew(
 			Integer iIdRechnungI, Integer iIdAuftrag,
 			List<Artikelset> artikelsets) throws ExceptionLP {
@@ -1703,5 +1763,50 @@ public class RechnungDelegate extends Delegate {
 		}
 
 		return new ArrayList<SeriennrChargennrMitMengeDto>();
+	}
+
+	public void repairRechnungZws2276(Integer rechnungId) throws ExceptionLP {
+		try {
+			rechnungFac
+					.repairRechnungZws2276(rechnungId, LPMain.getTheClient());
+		} catch (Throwable t) {
+			handleThrowable(t);
+		}
+	}
+
+	public List<Integer> repairRechnungZws2276GetList() throws ExceptionLP {
+		try {
+			return rechnungFac.repairRechnungZws2276GetList(LPMain
+					.getTheClient());
+		} catch (Throwable t) {
+			handleThrowable(t);
+		}
+
+		return new ArrayList<Integer>();
+	}
+
+	public RechnungDto[] findByAuftragIId(int auftragIId) throws ExceptionLP {
+		try {
+			return rechnungFac.rechnungFindByAuftragIId(auftragIId);
+		} catch (Throwable t) {
+			handleThrowable(t);
+		}
+
+		return null;
+	}
+
+	public RechnungzahlungDto createUpdateZahlung(
+			RechnungzahlungDto zahlungDto, boolean rechnungErledigt,
+			RechnungzahlungDto gutschriftZahlungDto, boolean gutschriftErledigt)
+			throws ExceptionLP {
+		try {
+			return rechnungFac.createUpdateZahlung(zahlungDto,
+					rechnungErledigt, gutschriftZahlungDto, gutschriftErledigt,
+					LPMain.getTheClient());
+		} catch (Throwable t) {
+			handleThrowable(t);
+		}
+
+		return null;
 	}
 }

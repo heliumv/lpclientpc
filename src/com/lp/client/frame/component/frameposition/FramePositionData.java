@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -32,6 +32,7 @@
  ******************************************************************************/
 package com.lp.client.frame.component.frameposition;
 
+import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.Point;
@@ -40,6 +41,7 @@ import java.beans.PropertyVetoException;
 import java.io.Serializable;
 
 import com.lp.client.frame.component.InternalFrame;
+import com.lp.client.frame.component.PanelQueryFLR;
 import com.lp.client.pc.Desktop;
 
 public class FramePositionData implements Serializable {
@@ -67,6 +69,11 @@ public class FramePositionData implements Serializable {
 		setMaximized(iFrame.isMaximum());
 	}
 	
+	public FramePositionData(Dialog dialog) {
+		setLocation(dialog.getLocationOnScreen());
+		setSize(dialog.getSize());
+	}
+	
 	public FramePositionData(Desktop desktop) {
 		setSize(desktop.getSize());
 		setLocation(desktop.getLocation());
@@ -74,7 +81,7 @@ public class FramePositionData implements Serializable {
 		setMaximized(desktop.getExtendedState() == Frame.MAXIMIZED_BOTH);
 	}
 
-	public void applyto(InternalFrame iFrame) {
+	public void applyTo(InternalFrame iFrame) {
 		iFrame.setBounds(new Rectangle(getLocation(), getSize()));
 //		iFrame.setSize(getSize());
 //		iFrame.setLocation(getLocation());
@@ -93,7 +100,13 @@ public class FramePositionData implements Serializable {
 		
 	}
 	
-	public void applyto(Desktop desktop) {
+	public void applyTo(PanelQueryFLR panel) {
+		Dialog dialog = panel.getDialog();
+//		dialog.setLocation(getLocation());
+		dialog.setSize(getSize());
+	}
+	
+	public void applyTo(Desktop desktop) {
 		desktop.setSize(getSize());
 		desktop.setLocation(getLocation());
 		desktop.setExtendedState( isIconified() ? Frame.ICONIFIED :

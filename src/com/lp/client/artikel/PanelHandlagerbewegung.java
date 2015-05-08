@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -86,6 +86,7 @@ import com.lp.server.artikel.service.LagerumbuchungDto;
 import com.lp.server.artikel.service.SeriennrChargennrMitMengeDto;
 import com.lp.server.benutzer.service.RechteFac;
 import com.lp.server.system.service.LocaleFac;
+import com.lp.server.system.service.MandantFac;
 import com.lp.server.system.service.ParameterFac;
 import com.lp.server.system.service.ParametermandantDto;
 import com.lp.server.util.Facade;
@@ -114,7 +115,7 @@ public class PanelHandlagerbewegung extends PanelBasis {
 	private WrapperRadioButton wrbAbgang = new WrapperRadioButton();
 	private WrapperRadioButton wrbUmbuchung = new WrapperRadioButton();
 	private WrapperSnrChnrField wtfSeriennr = new WrapperSnrChnrField(
-			getInternalFrame());
+			getInternalFrame(), true);
 	private ButtonGroup buttonGroup1 = new ButtonGroup();
 	private HandlagerbewegungDto handlagerbewegungDto = null;
 	private PanelQueryFLR panelQueryFLRLager = null;
@@ -275,7 +276,6 @@ public class PanelHandlagerbewegung extends PanelBasis {
 
 		iDefaultHandbuchungsart = ((Integer) parameter.getCWertAsObject());
 
-
 		wifArtikel = new WrapperIdentField(getInternalFrame(), this);
 
 		wtfLagerZu.setMandatoryField(true);
@@ -310,12 +310,12 @@ public class PanelHandlagerbewegung extends PanelBasis {
 		wtfSeriennr.setMandatoryField(true);
 		wtfSeriennr.setActivatable(false);
 		wtfSeriennr.setWnfBelegMenge(wnfMenge);
-		
+
 		if (hatRechtCUD == false) {
 			wrbZugang.setActivatable(false);
 			wrbAbgang.setActivatable(false);
 		}
-		
+
 		buttonGroup1.add(wrbZugang);
 		buttonGroup1.add(wrbAbgang);
 		buttonGroup1.add(wrbUmbuchung);
@@ -329,47 +329,110 @@ public class PanelHandlagerbewegung extends PanelBasis {
 		this.add(getPanelStatusbar(), new GridBagConstraints(0, 2, 1, 1, 1.0,
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(0, 0, 0, 0), 0, 0));
-		
-		int iZeile = 0;		
-		jpaWorkingOn.add(wrbZugang, new GridBagConstraints(1, iZeile, 2, 1, 0.1, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wrbAbgang, new GridBagConstraints(3, iZeile, 2, 1, 0.1, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wrbUmbuchung, new GridBagConstraints(5, iZeile, 1, 1, 0.1, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+
+		int iZeile = 0;
+		jpaWorkingOn.add(wrbZugang, new GridBagConstraints(1, iZeile, 2, 1,
+				0.1, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wrbAbgang, new GridBagConstraints(3, iZeile, 2, 1,
+				0.1, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wrbUmbuchung, new GridBagConstraints(5, iZeile, 1, 1,
+				0.1, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
 		iZeile++;
-		jpaWorkingOn.add(wifArtikel.getWbuArtikel(), new GridBagConstraints(0, iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 200, 0));
-		jpaWorkingOn.add(wifArtikel.getWtfIdent(), new GridBagConstraints(1, iZeile, 3, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wifArtikel.getWtfBezeichnung(), new GridBagConstraints(3, iZeile, 2, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wifArtikel.getWbuArtikel(), new GridBagConstraints(0,
+				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 200, 0));
+		jpaWorkingOn.add(wifArtikel.getWtfIdent(), new GridBagConstraints(1,
+				iZeile, 3, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wifArtikel.getWtfBezeichnung(),
+				new GridBagConstraints(3, iZeile, 2, 1, 0.0, 0.0,
+						GridBagConstraints.CENTER,
+						GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2),
+						0, 0));
 		if (bHerstellerUrsprungsland == true) {
-			jpaWorkingOn.add(wsfHersteller.getWrapperButton(), new GridBagConstraints(5, iZeile, 1, 1, 0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-			jpaWorkingOn.add(wsfHersteller.getWrapperTextField(), new GridBagConstraints(6, iZeile, 1, 1, 0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+			jpaWorkingOn.add(wsfHersteller.getWrapperButton(),
+					new GridBagConstraints(5, iZeile, 1, 1, 0, 0.0,
+							GridBagConstraints.CENTER,
+							GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2,
+									2), 0, 0));
+			jpaWorkingOn.add(wsfHersteller.getWrapperTextField(),
+					new GridBagConstraints(6, iZeile, 1, 1, 0, 0.0,
+							GridBagConstraints.CENTER,
+							GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2,
+									2), 0, 0));
 		}
 		iZeile++;
-		jpaWorkingOn.add(wtfSeriennr.getButtonSnrAuswahl(), new GridBagConstraints(0, iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 140, 0));
-		jpaWorkingOn.add(wtfSeriennr, new GridBagConstraints(1, iZeile, 4, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wtfSeriennr.getButtonSnrAuswahl(),
+				new GridBagConstraints(0, iZeile, 1, 1, 0.0, 0.0,
+						GridBagConstraints.CENTER,
+						GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2),
+						140, 0));
+		jpaWorkingOn.add(wtfSeriennr, new GridBagConstraints(1, iZeile, 4, 1,
+				0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
 		if (bHerstellerUrsprungsland == true) {
-			jpaWorkingOn.add(wsfLand.getWrapperButton(), new GridBagConstraints(5, iZeile, 1, 1, 0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-			jpaWorkingOn.add(wsfLand.getWrapperTextField(), new GridBagConstraints(6, iZeile, 1, 1, 0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+			jpaWorkingOn.add(wsfLand.getWrapperButton(),
+					new GridBagConstraints(5, iZeile, 1, 1, 0, 0.0,
+							GridBagConstraints.CENTER,
+							GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2,
+									2), 0, 0));
+			jpaWorkingOn.add(wsfLand.getWrapperTextField(),
+					new GridBagConstraints(6, iZeile, 1, 1, 0, 0.0,
+							GridBagConstraints.CENTER,
+							GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2,
+									2), 0, 0));
 		}
 		iZeile++;
-		jpaWorkingOn.add(wbuLager, new GridBagConstraints(0, iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 50, 0));
-		jpaWorkingOn.add(wtfLager, new GridBagConstraints(1, iZeile, 5, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 0, 2), 100, 0));
-		jpaWorkingOn.add(wlaLagerstand, new GridBagConstraints(6, iZeile, 1, 1, 0.2, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wbuLager, new GridBagConstraints(0, iZeile, 1, 1, 0.0,
+				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+				new Insets(2, 2, 2, 2), 50, 0));
+		jpaWorkingOn.add(wtfLager, new GridBagConstraints(1, iZeile, 5, 1, 0.0,
+				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+				new Insets(2, 2, 0, 2), 100, 0));
+		jpaWorkingOn.add(wlaLagerstand, new GridBagConstraints(6, iZeile, 1, 1,
+				0.2, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
 		iZeile++;
-		jpaWorkingOn.add(wbuLagerZu, new GridBagConstraints(0, iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wtfLagerZu, new GridBagConstraints(1, iZeile, 4, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wbuLagerZu, new GridBagConstraints(0, iZeile, 1, 1,
+				0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wtfLagerZu, new GridBagConstraints(1, iZeile, 4, 1,
+				0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
 		iZeile++;
-		jpaWorkingOn.add(wbuLagerplatz, new GridBagConstraints(0, iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wtfLagerplatz, new GridBagConstraints(1, iZeile, 4, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wbuLagerplatz, new GridBagConstraints(0, iZeile, 1, 1,
+				0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wtfLagerplatz, new GridBagConstraints(1, iZeile, 4, 1,
+				0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
 		iZeile++;
-		jpaWorkingOn.add(wlaMenge, new GridBagConstraints(0, iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wnfMenge, new GridBagConstraints(1, iZeile, 5, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wlaMengeneinheit, new GridBagConstraints(6, iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), -3, 0));
+		jpaWorkingOn.add(wlaMenge, new GridBagConstraints(0, iZeile, 1, 1, 0.0,
+				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+				new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wnfMenge, new GridBagConstraints(1, iZeile, 5, 1, 0.0,
+				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+				new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wlaMengeneinheit, new GridBagConstraints(6, iZeile, 1,
+				1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), -3, 0));
 		iZeile++;
-		jpaWorkingOn.add(wlaKommentar, new GridBagConstraints(0, iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wtfKommentar, new GridBagConstraints(1, iZeile, 5, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wlaKommentar, new GridBagConstraints(0, iZeile, 1, 1,
+				0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wtfKommentar, new GridBagConstraints(1, iZeile, 5, 1,
+				0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
 		iZeile++;
-		jpaWorkingOn.add(wlaPreis, new GridBagConstraints(0, iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wnfPreis, new GridBagConstraints(1, iZeile, 5, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		
+		jpaWorkingOn.add(wlaPreis, new GridBagConstraints(0, iZeile, 1, 1, 0.0,
+				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+				new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wnfPreis, new GridBagConstraints(1, iZeile, 5, 1, 0.0,
+				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+				new Insets(2, 2, 2, 2), 0, 0));
 
 		String[] aWhichButtonIUse = null;
 
@@ -551,11 +614,25 @@ public class PanelHandlagerbewegung extends PanelBasis {
 	}
 
 	void dialogQueryLagerZuFromListe(ActionEvent e) throws Throwable {
-		panelQueryFLRLagerZu = ArtikelFilterFactory.getInstance()
-				.createPanelFLRLager(getInternalFrame(),
-						handlagerbewegungDto.getLagerIId());
+		// PJ18760
+		if (LPMain
+				.getInstance()
+				.getDesktop()
+				.darfAnwenderAufZusatzfunktionZugreifen(
+						MandantFac.ZUSATZFUNKTION_ZENTRALER_ARTIKELSTAMM)) {
+			panelQueryFLRLagerZu = ArtikelFilterFactory.getInstance()
+					.createPanelFLRLagerMitMandant(getInternalFrame(),
+							handlagerbewegungDto.getLagerIId(), false);
 
-		new DialogQuery(panelQueryFLRLagerZu);
+			new DialogQuery(panelQueryFLRLagerZu);
+		} else {
+			panelQueryFLRLagerZu = ArtikelFilterFactory.getInstance()
+					.createPanelFLRLager(getInternalFrame(),
+							handlagerbewegungDto.getLagerIId());
+
+			new DialogQuery(panelQueryFLRLagerZu);
+		}
+
 	}
 
 	void dialogQueryLagerplatzFromListe(ActionEvent e) throws Throwable {
@@ -773,7 +850,8 @@ public class PanelHandlagerbewegung extends PanelBasis {
 														"artikel.umbuchung.zugehoerige.aendern"));
 						if (b == true) {
 							zugehDto.setNMenge(handlagerbewegungDto.getNMenge());
-							zugehDto.setSeriennrChargennrMitMenge(handlagerbewegungDto.getSeriennrChargennrMitMenge());
+							zugehDto.setSeriennrChargennrMitMenge(handlagerbewegungDto
+									.getSeriennrChargennrMitMenge());
 							DelegateFactory.getInstance().getLagerDelegate()
 									.updateHandlagerbewegung(zugehDto);
 						}
@@ -1103,6 +1181,8 @@ public class PanelHandlagerbewegung extends PanelBasis {
 		wtfLagerZu.setMandatoryField(false);
 		wbuLagerplatz.setVisible(true);
 		wtfLagerplatz.setVisible(true);
+		wtfSeriennr.setBZugang(true);
+
 		zielLager = null;
 		wtfLagerZu.setText(null);
 		jpaWorkingOn.repaint();
@@ -1125,7 +1205,8 @@ public class PanelHandlagerbewegung extends PanelBasis {
 		wtfLagerZu.setMandatoryField(false);
 		wbuLagerplatz.setVisible(true);
 		wtfLagerplatz.setVisible(true);
-		
+		wtfSeriennr.setBZugang(false);
+
 		zielLager = null;
 		wtfLagerZu.setText(null);
 		jpaWorkingOn.repaint();

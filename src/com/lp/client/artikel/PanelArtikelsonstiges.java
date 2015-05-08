@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -39,6 +39,7 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.EventObject;
 
 import javax.swing.JComponent;
@@ -47,6 +48,8 @@ import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
+
+import net.miginfocom.swing.MigLayout;
 
 import com.lp.client.finanz.FinanzFilterFactory;
 import com.lp.client.frame.HelperClient;
@@ -112,7 +115,9 @@ public class PanelArtikelsonstiges extends PanelBasis {
 	private WrapperNumberField wnfSoll = new WrapperNumberField();
 	private WrapperLabel wlaVerkaufsean = new WrapperLabel();
 	private WrapperTextField wtfVerkaufsean = new WrapperTextField();
+	private WrapperTextField wtfEccn = new WrapperTextField();
 	private WrapperLabel wlaVerpackungsean = new WrapperLabel();
+	private WrapperLabel wlaEccn = new WrapperLabel();
 	private WrapperTextField wtfVerpackungsean = new WrapperTextField();
 	private WrapperButton wbuWarenverkehrsnummer = new WrapperButton();
 	private WrapperFormattedTextField wtfWarenverkehrsnummer = new WrapperFormattedTextField();
@@ -196,12 +201,11 @@ public class PanelArtikelsonstiges extends PanelBasis {
 				com.lp.server.util.fastlanereader.service.query.QueryParameters.UC_ID_ARTIKELLISTE,
 				aWhichButtonIUse, getInternalFrame(), LPMain.getInstance()
 						.getTextRespectUISPr("title.artikelauswahlliste"),
-				ArtikelFilterFactory.getInstance().createFKVArtikel());
+				ArtikelFilterFactory.getInstance().createFKVArtikel(), null);
 		panelQueryFLRArtikel.setFilterComboBox(DelegateFactory.getInstance()
-				.getArtikelDelegate().getAllSprArtgru(),
-				new FilterKriterium("ag.i_id", true, "" + "",
-						FilterKriterium.OPERATOR_EQUAL, false), false,
-				LPMain.getTextRespectUISPr("lp.alle"));
+				.getArtikelDelegate().getAllSprArtgru(), new FilterKriterium(
+				"ag.i_id", true, "" + "", FilterKriterium.OPERATOR_IN, false),
+				false, LPMain.getTextRespectUISPr("lp.alle"),false);
 		panelQueryFLRArtikel.befuellePanelFilterkriterienDirekt(
 				ArtikelFilterFactory.getInstance().createFKDArtikelnummer(
 						internalFrameArtikel), ArtikelFilterFactory
@@ -221,12 +225,12 @@ public class PanelArtikelsonstiges extends PanelBasis {
 				com.lp.server.util.fastlanereader.service.query.QueryParameters.UC_ID_ARTIKELLISTE,
 				aWhichButtonIUse, getInternalFrame(), LPMain.getInstance()
 						.getTextRespectUISPr("title.artikelauswahlliste"),
-				ArtikelFilterFactory.getInstance().createFKVArtikel());
-		panelQueryFLRErsatzArtikel.setFilterComboBox(DelegateFactory.getInstance()
-				.getArtikelDelegate().getAllSprArtgru(),
+				ArtikelFilterFactory.getInstance().createFKVArtikel(), null);
+		panelQueryFLRErsatzArtikel.setFilterComboBox(DelegateFactory
+				.getInstance().getArtikelDelegate().getAllSprArtgru(),
 				new FilterKriterium("ag.i_id", true, "" + "",
-						FilterKriterium.OPERATOR_EQUAL, false), false,
-				LPMain.getTextRespectUISPr("lp.alle"));
+						FilterKriterium.OPERATOR_IN, false), false, LPMain
+						.getTextRespectUISPr("lp.alle"),false);
 		panelQueryFLRErsatzArtikel.befuellePanelFilterkriterienDirekt(
 				ArtikelFilterFactory.getInstance().createFKDArtikelnummer(
 						internalFrameArtikel), ArtikelFilterFactory
@@ -436,6 +440,8 @@ public class PanelArtikelsonstiges extends PanelBasis {
 
 		wlaEinheitVerpackungsmenge.setText(artikelDto.getEinheitCNr());
 
+		wtfEccn.setText(artikelDto.getCEccn());
+
 		wtfVerkaufsean.setText(artikelDto.getCVerkaufseannr());
 		wtfVerpackungsean.setText(artikelDto.getCVerpackungseannr());
 		wtfWarenverkehrsnummer.setText(artikelDto.getCWarenverkehrsnummer());
@@ -507,9 +513,21 @@ public class PanelArtikelsonstiges extends PanelBasis {
 					.getArtikelDelegate()
 					.artikelFindByPrimaryKey(artikelDto.getArtikelIIdErsatz());
 			wtfErsatzArtikel.setText(artikelDtoTemp.formatArtikelbezeichnung());
+
 		} else {
 			wtfErsatzArtikel.setText(null);
 		}
+
+		ArrayList<String> s = DelegateFactory.getInstance()
+				.getArtikelDelegate().getVorgaengerArtikel(artikelDto.getIId());
+
+		StringBuffer str = new StringBuffer("Vorg\u00E4nger: ");
+		for (int i = 0; i < s.size(); i++) {
+			str.append(s.get(i));
+			str.append(", ");
+		}
+
+		wbuErsatzArtikel.setToolTipText(str.toString());
 
 		wbuErsatzArtikel.setOKey(artikelDto.getArtikelIIdErsatz());
 
@@ -582,6 +600,8 @@ public class PanelArtikelsonstiges extends PanelBasis {
 		artikelDto.setCVerkaufseannr(wtfVerkaufsean.getText());
 		artikelDto.setCVerpackungseannr(wtfVerpackungsean.getText());
 
+		artikelDto.setCEccn(wtfEccn.getText());
+
 		artikelDto.setSollverkaufDto(new SollverkaufDto());
 		artikelDto.getSollverkaufDto().setFAufschlag(wnfAufschlag.getDouble());
 		artikelDto.getSollverkaufDto().setFSollverkauf(wnfSoll.getDouble());
@@ -615,9 +635,6 @@ public class PanelArtikelsonstiges extends PanelBasis {
 		// Actionpanel von Oberklasse holen und anhaengen.
 		jpaButtonAction = getToolsPanel();
 		this.setActionMap(null);
-		jpaWorkingOn = new JPanel();
-		gridBagLayoutWorkingPanel = new GridBagLayout();
-		jpaWorkingOn.setLayout(gridBagLayoutWorkingPanel);
 		wlaMaxvertreterprovision
 				.setText(LPMain.getInstance().getTextRespectUISPr(
 						"artikel.sonstiges.maxvertreterprovision"));
@@ -648,6 +665,8 @@ public class PanelArtikelsonstiges extends PanelBasis {
 				"artikel.sonstiges.aufschlag"));
 		wlaSoll.setText(LPMain.getInstance().getTextRespectUISPr(
 				"artikel.sonstiges.soll"));
+		wlaEccn.setText(LPMain.getInstance().getTextRespectUISPr(
+				"artikel.sonstiges.eccn"));
 		wlaVerkaufsean.setText(LPMain.getInstance().getTextRespectUISPr(
 				"artikel.sonstiges.verkaufsean"));
 		wlaVerpackungsean.setText(LPMain.getInstance().getTextRespectUISPr(
@@ -661,6 +680,7 @@ public class PanelArtikelsonstiges extends PanelBasis {
 		wnfSofortverbrauch.setFractionDigits(0);
 
 		wtfVerkaufsean.setColumnsMax(ArtikelFac.MAX_ARTIKEL_VERKAUFEANNR);
+		wtfEccn.setColumnsMax(ArtikelFac.MAX_ARTIKEL_ECCN);
 		wtfVerpackungsean.setColumnsMax(ArtikelFac.MAX_ARTIKEL_VERKAUFEANNR);
 		wtfVerkaufsean.setText("");
 		wbuWarenverkehrsnummer.setToolTipText("");
@@ -764,209 +784,87 @@ public class PanelArtikelsonstiges extends PanelBasis {
 		wla3.setRequestFocusEnabled(true);
 		wla3.setHorizontalAlignment(SwingConstants.LEFT);
 		wla3.setText("%");
+
+		jpaWorkingOn = new JPanel(new MigLayout("wrap 6",
+				"[fill, 25%|fill,20%|fill,5%|fill, 20%|fill, 10%|fill, 15%]"));
+
 		this.add(jpaButtonAction, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(0,
 						0, 0, 0), 0, 0));
 		this.add(jpaWorkingOn, new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0,
 				GridBagConstraints.NORTHEAST, GridBagConstraints.BOTH,
-				new Insets(-9, 0, 9, 0), 0, 0));
+				new Insets(0, 0, 9, 0), 0, 0));
 		this.add(getPanelStatusbar(), new GridBagConstraints(0, 2, 1, 1, 1.0,
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(0, 0, 0, 0), 0, 0));
 
-		jpaWorkingOn.add(wlaArtikelnummer, new GridBagConstraints(0, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0));
+		jpaWorkingOn.add(wlaArtikelnummer);
+		jpaWorkingOn.add(wtfArtikelnummer, "wrap");
 
-		jpaWorkingOn.add(wtfArtikelnummer, new GridBagConstraints(1, iZeile, 2,
-				1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		iZeile++;
+		jpaWorkingOn.add(wlaBezeichnung);
+		jpaWorkingOn.add(wftBezeichnungStd, "span");
 
-		jpaWorkingOn.add(wlaBezeichnung, new GridBagConstraints(0, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0));
+		jpaWorkingOn.add(wlaZbez);
+		jpaWorkingOn.add(wtfZBezStd, "span");
 
-		jpaWorkingOn.add(wftBezeichnungStd, new GridBagConstraints(1, iZeile,
-				5, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 0), 0, 0));
-		iZeile++;
+		jpaWorkingOn.add(wlaZBez2);
+		jpaWorkingOn.add(wtfZBez2Std, "span");
 
-		jpaWorkingOn.add(wlaZbez, new GridBagConstraints(0, iZeile, 1, 1, 0.0,
-				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
-				new Insets(0, 0, 0, 0), 0, 0));
+		jpaWorkingOn.add(wlaDummy, "span");
 
-		jpaWorkingOn.add(wtfZBezStd, new GridBagConstraints(1, iZeile++, 5, 1,
-				0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 0), 0, 0));
+		jpaWorkingOn.add(wlaMaxvertreterprovision);
+		jpaWorkingOn.add(wnfMaxvertreterprovision);
+		jpaWorkingOn.add(wla2);
+		jpaWorkingOn.add(wlaGarantiezeit);
+		jpaWorkingOn.add(wnfGarantiezeit);
+		jpaWorkingOn.add(wlaInMonaten, "wrap");
 
-		iZeile++;
-		jpaWorkingOn.add(wlaZBez2, new GridBagConstraints(0, iZeile, 1, 1, 0.0,
-				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
-				new Insets(0, 0, 0, 0), 0, 0));
-
-		jpaWorkingOn.add(wtfZBez2Std, new GridBagConstraints(1, iZeile, 5, 1,
-				0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 0), 0, 0));
-
-		iZeile++;
-		jpaWorkingOn.add(wlaDummy, new GridBagConstraints(0, iZeile, 6, 1, 0.0,
-				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
-				new Insets(1, 0, 1, 0), 0, -10));
-
-		iZeile++;
-
-		jpaWorkingOn.add(wlaMaxvertreterprovision, new GridBagConstraints(0,
-				iZeile, 1, 1, 0.2, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wnfMaxvertreterprovision, new GridBagConstraints(1,
-				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), -40, 0));
-		jpaWorkingOn.add(wla2, new GridBagConstraints(2, iZeile, 1, 1, 0.0,
-				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
-				new Insets(2, 2, 2, 2), 10, 0));
-		jpaWorkingOn.add(wlaGarantiezeit, new GridBagConstraints(3, iZeile, 1,
-				1, 0.1, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wnfGarantiezeit, new GridBagConstraints(4, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), -50, 0));
-		jpaWorkingOn.add(wlaInMonaten, new GridBagConstraints(5, iZeile, 1, 1,
-				0.07, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-
-		iZeile++;
-
-		jpaWorkingOn.add(wnfMindestdeckungsbeitrag, new GridBagConstraints(1,
-				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), -40, 0));
-		jpaWorkingOn.add(wlaMindestdeckungsbeitrag, new GridBagConstraints(0,
-				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wla8, new GridBagConstraints(2, iZeile, 1, 1, 0.0,
-				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
-				new Insets(2, 2, 2, 2), 0, 0));
-
-		jpaWorkingOn.add(wlaSofortverbrauch, new GridBagConstraints(3, iZeile,
-				1, 1, 0.1, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wnfSofortverbrauch, new GridBagConstraints(4, iZeile,
-				1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), -50, 0));
+		jpaWorkingOn.add(wlaMindestdeckungsbeitrag);
+		jpaWorkingOn.add(wnfMindestdeckungsbeitrag);
+		jpaWorkingOn.add(wla8);
+		jpaWorkingOn.add(wlaSofortverbrauch);
+		jpaWorkingOn.add(wnfSofortverbrauch);
 		jpaWorkingOn.add(
 				new WrapperLabel(LPMain.getInstance().getTextRespectUISPr(
-						"artikel.sonstiges.sofortverbrauch.intagen")),
-				new GridBagConstraints(5, iZeile, 1, 1, 0.07, 0.0,
-						GridBagConstraints.CENTER,
-						GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2),
-						0, 0));
+						"artikel.sonstiges.sofortverbrauch.intagen")), "wrap");
 
-		iZeile++;
-
-		jpaWorkingOn.add(wdfLetzteWartung, new GridBagConstraints(1, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE,
-				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wlaLetzteWartung, new GridBagConstraints(0, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wlaLetzteWartungPersonal, new GridBagConstraints(2,
-				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wlaWartungsintervall, new GridBagConstraints(3,
-				iZeile, 1, 1, 0.1, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wnfWartungsintervall, new GridBagConstraints(4,
-				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), -50, 0));
+		jpaWorkingOn.add(wlaLetzteWartung);
+		jpaWorkingOn.add(wdfLetzteWartung);
+		jpaWorkingOn.add(wlaLetzteWartungPersonal);
+		jpaWorkingOn.add(wlaWartungsintervall);
+		jpaWorkingOn.add(wnfWartungsintervall);
 		jpaWorkingOn.add(
 				new WrapperLabel(LPMain.getInstance().getTextRespectUISPr(
 						"artikel.sonstiges.wartungsintervall.inmonaten")),
-				new GridBagConstraints(5, iZeile, 1, 1, 0.07, 0.0,
-						GridBagConstraints.CENTER,
-						GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2),
-						0, 0));
+				"wrap");
 
-		iZeile++;
+		jpaWorkingOn.add(wlaAufschlag);
+		jpaWorkingOn.add(wnfAufschlag);
+		jpaWorkingOn.add(wla1);
+		jpaWorkingOn.add(wlaMinutenfaktor1);
+		jpaWorkingOn.add(wrapperNumberFieldMinutenfaktor1, "wrap");
 
-		jpaWorkingOn.add(wlaAufschlag, new GridBagConstraints(0, iZeile, 1, 1,
-				0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wnfAufschlag, new GridBagConstraints(1, iZeile, 1, 1,
-				0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), -40, 0));
-		jpaWorkingOn.add(wla1, new GridBagConstraints(2, iZeile, 1, 1, 0.0,
-				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
-				new Insets(0, 0, 0, 0), 0, 0));
+		jpaWorkingOn.add(wlaSoll);
+		jpaWorkingOn.add(wnfSoll);
+		jpaWorkingOn.add(wla3);
+		jpaWorkingOn.add(wlaMinutenfaktor2);
+		jpaWorkingOn.add(wnfMinutenfaktor2, "wrap");
 
-		jpaWorkingOn.add(wlaMinutenfaktor1, new GridBagConstraints(3, iZeile,
-				1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wrapperNumberFieldMinutenfaktor1,
-				new GridBagConstraints(4, iZeile, 1, 1, 0.0, 0.0,
-						GridBagConstraints.CENTER,
-						GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2),
-						-40, 0));
-		iZeile++;
-		jpaWorkingOn.add(wlaSoll, new GridBagConstraints(0, iZeile, 1, 1, 0.0,
-				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
-				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wnfSoll, new GridBagConstraints(1, iZeile, 1, 1, 0.0,
-				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
-				new Insets(2, 2, 2, 2), -40, 0));
-		jpaWorkingOn.add(wla3, new GridBagConstraints(2, iZeile, 1, 1, 0.0,
-				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
-				new Insets(0, 0, 0, 0), 0, 0));
-		jpaWorkingOn.add(wlaMinutenfaktor2, new GridBagConstraints(3, iZeile,
-				1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wnfMinutenfaktor2, new GridBagConstraints(4, iZeile,
-				1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), -50, 0));
+		jpaWorkingOn.add(wlaVerkaufsean);
+		jpaWorkingOn.add(wtfVerkaufsean);
+		jpaWorkingOn.add(wlaVerpackungsmenge, "skip");
+		jpaWorkingOn.add(wnfVerpackungsmenge);
+		jpaWorkingOn.add(wlaEinheitVerpackungsmenge, "wrap");
 
-		iZeile++;
+		jpaWorkingOn.add(wlaEccn);
+		jpaWorkingOn.add(wtfEccn);
+		jpaWorkingOn.add(wlaVerpackungsean, "skip");
+		jpaWorkingOn.add(wtfVerpackungsean, "wrap");
 
-		jpaWorkingOn.add(wlaVerkaufsean, new GridBagConstraints(0, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wtfVerkaufsean, new GridBagConstraints(1, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-
-		jpaWorkingOn.add(wlaVerpackungsmenge, new GridBagConstraints(3, iZeile,
-				1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wnfVerpackungsmenge, new GridBagConstraints(4, iZeile,
-				1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), -50, 0));
-		jpaWorkingOn.add(wlaEinheitVerpackungsmenge, new GridBagConstraints(5,
-				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-
-		iZeile++;
-
-		jpaWorkingOn.add(wlaVerpackungsean, new GridBagConstraints(3, iZeile,
-				1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wtfVerpackungsean, new GridBagConstraints(4, iZeile,
-				1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), -50, 0));
-
-		iZeile++;
-
-		jpaWorkingOn.add(wbuWarenverkehrsnummer, new GridBagConstraints(0,
-				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wtfWarenverkehrsnummer, new GridBagConstraints(1,
-				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wbuUrsprungsland, new GridBagConstraints(3, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wtfUrsprungsland, new GridBagConstraints(4, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-
-		iZeile++;
+		jpaWorkingOn.add(wbuWarenverkehrsnummer);
+		jpaWorkingOn.add(wtfWarenverkehrsnummer);
+		jpaWorkingOn.add(wbuUrsprungsland, "skip");
+		jpaWorkingOn.add(wtfUrsprungsland, "wrap");
 
 		if (LPMain
 				.getInstance()
@@ -974,11 +872,7 @@ public class PanelArtikelsonstiges extends PanelBasis {
 				.darfAnwenderAufZusatzfunktionZugreifen(
 						MandantFac.ZUSATZFUNKTION_SERIENNUMMERN)) {
 
-			jpaWorkingOn.add(wcoSeriennummer,
-					new GridBagConstraints(0, iZeile, 1, 1, 0.0, 0.0,
-							GridBagConstraints.CENTER,
-							GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2,
-									2), 0, 0));
+			jpaWorkingOn.add(wcoSeriennummer, "span 3");
 		}
 
 		if (LPMain
@@ -987,20 +881,11 @@ public class PanelArtikelsonstiges extends PanelBasis {
 				.darfAnwenderAufZusatzfunktionZugreifen(
 						MandantFac.ZUSATZFUNKTION_CHARGENNUMMERN)) {
 
-			jpaWorkingOn.add(wcoChargennummer,
-					new GridBagConstraints(1, iZeile, 3, 1, 0.0, 0.0,
-							GridBagConstraints.CENTER,
-							GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2,
-									2), 2, 0));
+			jpaWorkingOn.add(wcoChargennummer, "span 3");
 		}
 
-		iZeile++;
-		jpaWorkingOn.add(wcoLagerbewirtschaftet, new GridBagConstraints(0,
-				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wcoLagerbewertet, new GridBagConstraints(1, iZeile, 2,
-				1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wcoLagerbewirtschaftet, "newline");
+		jpaWorkingOn.add(wcoLagerbewertet, "span 2");
 
 		if (LPMain
 				.getInstance()
@@ -1008,39 +893,18 @@ public class PanelArtikelsonstiges extends PanelBasis {
 				.darfAnwenderAufZusatzfunktionZugreifen(
 						MandantFac.ZUSATZFUNKTION_VERLEIH)) {
 
-			jpaWorkingOn.add(wcoVerleih,
-					new GridBagConstraints(3, iZeile, 2, 1, 0.0, 0.0,
-							GridBagConstraints.CENTER,
-							GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2,
-									2), 0, 0));
+			jpaWorkingOn.add(wcoVerleih, "span 3");
 		}
 
-		iZeile++;
-		jpaWorkingOn.add(wcoRabattierbar, new GridBagConstraints(0, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wcoDokumentenpflicht, new GridBagConstraints(1,
-				iZeile, 2, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wcoWerbeabgabepflichtig, new GridBagConstraints(4,
-				iZeile, 2, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 2, 0));
-		iZeile++;
-		jpaWorkingOn.add(wbuZugehoerigerArtikel, new GridBagConstraints(0,
-				iZeile, 2, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wtfZugehoerigerArtikel, new GridBagConstraints(2,
-				iZeile, 4, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wcoRabattierbar, "newline");
+		jpaWorkingOn.add(wcoDokumentenpflicht, "span 2");
+		jpaWorkingOn.add(wcoWerbeabgabepflichtig, "span");
 
-		iZeile++;
+		jpaWorkingOn.add(wbuZugehoerigerArtikel);
+		jpaWorkingOn.add(wtfZugehoerigerArtikel, "span");
 
-		jpaWorkingOn.add(wbuErsatzArtikel, new GridBagConstraints(0, iZeile, 2,
-				1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wtfErsatzArtikel, new GridBagConstraints(2, iZeile, 4,
-				1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wbuErsatzArtikel);
+		jpaWorkingOn.add(wtfErsatzArtikel, "span");
 
 		String[] aWhichButtonIUse = { ACTION_UPDATE, ACTION_SAVE,
 				ACTION_DISCARD, ACTION_PREVIOUS, ACTION_NEXT, };

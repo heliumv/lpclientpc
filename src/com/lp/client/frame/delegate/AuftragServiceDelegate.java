@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -48,8 +48,13 @@ import com.lp.server.auftrag.service.AuftragbegruendungDto;
 import com.lp.server.auftrag.service.AuftragdokumentDto;
 import com.lp.server.auftrag.service.AuftragpositionArtDto;
 import com.lp.server.auftrag.service.AuftragtextDto;
+import com.lp.server.auftrag.service.MeilensteinDto;
+import com.lp.server.auftrag.service.ZahlungsplanDto;
+import com.lp.server.auftrag.service.ZahlungsplanmeilensteinDto;
+import com.lp.server.auftrag.service.ZeitplanDto;
 import com.lp.server.lieferschein.service.BegruendungDto;
 import com.lp.server.system.service.MediaFac;
+import com.lp.server.system.service.TheClientDto;
 
 @SuppressWarnings("static-access")
 /*
@@ -108,8 +113,17 @@ public class AuftragServiceDelegate extends Delegate {
 		}
 	}
 
-	public AuftragbegruendungDto auftragbegruendungFindByPrimaryKey(Integer begruendungIId)
+	public void removeMeilenstein(MeilensteinDto meilensteinDto)
 			throws ExceptionLP {
+		try {
+			auftragServiceFac.removeMeilenstein(meilensteinDto);
+		} catch (Throwable t) {
+			handleThrowable(t);
+		}
+	}
+
+	public AuftragbegruendungDto auftragbegruendungFindByPrimaryKey(
+			Integer begruendungIId) throws ExceptionLP {
 		AuftragbegruendungDto oLieferscheintextDto = null;
 
 		try {
@@ -134,6 +148,70 @@ public class AuftragServiceDelegate extends Delegate {
 		}
 
 		return oAuftragtextDto;
+	}
+
+	public ZeitplanDto zeitplanFindByPrimaryKey(Integer iId) throws ExceptionLP {
+
+		try {
+			return auftragServiceFac.zeitplanFindByPrimaryKey(iId);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+
+	}
+
+	public ZahlungsplanDto zahlungsplanFindByPrimaryKey(Integer iId)
+			throws ExceptionLP {
+
+		try {
+			return auftragServiceFac.zahlungsplanFindByPrimaryKey(iId);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+
+	}
+
+	public ZahlungsplanmeilensteinDto zahlungsplanmeilensteinFindByPrimaryKey(
+			Integer iId) throws ExceptionLP {
+
+		try {
+			return auftragServiceFac
+					.zahlungsplanmeilensteinFindByPrimaryKey(iId);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+
+	}
+
+	public void toggleZahlungplanmeilensteinErledigt(
+			Integer zahlungsplanmeilensteinIId) throws ExceptionLP {
+
+		try {
+			auftragServiceFac.toggleZahlungplanmeilensteinErledigt(
+					zahlungsplanmeilensteinIId, LPMain.getInstance()
+							.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+
+		}
+
+	}
+
+	public MeilensteinDto meilensteinFindByPrimaryKey(Integer iId)
+			throws ExceptionLP {
+		MeilensteinDto meilensteinDto = null;
+
+		try {
+			meilensteinDto = auftragServiceFac.meilensteinFindByPrimaryKey(iId,
+					LPMain.getInstance().getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+
+		return meilensteinDto;
 	}
 
 	public AuftragdokumentDto auftragdokumentFindByPrimaryKey(Integer iId)
@@ -232,10 +310,81 @@ public class AuftragServiceDelegate extends Delegate {
 		return iId;
 	}
 
+	public Integer createZeitplan(ZeitplanDto zeitplanDto) throws ExceptionLP {
+		Integer iId = null;
+
+		try {
+
+			iId = auftragServiceFac.createZeitplan(zeitplanDto);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+
+		return iId;
+	}
+
+	public Integer createZahlungsplan(ZahlungsplanDto zahlungsplanDto)
+			throws ExceptionLP {
+		Integer iId = null;
+
+		try {
+
+			iId = auftragServiceFac.createZahlungsplan(zahlungsplanDto);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+
+		return iId;
+	}
+
+	public Integer createZahlungsplanmeilenstein(
+			ZahlungsplanmeilensteinDto zahlungsplanmeilensteinDto)
+			throws ExceptionLP {
+		Integer iId = null;
+
+		try {
+
+			iId = auftragServiceFac.createZahlungsplanmeilenstein(
+					zahlungsplanmeilensteinDto, LPMain.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+
+		return iId;
+	}
+
 	public void removeAuftragtext(AuftragtextDto auftragtextDto)
 			throws ExceptionLP {
 		try {
 			auftragServiceFac.removeAuftragtext(auftragtextDto);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+	}
+
+	public void removeZeitplan(ZeitplanDto zeitplanDto) throws ExceptionLP {
+		try {
+			auftragServiceFac.removeZeitplan(zeitplanDto);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+	}
+
+	public void removeZahlungsplan(ZahlungsplanDto zahlungsplanDto)
+			throws ExceptionLP {
+		try {
+			auftragServiceFac.removeZahlungsplan(zahlungsplanDto);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+	}
+
+	public void removeZahlungsplanmeilenstein(
+			ZahlungsplanmeilensteinDto zahlungsplanmeilensteinDto)
+			throws ExceptionLP {
+		try {
+			auftragServiceFac
+					.removeZahlungsplanmeilenstein(zahlungsplanmeilensteinDto);
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 		}
@@ -326,6 +475,20 @@ public class AuftragServiceDelegate extends Delegate {
 		return cNr;
 	}
 
+	public Integer createMeilenstein(MeilensteinDto meilensteinDto)
+			throws ExceptionLP {
+		Integer iId = null;
+
+		try {
+			iId = auftragServiceFac.createMeilenstein(meilensteinDto,
+					LPMain.getTheClient());
+		} catch (Throwable t) {
+			handleThrowable(t);
+		}
+
+		return iId;
+	}
+
 	public Integer createAuftragdokument(AuftragdokumentDto auftragdokumentDto)
 			throws ExceptionLP {
 		Integer iId = null;
@@ -363,6 +526,44 @@ public class AuftragServiceDelegate extends Delegate {
 		try {
 			auftragServiceFac.updateAuftragart(auftragartDtoI,
 					LPMain.getTheClient());
+		} catch (Throwable t) {
+			handleThrowable(t);
+		}
+	}
+
+	public void updateMeilenstein(MeilensteinDto meilensteinDto)
+			throws ExceptionLP {
+		try {
+			auftragServiceFac.updateMeilenstein(meilensteinDto,
+					LPMain.getTheClient());
+		} catch (Throwable t) {
+			handleThrowable(t);
+		}
+	}
+
+	public void updateZeitplan(ZeitplanDto zeitplanDto) throws ExceptionLP {
+		try {
+			auftragServiceFac.updateZeitplan(zeitplanDto);
+		} catch (Throwable t) {
+			handleThrowable(t);
+		}
+	}
+
+	public void updateZahlungsplan(ZahlungsplanDto zahlungsplanDto)
+			throws ExceptionLP {
+		try {
+			auftragServiceFac.updateZahlungsplan(zahlungsplanDto);
+		} catch (Throwable t) {
+			handleThrowable(t);
+		}
+	}
+
+	public void updateZahlungsplanmeilenstein(
+			ZahlungsplanmeilensteinDto zahlungsplanmeilensteinDto)
+			throws ExceptionLP {
+		try {
+			auftragServiceFac.updateZahlungsplanmeilenstein(
+					zahlungsplanmeilensteinDto, LPMain.getTheClient());
 		} catch (Throwable t) {
 			handleThrowable(t);
 		}

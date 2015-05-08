@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -63,12 +63,15 @@ import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.frame.dialog.DialogFactory;
 import com.lp.client.pc.LPMain;
 import com.lp.server.angebotstkl.service.AgstklpositionDto;
+import com.lp.server.angebotstkl.service.AngebotstklFac;
 import com.lp.server.angebotstkl.service.AngebotstklServiceFac;
 import com.lp.server.artikel.service.ArtikelDto;
 import com.lp.server.artikel.service.ArtikellieferantDto;
 import com.lp.server.artikel.service.ArtikellieferantstaffelDto;
 import com.lp.server.artikel.service.VerkaufspreisDto;
+import com.lp.server.artikel.service.VkpreisfindungDto;
 import com.lp.server.partner.service.KundeDto;
+import com.lp.server.system.service.MwstsatzDto;
 import com.lp.server.system.service.ParameterFac;
 import com.lp.server.system.service.ParametermandantDto;
 import com.lp.util.EJBExceptionLP;
@@ -101,6 +104,8 @@ public class PanelAgstklPositionenEinkauf extends PanelPositionen2 {
 
 	private WrapperCheckBox wcbMitdrucken = new WrapperCheckBox();
 
+	private Double default_dAufschlag = 0D;
+
 	public PanelAgstklPositionenEinkauf(InternalFrame internalFrame,
 			String add2TitleI, Object key) throws Throwable {
 		super(internalFrame, add2TitleI, key,
@@ -114,9 +119,36 @@ public class PanelAgstklPositionenEinkauf extends PanelPositionen2 {
 		initPanel();
 	}
 
+	private void aktualisiereFelderAnhandEKPreisBasis() {
+		// PJ18725
+
+		boolean b = true;
+
+		if (intFrame.getAgstklDto().getIEkpreisbasis().intValue() == AngebotstklFac.EK_PREISBASIS_LIEF1PREIS) {
+			b = false;
+		}
+
+		panelArtikel.wnfEinzelpreis.setActivatable(b);
+		panelArtikel.wnfRabattsatz.setActivatable(b);
+		panelArtikel.wnfRabattsumme.setActivatable(b);
+		panelArtikel.wnfNettopreis.setActivatable(b);
+
+	}
+
 	private void jbInit() throws Throwable {
 		// braucht nur refresh, save und aendern
 		resetToolsPanel();
+
+		ParametermandantDto parameter = (ParametermandantDto) DelegateFactory
+				.getInstance()
+				.getParameterDelegate()
+				.getParametermandant(ParameterFac.PARAMETER_DEFAULT_AUFSCHLAG,
+						ParameterFac.KATEGORIE_ANGEBOTSSTUECKLISTE,
+						LPMain.getTheClient().getMandant());
+
+		if (parameter.getCWertAsObject() != null) {
+			default_dAufschlag = (Double) parameter.getCWertAsObject();
+		}
 
 		wcbMitdrucken.setText(LPMain.getInstance().getTextRespectUISPr(
 				"stkl.positionen.mitdrucken"));
@@ -192,25 +224,17 @@ public class PanelAgstklPositionenEinkauf extends PanelPositionen2 {
 			panelArtikel.setWaehrungCNr(intFrame.getAgstklDto()
 					.getWaehrungCNr());
 
-			ParametermandantDto parameter = (ParametermandantDto) DelegateFactory
-					.getInstance()
-					.getParameterDelegate()
-					.getParametermandant(
-							ParameterFac.PARAMETER_DEFAULT_AUFSCHLAG,
-							ParameterFac.KATEGORIE_ANGEBOTSSTUECKLISTE,
-							LPMain.getTheClient().getMandant());
-
-			if (parameter.getCWertAsObject() != null) {
-				Double dAufschlag = (Double) parameter.getCWertAsObject();
+			if (default_dAufschlag.doubleValue() != -1) {
 
 				if (panelArtikel.wnfAufschlagProzent != null) {
-					panelArtikel.wnfAufschlagProzent.setDouble(dAufschlag);
+					panelArtikel.wnfAufschlagProzent
+							.setDouble(default_dAufschlag);
 				}
 				if (panelHandeingabe.wnfAufschlagProzent != null) {
-					panelHandeingabe.wnfAufschlagProzent.setDouble(dAufschlag);
+					panelHandeingabe.wnfAufschlagProzent
+							.setDouble(default_dAufschlag);
 				}
 			}
-
 			// im PanelArtikel alles fuer die VKPF vorbereiten
 
 		}
@@ -260,10 +284,12 @@ public class PanelAgstklPositionenEinkauf extends PanelPositionen2 {
 
 		setzePositionsartAenderbar(agstklpositionDto);
 		panelArtikel.setzeEinheitAenderbar();
+		aktualisiereFelderAnhandEKPreisBasis();
 	}
 
 	public void eventYouAreSelected(boolean bNeedNoYouAreSelectedI)
 			throws Throwable {
+
 		super.eventYouAreSelected(false);
 		setTBelegdatumMwstsatz(intFrame.getAgstklDto().getTBelegdatum());
 		// den gesamten Inhalt zuruecksetzen, ausloeser war ev. ein discard
@@ -295,7 +321,7 @@ public class PanelAgstklPositionenEinkauf extends PanelPositionen2 {
 
 		setzePositionsartAenderbar(agstklpositionDto);
 		panelArtikel.setzeEinheitAenderbar();
-
+		tpAngebotstkl.refreshTitle();
 		aktualisiereStatusbar();
 	}
 
@@ -321,6 +347,9 @@ public class PanelAgstklPositionenEinkauf extends PanelPositionen2 {
 						.getArtikelDto() != null) {
 
 					setPreis();
+
+					aktualisiereFelderAnhandEKPreisBasis();
+
 				}
 			}
 		}
@@ -378,6 +407,47 @@ public class PanelAgstklPositionenEinkauf extends PanelPositionen2 {
 			// Bei Neu Aufschlag auf Parameter holen
 
 		}
+
+		// SP3341
+		if (default_dAufschlag == -1) {
+			KundeDto kdDto = DelegateFactory
+					.getInstance()
+					.getKundeDelegate()
+					.kundeFindByPrimaryKey(
+							intFrame.getAgstklDto().getKundeIId());
+
+			// Aktuellen MWST-Satz uebersetzen.
+			MwstsatzDto mwstsatzDtoAktuell = DelegateFactory
+					.getInstance()
+					.getMandantDelegate()
+					.mwstsatzFindByMwstsatzbezIIdAktuellster(
+							kdDto.getMwstsatzbezIId());
+			// den aktuellen Verkaufpsreis berechnen
+			VkpreisfindungDto vkpreisfindungDto = DelegateFactory
+					.getInstance()
+					.getVkPreisfindungDelegate()
+					.verkaufspreisfindung(
+							panelArtikel.getArtikelDto().getIId(),
+							kdDto.getIId(),
+							panelArtikel.wnfMenge.getBigDecimal(),
+							new java.sql.Date(intFrame.getAgstklDto()
+									.getTBelegdatum().getTime()),
+							kdDto.getVkpfArtikelpreislisteIIdStdpreisliste(),
+							mwstsatzDtoAktuell.getIId(),
+							intFrame.getAgstklDto().getWaehrungCNr());
+
+			VerkaufspreisDto vkPreisDto = Helper
+					.getVkpreisBerechnet(vkpreisfindungDto);
+
+			if (vkPreisDto != null) {
+				panelArtikel.wnfGesamtpreisMitAufschlag
+						.setBigDecimal(vkPreisDto.nettopreis);
+				panelArtikel.wnfGesamtpreisMitAufschlag.getWrbFixNumber()
+						.setSelected(true);
+			}
+
+		}
+
 		panelArtikel.berechneAufschlag();
 	}
 
@@ -521,8 +591,19 @@ public class PanelAgstklPositionenEinkauf extends PanelPositionen2 {
 	protected void eventActionDelete(ActionEvent e,
 			boolean bAdministrateLockKeyI, boolean bNeedNoDeleteI)
 			throws Throwable {
-		DelegateFactory.getInstance().getAngebotstklpositionDelegate()
-				.removeAgstklposition(agstklpositionDto);
+		Object[] o = tpAngebotstkl.getAngebotstklPositionenTop()
+				.getSelectedIds();
+		if (o != null) {
+			for (int i = 0; i < o.length; i++) {
+				AgstklpositionDto toRemove = DelegateFactory.getInstance()
+						.getAngebotstklpositionDelegate()
+						.agstklpositionFindByPrimaryKey((Integer) o[i]);
+				DelegateFactory.getInstance().getAngebotstklpositionDelegate()
+						.removeAgstklposition(toRemove);
+
+			}
+		}
+
 		this.setKeyWhenDetailPanel(null);
 		super.eventActionDelete(e, false, false); // keyWasForLockMe nicht
 													// ueberschreiben
@@ -543,14 +624,6 @@ public class PanelAgstklPositionenEinkauf extends PanelPositionen2 {
 				.equalsIgnoreCase(AngebotstklServiceFac.AGSTKLPOSITIONART_IDENT)) {
 			panelArtikel.wnfGestpreis.setBigDecimal(agstklpositionDto
 					.getNGestehungspreis());
-
-			// die Artikelbezeichnung kann in der Angebotposition uebersteuert
-			// sein
-			if (Helper.short2boolean(agstklpositionDto
-					.getBArtikelbezeichnunguebersteuert())) {
-				panelArtikel.wtfBezeichnung
-						.setText(agstklpositionDto.getCBez());
-			}
 
 			panelArtikel.getWnfRabattsatz().setDouble(
 					agstklpositionDto.getFRabattsatz());
@@ -666,6 +739,11 @@ public class PanelAgstklPositionenEinkauf extends PanelPositionen2 {
 					.getBigDecimal());
 			agstklpositionDto.setNNettogesamtpreis(panelArtikel.wnfNettopreis
 					.getBigDecimal());
+			if (panelArtikel.wnfMaterialzuschlag != null) {
+				agstklpositionDto
+						.setNMaterialzuschlag(panelArtikel.wnfMaterialzuschlag
+								.getBigDecimal());
+			}
 
 		} else if (positionsart
 				.equalsIgnoreCase(AngebotstklServiceFac.AGSTKLPOSITIONART_HANDEINGABE)) {

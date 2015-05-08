@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -58,6 +58,7 @@ import com.lp.client.frame.component.WrapperButton;
 import com.lp.client.frame.component.WrapperCheckBox;
 import com.lp.client.frame.component.WrapperLabel;
 import com.lp.client.frame.component.WrapperNumberField;
+import com.lp.client.frame.component.WrapperSelectField;
 import com.lp.client.frame.component.WrapperTextField;
 import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.frame.dialog.DialogFactory;
@@ -145,6 +146,12 @@ public class PanelArtikeltechnik extends PanelBasis {
 	private WrapperLabel wla6 = new WrapperLabel();
 	private WrapperLabel wla7 = new WrapperLabel();
 	private WrapperLabel wla8 = new WrapperLabel();
+	private WrapperSelectField wsfReach=new WrapperSelectField(WrapperSelectField.REACH,getInternalFrame(),true);
+	private WrapperSelectField wsfRohs=new WrapperSelectField(WrapperSelectField.ROHS,getInternalFrame(),true);
+	private WrapperSelectField wsfAutomotive=new WrapperSelectField(WrapperSelectField.AUTOMOTIVE,getInternalFrame(),true);
+	private WrapperSelectField wsfMedical=new WrapperSelectField(WrapperSelectField.MEDICAL,getInternalFrame(),true);
+	private WrapperLabel wlaUL = new WrapperLabel();
+	private WrapperTextField wtfUL = new WrapperTextField();
 
 	private WrapperButton wbuFarbcodierung = new WrapperButton();
 	private WrapperTextField wtfFarbcodierung = new WrapperTextField();
@@ -320,6 +327,14 @@ public class PanelArtikeltechnik extends PanelBasis {
 			wtfZBez.setText(artikelDto.getArtikelsprDto().getCZbez());
 			wtfZBez2.setText(artikelDto.getArtikelsprDto().getCZbez2());
 		}
+		
+		wtfUL.setText(artikelDto.getCUL());
+		wsfReach.setKey(artikelDto.getReachIId());
+		wsfRohs.setKey(artikelDto.getRohsIId());
+		wsfAutomotive.setKey(artikelDto.getAutomotiveIId());
+		wsfMedical.setKey(artikelDto.getMedicalIId());
+		
+		
 		this.setStatusbarPersonalIIdAendern(artikelDto.getPersonalIIdAendern());
 		this.setStatusbarPersonalIIdAnlegen(artikelDto.getPersonalIIdAnlegen());
 		this.setStatusbarTAnlegen(artikelDto.getTAnlegen());
@@ -356,6 +371,11 @@ public class PanelArtikeltechnik extends PanelBasis {
 		artikelDto.getVerpackungDto().setCBauform(wtfBauform.getText());
 		artikelDto.getVerpackungDto().setCVerpackungsart(
 				wtfVerpackungsart.getText());
+		artikelDto.setCUL(wtfUL.getText());
+		artikelDto.setReachIId(wsfReach.getIKey());
+		artikelDto.setRohsIId(wsfRohs.getIKey());
+		artikelDto.setAutomotiveIId(wsfAutomotive.getIKey());
+		artikelDto.setMedicalIId(wsfMedical.getIKey());
 
 	}
 
@@ -520,6 +540,10 @@ public class PanelArtikeltechnik extends PanelBasis {
 		wbuFarbcodierung.setText(LPMain.getInstance().getTextRespectUISPr(
 				"artikel.farbcode")
 				+ "...");
+		
+		wlaUL.setText(LPMain.getInstance().getTextRespectUISPr(
+				"artikel.ul"));
+		
 		wbuFarbcodierung
 				.setActionCommand(PanelArtikeltechnik.ACTION_SPECIAL_FARBCODE_FROM_LISTE);
 		wbuFarbcodierung.addActionListener(this);
@@ -630,36 +654,61 @@ public class PanelArtikeltechnik extends PanelBasis {
 		jpaWorkingOn.add(wlaTiefe, "growx");
 		jpaWorkingOn.add(wnfTiefe, "growx, span 2");
 		jpaWorkingOn.add(wla5, "growx");
-		jpaWorkingOn.add(wcbHochsetzen, "growx, span");
+		jpaWorkingOn.add(wcbHochsetzen, "growx, span 2");
+		jpaWorkingOn.add(wcbHochstellen, "growx, span ");
 
 		jpaWorkingOn.add(wlaGewicht, "growx");
 		jpaWorkingOn.add(wnfGewicht, "growx, span 2");
 		jpaWorkingOn.add(wla9, "growx");
-		jpaWorkingOn.add(wcbHochstellen, "growx, span");
+		jpaWorkingOn.add(wcbPolarisiert, "growx, span 2");
+		jpaWorkingOn.add(wcbAntistatic, "growx, span ");
 
 		jpaWorkingOn.add(wlaRasterliegend, "growx");
 		jpaWorkingOn.add(wnfRasterliegend, "growx, span 2");
 		jpaWorkingOn.add(wla4, "growx");
-		jpaWorkingOn.add(wcbPolarisiert, "growx, span");
+		jpaWorkingOn.add(wsfReach.getWrapperButton(), "growx, span 2");
+		jpaWorkingOn.add(wsfReach.getWrapperTextField(), "growx, span ");
+		
+		
+	
+		
 
 		jpaWorkingOn.add(wlaRasterstehend, "growx");
 		jpaWorkingOn.add(wnfRasterstehend, "growx, span 2");
 		jpaWorkingOn.add(wla6, "growx");
-		jpaWorkingOn.add(wcbAntistatic, "growx, span");
+		jpaWorkingOn.add(wsfRohs.getWrapperButton(), "growx, span 2");
+		jpaWorkingOn.add(wsfRohs.getWrapperTextField(), "growx, span ");
+		
 
 		jpaWorkingOn.add(wlaStromverbrauchtypisch, "growx");
 		jpaWorkingOn.add(wnfStromverbrauchtypisch, "growx, span 2");
 		jpaWorkingOn.add(wla7, "growx");
-		jpaWorkingOn.add(wbuFarbcodierung, "growx, span 2");
-		jpaWorkingOn.add(wtfFarbcodierung, "growx, span");
+		jpaWorkingOn.add(wsfAutomotive.getWrapperButton(), "growx, span 2");
+		jpaWorkingOn.add(wsfAutomotive.getWrapperTextField(), "growx, span ");
+		
+		
+		
+		
 
 		jpaWorkingOn.add(wlaStromverbrauchmaximal, "growx");
 		jpaWorkingOn.add(wnfStromverbrauchmaximal, "growx, span 2");
-		jpaWorkingOn.add(wla8, "growx, wrap");
+		jpaWorkingOn.add(wla8, "growx");
+		jpaWorkingOn.add(wsfMedical.getWrapperButton(), "growx, span 2");
+		jpaWorkingOn.add(wsfMedical.getWrapperTextField(), "growx, span ");
+		
+		
+		jpaWorkingOn.add(wlaUL, "growx, span 6");
+		//jpaWorkingOn.add(new WrapperLabel(), "growx, span 2");
+		//jpaWorkingOn.add(new WrapperLabel(), "growx");
+		//jpaWorkingOn.add(new WrapperLabel(), "growx, span 2");
+		jpaWorkingOn.add(wtfUL, "growx, span, wrap ");
+		
 
 		jpaWorkingOn.add(wlaMaterialgewicht, "growx");
 		jpaWorkingOn.add(wnfMaterialgewicht, "growx, span 2");
-		jpaWorkingOn.add(wlaMaterialgewichteinheit, "growx, span 2, wrap");
+		jpaWorkingOn.add(wlaMaterialgewichteinheit, "growx");
+		jpaWorkingOn.add(wbuFarbcodierung, "growx, span 2");
+		jpaWorkingOn.add(wtfFarbcodierung, "growx, span");
 		
 		jpaWorkingOn.add(wbuMaterial, "growx");
 		jpaWorkingOn.add(wtfMaterialkennung, "growx, span 2");

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -269,14 +269,20 @@ public class PanelVkpfPreise extends PanelBasis implements
 		wlaGestehungspreis = new WrapperLabel(LPMain.getTextRespectUISPr("lp.gestehungspreis"));
 		wnfGestehungspreis = new WrapperNumberField();
 		wnfGestehungspreis.setActivatable(false);
-		wnfGestehungspreis.setFractionDigits(Defaults.getInstance().getIUINachkommastellenPreiseVK());
+		
+		
+		int iNachkommastellenGestpreis=Defaults.getInstance().getIUINachkommastellenPreiseVK();
+		if(Defaults.getInstance().getIUINachkommastellenPreiseEK()>Defaults.getInstance().getIUINachkommastellenPreiseVK()){
+			iNachkommastellenGestpreis=Defaults.getInstance().getIUINachkommastellenPreiseEK();
+		}
+		wnfGestehungspreis.setFractionDigits(iNachkommastellenGestpreis);
 		wlaGestehungspreisWaehrung = new WrapperLabel(LPMain.getTheClient().getSMandantenwaehrung());
 		wlaGestehungspreisWaehrung.setHorizontalAlignment(SwingConstants.LEADING);
 
 		wlaLief1Preis = new WrapperLabel(LPMain.getTextRespectUISPr("artikel.lief1preis"));
 		wnfLief1Preis = new WrapperNumberField();
 		wnfLief1Preis.setActivatable(false);
-		wnfLief1Preis.setFractionDigits(Defaults.getInstance().getIUINachkommastellenPreiseVK());
+		wnfLief1Preis.setFractionDigits(Defaults.getInstance().getIUINachkommastellenPreiseEK());
 		wlaLief1PreisWaehrung = new WrapperLabel(LPMain.getTheClient().getSMandantenwaehrung());
 		wlaLief1PreisWaehrung.setHorizontalAlignment(SwingConstants.LEADING);
 		
@@ -305,7 +311,6 @@ public class PanelVkpfPreise extends PanelBasis implements
 
 		wnfEinzelvkp = new WrapperNumberField();
 		wnfEinzelvkp.setFractionDigits(iPreiseUINachkommastellen);
-		wnfEinzelvkp.setMaximumIntegerDigits(6);
 		wlaWaehrung1 = new WrapperLabel();
 		wlaWaehrung1.setHorizontalAlignment(SwingConstants.LEADING);
 
@@ -841,7 +846,7 @@ public class PanelVkpfPreise extends PanelBasis implements
 						.getArtikelEinkaufspreis(
 								artikelDto.getIId(),
 								null,
-								new BigDecimal(1),
+								new BigDecimal(0),
 								LPMain.getTheClient()
 										.getSMandantenwaehrung(),
 								wdfPreisgueltigkeitsanzeigeab.getDate());
@@ -980,7 +985,7 @@ public class PanelVkpfPreise extends PanelBasis implements
 
 					// PJ 17178
 					wnfStandardrabattsatz[i].setDouble(null);
-					wnfBerechneterPreis[i].setBigDecimal(null);
+					wnfBerechneterPreis[i].setBigDecimal(BigDecimal.ZERO);
 					wdfPreisGueltigab[i].setDate(datGueltigkeitsanzeigeab);
 				}
 			}
@@ -1162,7 +1167,8 @@ public class PanelVkpfPreise extends PanelBasis implements
 										.setScale(iPreiseUINachkommastellen,
 												BigDecimal.ROUND_HALF_EVEN));
 					} else {
-
+						if(wnfMinverkaufspreis.getBigDecimal() == null)
+							wnfMinverkaufspreis.setBigDecimal(BigDecimal.ZERO);
 						wnfBerechneterPreis[iPreislisteI]
 								.setCompareValue(wnfMinverkaufspreis
 										.getBigDecimal()

@@ -1,33 +1,33 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
- * 
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
+ *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published 
- * by the Free Software Foundation, either version 3 of theLicense, or 
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of theLicense, or
  * (at your option) any later version.
- * 
- * According to sec. 7 of the GNU Affero General Public License, version 3, 
+ *
+ * According to sec. 7 of the GNU Affero General Public License, version 3,
  * the terms of the AGPL are supplemented with the following terms:
- * 
- * "HELIUM V" and "HELIUM 5" are registered trademarks of 
- * HELIUM V IT-Solutions GmbH. The licensing of the program under the 
+ *
+ * "HELIUM V" and "HELIUM 5" are registered trademarks of
+ * HELIUM V IT-Solutions GmbH. The licensing of the program under the
  * AGPL does not imply a trademark license. Therefore any rights, title and
  * interest in our trademarks remain entirely with us. If you want to propagate
  * modified versions of the Program under the name "HELIUM V" or "HELIUM 5",
- * you may only do so if you have a written permission by HELIUM V IT-Solutions 
+ * you may only do so if you have a written permission by HELIUM V IT-Solutions
  * GmbH (to acquire a permission please contact HELIUM V IT-Solutions
  * at trademark@heliumv.com).
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Affero General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Contact: developers@heliumv.com
  ******************************************************************************/
 package com.lp.client.frame.component;
@@ -48,6 +48,7 @@ import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JPanel;
 import javax.swing.filechooser.FileFilter;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 import com.lp.client.frame.Defaults;
 import com.lp.client.frame.ExceptionLP;
@@ -75,9 +76,7 @@ import com.lp.util.Helper;
  * @todo texte uebersetzen  PJ 3416
  */
 public class WrapperBildField extends PanelBasis implements IControl {
-	/**
-	 * 
-	 */
+
 	private static final long serialVersionUID = 1L;
 
 	private final static String ACTION_SPECIAL_DATEI = "action_special_datei";
@@ -229,7 +228,7 @@ public class WrapperBildField extends PanelBasis implements IControl {
 		}
 
 	}
-	
+
 	protected void toTempFile() throws IOException {
 		if(getImage() == null) {
 			temp = null;
@@ -239,8 +238,9 @@ public class WrapperBildField extends PanelBasis implements IControl {
 		String name = getDateiname();
 		if(name == null)
 			name = "tempImageHV.gif";
+		String mime = Helper.getMime(name);
 		temp = File.createTempFile(
-				Helper.getName(name), Helper.getMime(name));
+				Helper.getName(name), mime.isEmpty() ? null : mime);
 		ImageIO.write(image, Helper.getMime(name).replace(".", ""), temp);
 	}
 
@@ -252,27 +252,45 @@ public class WrapperBildField extends PanelBasis implements IControl {
 			HelperClient.desktopTryToOpenElseSave(temp, getInternalFrame());
 		} else if (e.getActionCommand().equalsIgnoreCase(ACTION_SPECIAL_SPEICHERN)) {
 			toTempFile();
-			HelperClient.showSaveFileDialog(temp, getDateiname() == null ? null : new File(getDateiname()), getInternalFrame(), null, null);
+			HelperClient.showSaveFileDialog(temp, getDateiname() == null ? null : new File(getDateiname()), getInternalFrame(), Helper.getMime(getDateiname()));
 		} else if (e.getActionCommand().equalsIgnoreCase(ACTION_SPECIAL_DATEI)) {
 			JFileChooser fc = new JFileChooser();
 
 			if (sLetzteDatei != null) {
 				fc.setCurrentDirectory(sLetzteDatei);
 			}
-			fc.setFileFilter(new FileFilter() {
-				public boolean accept(File f) {
-					return f.getName().toLowerCase().endsWith(bildExtension)
-							|| f.isDirectory();
-				}
 
-				public String getDescription() {
-					return "Bilder";
-				}
-			});
+//			fc.setFileFilter(new FileFilter() {
+//				public boolean accept(File f) {
+//					return f.getName().toLowerCase().endsWith(bildExtension)
+//							|| f.isDirectory();
+//				}
+//
+//				public String getDescription() {
+//					return "Bilder";
+//				}
+//			});
 
-			int returnVal = fc.showOpenDialog(null);
-			if (returnVal == JFileChooser.APPROVE_OPTION) {
-				File file = fc.getSelectedFile();
+			FileFilter imageFilter = new FileNameExtensionFilter(
+				    "Bilder", "gif", "jpeg", "jpg", "png");
+
+			fc.setFileFilter(imageFilter);
+
+			int returnVal = fc.showOpenDialog(getInternalFrame());
+
+			File file = fc.getSelectedFile();
+
+			boolean fileExist = true;
+			if (file != null) {
+			fileExist = file.exists();
+			if (!fileExist)
+				DialogFactory.showModalDialog(
+						LPMain.getTextRespectUISPr("lp.warning"),
+						LPMain.getMessageTextRespectUISPr("lp.warning.dateinichtvorhanden", file.getName()));
+			}
+
+			if (returnVal == JFileChooser.APPROVE_OPTION && fileExist) {
+
 				sLetzteDatei = file;
 				ParametermandantDto parameter = DelegateFactory
 						.getInstance()
@@ -295,6 +313,7 @@ public class WrapperBildField extends PanelBasis implements IControl {
 							.read(file)));
 					if (getImage() == null) {
 						// Die Ausgewaehlte Datei ist kein Bild
+						imageviewer.setImage((byte[]) null);
 						DialogFactory.showModalDialog(
 								LPMain.getTextRespectUISPr(
 										"lp.error"),
@@ -358,6 +377,11 @@ public class WrapperBildField extends PanelBasis implements IControl {
 		}
 	}
 
+	public void cleanup(){
+		imageviewer=null;
+		setToolBar(null);
+	}
+
 	protected JComponent getFirstFocusableComponent() throws Exception {
 		return wbuDatei;
 	}
@@ -371,15 +395,15 @@ public class WrapperBildField extends PanelBasis implements IControl {
 	public void setMandatoryField(boolean isMandatoryField) {
 		wtfDatei.setMandatoryField(isMandatoryField);
 	}
-	
+
 	@Override
 	public boolean isActivatable() {
 		return isActivatable;
 	}
-	
+
 	@Override
 	public void setActivatable(boolean isActivatable) {
-		this.isActivatable = isActivatable;		
+		this.isActivatable = isActivatable;
 		if(!isActivatable) {
 			setEnabled(false) ;
 		}

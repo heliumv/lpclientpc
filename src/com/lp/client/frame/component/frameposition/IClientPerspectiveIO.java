@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -33,6 +33,7 @@
 package com.lp.client.frame.component.frameposition;
 
 import java.awt.Font;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -83,7 +84,7 @@ public interface IClientPerspectiveIO {
 	/**
 	 * Liest die Liste der (beim n&auml;chsten laden des Layouts) zu startenden Module.
 	 * Inhalt der String-Liste sind die BelegartCNr's der erw&auml;hnten Module.
-	 * @return
+	 * @return eine Liste von Strings
 	 * @throws Exception
 	 */
 	public List<String> readStartupModule() throws Exception;
@@ -103,7 +104,7 @@ public interface IClientPerspectiveIO {
 	/**
 	 * Liest eine IntegerListe aus, welche die Spaltenbreiten beinhaltet.
 	 * @param usecaseId die UsecaseId der Tabelle
-	 * @return
+	 * @return die Breiten in einer Liste
 	 * @throws Exception wenn das lesen scheitert
 	 */
 	public List<Integer> readQueryColumnWidth(int usecaseId) throws Exception;
@@ -127,6 +128,7 @@ public interface IClientPerspectiveIO {
 	/**
 	 * Liest die Sortierkriterien einer Tabelle.
 	 * @param usecaseId die UsecaseId der Tabelle
+	 * @return die Sortierkriterien
 	 * @throws Exception wenn das lesen scheitert.
 	 */
 	public List<SortierKriterium> readQueryColumnSorting(int usecaseId) throws Exception;
@@ -136,4 +138,8 @@ public interface IClientPerspectiveIO {
 	public void persistClientFont(Font font) throws Exception;
 	
 	public void resetClientFont() throws Exception;
+	
+	public void persistPropertyMap(HashMap<String,String> properties) throws Exception;
+	
+	public HashMap<String,String> readPropertyMap() throws Exception;
 }

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -36,6 +36,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.GraphicsEnvironment;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
@@ -62,7 +63,6 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.JCheckBoxMenuItem;
-import javax.swing.JColorChooser;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
@@ -117,7 +117,6 @@ import com.lp.editor.ui.LpDecoratedTextPane;
 import com.lp.editor.ui.LpEditorSettings;
 import com.lp.editor.ui.LpEditorSheetPanel;
 import com.lp.editor.ui.LpEditorTable;
-import com.lp.editor.ui.LpFontChooser;
 import com.lp.editor.ui.LpRuler;
 import com.lp.editor.ui.LpToolBarButton;
 import com.lp.editor.ui.LpToolBarToggleButton;
@@ -149,8 +148,6 @@ import com.lp.server.system.service.ParameterFac;
  * @author Sascha Zelzer
  * @version $Revision: 1.7 $
  */
-
-@SuppressWarnings("static-access")
 public class LpEditor extends JPanel implements PropertyChangeListener {
 
 	/**
@@ -183,6 +180,10 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 
 	private int iEditorMode = 0;
 
+	public int getEditorMode() {
+		return iEditorMode;
+	}
+
 	private boolean bTabRulerVisibility = true;
 	private boolean bFileIsEdited = false;
 	private boolean bReadingInProgress = false;
@@ -193,9 +194,25 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 	private File actualFile;
 	private JFrame ownerFrame;
 
+	public JFrame getOwnerFrame() {
+		return ownerFrame;
+	}
+
+	public void setOwnerFrame(JFrame ownerFrame) {
+		this.ownerFrame = ownerFrame;
+	}
+
 	private static String[] asSystemFonts = null;
 	private static String[] asAvailableFontNames = null;
 	private static String[] asAvailableFontSizes = null;
+
+	public static String[] getAsAvailableFontSizes() {
+		return asAvailableFontSizes;
+	}
+
+	public static void setAsAvailableFontSizes(String[] asAvailableFontSizes) {
+		LpEditor.asAvailableFontSizes = asAvailableFontSizes;
+	}
 
 	private static String[] asZoomFactors = null;
 
@@ -237,15 +254,16 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 	ActionEditPaste actionEditPaste;
 	Action actionEditSelectAll;
 	Action actionFormatFont, actionFormatColorForeground,
-	actionFormatColorBackground;
+			actionFormatColorBackground;
 	Action actionFormatAlignLeft, actionFormatAlignRight,
-	actionFormatAlignCenter, actionFormatAlignJustified;
+			actionFormatAlignCenter, actionFormatAlignJustified;
 	Action actionFormatStyleBold, actionFormatStyleItalic,
-	actionFormatStyleUnderline, actionFormatStyleStrikethrough;
+			actionFormatStyleUnderline, actionFormatStyleStrikethrough;
 	Action actionInsertTable, actionDeleteTable, actionInsertRowBefore,
-	actionInsertRowAfter, actionDeleteRow;
+			actionInsertRowAfter, actionDeleteRow;
 	Action actionInsertDateTimeUserShortcut;
 	Action actionInsertSignatur;
+	Action actionInsertTextbaustein;
 
 	UndoAction actionEditUndo;
 	RedoAction actionEditRedo;
@@ -255,11 +273,6 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 	LpDocumentListener lpDocumentListener = new LpDocumentListener();
 	LpDocumentFilter lpDocumentFilter = new LpDocumentFilter();
 	LpMouseAdapter lpMouseAdapter = new LpMouseAdapter();
-
-	JFileChooser jFileChooser = new JFileChooser();
-	JColorChooser jColorChooser = new JColorChooser();
-	LpEditorSettings lpSettings;
-	LpFontChooser fontChooser;
 
 	// ======== UI Variablen ================
 
@@ -281,6 +294,7 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 	JMenuItem jMenuEditPaste = new JMenuItem();
 	JMenuItem jMenuEditinsertDateTimeUserShortcut = new JMenuItem();
 	JMenuItem jMenuEditinsertSignatur = new JMenuItem();
+	JMenuItem jMenuEditinsertTextbaustein = new JMenuItem();
 	// JMenuItem jMenuEditSelectAll = new JMenuItem();
 	JCheckBoxMenuItem jMenuEditPageBreak = new JCheckBoxMenuItem();
 	JMenuItem jMenuEditSettings = new JMenuItem();
@@ -365,6 +379,7 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 	LpToolBarButton lpButtonEditPaste = new LpToolBarButton();
 	LpToolBarButton lpButtonInsertDateTimeUserShortcut = new LpToolBarButton();
 	LpToolBarButton lpButtonInsertSignatur = new LpToolBarButton();
+	LpToolBarButton lpButtonInsertTextbaustein = new LpToolBarButton();
 	LpToolBarToggleButton lpButtonFormatAlignLeft = new LpToolBarToggleButton();
 	LpToolBarToggleButton lpButtonFormatAlignRight = new LpToolBarToggleButton();
 	LpToolBarToggleButton lpButtonFormatAlignCenter = new LpToolBarToggleButton();
@@ -397,14 +412,54 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 	Box rulerBox;
 	LpRuler ruler;
 	JComboBox jComboBoxZoom;
-	
-	public String localeFuerSignatur=null;
-	
-	public void setLocaleAsStringFuerSignatur(String localeFuerSignatur){
-		this.localeFuerSignatur=localeFuerSignatur;
+
+	public String localeFuerSignatur = null;
+
+	public void setLocaleAsStringFuerSignatur(String localeFuerSignatur) {
+		this.localeFuerSignatur = localeFuerSignatur;
 	}
-	
+
+	public void cleanup() {
+		jTextPane=null;
+		jComboBoxFontNames = null;
+		jComboBoxFontSizes = null;
+		jComboBoxZoom = null;
+		jTextPane = null;
+		ruler=null;
+		jScrollPane=null;
+		jToolBarOther=null;
 		
+		actionFileNew = null;
+		actionFileOpen = null;
+		actionFileSave = null;
+		actionFileSaveAs = null;
+		actionFormatStyleBold = null;
+		actionFormatStyleItalic = null;
+		actionFormatStyleUnderline = null;
+		actionFormatStyleStrikethrough = null;
+		actionEditCut = null;
+		actionEditCopy = null;
+		actionEditPaste = null;
+		actionInsertDateTimeUserShortcut = null;
+		actionInsertSignatur = null;
+		actionInsertTextbaustein = null;
+
+		actionInsertTable = null;
+		actionDeleteTable = null;
+		actionInsertRowBefore = null;
+		actionInsertRowAfter = null;
+		actionDeleteRow = null;
+
+		actionFormatAlignLeft = null;
+		actionFormatAlignRight = null;
+		actionFormatAlignCenter = null;
+
+		actionFormatFont = null;
+		actionFormatColorForeground = null;
+		actionFormatColorBackground = null;
+		actionEditUndo = null;
+		actionEditRedo = null;
+	}
 
 	/**
 	 * Konstruktor fuer den LpEditor. Ruft LpEditor(ownerFrame, null) auf.
@@ -433,17 +488,55 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 		messages.setLocale(locale);
 
 		try {
-			UIManager.put("TextPane.font", new java.awt.Font("Arial",
-					java.awt.Font.PLAIN, 10));
-			jTextPane.registerEditorKitForContentType("text/jasper",
-					"com.lp.editor.text.LpJasperReportEditorKit");
-			if(asSystemFonts == null) {
+			String zoom = null;
+			String font = null;
+			String size = null;
+			try {
+				ArbeitsplatzparameterDto zoomDto = DelegateFactory
+						.getInstance()
+						.getParameterDelegate()
+						.holeArbeitsplatzparameter(
+								ParameterFac.ARBEITSPLATZPARAMETER_EDITOR_ZOOM);
+				ArbeitsplatzparameterDto fontDto = DelegateFactory
+						.getInstance()
+						.getParameterDelegate()
+						.holeArbeitsplatzparameter(
+								ParameterFac.ARBEITSPLATZPARAMETER_EDITOR_SCHRIFTART);
+				ArbeitsplatzparameterDto sizeDto = DelegateFactory
+						.getInstance()
+						.getParameterDelegate()
+						.holeArbeitsplatzparameter(
+								ParameterFac.ARBEITSPLATZPARAMETER_EDITOR_SCHRIFT_GROESSE);
+				zoom = zoomDto == null ? null : zoomDto.getCWert();
+				font = fontDto == null ? null : fontDto.getCWert();
+				size = sizeDto == null ? null : sizeDto.getCWert();
+			} catch (Throwable e) {
+			}
+			zoom =  zoom == null ? "100" : zoom;
+			font = font == null ? "Arial" : font;
+			size = size == null ? "10" : size;
+			
+			
+			if (asSystemFonts == null) {
 				try {
-					setFontFilter(DelegateFactory.getInstance().getSystemDelegate().getErlaubteFonts(), false);
+					setFontFilter(DelegateFactory.getInstance()
+							.getSystemDelegate().getErlaubteFonts(), false);
 				} catch (Throwable e) {
 					setFontFilter(null, false);
 				}
 			}
+			boolean fontAvailable = false;
+			for(String sysFont : asSystemFonts) {
+				if(sysFont.equals(font)) {
+					fontAvailable = true;
+					break;
+				}
+			}
+			font = fontAvailable ? font : "Arial";
+			Font awtFont = new Font(font, Font.PLAIN, new Integer(size));
+			UIManager.put("TextPane.font", awtFont);
+			jTextPane.registerEditorKitForContentType("text/jasper",
+					"com.lp.editor.text.LpJasperReportEditorKit");
 			jbInit();
 
 			// AD: test
@@ -484,22 +577,12 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 				newFile("text/plain");
 			}
 
-			Double zoom;
-			try {
-				ArbeitsplatzparameterDto zoomDto = DelegateFactory.getInstance().getParameterDelegate()
-						.holeArbeitsplatzparameter(ParameterFac.ARBEITSPLATZPARAMETER_EDITOR_ZOOM);
-				zoom = new Double(zoomDto.getCWert() == null? "100" : zoomDto.getCWert())/100;
-			} catch (Throwable e) {
-				zoom = 1.0;
-			}
-			jScrollPane.revalidate();
-			jScrollPane.repaint();
-			jComboBoxZoom.setSelectedItem((int)(zoom*100)+"%");
+			jComboBoxZoom.setSelectedItem(zoom + "%");
+			
 
 		} catch (Exception ex) {
 			myLogger.error(ex.getLocalizedMessage(), ex);
 		}
-
 
 	}
 
@@ -542,9 +625,6 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 		asZoomFactors = new String[] { "50%", "75%", "100%", "125%", "150%",
 				"175%", "200%" };
 
-		fontChooser = new LpFontChooser(ownerFrame, iEditorMode, null,
-				asAvailableFontSizes);
-
 		actionFileNew = new ActionFileNew(this);
 		actionFileOpen = new ActionFileOpen(this);
 		actionFileSave = new ActionFileSave(this);
@@ -559,8 +639,8 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 		actionEditPaste = new ActionEditPaste(this);
 		actionInsertDateTimeUserShortcut = new ActionInsertDateTimeUserShortcut(
 				this);
-		actionInsertSignatur = new ActionInsertSignatur(
-				this);
+		actionInsertSignatur = new ActionInsertSignatur(this);
+		actionInsertTextbaustein = new ActionInsertTextbaustein(this);
 
 		actionInsertTable = new ActionInsertTable(this);
 		actionDeleteTable = new ActionDeleteTable(this);
@@ -585,6 +665,9 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 		jMenuEditSettings.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent ae) {
+				LpEditorSettings lpSettings = new LpEditorSettings(ownerFrame,
+						messages.getString("Dialog.Settings"));
+
 				lpSettings.setFormat(jTextPane.getPageFormat());
 				lpSettings.setPageMargin(jTextPane.getPageMargin());
 				lpSettings.setVisible(true);
@@ -595,6 +678,7 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 					}
 					jTextPane.setPageMargin(lpSettings.getPageMargin());
 				}
+				lpSettings.dispose();
 			}
 		});
 
@@ -624,13 +708,13 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 				jComboBoxFontNames.removeItemAt(i);
 
 		jComboBoxFontNames
-		.setMaximumSize(jComboBoxFontNames.getPreferredSize());
+				.setMaximumSize(jComboBoxFontNames.getPreferredSize());
 		jComboBoxFontNames.setEditable(true);
 		jComboBoxFontNames.setSelectedItem("Arial");
 
 		ActionListener actionListener = new ActionListener() {
 			@Override
-			public void actionPerformed(ActionEvent e) {
+			public void actionPerformed(ActionEvent arg0) {
 				if (jComboBoxFontNames.getSelectedIndex() < 0) {
 					return;
 				}
@@ -645,14 +729,15 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 		jComboBoxFontNames.addActionListener(actionListener);
 
 		jComboBoxFontSizes = new JComboBox(asAvailableFontSizes);
-		Dimension d = new Dimension(Defaults.getInstance().bySizeFactor(50), jComboBoxFontSizes
-				.getPreferredSize().height);
+		Dimension d = new Dimension(Defaults.getInstance().bySizeFactor(50),
+				jComboBoxFontSizes.getPreferredSize().height);
 		jComboBoxFontSizes.setMaximumSize(d);
 		jComboBoxFontSizes.setPreferredSize(d);
 		jComboBoxFontSizes.setEditable(true);
+		
 		actionListener = new ActionListener() {
 			@Override
-			public void actionPerformed(ActionEvent e) {
+			public void actionPerformed(ActionEvent arg0) {
 				int fontSize = 0;
 				try {
 					fontSize = Integer.parseInt(jComboBoxFontSizes
@@ -670,15 +755,22 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 		jComboBoxFontSizes.addActionListener(actionListener);
 
 		jComboBoxZoom = new JComboBox(asZoomFactors);
-		//		jComboBoxZoom.setSelectedIndex(2);
+		jComboBoxZoom.setEditable(true); 
+		jComboBoxZoom.setPreferredSize(new Dimension(Defaults.getInstance().bySizeFactor(60),
+				jComboBoxZoom.getPreferredSize().height));
+		// jComboBoxZoom.setSelectedIndex(2);
 		actionListener = new ActionListener() {
 			@Override
-			public void actionPerformed(ActionEvent e) {
-				if (jComboBoxZoom.getSelectedIndex() < 0) {
+			public void actionPerformed(ActionEvent arg0) {
+				if (jComboBoxZoom.getSelectedItem() == null) {
 					return;
 				}
 				String sZoom = jComboBoxZoom.getSelectedItem().toString()
 						.replace("%", "");
+				if(sZoom.isEmpty()) {
+					jComboBoxZoom.setSelectedItem("100%");
+					return;
+				}
 				double scale = new Double(sZoom) / 100;
 				jTextPane.setZoomFactor(scale);
 				jScrollPane.revalidate();
@@ -728,7 +820,7 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 		jMenuEditCopy.setAction(actionEditCopy);
 		jMenuEditPaste.setAction(actionEditPaste);
 		jMenuEditinsertDateTimeUserShortcut
-		.setAction(actionInsertDateTimeUserShortcut);
+				.setAction(actionInsertDateTimeUserShortcut);
 		// jMenuEditSelectAll.setAction(actionEditSelectAll);
 		jMenuEdit.add(jMenuEditUndo);
 		jMenuEdit.add(jMenuEditRedo);
@@ -803,9 +895,9 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 		jMenuEditCopyPopup.setAction(actionEditCopy);
 		jMenuEditPastePopup.setAction(actionEditPaste);
 		jMenuEditinsertDateTimeUserShortcutPopup
-		.setAction(actionInsertDateTimeUserShortcut);
-		jMenuEditinsertSignatur
-		.setAction(actionInsertSignatur);
+				.setAction(actionInsertDateTimeUserShortcut);
+		jMenuEditinsertSignatur.setAction(actionInsertSignatur);
+		jMenuEditinsertTextbaustein.setAction(actionInsertTextbaustein);
 		// jMenuEditSelectAllPopup.setAction(actionEditSelectAll);
 
 		jMenuTablePopup.setText(jMenuTable.getText());
@@ -836,7 +928,7 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 		jMenuFormatStyleItalicPopup.setAction(actionFormatStyleItalic);
 		jMenuFormatStyleUnderlinePopup.setAction(actionFormatStyleUnderline);
 		jMenuFormatStyleStrikethroughPopup
-		.setAction(actionFormatStyleStrikethrough);
+				.setAction(actionFormatStyleStrikethrough);
 		jMenuFormatFontPopup.setAction(actionFormatFont);
 
 		jMenuFormatColorPopup.setText(jMenuFormatColor.getText());
@@ -915,16 +1007,17 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 		jToolBarOther.add(lpButtonEditPaste);
 
 		lpButtonInsertDateTimeUserShortcut
-		.setAction(actionInsertDateTimeUserShortcut);
+				.setAction(actionInsertDateTimeUserShortcut);
 		lpButtonInsertDateTimeUserShortcut.setMnemonic(0);
 		jToolBarOther.add(lpButtonInsertDateTimeUserShortcut);
-		
-		
-		lpButtonInsertSignatur
-		.setAction(actionInsertSignatur);
+
+		lpButtonInsertSignatur.setAction(actionInsertSignatur);
 		lpButtonInsertSignatur.setMnemonic(0);
 		jToolBarOther.add(lpButtonInsertSignatur);
 		
+		lpButtonInsertTextbaustein.setAction(actionInsertTextbaustein);
+		lpButtonInsertTextbaustein.setMnemonic(0);
+		jToolBarOther.add(lpButtonInsertTextbaustein);
 
 		jToolBarOther.addSeparator();
 
@@ -977,7 +1070,7 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 		jToolBarFontStyle.add(lpButtonFormatStyleUnderline);
 
 		lpButtonFormatStyleStrikethrough
-		.setAction(actionFormatStyleStrikethrough);
+				.setAction(actionFormatStyleStrikethrough);
 		lpButtonFormatStyleStrikethrough.setMnemonic(0);
 		jToolBarFontStyle.add(lpButtonFormatStyleStrikethrough);
 
@@ -1018,15 +1111,7 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 		jPanelToolBars.add(jToolBarTable);
 		jPanelToolBars.add(jComboBoxZoom);
 
-		// File chooser konfigurieren:
-		jFileChooser.addChoosableFileFilter(new LpFileFilter(
-				LpFileFilter.FILE_EXTENSION_JRXML, "Jasper XML"));
-		jFileChooser.addChoosableFileFilter(new LpFileFilter(
-				LpFileFilter.FILE_EXTENSION_JASPER, "Jasper Report"));
-
 		// Settings:
-		lpSettings = new LpEditorSettings(ownerFrame,
-				messages.getString("Dialog.Settings"));
 
 		// Init Edit - area
 		jToolBarOther.setOrientation(JToolBar.HORIZONTAL);
@@ -1047,7 +1132,7 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 		LpEditorSheetPanel sheet = new LpEditorSheetPanel(jTextPane);
 		jTextPaneBox.add(sheet);
 		jTextPaneBox.add(Box.createHorizontalGlue());
-//		jTextPaneBox.setMinimumSize(sheet.getPreferredSize());
+		// jTextPaneBox.setMinimumSize(sheet.getPreferredSize());
 		jScrollPane.getViewport().add(jTextPaneBox, null);
 		rulerBox = Box.createHorizontalBox();
 		ruler = new LpRuler(jTextPane);
@@ -1110,22 +1195,16 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 	 * @see #setJasperReport(JasperReport)
 	 * @see #newFile(String)
 	 */
-/*	public JasperReport getJasperReport() {
-		if (!jTextPane.getContentType().equals("text/jasper")) {
-			return null;
-		}
-
-		if (jTextPane.getContentType().equals("text/jasper")) {
-			if (jasperReportTemplate == null) {
-				return ((LpJasperReportEditorKit) jTextPane.getEditorKit())
-						.getJasperReport(jTextPane.getStyledDocument());
-			} else {
-				return jasperReportTemplate;
-			}
-		} else {
-			return null;
-		}
-	}*/
+	/*
+	 * public JasperReport getJasperReport() { if
+	 * (!jTextPane.getContentType().equals("text/jasper")) { return null; }
+	 * 
+	 * if (jTextPane.getContentType().equals("text/jasper")) { if
+	 * (jasperReportTemplate == null) { return ((LpJasperReportEditorKit)
+	 * jTextPane.getEditorKit())
+	 * .getJasperReport(jTextPane.getStyledDocument()); } else { return
+	 * jasperReportTemplate; } } else { return null; } }
+	 */
 
 	/**
 	 * Liefert den formatierten Inhalt des Editors in strukturierter Form.
@@ -1213,8 +1292,8 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 				}
 				LpJasperParser.parseString(row.getText(),
 						jTextPane.getStyledDocument(), jTextPane
-						.getStyledDocument().getEndPosition()
-						.getOffset() - 1);
+								.getStyledDocument().getEndPosition()
+								.getOffset() - 1);
 			} else {
 				if (!bTableFound) {
 					model = new LpEditorTableModel(0, data.getColumnNum());
@@ -1351,11 +1430,9 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 
 			}
 			if (i >= vecCellRenderers.size()) {
-				column.setCellRenderer(vecCellRenderers
-						.get(0));
+				column.setCellRenderer(vecCellRenderers.get(0));
 			} else {
-				column.setCellRenderer(vecCellRenderers
-						.get(i));
+				column.setCellRenderer(vecCellRenderers.get(i));
 			}
 		}
 
@@ -1376,8 +1453,7 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 				int end = 0;
 				for (int i = 0; i < vecMarkersBefore.size(); i++) {
 					if (i > 0)
-						start = vecMarkersAfter.get(i - 1)
-						.getOffset();
+						start = vecMarkersAfter.get(i - 1).getOffset();
 					end = vecMarkersBefore.get(i).getOffset();
 
 					if (start <= offset && end >= offset) {
@@ -1399,7 +1475,7 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 			int additionalInsert = 0;
 			if (offset == 0
 					|| !jTextPane.getDocument().getText(offset - 1, 1)
-					.equals("\n")) {
+							.equals("\n")) {
 				additionalInsert = 1;
 			}
 
@@ -1445,8 +1521,7 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 					offset + 1);
 			boolean bInserted = false;
 			for (int i = 0; i < vecMarkersBefore.size(); i++) {
-				if (vecMarkersBefore.get(i).getOffset() > posBefore
-						.getOffset()) {
+				if (vecMarkersBefore.get(i).getOffset() > posBefore.getOffset()) {
 					vecMarkersBefore.add(i, posBefore);
 					vecMarkersAfter.add(i, posAfter);
 					bInserted = true;
@@ -1492,10 +1567,10 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 
 			undoManager.startCompoundTableEdit(false, table,
 					vecTables.indexOf(table), posBefore.getOffset()
-					- additionalRemove);
+							- additionalRemove);
 			doc.remove(posBefore.getOffset() - additionalRemove,
 					posAfter.getOffset() + 1 - posBefore.getOffset()
-					+ additionalRemove);
+							+ additionalRemove);
 			undoManager.endCompoundTableEdit();
 		} catch (BadLocationException ex) {
 			myLogger.error(ex.getLocalizedMessage(), ex);
@@ -1513,15 +1588,15 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 		vecTableModels.remove(index);
 
 		if (index > 0) {
-			jTextPane.removeOverflowRange(
-					vecMarkersAfter.get(index - 1), posBefore);
+			jTextPane.removeOverflowRange(vecMarkersAfter.get(index - 1),
+					posBefore);
 		} else {
 			jTextPane.removeOverflowRange(jTextPane.getDocument()
 					.getStartPosition(), posBefore);
 		}
 		if (index < vecMarkersBefore.size()) {
-			jTextPane.removeOverflowRange(posAfter,
-					vecMarkersBefore.get(index));
+			jTextPane
+					.removeOverflowRange(posAfter, vecMarkersBefore.get(index));
 		} else {
 			jTextPane.removeOverflowRange(posAfter, jTextPane.getDocument()
 					.getEndPosition());
@@ -1679,7 +1754,6 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 		}
 	}
 
-
 	/**
 	 * Ruft getText() des verwendeten JTextPane auf. Abhaengig vom Editor-Modus
 	 * wird der Text inklusive Format-Tags zurueckgegeben. Im Jasper Modus wird
@@ -1746,10 +1820,11 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 	 * encoding dargestellt. In einem "PlainText" Dokument will ich aber kein
 	 * &amp; sondern ein & haben.
 	 * 
-	 * Das das hier an dieser Stelle ist, ist mehr als &uuml;berarbeitungs- w&uuml;rdig.
-	 * Eigentlich m&uuml;sste man das dem LpJasperGenerator beibringen, der den Text
-	 * mittels getReportData() liefert. Das ist aber eine &ouml;ffentliche Methode
-	 * und zus&auml;tzlich werden die so gelieferten Daten auch noch manipuliert.
+	 * Das das hier an dieser Stelle ist, ist mehr als &uuml;berarbeitungs-
+	 * w&uuml;rdig. Eigentlich m&uuml;sste man das dem LpJasperGenerator
+	 * beibringen, der den Text mittels getReportData() liefert. Das ist aber
+	 * eine &ouml;ffentliche Methode und zus&auml;tzlich werden die so
+	 * gelieferten Daten auch noch manipuliert.
 	 * 
 	 * Vielleicht f&auml;llt mir da sp&auml;ter noch was sinnvolles ein.
 	 * 
@@ -1817,10 +1892,10 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 	 *            JasperReport
 	 * @throws FontNotFoundException
 	 */
-	/*public void setJasperReport(JasperReport report)
-			throws FontNotFoundException {
-		setJasperReport(report, false);
-	}*/
+	/*
+	 * public void setJasperReport(JasperReport report) throws
+	 * FontNotFoundException { setJasperReport(report, false); }
+	 */
 
 	/**
 	 * Setzt als Vorlage einen JasperReport und erzeugt ein leeres Dokument mit
@@ -1849,276 +1924,194 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 	 * 
 	 * @see #getTextBlockAttributes(int)
 	 */
-/*	public void setJasperReport(JasperReport report, boolean bEditable)
-			throws FontNotFoundException {
-		int top = report.getTopMargin();
-		int bottom = report.getBottomMargin();
-		int left = report.getLeftMargin();
-		int right = report.getRightMargin();
-
-		int width = report.getPageWidth();
-		int height = report.getPageHeight();
-
-		JRSection detail = report.getDetailSection();
-
-		Vector<AttributeSet> vecAttributes = new Vector<AttributeSet>();
-
-		boolean bThrowFontNotFoundException = false;
-		Vector<String> vecStrFontNamesNotFound = new Vector<String>();
-
-		newFile("text/jasper");
-		jTextPane.setPageFormat(new Dimension(width, height));
-		jTextPane.setPageMargin(new Insets(top, left, bottom, right));
-
-		// ======================== Default Style
-		// ================================
-		// Benutzt die neueren "style" Jasper Elemente um den Default-Stil
-		// fuer den Report zu finden
-		Style defaultStyle = jTextPane.getStyle(StyleContext.DEFAULT_STYLE);
-		defaultStyle.removeAttributes(defaultStyle);
-
-		boolean bDefaultFontFound = false;
-		JRStyle[] styles = report.getStyles();
-		if (styles != null) {
-			for (int i = 0; i < styles.length; i++) {
-				if (styles[i].isDefault()) {
-					bDefaultFontFound = true;
-
-					if (!isFontNameAvailable(styles[i].getFontName())) {
-						bThrowFontNotFoundException = true;
-						myLogger.warn(messages.format(
-								"FontNotFoundException.DefaultFontName",
-								new Object[] { styles[i].getFontName(),
-										report.getName() }));
-						vecStrFontNamesNotFound.add(styles[i].getFontName());
-
-						defaultStyle.addAttribute(StyleConstants.FontFamily,
-								((Font) UIManager.get("TextPane.font"))
-								.getFontName());
-					} else {
-						defaultStyle.addAttribute(StyleConstants.FontFamily,
-								styles[i].getFontName());
-					}
-
-					defaultStyle.addAttribute(StyleConstants.FontSize,
-							styles[i].getFontSize());
-					defaultStyle.addAttribute(StyleConstants.Italic,
-							styles[i].isItalic());
-					defaultStyle.addAttribute(StyleConstants.Bold,
-							styles[i].isBold());
-					defaultStyle.addAttribute(StyleConstants.Underline,
-							styles[i].isUnderline());
-					defaultStyle.addAttribute(StyleConstants.StrikeThrough,
-							styles[i].isStrikeThrough());
-
-					break;
-				}
-			}
-		}
-
-		// Fallback zu den veralteten "reportFont" Jasper-Elementen um nach
-		// den Default-Font zu suchen
-		if (!bDefaultFontFound) {
-			JRReportFont[] fonts = report.getFonts();
-			if (fonts != null) {
-				for (int i = 0; i < fonts.length; i++) {
-					if (fonts[i].isDefault()) {
-
-						if (!isFontNameAvailable(fonts[i].getFontName())) {
-							bThrowFontNotFoundException = true;
-							myLogger.warn(messages.format(
-									"FontNotFoundException.DefaultFontName",
-									new Object[] { fonts[i].getFontName(),
-											report.getName() }));
-							vecStrFontNamesNotFound.add(fonts[i].getFontName());
-
-							defaultStyle.addAttribute(
-									StyleConstants.FontFamily,
-									((Font) UIManager.get("TextPane.font"))
-									.getFontName());
-						} else {
-							defaultStyle.addAttribute(
-									StyleConstants.FontFamily,
-									fonts[i].getFontName());
-						}
-
-						defaultStyle.addAttribute(StyleConstants.FontSize,
-								new Integer(fonts[i].getFontSize()));
-						defaultStyle.addAttribute(StyleConstants.Italic,
-								new Boolean(fonts[i].isItalic()));
-						defaultStyle.addAttribute(StyleConstants.Bold,
-								new Boolean(fonts[i].isBold()));
-						defaultStyle.addAttribute(StyleConstants.Underline,
-								new Boolean(fonts[i].isUnderline()));
-						defaultStyle.addAttribute(StyleConstants.StrikeThrough,
-								new Boolean(fonts[i].isStrikeThrough()));
-						break;
-					}
-				}
-			}
-		}
-
-		// ================== Tabellenspalten - Attribute
-		// =======================
-		vecCellEditors.clear();
-		vecCellRenderers.clear();
-		vecColTextAttributes.clear();
-		TextBlockAttributes colAttributes = null;
-		for (int i = 1;; i++) {
-			JRBaseTextField element = (JRBaseTextField) detail
-					.getElementByKey("column" + i);
-			if (element == null) {
-				break;
-			} else {
-				SimpleAttributeSet attributes = new SimpleAttributeSet();
-				attributes.addAttributes(defaultStyle.copyAttributes());
-
-				// Alignment
-				if (element.getHorizontalAlignmentValue() == HorizontalAlignEnum.LEFT ) {
-					StyleConstants.setAlignment(attributes,
-							StyleConstants.ALIGN_LEFT);
-				} else if (element.getHorizontalAlignmentValue() == HorizontalAlignEnum.JUSTIFIED) {
-					StyleConstants.setAlignment(attributes,
-							StyleConstants.ALIGN_JUSTIFIED);
-				} else if (element.getHorizontalAlignmentValue() == HorizontalAlignEnum.CENTER) {
-					StyleConstants.setAlignment(attributes,
-							StyleConstants.ALIGN_CENTER);
-				} else if (element.getHorizontalAlignmentValue() == HorizontalAlignEnum.RIGHT) {
-					StyleConstants.setAlignment(attributes,
-							StyleConstants.ALIGN_RIGHT);
-
-					// Color
-				}
-				StyleConstants
-				.setForeground(attributes, element.getForecolor());
-				StyleConstants
-				.setBackground(attributes, element.getBackcolor());
-
-				// Font
-				String strFontName = element.getFontName();
-				if (!isFontNameAvailable(strFontName)) {
-					bThrowFontNotFoundException = true;
-					myLogger.warn(messages.format(
-							"FontNotFoundException.FontName",
-							new Object[] { strFontName, element.getKey(),
-									report.getName() }));
-					vecStrFontNamesNotFound.add(strFontName);
-
-					attributes.addAttribute(StyleConstants.FontFamily,
-							((Font) UIManager.get("TextPane.font"))
-							.getFontName());
-				} else {
-					attributes.addAttribute(StyleConstants.FontFamily,
-							strFontName);
-				}
-
-				attributes.addAttribute(StyleConstants.FontSize, new Integer(
-						element.getFontSize()));
-				attributes.addAttribute(StyleConstants.Bold, new Boolean(
-						element.isBold()));
-				attributes.addAttribute(StyleConstants.Italic, new Boolean(
-						element.isItalic()));
-				attributes.addAttribute(StyleConstants.Underline, new Boolean(
-						element.isUnderline()));
-				attributes.addAttribute(StyleConstants.StrikeThrough,
-						new Boolean(element.isStrikeThrough()));
-
-				boolean bEqual = false;
-				for (int j = 0; j < vecAttributes.size(); j++) {
-					if (vecAttributes.get(j)
-							.isEqual(attributes)) {
-						vecCellEditors.add(vecCellEditors.get(j));
-						vecCellRenderers.add(vecCellRenderers.get(j));
-						bEqual = true;
-						break;
-					}
-				}
-				if (!bEqual) {
-					vecAttributes.add(attributes);
-					setupNewCellEditor(attributes);
-					vecCellRenderers.add(new LpEditorCellRenderer(attributes));
-				}
-
-				colAttributes = new TextBlockAttributes(attributes);
-				colAttributes.width = element.getWidth();
-				colAttributes.isStyledText = element.isStyledText();
-				vecColTextAttributes.add(colAttributes);
-			}
-
-			showAlignmentItems(bEditable);
-		}
-
-		// Eigenschaften des TextFeld mit key = "textblock" zum
-		// Default - Style fuer Fliesztexte hinzufuegen
-		JRBaseTextField textblock = (JRBaseTextField) detail
-				.getElementByKey("textblock");
-		if (textblock != null) {
-
-			// Alignment
-			if (textblock.getHorizontalAlignmentValue() == HorizontalAlignEnum.LEFT) {
-				StyleConstants.setAlignment(defaultStyle,
-						StyleConstants.ALIGN_LEFT);
-			} else if (textblock.getHorizontalAlignmentValue() == HorizontalAlignEnum.JUSTIFIED) {
-				StyleConstants.setAlignment(defaultStyle,
-						StyleConstants.ALIGN_JUSTIFIED);
-			} else if (textblock.getHorizontalAlignmentValue() == HorizontalAlignEnum.CENTER) {
-				StyleConstants.setAlignment(defaultStyle,
-						StyleConstants.ALIGN_CENTER);
-			} else if (textblock.getHorizontalAlignmentValue() == HorizontalAlignEnum.RIGHT) {
-				StyleConstants.setAlignment(defaultStyle,
-						StyleConstants.ALIGN_RIGHT);
-
-				// Color
-			}
-			StyleConstants
-			.setForeground(defaultStyle, textblock.getForecolor());
-			StyleConstants
-			.setBackground(defaultStyle, textblock.getBackcolor());
-
-			// Font
-			String strFontName = textblock.getFontName();
-			if (!isFontNameAvailable(strFontName)) {
-			
-				bThrowFontNotFoundException = true;
-				myLogger.warn(messages.format(
-						"FontNotFoundException.FontName",
-						new Object[] { strFontName, textblock.getKey(),
-								report.getName() }));
-				vecStrFontNamesNotFound.add(strFontName);
-
-				defaultStyle.addAttribute(StyleConstants.FontFamily,
-						((Font) UIManager.get("TextPane.font")).getFontName());
-			} else {
-				defaultStyle.addAttribute(StyleConstants.FontFamily,
-						strFontName);
-			}
-
-			defaultStyle.addAttribute(StyleConstants.FontSize, new Integer(
-					textblock.getFontSize()));
-			defaultStyle.addAttribute(StyleConstants.Bold, new Boolean(
-					textblock.isBold()));
-			defaultStyle.addAttribute(StyleConstants.Italic, new Boolean(
-					textblock.isItalic()));
-			defaultStyle.addAttribute(StyleConstants.Underline, new Boolean(
-					textblock.isUnderline()));
-			defaultStyle.addAttribute(StyleConstants.StrikeThrough,
-					new Boolean(textblock.isStrikeThrough()));
-
-			textPaneAttributes = new TextBlockAttributes(defaultStyle);
-			textPaneAttributes.isStyledText = textblock.isStyledText();
-		}
-
-		jTextPane.setLogicalStyle(defaultStyle);
-		updateUIElements(defaultStyle, false);
-		undoManager.discardAllEdits();
-		jasperReportTemplate = report;
-
-		if (bThrowFontNotFoundException) {
-			throw new FontNotFoundException(
-					messages.getString("FontNotFoundException.FontNotFound"),
-					vecStrFontNamesNotFound.toArray(new String[] {}));
-		}
-	}*/
+	/*
+	 * public void setJasperReport(JasperReport report, boolean bEditable)
+	 * throws FontNotFoundException { int top = report.getTopMargin(); int
+	 * bottom = report.getBottomMargin(); int left = report.getLeftMargin(); int
+	 * right = report.getRightMargin();
+	 * 
+	 * int width = report.getPageWidth(); int height = report.getPageHeight();
+	 * 
+	 * JRSection detail = report.getDetailSection();
+	 * 
+	 * Vector<AttributeSet> vecAttributes = new Vector<AttributeSet>();
+	 * 
+	 * boolean bThrowFontNotFoundException = false; Vector<String>
+	 * vecStrFontNamesNotFound = new Vector<String>();
+	 * 
+	 * newFile("text/jasper"); jTextPane.setPageFormat(new Dimension(width,
+	 * height)); jTextPane.setPageMargin(new Insets(top, left, bottom, right));
+	 * 
+	 * // ======================== Default Style //
+	 * ================================ // Benutzt die neueren "style" Jasper
+	 * Elemente um den Default-Stil // fuer den Report zu finden Style
+	 * defaultStyle = jTextPane.getStyle(StyleContext.DEFAULT_STYLE);
+	 * defaultStyle.removeAttributes(defaultStyle);
+	 * 
+	 * boolean bDefaultFontFound = false; JRStyle[] styles = report.getStyles();
+	 * if (styles != null) { for (int i = 0; i < styles.length; i++) { if
+	 * (styles[i].isDefault()) { bDefaultFontFound = true;
+	 * 
+	 * if (!isFontNameAvailable(styles[i].getFontName())) {
+	 * bThrowFontNotFoundException = true; myLogger.warn(messages.format(
+	 * "FontNotFoundException.DefaultFontName", new Object[] {
+	 * styles[i].getFontName(), report.getName() }));
+	 * vecStrFontNamesNotFound.add(styles[i].getFontName());
+	 * 
+	 * defaultStyle.addAttribute(StyleConstants.FontFamily, ((Font)
+	 * UIManager.get("TextPane.font")) .getFontName()); } else {
+	 * defaultStyle.addAttribute(StyleConstants.FontFamily,
+	 * styles[i].getFontName()); }
+	 * 
+	 * defaultStyle.addAttribute(StyleConstants.FontSize,
+	 * styles[i].getFontSize());
+	 * defaultStyle.addAttribute(StyleConstants.Italic, styles[i].isItalic());
+	 * defaultStyle.addAttribute(StyleConstants.Bold, styles[i].isBold());
+	 * defaultStyle.addAttribute(StyleConstants.Underline,
+	 * styles[i].isUnderline());
+	 * defaultStyle.addAttribute(StyleConstants.StrikeThrough,
+	 * styles[i].isStrikeThrough());
+	 * 
+	 * break; } } }
+	 * 
+	 * // Fallback zu den veralteten "reportFont" Jasper-Elementen um nach //
+	 * den Default-Font zu suchen if (!bDefaultFontFound) { JRReportFont[] fonts
+	 * = report.getFonts(); if (fonts != null) { for (int i = 0; i <
+	 * fonts.length; i++) { if (fonts[i].isDefault()) {
+	 * 
+	 * if (!isFontNameAvailable(fonts[i].getFontName())) {
+	 * bThrowFontNotFoundException = true; myLogger.warn(messages.format(
+	 * "FontNotFoundException.DefaultFontName", new Object[] {
+	 * fonts[i].getFontName(), report.getName() }));
+	 * vecStrFontNamesNotFound.add(fonts[i].getFontName());
+	 * 
+	 * defaultStyle.addAttribute( StyleConstants.FontFamily, ((Font)
+	 * UIManager.get("TextPane.font")) .getFontName()); } else {
+	 * defaultStyle.addAttribute( StyleConstants.FontFamily,
+	 * fonts[i].getFontName()); }
+	 * 
+	 * defaultStyle.addAttribute(StyleConstants.FontSize, new
+	 * Integer(fonts[i].getFontSize()));
+	 * defaultStyle.addAttribute(StyleConstants.Italic, new
+	 * Boolean(fonts[i].isItalic()));
+	 * defaultStyle.addAttribute(StyleConstants.Bold, new
+	 * Boolean(fonts[i].isBold()));
+	 * defaultStyle.addAttribute(StyleConstants.Underline, new
+	 * Boolean(fonts[i].isUnderline()));
+	 * defaultStyle.addAttribute(StyleConstants.StrikeThrough, new
+	 * Boolean(fonts[i].isStrikeThrough())); break; } } } }
+	 * 
+	 * // ================== Tabellenspalten - Attribute //
+	 * ======================= vecCellEditors.clear(); vecCellRenderers.clear();
+	 * vecColTextAttributes.clear(); TextBlockAttributes colAttributes = null;
+	 * for (int i = 1;; i++) { JRBaseTextField element = (JRBaseTextField)
+	 * detail .getElementByKey("column" + i); if (element == null) { break; }
+	 * else { SimpleAttributeSet attributes = new SimpleAttributeSet();
+	 * attributes.addAttributes(defaultStyle.copyAttributes());
+	 * 
+	 * // Alignment if (element.getHorizontalAlignmentValue() ==
+	 * HorizontalAlignEnum.LEFT ) { StyleConstants.setAlignment(attributes,
+	 * StyleConstants.ALIGN_LEFT); } else if
+	 * (element.getHorizontalAlignmentValue() == HorizontalAlignEnum.JUSTIFIED)
+	 * { StyleConstants.setAlignment(attributes,
+	 * StyleConstants.ALIGN_JUSTIFIED); } else if
+	 * (element.getHorizontalAlignmentValue() == HorizontalAlignEnum.CENTER) {
+	 * StyleConstants.setAlignment(attributes, StyleConstants.ALIGN_CENTER); }
+	 * else if (element.getHorizontalAlignmentValue() ==
+	 * HorizontalAlignEnum.RIGHT) { StyleConstants.setAlignment(attributes,
+	 * StyleConstants.ALIGN_RIGHT);
+	 * 
+	 * // Color } StyleConstants .setForeground(attributes,
+	 * element.getForecolor()); StyleConstants .setBackground(attributes,
+	 * element.getBackcolor());
+	 * 
+	 * // Font String strFontName = element.getFontName(); if
+	 * (!isFontNameAvailable(strFontName)) { bThrowFontNotFoundException = true;
+	 * myLogger.warn(messages.format( "FontNotFoundException.FontName", new
+	 * Object[] { strFontName, element.getKey(), report.getName() }));
+	 * vecStrFontNamesNotFound.add(strFontName);
+	 * 
+	 * attributes.addAttribute(StyleConstants.FontFamily, ((Font)
+	 * UIManager.get("TextPane.font")) .getFontName()); } else {
+	 * attributes.addAttribute(StyleConstants.FontFamily, strFontName); }
+	 * 
+	 * attributes.addAttribute(StyleConstants.FontSize, new Integer(
+	 * element.getFontSize())); attributes.addAttribute(StyleConstants.Bold, new
+	 * Boolean( element.isBold()));
+	 * attributes.addAttribute(StyleConstants.Italic, new Boolean(
+	 * element.isItalic())); attributes.addAttribute(StyleConstants.Underline,
+	 * new Boolean( element.isUnderline()));
+	 * attributes.addAttribute(StyleConstants.StrikeThrough, new
+	 * Boolean(element.isStrikeThrough()));
+	 * 
+	 * boolean bEqual = false; for (int j = 0; j < vecAttributes.size(); j++) {
+	 * if (vecAttributes.get(j) .isEqual(attributes)) {
+	 * vecCellEditors.add(vecCellEditors.get(j));
+	 * vecCellRenderers.add(vecCellRenderers.get(j)); bEqual = true; break; } }
+	 * if (!bEqual) { vecAttributes.add(attributes);
+	 * setupNewCellEditor(attributes); vecCellRenderers.add(new
+	 * LpEditorCellRenderer(attributes)); }
+	 * 
+	 * colAttributes = new TextBlockAttributes(attributes); colAttributes.width
+	 * = element.getWidth(); colAttributes.isStyledText =
+	 * element.isStyledText(); vecColTextAttributes.add(colAttributes); }
+	 * 
+	 * showAlignmentItems(bEditable); }
+	 * 
+	 * // Eigenschaften des TextFeld mit key = "textblock" zum // Default -
+	 * Style fuer Fliesztexte hinzufuegen JRBaseTextField textblock =
+	 * (JRBaseTextField) detail .getElementByKey("textblock"); if (textblock !=
+	 * null) {
+	 * 
+	 * // Alignment if (textblock.getHorizontalAlignmentValue() ==
+	 * HorizontalAlignEnum.LEFT) { StyleConstants.setAlignment(defaultStyle,
+	 * StyleConstants.ALIGN_LEFT); } else if
+	 * (textblock.getHorizontalAlignmentValue() ==
+	 * HorizontalAlignEnum.JUSTIFIED) {
+	 * StyleConstants.setAlignment(defaultStyle,
+	 * StyleConstants.ALIGN_JUSTIFIED); } else if
+	 * (textblock.getHorizontalAlignmentValue() == HorizontalAlignEnum.CENTER) {
+	 * StyleConstants.setAlignment(defaultStyle, StyleConstants.ALIGN_CENTER); }
+	 * else if (textblock.getHorizontalAlignmentValue() ==
+	 * HorizontalAlignEnum.RIGHT) { StyleConstants.setAlignment(defaultStyle,
+	 * StyleConstants.ALIGN_RIGHT);
+	 * 
+	 * // Color } StyleConstants .setForeground(defaultStyle,
+	 * textblock.getForecolor()); StyleConstants .setBackground(defaultStyle,
+	 * textblock.getBackcolor());
+	 * 
+	 * // Font String strFontName = textblock.getFontName(); if
+	 * (!isFontNameAvailable(strFontName)) {
+	 * 
+	 * bThrowFontNotFoundException = true; myLogger.warn(messages.format(
+	 * "FontNotFoundException.FontName", new Object[] { strFontName,
+	 * textblock.getKey(), report.getName() }));
+	 * vecStrFontNamesNotFound.add(strFontName);
+	 * 
+	 * defaultStyle.addAttribute(StyleConstants.FontFamily, ((Font)
+	 * UIManager.get("TextPane.font")).getFontName()); } else {
+	 * defaultStyle.addAttribute(StyleConstants.FontFamily, strFontName); }
+	 * 
+	 * defaultStyle.addAttribute(StyleConstants.FontSize, new Integer(
+	 * textblock.getFontSize())); defaultStyle.addAttribute(StyleConstants.Bold,
+	 * new Boolean( textblock.isBold()));
+	 * defaultStyle.addAttribute(StyleConstants.Italic, new Boolean(
+	 * textblock.isItalic()));
+	 * defaultStyle.addAttribute(StyleConstants.Underline, new Boolean(
+	 * textblock.isUnderline()));
+	 * defaultStyle.addAttribute(StyleConstants.StrikeThrough, new
+	 * Boolean(textblock.isStrikeThrough()));
+	 * 
+	 * textPaneAttributes = new TextBlockAttributes(defaultStyle);
+	 * textPaneAttributes.isStyledText = textblock.isStyledText(); }
+	 * 
+	 * jTextPane.setLogicalStyle(defaultStyle); updateUIElements(defaultStyle,
+	 * false); undoManager.discardAllEdits(); jasperReportTemplate = report;
+	 * 
+	 * if (bThrowFontNotFoundException) { throw new FontNotFoundException(
+	 * messages.getString("FontNotFoundException.FontNotFound"),
+	 * vecStrFontNamesNotFound.toArray(new String[] {})); } }
+	 */
 
 	/**
 	 * Schaltet die Sichtbarkeit des eingebetteten Menues um.
@@ -2257,18 +2250,19 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 
 		// Alle Fonts bereitstellen
 		if (fontNames == null) {
-			asSystemFonts = GraphicsEnvironment
-					.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
+			asSystemFonts = GraphicsEnvironment.getLocalGraphicsEnvironment()
+					.getAvailableFontFamilyNames();
 		} else {
 			List<String> systemFonts = Arrays.asList(GraphicsEnvironment
-					.getLocalGraphicsEnvironment().getAvailableFontFamilyNames());
+					.getLocalGraphicsEnvironment()
+					.getAvailableFontFamilyNames());
 			// Filtern
 			List<String> matchedFonts = new ArrayList<String>();
-			for(String font : fontNames) {
-				if(bExactMatch && systemFonts.contains(font))
+			for (String font : fontNames) {
+				if (bExactMatch && systemFonts.contains(font))
 					matchedFonts.add(font);
 				else {
-					for(String systemFont : systemFonts) {
+					for (String systemFont : systemFonts) {
 						if (systemFont.toLowerCase().startsWith(
 								font.toLowerCase())) {
 							matchedFonts.add(systemFont);
@@ -2283,46 +2277,42 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 						messages.getString("FontNotFoundException.NoFonts"),
 						fontNames);
 			} else {
-				asSystemFonts = matchedFonts
-						.toArray(new String[0]);
+				asSystemFonts = matchedFonts.toArray(new String[0]);
 			}
 		}
 
-		//		ActionListener[] fontNameListeners = jComboBoxFontNames
-		//				.getActionListeners();
-		//		ActionListener[] fontSizeListeners = jComboBoxFontSizes
-		//				.getActionListeners();
-		//		if (fontNameListeners != null) {
-		//			for (int i = 0; i < fontNameListeners.length; i++)
-		//				jComboBoxFontNames.removeActionListener(fontNameListeners[i]);
-		//		}
-		//		if (fontSizeListeners != null) {
-		//			for (int i = 0; i < fontSizeListeners.length; i++)
-		//				jComboBoxFontSizes.removeActionListener(fontSizeListeners[i]);
-		//		}
+		// ActionListener[] fontNameListeners = jComboBoxFontNames
+		// .getActionListeners();
+		// ActionListener[] fontSizeListeners = jComboBoxFontSizes
+		// .getActionListeners();
+		// if (fontNameListeners != null) {
+		// for (int i = 0; i < fontNameListeners.length; i++)
+		// jComboBoxFontNames.removeActionListener(fontNameListeners[i]);
+		// }
+		// if (fontSizeListeners != null) {
+		// for (int i = 0; i < fontSizeListeners.length; i++)
+		// jComboBoxFontSizes.removeActionListener(fontSizeListeners[i]);
+		// }
 		//
-		//		jComboBoxFontNames.removeAllItems();
-		//		for (int i = 0; i < asAvailableFontNames.length; i++) {
-		//			if (asAvailableFontNames[i].compareTo("") != 0)
-		//				jComboBoxFontNames.addItem(asAvailableFontNames[i]);
-		//		}
+		// jComboBoxFontNames.removeAllItems();
+		// for (int i = 0; i < asAvailableFontNames.length; i++) {
+		// if (asAvailableFontNames[i].compareTo("") != 0)
+		// jComboBoxFontNames.addItem(asAvailableFontNames[i]);
+		// }
 
-		//		MutableAttributeSet attributes = jTextPane.getInputAttributes();
-		//		updateUIElements(attributes, false);
+		// MutableAttributeSet attributes = jTextPane.getInputAttributes();
+		// updateUIElements(attributes, false);
 
-		//		if (fontNameListeners != null) {
-		//			for (int i = 0; i < fontNameListeners.length; i++)
-		//				jComboBoxFontNames.addActionListener(fontNameListeners[i]);
-		//		}
-		//		if (fontSizeListeners != null) {
-		//			for (int i = 0; i < fontSizeListeners.length; i++)
-		//				jComboBoxFontSizes.addActionListener(fontSizeListeners[i]);
-		//		}
+		// if (fontNameListeners != null) {
+		// for (int i = 0; i < fontNameListeners.length; i++)
+		// jComboBoxFontNames.addActionListener(fontNameListeners[i]);
+		// }
+		// if (fontSizeListeners != null) {
+		// for (int i = 0; i < fontSizeListeners.length; i++)
+		// jComboBoxFontSizes.addActionListener(fontSizeListeners[i]);
+		// }
 
-		if (fontChooser != null)
-			fontChooser.setFonts(asAvailableFontNames);
-
-		//		jComboBoxFontNames = new JComboBox(asSystemFonts);
+		// jComboBoxFontNames = new JComboBox(asSystemFonts);
 
 		return asAvailableFontNames;
 	}
@@ -2342,8 +2332,7 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 	 * Liefert die Seitenbreite des editierbaren Bereichs.
 	 * 
 	 * @see #getTextPane
-	 * @param width
-	 *            Die Breite in Pixel.
+	 * @return die Seitenbreite des editierbaren Bereichs
 	 */
 	public int getPageWidth() {
 		return jTextPane.getPageFormat().width;
@@ -2559,8 +2548,8 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 	 * 
 	 */
 	public void saveFile(File file) throws FileNotFoundException {
-//		FileOutputStream stream = 
-//				new FileOutputStream(file);
+		// FileOutputStream stream =
+		// new FileOutputStream(file);
 		/*
 		 * try { generator.setPageMargin(jTextPane.getPageMargin());
 		 * generator.setPageSize(jTextPane.getPageFormat());
@@ -2644,8 +2633,7 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 								.getEndPosition();
 						return jTextPane.getText(start, end - start).length();
 					} else {
-						end = vecMarkersBefore.get(i + 1)
-								.getOffset() - 1;
+						end = vecMarkersBefore.get(i + 1).getOffset() - 1;
 					}
 				}
 			} catch (BadLocationException ex) {
@@ -2754,7 +2742,7 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 					currentCellEditor.setOverflow(true);
 				} else if (currentTable == null
 						|| (currentTable != null && !currentTable
-						.isPreparingEditor())) {
+								.isPreparingEditor())) {
 					jTextPane.addOverflowRange(currentTextBlockStart,
 							currentTextBlockEnd);
 				}
@@ -2792,8 +2780,7 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 				actionEditRedo.setEnabled(false);
 				int iCol = currentCellEditor.getEditingColumn();
 				if (iCol >= 0 && iCol < vecColTextAttributes.size()) {
-					currentTextBlockAttributes = vecColTextAttributes
-							.get(iCol);
+					currentTextBlockAttributes = vecColTextAttributes.get(iCol);
 					enableFontStyleItems(currentTextBlockAttributes.isStyledText);
 					currentTextBlockLength = -1;
 					updateBufferStatus(currentTextBlockAttributes, -1);
@@ -2860,6 +2847,13 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 
 		if (checkContentDiscardAllowed(messages
 				.getString("Dialog.OpenDocument"))) {
+
+			JFileChooser jFileChooser = new JFileChooser();
+			jFileChooser.addChoosableFileFilter(new LpFileFilter(
+					LpFileFilter.FILE_EXTENSION_JRXML, "Jasper XML"));
+			jFileChooser.addChoosableFileFilter(new LpFileFilter(
+					LpFileFilter.FILE_EXTENSION_JASPER, "Jasper Report"));
+
 			if (jFileChooser.showOpenDialog(LpEditor.this) == JFileChooser.APPROVE_OPTION) {
 				file = jFileChooser.getSelectedFile();
 				try {
@@ -2912,6 +2906,12 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 	protected boolean saveAs() {
 		File file;
 		boolean bSuccess = false;
+
+		JFileChooser jFileChooser = new JFileChooser();
+		jFileChooser.addChoosableFileFilter(new LpFileFilter(
+				LpFileFilter.FILE_EXTENSION_JRXML, "Jasper XML"));
+		jFileChooser.addChoosableFileFilter(new LpFileFilter(
+				LpFileFilter.FILE_EXTENSION_JASPER, "Jasper Report"));
 
 		if (jFileChooser.showSaveDialog(LpEditor.this) == JFileChooser.APPROVE_OPTION) {
 			file = jFileChooser.getSelectedFile();
@@ -3005,16 +3005,16 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 					messages.getString("Dialog.DocumentNotSaved"),
 					sDialogTitle, JOptionPane.YES_NO_CANCEL_OPTION,
 					JOptionPane.QUESTION_MESSAGE)) {
-					case JOptionPane.CLOSED_OPTION:
-					case JOptionPane.CANCEL_OPTION:
-						bAllowed = false;
-						break;
-					case JOptionPane.NO_OPTION:
-						bAllowed = true;
-						break;
-					case JOptionPane.YES_OPTION:
-						bAllowed = save();
-						break;
+			case JOptionPane.CLOSED_OPTION:
+			case JOptionPane.CANCEL_OPTION:
+				bAllowed = false;
+				break;
+			case JOptionPane.NO_OPTION:
+				bAllowed = true;
+				break;
+			case JOptionPane.YES_OPTION:
+				bAllowed = save();
+				break;
 			}
 		}
 
@@ -3107,7 +3107,7 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 		@Override
 		public int getNextVisualPositionFrom(JTextComponent text, int pos,
 				Position.Bias bias, int direction, Position.Bias[] biasRet)
-						throws BadLocationException {
+				throws BadLocationException {
 
 			int nextPos = super.getNextVisualPositionFrom(text, pos, bias,
 					direction, biasRet);
@@ -3118,8 +3118,7 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 					currentTextBlockLength = -1;
 					updateBufferStatus(textPaneAttributes, nextPos);
 					break;
-				} else if (nextPos == vecMarkersAfter.get(i)
-						.getOffset()) {
+				} else if (nextPos == vecMarkersAfter.get(i).getOffset()) {
 					nextPos = vecMarkersBefore.get(i).getOffset() - 1;
 					currentTextBlockLength = -1;
 					updateBufferStatus(textPaneAttributes, nextPos);
@@ -3178,8 +3177,7 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 				// und diese richtig setzten, damit sich die Marker nicht
 				// verschieben.
 				for (int i = 0; i < vecMarkersBefore.size(); i++) {
-					if (offset == vecMarkersBefore.get(i)
-							.getOffset()) {
+					if (offset == vecMarkersBefore.get(i).getOffset()) {
 						if (text.equals("\n")) {
 							super.insertString(fb, offset, text, attr);
 							bInserted = true;
@@ -3187,8 +3185,7 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 						} else {
 							return;
 						}
-					} else if (offset == vecMarkersAfter.get(i)
-							.getOffset()) {
+					} else if (offset == vecMarkersAfter.get(i).getOffset()) {
 						if (text.equals("\n")) {
 							super.insertString(fb, offset + 1, text, attr);
 							jTextPane.setCaretPosition(offset + 1);
@@ -3202,9 +3199,8 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 
 				defaultAttrib = textPaneAttributes.getStyleAttributes();
 			} else {
-				defaultAttrib = vecColTextAttributes
-						.get(currentTable.getEditingColumn())
-						.getStyleAttributes();
+				defaultAttrib = vecColTextAttributes.get(
+						currentTable.getEditingColumn()).getStyleAttributes();
 			}
 
 			if (attr != null && defaultAttrib.containsAttributes(attr)) {
@@ -3221,7 +3217,7 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 		@Override
 		public void replace(DocumentFilter.FilterBypass fb, int offset,
 				int length, String text, AttributeSet attr)
-						throws BadLocationException {
+				throws BadLocationException {
 			// System.out.println("in filter replace");
 
 			if (length == 0
@@ -3232,7 +3228,7 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 			}
 
 			// SP 922 Tabs unterbinden
-			text = text.replaceAll("\t", " ");
+			//text = text.replaceAll("\t", " ");
 
 			boolean bReplaced = false;
 
@@ -3250,8 +3246,7 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 				// und diese richtig setzen, damit sich die Marker nicht
 				// verschieben.
 				for (int i = 0; i < vecMarkersBefore.size(); i++) {
-					if (offset == vecMarkersBefore.get(i)
-							.getOffset()) {
+					if (offset == vecMarkersBefore.get(i).getOffset()) {
 						if (text.equals("\n")) {
 							super.replace(fb, offset, length, text, attr);
 							bReplaced = true;
@@ -3259,8 +3254,7 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 						} else {
 							return;
 						}
-					} else if (offset == vecMarkersAfter.get(i)
-							.getOffset()) {
+					} else if (offset == vecMarkersAfter.get(i).getOffset()) {
 						if (text.equals("\n")) {
 							super.replace(fb, offset + 1, length, text, attr);
 							jTextPane.setCaretPosition(offset + 1);
@@ -3275,8 +3269,9 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 			String pasteText = null;
 			if (true) { // (length == 0) {
 				/**
-				 * @todo currentTextBlockLength = 0 nach &ouml;ffnen des Editors ->
-				 *       l&auml;ngenberechnung falsch -> hier neu laden PJ 4778
+				 * @todo currentTextBlockLength = 0 nach &ouml;ffnen des Editors
+				 *       -> l&auml;ngenberechnung falsch -> hier neu laden PJ
+				 *       4778
 				 */
 				// pos bei getCurrentTextBlockLength??
 				if (currentTextBlockLength == 0)
@@ -3305,11 +3300,11 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 				// insertUpdate(). Mit length = -2 wird daher beim ersten
 				// Aufruf von updateBuffer() die Laenge nicht neu berechnet
 			}
-//			else {
-//				currentTextBlockLength = -2;
-//				// AD Replace bei selektiertem Block
-//				pasteText = text;
-//			}
+			// else {
+			// currentTextBlockLength = -2;
+			// // AD Replace bei selektiertem Block
+			// pasteText = text;
+			// }
 			if (!bReplaced) {
 				super.replace(fb, offset, length, pasteText, attr);
 			}
@@ -3336,8 +3331,8 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 					return;
 				}
 				// Entfernen mittels backspace genau nach dem \n
-				else if (offset == vecMarkersAfter.get(i)
-						.getOffset() && length == 1) {
+				else if (offset == vecMarkersAfter.get(i).getOffset()
+						&& length == 1) {
 					currentTextBlockLength = -1;
 					// System.out.println("filter removes " + (offset-1) + " - "
 					// + (offset+1));
@@ -3346,10 +3341,9 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 					return;
 				}
 				// Zu entfernender Bereich beinhaelt ein Tabelle
-				else if (offset <= vecMarkersBefore.get(i)
-						.getOffset()
-						&& offset + length >= vecMarkersAfter
-						.get(i).getOffset()) {
+				else if (offset <= vecMarkersBefore.get(i).getOffset()
+						&& offset + length >= vecMarkersAfter.get(i)
+								.getOffset()) {
 					// System.out.println("filter removes " + offset + " - " +
 					// (offset+length));
 					super.remove(fb, offset, length);
@@ -3402,7 +3396,7 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 	 * @version $Revision: 1.7 $
 	 */
 	protected class LpCompoundUndoManager extends UndoManager implements
-	UndoableEditListener {
+			UndoableEditListener {
 		/**
 		 * 
 		 */
@@ -3523,11 +3517,11 @@ public class LpEditor extends JPanel implements PropertyChangeListener {
 
 				requestFocusInWindow();
 
-				//				if (e.getButton() == e.BUTTON1) {
-				//					currentTextBlockLength = -1;
-				//					currentTextBlockAttributes = textPaneAttributes;
-				//					updateBufferStatus(textPaneAttributes, -1);
-				//				}
+				// if (e.getButton() == e.BUTTON1) {
+				// currentTextBlockLength = -1;
+				// currentTextBlockAttributes = textPaneAttributes;
+				// updateBufferStatus(textPaneAttributes, -1);
+				// }
 			}
 
 			if (e.getButton() == e.BUTTON3) {

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -31,6 +31,8 @@
  * Contact: developers@heliumv.com
  ******************************************************************************/
 package com.lp.client.angebotstkl;
+
+import gnu.trove.TPrimitiveHash;
 
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -63,6 +65,7 @@ import com.lp.client.frame.component.WrapperNumberField;
 import com.lp.client.frame.component.WrapperTextField;
 import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.pc.LPMain;
+import com.lp.server.angebotstkl.service.AgstklpositionDto;
 import com.lp.server.angebotstkl.service.AngebotstklFac;
 import com.lp.server.angebotstkl.service.EinkaufsangebotDto;
 import com.lp.server.angebotstkl.service.EinkaufsangebotpositionDto;
@@ -202,8 +205,20 @@ public class PanelEinkaufsangebotpositionen extends PanelBasis {
 	protected void eventActionDelete(ActionEvent e,
 			boolean bAdministrateLockKeyI, boolean bNeedNoDeleteI)
 			throws Throwable {
-		DelegateFactory.getInstance().getAngebotstklDelegate()
-				.removeEinkaufsangebotposition(einkaufsangebotpositionDto);
+		
+		Object[] o = internalFrameStueckliste.getTabbedPaneEinkaufsangebot().getPanelQueryEinkaufsangebotpositionen()
+				.getSelectedIds();
+		if (o != null) {
+			for (int i = 0; i < o.length; i++) {
+				EinkaufsangebotpositionDto toRemove = DelegateFactory.getInstance()
+						.getAngebotstklDelegate()
+						.einkaufsangebotpositionFindByPrimaryKey((Integer) o[i]);
+				DelegateFactory.getInstance().getAngebotstklDelegate()
+						.removeEinkaufsangebotposition(toRemove);
+
+			}
+		}
+
 		this.setKeyWhenDetailPanel(null);
 		super.eventActionDelete(e, false, false);
 	}

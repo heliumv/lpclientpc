@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -32,24 +32,19 @@
  ******************************************************************************/
 package com.lp.client.system;
 
-import java.util.Calendar;
-
 import com.lp.client.frame.component.InternalFrame;
 import com.lp.client.frame.component.PanelBasis;
-import com.lp.client.frame.component.PanelQuery;
 import com.lp.client.frame.component.PanelQueryFLR;
 import com.lp.client.frame.component.PanelQueryFLROrtAnlegen;
 import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.pc.LPMain;
 import com.lp.client.util.fastlanereader.gui.QueryType;
-import com.lp.server.artikel.service.ArtikelFac;
 import com.lp.server.benutzer.service.RechteFac;
 import com.lp.server.system.service.DokumenteFac;
 import com.lp.server.system.service.MandantFac;
 import com.lp.server.system.service.MediaFac;
 import com.lp.server.system.service.PanelFac;
 import com.lp.server.system.service.ParameterFac;
-import com.lp.server.system.service.ParametermandantDto;
 import com.lp.server.system.service.SystemFac;
 import com.lp.server.system.service.VersandFac;
 import com.lp.server.util.Facade;
@@ -684,6 +679,19 @@ public class SystemFilterFactory {
 		return kriterien;
 	}
 
+	public FilterKriterium[] createFKParametermandantgueltigab(String parameterCNr) throws Throwable {
+		FilterKriterium[] kriterien =  new FilterKriterium[1];
+
+			FilterKriterium krit1 = new FilterKriterium("id_comp.c_nr",
+					true, "'"
+							+ parameterCNr+ "'", FilterKriterium.OPERATOR_EQUAL, false);
+
+			kriterien[0] = krit1;
+		
+
+		return kriterien;
+	}
+	
 	/**
 	 * Direktes Filterkriterium fuer "%id_comp.c_nr%".
 	 * 
@@ -966,5 +974,4 @@ public class SystemFilterFactory {
 
 		return plPartner;
 	}
-
 }

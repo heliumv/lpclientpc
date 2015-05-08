@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -46,9 +46,11 @@ import com.lp.client.frame.ExceptionLP;
 import com.lp.client.pc.LPMain;
 import com.lp.server.artikel.service.ArtikelDto;
 import com.lp.server.stueckliste.service.FertigungsgruppeDto;
+import com.lp.server.stueckliste.service.IStklImportResult;
 import com.lp.server.stueckliste.service.KommentarimportDto;
 import com.lp.server.stueckliste.service.MontageartDto;
 import com.lp.server.stueckliste.service.PosersatzDto;
+import com.lp.server.stueckliste.service.StklagerentnahmeDto;
 import com.lp.server.stueckliste.service.StrukturierterImportDto;
 import com.lp.server.stueckliste.service.StrukturierterImportSiemensNXDto;
 import com.lp.server.stueckliste.service.StuecklisteDto;
@@ -56,17 +58,53 @@ import com.lp.server.stueckliste.service.StuecklisteFac;
 import com.lp.server.stueckliste.service.StuecklistearbeitsplanDto;
 import com.lp.server.stueckliste.service.StuecklisteeigenschaftDto;
 import com.lp.server.stueckliste.service.StuecklisteeigenschaftartDto;
+import com.lp.server.stueckliste.service.StuecklisteimportFac;
 import com.lp.server.stueckliste.service.StuecklistepositionDto;
+import com.lp.server.system.service.IntelligenterStklImportFac;
+import com.lp.server.system.service.TheClientDto;
+import com.lp.service.StklImportSpezifikation;
 
 @SuppressWarnings("static-access")
 public class StuecklisteDelegate extends Delegate {
 	private Context context;
 	private StuecklisteFac stuecklisteFac;
+	private StuecklisteimportFac stuecklisteimportFac;
+	private IntelligenterStklImportFac iStklImportFac;
 
 	public StuecklisteDelegate() throws Exception {
 		context = new InitialContext();
 		stuecklisteFac = (StuecklisteFac) context
 				.lookup("lpserver/StuecklisteFacBean/remote");
+		stuecklisteimportFac = (StuecklisteimportFac) context
+				.lookup("lpserver/StuecklisteimportFacBean/remote");
+		iStklImportFac = (IntelligenterStklImportFac) context
+				.lookup("lpserver/IntelligenterStklImportFacBean/remote");
+	}
+
+	public String pruefeUndImportiereArbeitsplanXLS(byte[] xlsDatei,
+			String einheitStueckRuestZeit, boolean bImportierenWennKeinFehler)
+			throws ExceptionLP {
+		try {
+			return stuecklisteimportFac.pruefeUndImportiereArbeitsplanXLS(
+					xlsDatei, einheitStueckRuestZeit,
+					bImportierenWennKeinFehler, LPMain.getInstance()
+							.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
+
+	public String pruefeUndImportiereMaterialXLS(byte[] xlsDatei,
+			boolean bImportierenWennKeinFehler) throws ExceptionLP {
+		try {
+			return stuecklisteimportFac.pruefeUndImportiereMaterialXLS(
+					xlsDatei, bImportierenWennKeinFehler, LPMain.getInstance()
+							.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
 	}
 
 	public Integer createMontageart(MontageartDto montageartDto)
@@ -181,7 +219,7 @@ public class StuecklisteDelegate extends Delegate {
 		}
 	}
 
-	public ArrayList importiereStuecklistenstruktur(
+	public ArrayList<?> importiereStuecklistenstruktur(
 			ArrayList<StrukturierterImportDto> struktur,
 			boolean bAnfragevorschlagErzeugen,
 			java.sql.Timestamp tLieferterminfuerAnfrageVorschlag)
@@ -866,4 +904,160 @@ public class StuecklisteDelegate extends Delegate {
 		}
 	}
 
+	/**
+	 * Sucht nach Artikeln f&uuml;r den intelligenten Stkl. Import
+	 * 
+	 * @param spez
+	 *            die Importspezifikation
+	 * @param importLines
+	 *            die Zeilen der Importdatei als Rohdaten, also nicht
+	 *            umformatiert
+	 * @param rowIndex
+	 *            = die Nummer der Zeile in der Datei, welche
+	 *            <code>importLines.get(0)</code> entspricht.
+	 * @return eine Liste von {@link IStklImportResult}
+	 * @throws ExceptionLP
+	 */
+	public List<IStklImportResult> searchForImportMatches(
+			StklImportSpezifikation spez, List<String> importLines, int rowIndex)
+			throws ExceptionLP {
+		try {
+			return iStklImportFac.searchForImportMatches(spez, importLines,
+					rowIndex, LPMain.getTheClient());
+		} catch (Throwable t) {
+			handleThrowable(t);
+			return new ArrayList<IStklImportResult>();
+		}
+	}
+
+	/**
+	 * Importiert die selektierten Artikel in den <code>results</code> in die
+	 * Stueckliste.<br>
+	 * Hat ein {@link IStklImportResult} keinen Artikel gesetzt (
+	 * <code>{@link IStklImportResult#getSelectedArtikelDto()} == null</code>),
+	 * wird ein Handartikel angelegt.
+	 * 
+	 * @param spez
+	 *            die Importspezifikation (<code>spez.getStklIId()</code> darf
+	 *            nicht null sein!)
+	 * @param results
+	 *            Liste der Ergebnisse der clientseitigen Artikelzuordnung
+	 * @param updateArtikel true, wenn der Artikelstamm aktualisiert werden
+	 * soll
+	 * @return die Anzahl der neu angelegten Positionen
+	 * @throws ExceptionLP
+	 */
+	public int importiereStklImportResults(StklImportSpezifikation spez,
+			List<IStklImportResult> results, Boolean updateArtikel) throws ExceptionLP {
+		try {
+			return iStklImportFac.importiereImportResultsAlsBelegpositionen(
+					spez, results, updateArtikel, LPMain.getTheClient());
+		} catch (Throwable t) {
+			handleThrowable(t);
+		}
+		return 0;
+	}
+
+	public void createStklImportSpez(StklImportSpezifikation spez)
+			throws ExceptionLP {
+		try {
+			iStklImportFac.createStklImportSpezifikation(spez);
+		} catch (Throwable t) {
+			handleThrowable(t);
+		}
+	}
+
+	public void updateStklImportSpez(StklImportSpezifikation spez)
+			throws ExceptionLP {
+		try {
+			iStklImportFac.updateStklImportSpezifikation(spez);
+		} catch (Throwable t) {
+			handleThrowable(t);
+		}
+	}
+
+	public void removeStklImportSpez(StklImportSpezifikation spez)
+			throws ExceptionLP {
+		try {
+			iStklImportFac.removeStklImportSpezifikation(spez);
+		} catch (Throwable t) {
+			handleThrowable(t);
+		}
+	}
+
+	public Map<String, StklImportSpezifikation> stklImportSpezFindAll(int stklTyp, TheClientDto theClientDto)
+			throws ExceptionLP {
+		try {
+			return iStklImportFac.stklImportSpezifikationenFindAll(stklTyp, theClientDto);
+		} catch (Throwable t) {
+			handleThrowable(t);
+		}
+		return null;
+	}
+
+	public void importiereStuecklistenINFRA(
+			HashMap<String, HashMap<String, byte[]>> dateien)
+			throws ExceptionLP {
+		try {
+			stuecklisteFac.importiereStuecklistenINFRA(dateien,
+					LPMain.getTheClient());
+		} catch (Throwable t) {
+			handleThrowable(t);
+		}
+	}
+
+	public void removeStklagerentnahme(StklagerentnahmeDto stklagerentnahmeDto)
+			throws ExceptionLP {
+		try {
+			stuecklisteFac.removeStklagerentnahme(stklagerentnahmeDto,
+					LPMain.getTheClient());
+		} catch (Throwable t) {
+			handleThrowable(t);
+		}
+	}
+
+	public StklagerentnahmeDto updateStklagerentnahme(
+			StklagerentnahmeDto stklagerentnahmeDto) throws ExceptionLP {
+		try {
+			if (stklagerentnahmeDto.getIId() == null) {
+				return stuecklisteFac.createStklagerentnahme(
+						stklagerentnahmeDto, LPMain.getTheClient());
+			} else {
+				return stuecklisteFac.updateStklagerentnahme(
+						stklagerentnahmeDto, LPMain.getTheClient());
+			}
+		} catch (Throwable t) {
+			handleThrowable(t);
+			return null;
+		}
+	}
+
+	public StklagerentnahmeDto stklagerentnahmeFindByPrimaryKey(Integer iId)
+			throws ExceptionLP {
+		try {
+			return stuecklisteFac.stklagerentnahmeFindByPrimaryKey(iId);
+		} catch (Throwable t) {
+			handleThrowable(t);
+			return null;
+		}
+	}
+
+	public void vertauscheStklagerentnahme(Integer iiDLagerentnahme1,
+			Integer iIdLagerentnahme2) throws ExceptionLP {
+		try {
+			stuecklisteFac.vertauscheStklagerentnahme(iiDLagerentnahme1,
+					iIdLagerentnahme2);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+	}
+
+	public void toggleFreigabe(Integer stuecklisteIId) throws ExceptionLP {
+		try {
+			stuecklisteFac
+					.toggleFreigabe(stuecklisteIId, LPMain.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+	}
 }

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -46,9 +46,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.EventObject;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 
 import javax.swing.BorderFactory;
 import javax.swing.JComponent;
@@ -192,6 +192,7 @@ public abstract class PanelZahlung extends PanelBasis {
 	protected WrapperNumberField wnfBetragUST = new WrapperNumberField();
 	protected WrapperNumberField wtnfAuszug = new WrapperNumberField();
 	protected WrapperCheckBox wcbErledigt = new WrapperCheckBox();
+	protected WrapperCheckBox wcbErledigtGutschrift = new WrapperCheckBox();
 	protected WrapperNumberField wnfBetragSkonto1 = new WrapperNumberField();
 	protected WrapperNumberField wnfBetragSkonto2 = new WrapperNumberField();
 	protected WrapperButton wbuSkonto1uebernehmen = new WrapperButton();
@@ -294,6 +295,9 @@ public abstract class PanelZahlung extends PanelBasis {
 		wbuBankverbindung.setText(LPMain
 				.getTextRespectUISPr("button.bankverbindung.tooltip"));
 		wcbErledigt.setText(LPMain.getTextRespectUISPr("label.erledigt"));
+		// wcbErledigtGutschrift.setText(LPMain.getTextRespectUISPr("label.gutschrifterledigt"));
+		initCheckboxGutschriftErledigt();
+		wcbErledigtGutschrift.setVisible(false);
 		wlaKurs.setText(LPMain.getTextRespectUISPr("label.kurs"));
 		wnfKurs.setFractionDigits(LocaleFac.ANZAHL_NACHKOMMASTELLEN_WECHSELKURS);
 		wnfKurs.setMaximumIntegerDigits(LocaleFac.ANZAHL_VORKOMMASTELLEN_WECHSELKURS);
@@ -302,15 +306,14 @@ public abstract class PanelZahlung extends PanelBasis {
 		wtfBankverbindungNummer.setMandatoryField(true);
 		wnfBetrag.setMandatoryFieldDB(true);
 		wnfBetrag.setDependenceField(true);
-		wnfBetrag.addFocusListener(new PanelZahlung_focusAdapter(this));
 		wnfBetrag.addKeyListener(new KeyAdapter() {
 			@Override
 			public void keyReleased(KeyEvent e) {
-//				if (e.getKeyCode() == KeyEvent.VK_ENTER)
-					try {
-						focusLostWnfBetrag();
-					} catch (Throwable e1) {
-					}
+				// if (e.getKeyCode() == KeyEvent.VK_ENTER)
+				try {
+					focusLostWnfBetrag();
+				} catch (Throwable e1) {
+				}
 			}
 		});
 		wdfDatum.getDisplay().addFocusListener(
@@ -436,8 +439,7 @@ public abstract class PanelZahlung extends PanelBasis {
 		wlaGesUST.setMinimumSize(new Dimension(30, Defaults.getInstance()
 				.getControlHeight()));
 		wbuKassenbuch.setText(LPMain.getTextRespectUISPr("finanz.kassenbuch"));
-		wbuGutschrift
-				.setText(LPMain.getTextRespectUISPr("rechnung.gutschrift"));
+		initializeGutschriftButton();
 		wbuVorauszahlung.setText(LPMain
 				.getTextRespectUISPr("rech.zahlung.vorauszahlung"));
 
@@ -476,132 +478,174 @@ public abstract class PanelZahlung extends PanelBasis {
 
 		wtfBankverbindungBezeichnung.setActivatable(false);
 		wtfBankverbindungBezeichnung.setColumnsMax(80);
-		
-		jPanelWorkingOn.setLayout(new MigLayout("wrap 7, hidemode 3", "[25%][20%][5%][10%][20%][10%][10%]"));
-		this.add(panelButtonAction, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.NORTHWEST, GridBagConstraints.NONE, new Insets(0, 0, 0, 0), 0, 0));
-		this.add(jPanelWorkingOn, new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(0, 0, 0, 0), 0, 0));
-		this.add(getPanelStatusbar(), new GridBagConstraints(0, 2, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(0, 0, 0, 0), 0, 0));
 
-		jPanelWorkingOn.add(wlaZahlungsziel, "growx");
-		jPanelWorkingOn.add(wtfZahlungsziel, "growx, span 3");
-		jPanelWorkingOn.add(wdfZieldatum, "growx, wrap");
-		
-		jPanelWorkingOn.add(wlaSkonto1, "growx");
-		jPanelWorkingOn.add(wnfSkontoProzent1, "growx");
-		jPanelWorkingOn.add(wlaProzent1, "growx");
-		jPanelWorkingOn.add(wlaBis1, "growx");
-		jPanelWorkingOn.add(wdfSkonto1, "growx");
-		jPanelWorkingOn.add(wnfBetragSkonto1, "growx");
-		jPanelWorkingOn.add(wbuSkonto1uebernehmen, "growx, wrap");
-		
-		jPanelWorkingOn.add(wlaSkonto2, "growx");
-		jPanelWorkingOn.add(wnfSkontoProzent2, "growx");
-		jPanelWorkingOn.add(wlaProzent2, "growx");
-		jPanelWorkingOn.add(wlaBis2, "growx");
-		jPanelWorkingOn.add(wdfSkonto2, "growx");
-		jPanelWorkingOn.add(wnfBetragSkonto2, "growx");
-		jPanelWorkingOn.add(wbuSkonto2uebernehmen, "growx, wrap");
-		
-		jPanelWorkingOn.add(wlaDatum, "growx");
-		jPanelWorkingOn.add(wdfDatum, "growx");
-		jPanelWorkingOn.add(wlaZahlungsart, "growx, span 2");
-		jPanelWorkingOn.add(wcoZahlungsart, "growx, span");
-		
-		jPanelWorkingOn.add(wbuBankverbindung, "growx");
-		jPanelWorkingOn.add(wtfBankverbindungNummer, "growx");
-		jPanelWorkingOn.add(wtfBankverbindungBezeichnung, "growx, span");
-		
-		jPanelWorkingOn.add(wlaAuszug, "growx");
-		jPanelWorkingOn.add(wtnfAuszug, "growx, wrap");
-		
-		jPanelWorkingOn.add(wbuKassenbuch, "growx");
-		jPanelWorkingOn.add(wtfKassenbuch, "growx, wrap");
-		
-		jPanelWorkingOn.add(wbuGutschrift, "growx");
-		jPanelWorkingOn.add(wtfGutschrift, "growx, wrap");
-		
-		jPanelWorkingOn.add(wbuEingangsrechnung, "growx");
-		jPanelWorkingOn.add(wtfEingangsrechnung, "growx, wrap");
-		
-		jPanelWorkingOn.add(wbuVorauszahlung, "growx");
-		jPanelWorkingOn.add(wtfVorauszahlung, "growx, wrap");
-		
-		jPanelWorkingOn.add(wlaRechnung, "growx");
-		jPanelWorkingOn.add(wtfRechnung, "growx, wrap");
-		
-		jPanelWorkingOn.add(wlaWert, "growx");
-		jPanelWorkingOn.add(wnfWert, "growx");
-		jPanelWorkingOn.add(wlaWaehrung7, "growx");
-		jPanelWorkingOn.add(wlaWertUST, "growx");
-		jPanelWorkingOn.add(wnfWertUST, "growx");
-		jPanelWorkingOn.add(wlaWaehrung8, "growx, wrap");
-		
-		jPanelWorkingOn.add(wlaAnzahlungen, "growx");
-		jPanelWorkingOn.add(wnfAnzahlungen, "growx");
-		jPanelWorkingOn.add(wlaWaehrungAnz, "growx");
-		jPanelWorkingOn.add(wlaAnzahlungenUST, "growx");
-		jPanelWorkingOn.add(wnfAnzahlungenUST, "growx");
-		jPanelWorkingOn.add(wlaWaehrungAnzUst, "growx, wrap");
-		
-		jPanelWorkingOn.add(wlaBereitsBezahlt, "growx");
-		jPanelWorkingOn.add(wnfBereitsBezahlt, "growx");
-		jPanelWorkingOn.add(wlaWaehrung5, "growx");
-		jPanelWorkingOn.add(wlaBereitsBezahltMwst, "growx");
-		jPanelWorkingOn.add(wnfBereitsBezahltMwst, "growx");
-		jPanelWorkingOn.add(wlaWaehrung6, "growx, wrap");
-		
-		jPanelWorkingOn.add(wlaBetrag, "growx");
-		jPanelWorkingOn.add(wnfBetrag, "growx");
-		jPanelWorkingOn.add(wlaWaehrung1, "growx");
-		jPanelWorkingOn.add(wlaUST, "growx");
-		jPanelWorkingOn.add(wnfBetragUST, "growx");
-		jPanelWorkingOn.add(wlaWaehrung2, "growx, wrap");
-		
-		jPanelWorkingOn.add(wlaOffen, "growx");
-		jPanelWorkingOn.add(wnfOffen, "growx");
-		jPanelWorkingOn.add(wlaWaehrung3, "growx");
-		jPanelWorkingOn.add(wlaUST1, "growx");
-		jPanelWorkingOn.add(wnfOffenUST, "growx");
-		jPanelWorkingOn.add(wlaWaehrung4, "growx, wrap");
-		
-		jPanelWorkingOn.add(wlaGesOffen, "growx");
-		jPanelWorkingOn.add(wnfGesOffen, "growx");
-		jPanelWorkingOn.add(wlaWaehrung9, "growx");
-		jPanelWorkingOn.add(wlaGesUST, "growx");
-		jPanelWorkingOn.add(wnfGesOffenUST, "growx");
-		jPanelWorkingOn.add(wlaWaehrung10, "growx, wrap");
-		
-		jPanelWorkingOn.add(wcbErledigt, "skip, growx");
-		jPanelWorkingOn.add(wlaKurs, "skip, growx");
-		jPanelWorkingOn.add(wnfKurs, "growx, wrap");
-		
+		jPanelWorkingOn
+				.setLayout(new MigLayout("wrap 7, hidemode 3",
+						"[25%,fill][20%,fill][5%,fill][10%,fill][20%,fill][10%,fill][10%,fill]"));
+		this.add(panelButtonAction, new GridBagConstraints(0, 0, 1, 1, 0.0,
+				0.0, GridBagConstraints.NORTHWEST, GridBagConstraints.NONE,
+				new Insets(0, 0, 0, 0), 0, 0));
+		this.add(jPanelWorkingOn, new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0,
+				GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(
+						0, 0, 0, 0), 0, 0));
+		this.add(getPanelStatusbar(), new GridBagConstraints(0, 2, 1, 1, 1.0,
+				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
+				new Insets(0, 0, 0, 0), 0, 0));
+
+		jPanelWorkingOn.add(wlaZahlungsziel);
+		jPanelWorkingOn.add(wtfZahlungsziel, "span 3");
+		jPanelWorkingOn.add(wdfZieldatum, "wrap");
+
+		jPanelWorkingOn.add(wlaSkonto1);
+		jPanelWorkingOn.add(wnfSkontoProzent1);
+		jPanelWorkingOn.add(wlaProzent1);
+		jPanelWorkingOn.add(wlaBis1);
+		jPanelWorkingOn.add(wdfSkonto1);
+		jPanelWorkingOn.add(wnfBetragSkonto1);
+		jPanelWorkingOn.add(wbuSkonto1uebernehmen, "wrap");
+
+		jPanelWorkingOn.add(wlaSkonto2);
+		jPanelWorkingOn.add(wnfSkontoProzent2);
+		jPanelWorkingOn.add(wlaProzent2);
+		jPanelWorkingOn.add(wlaBis2);
+		jPanelWorkingOn.add(wdfSkonto2);
+		jPanelWorkingOn.add(wnfBetragSkonto2);
+		jPanelWorkingOn.add(wbuSkonto2uebernehmen, "wrap");
+
+		jPanelWorkingOn.add(wlaDatum);
+		jPanelWorkingOn.add(wdfDatum);
+		jPanelWorkingOn.add(wlaZahlungsart, "span 2");
+		jPanelWorkingOn.add(wcoZahlungsart, "span");
+
+		jPanelWorkingOn.add(wbuBankverbindung);
+		jPanelWorkingOn.add(wtfBankverbindungNummer);
+		jPanelWorkingOn.add(wtfBankverbindungBezeichnung, "span");
+
+		jPanelWorkingOn.add(wlaAuszug);
+		jPanelWorkingOn.add(wtnfAuszug, "wrap");
+
+		jPanelWorkingOn.add(wbuKassenbuch);
+		jPanelWorkingOn.add(wtfKassenbuch, "wrap");
+
+		jPanelWorkingOn.add(wbuGutschrift);
+		jPanelWorkingOn.add(wtfGutschrift, "wrap");
+
+		jPanelWorkingOn.add(wbuEingangsrechnung);
+		jPanelWorkingOn.add(wtfEingangsrechnung, "wrap");
+
+		jPanelWorkingOn.add(wbuVorauszahlung);
+		jPanelWorkingOn.add(wtfVorauszahlung, "wrap");
+
+		jPanelWorkingOn.add(wlaRechnung);
+		jPanelWorkingOn.add(wtfRechnung, "wrap");
+
+		jPanelWorkingOn.add(wlaWert);
+		jPanelWorkingOn.add(wnfWert);
+		jPanelWorkingOn.add(wlaWaehrung7);
+		jPanelWorkingOn.add(wlaWertUST);
+		jPanelWorkingOn.add(wnfWertUST);
+		jPanelWorkingOn.add(wlaWaehrung8, "wrap");
+
+		jPanelWorkingOn.add(wlaAnzahlungen);
+		jPanelWorkingOn.add(wnfAnzahlungen);
+		jPanelWorkingOn.add(wlaWaehrungAnz);
+		jPanelWorkingOn.add(wlaAnzahlungenUST);
+		jPanelWorkingOn.add(wnfAnzahlungenUST);
+		jPanelWorkingOn.add(wlaWaehrungAnzUst, "wrap");
+
+		jPanelWorkingOn.add(wlaBereitsBezahlt);
+		jPanelWorkingOn.add(wnfBereitsBezahlt);
+		jPanelWorkingOn.add(wlaWaehrung5);
+		jPanelWorkingOn.add(wlaBereitsBezahltMwst);
+		jPanelWorkingOn.add(wnfBereitsBezahltMwst);
+		jPanelWorkingOn.add(wlaWaehrung6, "wrap");
+
+		jPanelWorkingOn.add(wlaBetrag);
+		jPanelWorkingOn.add(wnfBetrag);
+		jPanelWorkingOn.add(wlaWaehrung1);
+		jPanelWorkingOn.add(wlaUST);
+		jPanelWorkingOn.add(wnfBetragUST);
+		jPanelWorkingOn.add(wlaWaehrung2, "wrap");
+
+		jPanelWorkingOn.add(wlaOffen);
+		jPanelWorkingOn.add(wnfOffen);
+		jPanelWorkingOn.add(wlaWaehrung3);
+		jPanelWorkingOn.add(wlaUST1);
+		jPanelWorkingOn.add(wnfOffenUST);
+		jPanelWorkingOn.add(wlaWaehrung4, "wrap");
+
+		jPanelWorkingOn.add(wlaGesOffen);
+		jPanelWorkingOn.add(wnfGesOffen);
+		jPanelWorkingOn.add(wlaWaehrung9);
+		jPanelWorkingOn.add(wlaGesUST);
+		jPanelWorkingOn.add(wnfGesOffenUST);
+		jPanelWorkingOn.add(wlaWaehrung10, "wrap");
+
+		jPanelWorkingOn.add(wcbErledigt, "skip");
+		jPanelWorkingOn.add(wlaKurs, "skip");
+		jPanelWorkingOn.add(wnfKurs, "wrap");
+
+		jPanelWorkingOn.add(wcbErledigtGutschrift, "skip");
+
+	}
+
+	protected void initCheckboxGutschriftErledigt() {
+		wcbErledigtGutschrift.setText(LPMain
+				.getTextRespectUISPr("label.gutschrifterledigt"));
 	}
 
 	/**
 	 * Befuellen der Comboboxen. Befuellung erfolgt nur beim ersten Aufruf
 	 * 
-	 * @throws ExceptionForLPClients
 	 * @throws Throwable
 	 */
 	private void initPanel() throws Throwable {
 		zahlungsarten = DelegateFactory.getInstance()
 				.getRechnungServiceDelegate().getAllZahlungsarten();
+		initZahlungsarten();
+		// Map<Object, Object> m = new LinkedHashMap<Object,
+		// Object>(zahlungsarten);
+		//
+		// if (tabbedPane instanceof TabbedPaneGutschrift) {
+		// m.remove(RechnungFac.ZAHLUNGSART_GEGENVERRECHNUNG);
+		// m.remove(RechnungFac.ZAHLUNGSART_VORAUSZAHLUNG);
+		// m.remove(RechnungFac.ZAHLUNGSART_GUTSCHRIFT) ;
+		// }
+		// if (!DelegateFactory
+		// .getInstance()
+		// .getMandantDelegate()
+		// .darfAnwenderAufModulZugreifen(
+		// LocaleFac.BELEGART_FINANZBUCHHALTUNG)) {
+		// m.remove(RechnungFac.ZAHLUNGSART_VORAUSZAHLUNG);
+		// }
+		//
+		// this.wcoZahlungsart.setMap(m);
+	}
 
-		Map<Object, Object> m = new TreeMap<Object, Object>(zahlungsarten);
-		
+	private void initZahlungsarten() throws Throwable {
+		Map<Object, Object> m = new LinkedHashMap<Object, Object>(zahlungsarten);
+
 		if (tabbedPane instanceof TabbedPaneGutschrift) {
 			m.remove(RechnungFac.ZAHLUNGSART_GEGENVERRECHNUNG);
 			m.remove(RechnungFac.ZAHLUNGSART_VORAUSZAHLUNG);
+			m.remove(RechnungFac.ZAHLUNGSART_GUTSCHRIFT);
 		}
+
 		if (!DelegateFactory
 				.getInstance()
 				.getMandantDelegate()
 				.darfAnwenderAufModulZugreifen(
 						LocaleFac.BELEGART_FINANZBUCHHALTUNG)) {
 			m.remove(RechnungFac.ZAHLUNGSART_VORAUSZAHLUNG);
+			// wg. SP2897 wieder auskommentiert
+			// m.remove(RechnungFac.ZAHLUNGSART_BAR);
 		}
 
-		this.wcoZahlungsart.setMap(m);
+		if (!isGutschriftErlaubt()) {
+			m.remove(RechnungFac.ZAHLUNGSART_GUTSCHRIFT);
+		}
+
+		wcoZahlungsart.setMap(m);
 	}
 
 	public void eventActionNew(EventObject e, boolean bChangeKeyLockMeI,
@@ -614,24 +658,25 @@ public abstract class PanelZahlung extends PanelBasis {
 	}
 
 	private void setDefaults() throws Throwable {
-		// Rechnungswert
-		Map<Object, Object> m = new TreeMap<Object,Object>(zahlungsarten);
-		
-		if (tabbedPane instanceof TabbedPaneGutschrift) {
-			m.remove(RechnungFac.ZAHLUNGSART_GEGENVERRECHNUNG);
-			m.remove(RechnungFac.ZAHLUNGSART_VORAUSZAHLUNG);
-		}
-		if (!DelegateFactory
-				.getInstance()
-				.getMandantDelegate()
-				.darfAnwenderAufModulZugreifen(
-						LocaleFac.BELEGART_FINANZBUCHHALTUNG)) {
-			m.remove(RechnungFac.ZAHLUNGSART_VORAUSZAHLUNG);
-		}
-		if(!isGutschriftErlaubt()) {
-			m.remove(RechnungFac.ZAHLUNGSART_GUTSCHRIFT);
-		}
-		this.wcoZahlungsart.setMap(m);
+		initZahlungsarten();
+		// Map<Object, Object> m = new TreeMap<Object,Object>(zahlungsarten);
+		//
+		// if (tabbedPane instanceof TabbedPaneGutschrift) {
+		// m.remove(RechnungFac.ZAHLUNGSART_GEGENVERRECHNUNG);
+		// m.remove(RechnungFac.ZAHLUNGSART_VORAUSZAHLUNG);
+		// }
+		// if (!DelegateFactory
+		// .getInstance()
+		// .getMandantDelegate()
+		// .darfAnwenderAufModulZugreifen(
+		// LocaleFac.BELEGART_FINANZBUCHHALTUNG)) {
+		// m.remove(RechnungFac.ZAHLUNGSART_VORAUSZAHLUNG);
+		// m.remove(RechnungFac.ZAHLUNGSART_BAR);
+		// }
+		// if(!isGutschriftErlaubt()) {
+		// m.remove(RechnungFac.ZAHLUNGSART_GUTSCHRIFT);
+		// }
+		// this.wcoZahlungsart.setMap(m);
 
 		wnfWert.setBigDecimal(getWert());
 		wnfWertUST.setBigDecimal(getWertUst());
@@ -653,7 +698,8 @@ public abstract class PanelZahlung extends PanelBasis {
 		wlaWaehrungAnz.setText(getWaehrung());
 		wlaWaehrungAnzUst.setText(getWaehrung());
 
-		if (getZahlungszielIId() != null) {
+		Integer zahlungszielIId = getZahlungszielIId();
+		if (zahlungszielIId != null) {
 			zahlungszielDto = DelegateFactory.getInstance()
 					.getMandantDelegate()
 					.zahlungszielFindByPrimaryKey(getZahlungszielIId());
@@ -717,29 +763,31 @@ public abstract class PanelZahlung extends PanelBasis {
 		}
 	}
 
+	protected BigDecimal berechneSkonto(BigDecimal wert, BigDecimal prozent) {
+		if (prozent == null)
+			return wert;
+		prozent = BigDecimal.ONE.subtract(prozent.divide(new BigDecimal(
+				"100.00"), 4, BigDecimal.ROUND_HALF_EVEN));
+		return wert.multiply(prozent);
+	}
+
 	private void berechneSkontovorschlaege() throws ExceptionLP, Throwable {
 		// Skontovorschlaege erstellen
-		BigDecimal dSkonto1 = new BigDecimal(0);
-		BigDecimal dSkonto2 = new BigDecimal(0);
 		if (wnfSkontoProzent1.isVisible()) {
-			dSkonto1 = wnfSkontoProzent1.getBigDecimal();
+			BigDecimal dSkonto1 = wnfSkontoProzent1.getBigDecimal();
+			if (dSkonto1 != null) {
+				wnfBetragSkonto1.setBigDecimal(berechneSkonto(getWert(),
+						dSkonto1).subtract(getWertBereitsBezahlt()).subtract(
+						getWertAnzahlungen()));
+			}
 		}
 		if (wnfSkontoProzent2.isVisible()) {
-			dSkonto2 = wnfSkontoProzent2.getBigDecimal();
-		}
-		if (dSkonto1 != null) {
-			BigDecimal bdSatz1 = new BigDecimal(1.0).subtract((dSkonto1.divide(
-					new BigDecimal(100.0), 4, BigDecimal.ROUND_HALF_EVEN)));
-			BigDecimal bdSkontobetr1 = getWert().multiply(bdSatz1);
-			wnfBetragSkonto1.setBigDecimal(bdSkontobetr1.subtract(
-					getWertBereitsBezahlt()).subtract(getWertAnzahlungen()));
-		}
-		if (dSkonto2 != null) {
-			BigDecimal bdSatz2 = new BigDecimal(1.0).subtract((dSkonto2.divide(
-					new BigDecimal(100.0), 4, BigDecimal.ROUND_HALF_EVEN)));
-			BigDecimal bdSkontobetr2 = getWert().multiply(bdSatz2);
-			wnfBetragSkonto2.setBigDecimal(bdSkontobetr2.subtract(
-					getWertBereitsBezahlt()).subtract(getWertAnzahlungen()));
+			BigDecimal dSkonto2 = wnfSkontoProzent2.getBigDecimal();
+			if (dSkonto2 != null) {
+				wnfBetragSkonto2.setBigDecimal(berechneSkonto(getWert(),
+						dSkonto2).subtract(getWertBereitsBezahlt()).subtract(
+						getWertAnzahlungen()));
+			}
 		}
 	}
 
@@ -770,6 +818,14 @@ public abstract class PanelZahlung extends PanelBasis {
 										mandantDto.getIBankverbindung());
 						dto2ComponentsBankverbindung();
 					}
+
+					KassenbuchDto kbDto = DelegateFactory.getInstance()
+							.getFinanzDelegate().getHauptkassabuch();
+					if (kbDto != null) {
+						kassenbuchDto = kbDto;
+						dto2ComponentsKassenbuch();
+					}
+
 					BigDecimal wert = getWertGesamtOffenExklusiveZahlung();
 					wnfBetrag.setBigDecimal(wnfAnzahlungen.isVisible() ? wert
 							.subtract(wnfAnzahlungen.getBigDecimal()) : wert);
@@ -790,6 +846,7 @@ public abstract class PanelZahlung extends PanelBasis {
 			setDefaults();
 			focusLostWnfBetrag();
 		}
+		wcbErledigt.setActivatable(darfManuellErledigen());
 	}
 
 	protected void eventActionSpecial(ActionEvent e) throws Throwable {
@@ -970,9 +1027,9 @@ public abstract class PanelZahlung extends PanelBasis {
 		filter.add(new FilterKriterium("buchungdetailart_c_nr", true, "'"
 				+ getBuchungDetailAtCNr() + "'", FilterKriterium.OPERATOR_LIKE,
 				false));
-		filter.add(new FilterKriterium("flrbuchung.buchungsart_c_nr", true, "('"
-				+ FinanzFac.BUCHUNGSART_UMBUCHUNG + "','"
-				+ FinanzFac.BUCHUNGSART_BANKBUCHUNG + "')",
+		filter.add(new FilterKriterium("flrbuchung.buchungsart_c_nr", true,
+				"('" + FinanzFac.BUCHUNGSART_UMBUCHUNG + "','"
+						+ FinanzFac.BUCHUNGSART_BANKBUCHUNG + "')",
 				FilterKriterium.OPERATOR_IN, false));
 		filter.add(FinanzFilterFactory.getInstance().createFKVBuchungStorno());
 
@@ -1002,9 +1059,10 @@ public abstract class PanelZahlung extends PanelBasis {
 		new DialogQuery(panelQueryFLRKassenbuch);
 	}
 
-	private void setVisibilityOfComponents() {
+	protected void setVisibilityOfComponents() {
 		String zahlungsartCNr = (String) wcoZahlungsart.getKeyOfSelectedItem();
-		if(zahlungsartCNr == null) return;
+		if (zahlungsartCNr == null)
+			return;
 		boolean bIsBank = zahlungsartCNr
 				.equalsIgnoreCase(RechnungFac.ZAHLUNGSART_BANK);
 		boolean bIsGegenverrechnung = zahlungsartCNr
@@ -1032,6 +1090,7 @@ public abstract class PanelZahlung extends PanelBasis {
 		wbuGutschrift.setVisible(bIsGutschrift);
 		wtfGutschrift.setVisible(bIsGutschrift);
 		wtfGutschrift.setMandatoryField(bIsGutschrift);
+		wcbErledigtGutschrift.setVisible(bIsGutschrift);
 
 		wbuVorauszahlung.setVisible(bIsVorauszahlung);
 		wtfVorauszahlung.setVisible(bIsVorauszahlung);
@@ -1045,6 +1104,9 @@ public abstract class PanelZahlung extends PanelBasis {
 		wtfRechnung.setVisible(false);
 
 		if (this instanceof PanelRechnungZahlung) {
+			// TODO: instance of wenn wir in einer abstracten Klasse sind?!
+			// -> Dieses Verhalten muessen die abgeleiteten Klassen selbst
+			// steuern!
 			wbuEingangsrechnung.setVisible(bIsGegenverrechnung);
 			wtfEingangsrechnung.setVisible(bIsGegenverrechnung);
 			wtfEingangsrechnung.setMandatoryField(bIsGegenverrechnung);
@@ -1085,12 +1147,13 @@ public abstract class PanelZahlung extends PanelBasis {
 		wnfOffenUST.setBigDecimal(bdOffenUST);
 
 		if (wnfBetrag.getBigDecimal() == null) {
-//			wnfBetrag.setBigDecimal(new BigDecimal(0));
+			// wnfBetrag.setBigDecimal(new BigDecimal(0));
 			wnfBetragUST.setBigDecimal(new BigDecimal(0));
 		}
 
 		BigDecimal gesOffen = getWertGesamtOffenExklusiveZahlung().subtract(
-				wnfBetrag.getBigDecimal()==null?BigDecimal.ZERO:wnfBetrag.getBigDecimal());
+				wnfBetrag.getBigDecimal() == null ? BigDecimal.ZERO : wnfBetrag
+						.getBigDecimal());
 
 		BigDecimal gesOffenUst = getWertGesamtOffenUstExklusiveZahlung()
 				.subtract(wnfBetragUST.getBigDecimal());
@@ -1104,13 +1167,17 @@ public abstract class PanelZahlung extends PanelBasis {
 		wnfGesOffenUST.setBigDecimal(gesOffenUst);
 
 		// das erledigt-hakerl
+		myLogger.info("Zahlung VORHER isLocked: " + isLocked()
+				+ " offener Betrag: " + bdOffen + ", signum: "
+				+ bdOffen.signum() + ", wcbErledigt >> "
+				+ (bdOffen.signum() == 0));
 		if (isLocked()) {
-			if (bdOffen.signum() == 0) {
-				wcbErledigt.setSelected(true);
-			} else {
-				wcbErledigt.setSelected(false);
-			}
+			wcbErledigt.setSelected(bdOffen.signum() <= 0);
 		}
+		myLogger.info("Zahlung NACHHER isLocked: " + isLocked()
+				+ " offener Betrag: " + bdOffen + ", signum: "
+				+ bdOffen.signum() + ", wcbErledigt = "
+				+ wcbErledigt.isSelected());
 	}
 
 	private BigDecimal getWertOffen() throws Throwable {
@@ -1123,6 +1190,10 @@ public abstract class PanelZahlung extends PanelBasis {
 				getWertAnzahlungenUst());
 	}
 
+	protected void initializeGutschriftButton() {
+		wbuGutschrift.setText(LPMain.getTextRespectUISPr("rechnung.gutschrift"));		
+	}
+	
 	protected abstract BigDecimal getWertGesamtOffenExklusiveZahlung()
 			throws Throwable;
 
@@ -1146,7 +1217,7 @@ public abstract class PanelZahlung extends PanelBasis {
 	protected abstract Integer getZahlungszielIId() throws Throwable;
 
 	protected abstract java.sql.Date getDBelegdatum();
-	
+
 	protected abstract boolean isGutschriftErlaubt();
 
 	protected JComponent getFirstFocusableComponent() throws Exception {
@@ -1154,25 +1225,8 @@ public abstract class PanelZahlung extends PanelBasis {
 	}
 
 	protected abstract Integer getKontoIIdAnzahlung() throws Throwable;
-}
 
-class PanelZahlung_focusAdapter implements java.awt.event.FocusListener {
-	PanelZahlung adaptee;
-
-	PanelZahlung_focusAdapter(PanelZahlung adaptee) {
-		this.adaptee = adaptee;
-	}
-
-	public void focusLost(FocusEvent e) {
-		try {
-			adaptee.focusLostWnfBetrag();
-		} catch (Throwable ex) {
-			LPMain.getInstance().exitFrame(adaptee.getInternalFrame());
-		}
-	}
-
-	public void focusGained(FocusEvent e) {
-	}
+	protected abstract boolean darfManuellErledigen() throws Throwable;
 }
 
 class PanelZahlung_wdfDatumFocusAdapter implements FocusListener {

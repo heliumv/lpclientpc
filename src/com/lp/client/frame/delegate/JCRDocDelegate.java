@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -49,6 +49,7 @@ import com.lp.server.system.jcr.service.DokumentgruppierungDto;
 import com.lp.server.system.jcr.service.DokumentnichtarchiviertDto;
 import com.lp.server.system.jcr.service.JCRDocDto;
 import com.lp.server.system.jcr.service.JCRDocFac;
+import com.lp.server.system.jcr.service.JCRRepoInfo;
 import com.lp.server.system.jcr.service.PrintInfoDto;
 import com.lp.server.system.jcr.service.docnode.DocNodeBase;
 import com.lp.server.system.jcr.service.docnode.DocNodeLiteral;
@@ -179,8 +180,13 @@ public class JCRDocDelegate extends Delegate {
 	// return false;
 	// }
 
-	public boolean checkIfNodeExists(DocPath docPath) {
-		return jcrDocFac.checkIfNodeExists(docPath);
+	public JCRRepoInfo checkIfNodeExists(DocPath docPath) throws ExceptionLP {
+		try {
+			return jcrDocFac.checkIfNodeExists(docPath);
+		} catch(Throwable t) {
+			handleThrowable(t) ;
+		}
+		return new JCRRepoInfo() ;
 	}
 
 	public DokumentgruppierungDto dokumentgruppierungfindbyPrimaryKey(

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -49,6 +49,7 @@ import javax.swing.border.Border;
 
 import com.lp.client.frame.ExceptionLP;
 import com.lp.client.frame.HelperClient;
+import com.lp.client.frame.LockStateValue;
 import com.lp.client.frame.component.DialogQuery;
 import com.lp.client.frame.component.ISourceEvent;
 import com.lp.client.frame.component.InternalFrame;
@@ -71,6 +72,8 @@ import com.lp.server.personal.service.PersonalDto;
 import com.lp.server.personal.service.SonderzeitenDto;
 import com.lp.server.personal.service.TaetigkeitDto;
 import com.lp.server.personal.service.ZeiterfassungFac;
+import com.lp.server.system.service.LocaleFac;
+import com.lp.server.system.service.MandantFac;
 import com.lp.server.system.service.ParameterFac;
 import com.lp.server.system.service.ParametermandantDto;
 import com.lp.server.util.fastlanereader.service.query.QueryParameters;
@@ -144,17 +147,51 @@ public class PanelSonderzeiten extends PanelBasis {
 
 	protected void eventActionUpdate(ActionEvent aE, boolean bNeedNoUpdateI)
 			throws Throwable {
-		if(pruefeObBuchungMoeglich()){
-		super.eventActionUpdate(aE, bNeedNoUpdateI);
+		if (pruefeObBuchungMoeglich()) {
+			super.eventActionUpdate(aE, bNeedNoUpdateI);
 		} else {
 			return;
 		}
 	}
-	
+
 	private boolean pruefeObBuchungMoeglich() throws ExceptionLP, Throwable {
 		boolean bRechtChefbuchhalter = DelegateFactory.getInstance()
 				.getTheJudgeDelegate()
 				.hatRecht(RechteFac.RECHT_FB_CHEFBUCHHALTER);
+
+		// SP3285
+		if (LPMain
+				.getInstance()
+				.getDesktop()
+				.darfAnwenderAufZusatzfunktionZugreifen(
+						MandantFac.ZUSATZFUNKTION_ZEITEN_ABSCHLIESSEN)
+				&& sonderzeitenDto.getTDatum() != null) {
+
+			java.sql.Timestamp t = DelegateFactory
+					.getInstance()
+					.getZeiterfassungDelegate()
+					.gibtEsBereitseinenZeitabschlussBisZurKW(
+							internalFrameZeiterfassung.getPersonalDto()
+									.getIId(), sonderzeitenDto.getTDatum());
+
+			if (t != null) {
+				MessageFormat mf = new MessageFormat(
+						LPMain.getTextRespectUISPr("pers.zeiterfassung.zeitenbereitsabgeschlossen.bis"));
+				mf.setLocale(LPMain.getTheClient().getLocUi());
+
+				Calendar c = Calendar.getInstance();
+				c.setTimeInMillis(t.getTime());
+				c.get(Calendar.WEEK_OF_YEAR);
+				Object pattern[] = { c.get(Calendar.WEEK_OF_YEAR) };
+
+				String sMsg = mf.format(pattern);
+
+				DialogFactory.showModalDialog(
+						LPMain.getTextRespectUISPr("lp.error"), sMsg);
+				return false;
+			}
+
+		}
 
 		ParametermandantDto parameter = (ParametermandantDto) DelegateFactory
 				.getInstance()
@@ -342,6 +379,42 @@ public class PanelSonderzeiten extends PanelBasis {
 
 	}
 
+	public LockStateValue getLockedstateDetailMainKey() throws Throwable {
+		LockStateValue lockStateValue = super.getLockedstateDetailMainKey();
+
+		if (getKeyWhenDetailPanel() instanceof Integer) {
+
+			Integer key = (Integer) getKeyWhenDetailPanel();
+			sonderzeitenDto = DelegateFactory.getInstance()
+					.getZeiterfassungDelegate()
+					.sonderzeitenFindByPrimaryKey(key);
+
+			boolean bSonderzeitenCUD = DelegateFactory.getInstance()
+					.getTheJudgeDelegate()
+					.hatRecht(RechteFac.RECHT_PERS_SONDERZEITEN_CUD);
+
+			if (bSonderzeitenCUD == false) {
+
+				if (sonderzeitenDto != null
+						&& sonderzeitenDto.getTaetigkeitIId() != null
+						&& !sonderzeitenDto
+								.getTaetigkeitIId()
+								.equals(DelegateFactory
+										.getInstance()
+										.getZeiterfassungDelegate()
+										.taetigkeitFindByCNr(
+												ZeiterfassungFac.TAETIGKEIT_URLAUBSANTRAG)
+										.getIId())) {
+
+					lockStateValue = new LockStateValue(
+							PanelBasis.LOCK_ENABLE_REFRESHANDPRINT_ONLY);
+				}
+
+			}
+		}
+		return lockStateValue;
+	}
+
 	protected void eventActionUnlock(ActionEvent e) throws Throwable {
 		wcbAlle.setVisible(false);
 		wcbAlle.setSelected(false);
@@ -365,8 +438,15 @@ public class PanelSonderzeiten extends PanelBasis {
 						.taetigkeitFindByPrimaryKey(
 								sonderzeitenDto.getTaetigkeitIId());
 
-				if (!taetigkeitDto.getCNr().equals(
+				boolean bUrlaubOderUrlaubsantrag = false;
+				if (taetigkeitDto.getCNr().equals(
 						ZeiterfassungFac.TAETIGKEIT_URLAUB)
+						|| taetigkeitDto.getCNr().equals(
+								ZeiterfassungFac.TAETIGKEIT_URLAUBSANTRAG)) {
+					bUrlaubOderUrlaubsantrag = true;
+				}
+
+				if (bUrlaubOderUrlaubsantrag == false
 						&& com.lp.util.Helper.short2boolean(wrbHalbtageweise
 								.getShort())) {
 					DialogFactory

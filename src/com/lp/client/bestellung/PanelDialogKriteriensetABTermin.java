@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -50,6 +50,7 @@ import com.lp.client.frame.component.WrapperLabel;
 import com.lp.client.frame.component.WrapperRadioButton;
 import com.lp.client.frame.component.WrapperTextField;
 import com.lp.client.pc.LPMain;
+import com.lp.server.bestellung.service.BestellpositionFac;
 
 
 /**
@@ -75,14 +76,12 @@ private ButtonGroup jbgKriterien = null;
   private WrapperTextField wtfABNummer = null;
   private WrapperLabel wlaAlleBesPosSetzen = null;
   private WrapperLabel wlaLeereBesPosSetzen = null;
+  private WrapperLabel wlaMarkiertePosSetzen = null;
   private WrapperRadioButton wrbAlleBestellpositionSetzen = null;
   private WrapperRadioButton wrbLeereBestellpositionSetzen = null;
+  private WrapperRadioButton wrbMarkierteBestellpositionSetzen = null;
 
-  static final private String ACTION_RADIOBUTTON_ALLEBESTELLPOSITIONEN_SETZEN =
-      "action_radiobutton_allebestellpositionen_setzen";
-  static final private String ACTION_RADIOBUTTON_LEEREBESTELLPOSITIONEN_SETZEN =
-      "action_radiobutton_leerebestellpositionen_setzen";
-
+ 
   private TabbedPaneBestellung tpBestellung = null;
 
   public PanelDialogKriteriensetABTermin(InternalFrame oInternalFrameI,
@@ -116,18 +115,17 @@ private ButtonGroup jbgKriterien = null;
 
     wlaAlleBesPosSetzen = new WrapperLabel(LPMain.getTextRespectUISPr("bes.allepositionensetzen"));
     wlaLeereBesPosSetzen = new WrapperLabel(LPMain.getTextRespectUISPr("bes.leerepositionensetzen"));
+    wlaMarkiertePosSetzen = new WrapperLabel(LPMain.getTextRespectUISPr("bes.markiertepositionensetzen"));
     wrbAlleBestellpositionSetzen = new WrapperRadioButton();
-    wrbAlleBestellpositionSetzen.setActionCommand(
-        ACTION_RADIOBUTTON_ALLEBESTELLPOSITIONEN_SETZEN);
-    wrbAlleBestellpositionSetzen.addActionListener(this);
+   
 
     wrbLeereBestellpositionSetzen = new WrapperRadioButton();
-    wrbLeereBestellpositionSetzen.setActionCommand(
-        ACTION_RADIOBUTTON_LEEREBESTELLPOSITIONEN_SETZEN);
-    wrbLeereBestellpositionSetzen.addActionListener(this);
+    wrbMarkierteBestellpositionSetzen = new WrapperRadioButton();
+  
 
     jbgKriterien.add(wrbAlleBestellpositionSetzen);
     jbgKriterien.add(wrbLeereBestellpositionSetzen);
+    jbgKriterien.add(wrbMarkierteBestellpositionSetzen);
 
     iZeile++;
     jpaWorkingOn.add(new WrapperLabel(),
@@ -208,6 +206,18 @@ private ButtonGroup jbgKriterien = null;
                                             , GridBagConstraints.CENTER,
                                             GridBagConstraints.BOTH,
                                             new Insets(2, 2, 2, 2), 0, 0));
+    iZeile++;
+    jpaWorkingOn.add(wlaMarkiertePosSetzen,
+                     new GridBagConstraints(1, iZeile, 2, 1, 0.0, 0.0
+                                            , GridBagConstraints.CENTER,
+                                            GridBagConstraints.BOTH,
+                                            new Insets(2, 2, 2, 2), 0, 0));
+
+    jpaWorkingOn.add(wrbMarkierteBestellpositionSetzen,
+                     new GridBagConstraints(3, iZeile, 2, 1, 0.0, 0.0
+                                            , GridBagConstraints.CENTER,
+                                            GridBagConstraints.BOTH,
+                                            new Insets(2, 2, 2, 2), 0, 0));
 
   }
 
@@ -217,10 +227,21 @@ private ButtonGroup jbgKriterien = null;
     wdfABTermin.setEditable(false);
     wdfABTermin.setDate(new Date(System.currentTimeMillis()));
     wrbAlleBestellpositionSetzen.setSelected(true);
-    tpBestellung.setBooleanVonSichtLieferantenTermin(true);
+   
   }
 
 
+  public int getOptionAbTerminSetzen(){
+	  if(wrbAlleBestellpositionSetzen.isSelected()){
+		  return BestellpositionFac.SICHT_LIEFERANTENTERMINE_ABTERMIN_SETZEN_OPTION_ALLE;
+	  }else if(wrbMarkierteBestellpositionSetzen.isSelected()){
+		  return BestellpositionFac.SICHT_LIEFERANTENTERMINE_ABTERMIN_SETZEN_OPTION_MARKIERTE;
+	  }else if(wrbLeereBestellpositionSetzen.isSelected()){
+		  return BestellpositionFac.SICHT_LIEFERANTENTERMINE_ABTERMIN_SETZEN_OPTION_LEERE;
+	  } 
+	  return -1;
+  }
+  
   protected void eventActionSpecial(ActionEvent e)
       throws Throwable {
     if (e.getActionCommand().equals(ACTION_SPECIAL_OK)) {
@@ -228,14 +249,7 @@ private ButtonGroup jbgKriterien = null;
         setComponents();
       }
     }
-    else if (e.getActionCommand().equals(ACTION_RADIOBUTTON_ALLEBESTELLPOSITIONEN_SETZEN)) {
-      //true es werden alle Positionen gesetzt
-      tpBestellung.setBooleanVonSichtLieferantenTermin(true);
-    }
-    else if (e.getActionCommand().equals(ACTION_RADIOBUTTON_LEEREBESTELLPOSITIONEN_SETZEN)) {
-      //false es werden alle Positionen ohne abtermin und abnummer gesetzt
-     tpBestellung.setBooleanVonSichtLieferantenTermin(false);
-    }
+   
 
     super.eventActionSpecial(e);
   }

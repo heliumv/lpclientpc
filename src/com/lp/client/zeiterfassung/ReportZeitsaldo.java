@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -109,6 +109,7 @@ public class ReportZeitsaldo extends ReportZeiterfassung implements
 	}
 
 	protected void eventActionSpecial(ActionEvent e) throws Throwable {
+		super.eventActionSpecial(e);
 		if (wcbBisHeute.isSelected() && e.getSource().equals(wcbBisHeute)) {
 			wcbBisGestern.setSelected(false);
 			wcoMonat.setEnabled(false);
@@ -194,45 +195,51 @@ public class ReportZeitsaldo extends ReportZeiterfassung implements
 			iSortierung = ZeiterfassungFacAll.REPORT_MONATSABRECHNUNG_OPTION_SORTIERUNG_ABTEILUNG_KOSTENSTELLE_NAME_VORNAME;
 		}
 
-//		PersonalDto[] dtos = null;
+		// PersonalDto[] dtos = null;
 		try {
 
 			if (wcbBisGestern.isSelected()) {
-				java.sql.Timestamp ts = new java.sql.Timestamp(System
-						.currentTimeMillis() - 3600000 * 24);
+				java.sql.Timestamp ts = new java.sql.Timestamp(
+						System.currentTimeMillis() - 3600000 * 24);
 				ts = com.lp.util.Helper.cutTimestamp(ts);
 
 				Calendar c = Calendar.getInstance();
 				c.setTimeInMillis(ts.getTime());
-				jasperPrint = DelegateFactory.getInstance()
-						.getZeiterfassungDelegate().printZeitsaldo(
-								getPersonalIId(), (Integer) wspJahr.getValue(),
+				jasperPrint = DelegateFactory
+						.getInstance()
+						.getZeiterfassungDelegate()
+						.printZeitsaldo(getPersonalIId(),
+								(Integer) wspJahr.getValue(),
 								(Integer) wcoMonat.getKeyOfSelectedItem(),
 								(Integer) wspJahrBis.getValue(),
 								(Integer) wcoMonatBis.getKeyOfSelectedItem(),
 								getPersonAuswahl(), iSortierung,
 								mitVersteckten(), false,
-								new java.sql.Date(ts.getTime()));
+								new java.sql.Date(ts.getTime()), nurAnwesende());
 			} else {
-				jasperPrint = DelegateFactory.getInstance()
-						.getZeiterfassungDelegate().printZeitsaldo(
-								getPersonalIId(), (Integer) wspJahr.getValue(),
+				jasperPrint = DelegateFactory
+						.getInstance()
+						.getZeiterfassungDelegate()
+						.printZeitsaldo(getPersonalIId(),
+								(Integer) wspJahr.getValue(),
 								(Integer) wcoMonat.getKeyOfSelectedItem(),
 								(Integer) wspJahrBis.getValue(),
 								(Integer) wcoMonatBis.getKeyOfSelectedItem(),
 								getPersonAuswahl(), iSortierung,
 								mitVersteckten(), !wcbBisHeute.isSelected(),
-								new java.sql.Date(System.currentTimeMillis()));
+								new java.sql.Date(System.currentTimeMillis()),
+								nurAnwesende());
 			}
 
-//			if (dtos != null && dtos.length > 0) {
-//				String s = "Folgende Personen haben kein Eintrittsdatum eingetragen:\n";
-//				for (int i = 0; i < dtos.length; i++) {
-//					s = s + dtos[i].formatAnrede() + "\n";
-//				}
-//				DialogFactory.showModalDialog(LPMain
-//						.getTextRespectUISPr("lp.error"), s);
-//			}
+			// if (dtos != null && dtos.length > 0) {
+			// String s =
+			// "Folgende Personen haben kein Eintrittsdatum eingetragen:\n";
+			// for (int i = 0; i < dtos.length; i++) {
+			// s = s + dtos[i].formatAnrede() + "\n";
+			// }
+			// DialogFactory.showModalDialog(LPMain
+			// .getTextRespectUISPr("lp.error"), s);
+			// }
 		} catch (ExceptionLP ex) {
 
 			if (ex.getICode() == com.lp.util.EJBExceptionLP.FEHLER_PERSONAL_FEHLER_BEI_EINTRITTSDATUM) {

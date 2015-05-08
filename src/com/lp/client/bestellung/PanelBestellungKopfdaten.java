@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -85,6 +85,8 @@ import com.lp.server.benutzer.service.RechteFac;
 import com.lp.server.bestellung.service.BestellpositionDto;
 import com.lp.server.bestellung.service.BestellungDto;
 import com.lp.server.bestellung.service.BestellungFac;
+import com.lp.server.eingangsrechnung.service.EingangsrechnungDto;
+import com.lp.server.eingangsrechnung.service.EingangsrechnungFac;
 import com.lp.server.partner.service.AnsprechpartnerDto;
 import com.lp.server.partner.service.LieferantDto;
 import com.lp.server.partner.service.PartnerDto;
@@ -199,7 +201,7 @@ public class PanelBestellungKopfdaten extends PanelBasis {
 	private WrapperLabel wlaAbrufe = null;
 	private WrapperTextArea wtaAbrufe = null;
 
-	private WrapperButton wbuRahmenauswahl = null;
+	private WrapperGotoButton wbuRahmenauswahl = null;
 	private PanelQueryFLR panelQueryFLRRahmenauswahl = null;
 
 	private WrapperTextField wtfAbrufausrahmencnr = null;
@@ -222,6 +224,9 @@ public class PanelBestellungKopfdaten extends PanelBasis {
 	private WrapperButton wbuAnsprechpartnerAbholadresse = null;
 	private PanelQueryFLR panelQueryFLRAnsprechpartnerAbholadresse = null;
 	private PanelQueryFLR panelQueryFLRAbholadresse = null;
+
+	private WrapperLabel wlaAnzahlungen;
+	private WrapperTextField wtfAnzahlungen;
 
 	private WrapperSelectField wsfProjekt = new WrapperSelectField(
 			WrapperSelectField.PROJEKT, getInternalFrame(), true);
@@ -496,8 +501,8 @@ public class PanelBestellungKopfdaten extends PanelBasis {
 		wtaAbrufe.setActivatable(false);
 		wtaAbrufe.setRows(4);
 
-		wbuRahmenauswahl = new WrapperButton(
-				LPMain.getTextRespectUISPr("button.rahmen"));
+		wbuRahmenauswahl = new WrapperGotoButton(
+				LPMain.getTextRespectUISPr("button.rahmen"),WrapperGotoButton.GOTO_BESTELLUNG_AUSWAHL);
 		wbuRahmenauswahl.setActionCommand(ACTION_SPECIAL_RAHMENAUSWAHL);
 		wbuRahmenauswahl.addActionListener(this);
 
@@ -519,6 +524,14 @@ public class PanelBestellungKopfdaten extends PanelBasis {
 				.getTextRespectUISPr("button.auftrag.tooltip"));
 		wtfAuftragbezeichnung.setActivatable(false);
 		wtfAuftragnummer.setActivatable(false);
+
+		wlaAnzahlungen = new WrapperLabel(
+				LPMain.getTextRespectUISPr("rech.zahlung.anzahlungen")
+						+ "/"
+						+ LPMain.getTextRespectUISPr("rech.zahlung.schlusszahlung"));
+
+		wtfAnzahlungen = new WrapperTextField(9999);
+		wtfAnzahlungen.setActivatable(false);
 
 		// Workingpanel
 		jPanelWorkingOn = new JPanel(new MigLayout("wrap 5, hidemode 3",
@@ -616,8 +629,11 @@ public class PanelBestellungKopfdaten extends PanelBasis {
 		jPanelWorkingOn.add(wlaAbrufe, "growx");
 		jPanelWorkingOn.add(wtaAbrufe, "growx, span");
 
-		jPanelWorkingOn.add(wlaMahnsperreBis, "top, growx");
-		jPanelWorkingOn.add(wdfMahnsperre, "top, growx");
+		jPanelWorkingOn.add(wlaMahnsperreBis, "growx");
+		jPanelWorkingOn.add(wdfMahnsperre, "growx, wrap");
+
+		jPanelWorkingOn.add(wlaAnzahlungen, "top, growx");
+		jPanelWorkingOn.add(wtfAnzahlungen, "top, growx, span");
 
 		createAndSaveAndShowButton(
 				"/com/lp/client/res/shoppingcart.png",
@@ -894,7 +910,8 @@ public class PanelBestellungKopfdaten extends PanelBasis {
 											.getBestellungDelegate()
 											.bestellungFindByPrimaryKey(
 													(Integer) iIdRahmenbestellung));
-
+					wbuRahmenauswahl.setOKey(getInternalFrameBestellung()
+							.getTabbedPaneBestellung().getRahmBesDto().getIId());
 					wtfAbrufausrahmencnr
 							.setText(getInternalFrameBestellung()
 									.getTabbedPaneBestellung().getRahmBesDto()
@@ -1575,7 +1592,8 @@ public class PanelBestellungKopfdaten extends PanelBasis {
 							.getInstance()
 							.getLieferantDelegate()
 							.pruefeLieferant(
-									besDto.getLieferantIIdBestelladresse());
+									besDto.getLieferantIIdBestelladresse(),LocaleFac.BELEGART_BESTELLUNG,
+									getInternalFrame());
 
 					getTabbedPaneBestellung().setBestellungDto(
 							DelegateFactory.getInstance()
@@ -1677,20 +1695,43 @@ public class PanelBestellungKopfdaten extends PanelBasis {
 		}
 	}
 
-	private void addExtraDaten(BestellungDto besDto) {
+	private void addExtraDaten(BestellungDto besDto) throws Throwable {
 
-		if (besDto.getFAllgemeinerRabattsatz() == null) {
-			// kein rabatt->mit 0 vorbesetzen.
-			besDto.setFAllgemeinerRabattsatz(new Double(0));
+		if (besDto.getIBestellungIIdRahmenbestellung() != null
+				&& besDto.getBestellungartCNr().equals(
+						BestellungFac.BESTELLUNGART_ABRUFBESTELLUNG_C_NR)) {
+
+			BestellungDto rahmenbestellungDto = DelegateFactory
+					.getInstance()
+					.getBestellungDelegate()
+					.bestellungFindByPrimaryKey(
+							besDto.getIBestellungIIdRahmenbestellung());
+
+			// SP2661
+
+			besDto.setFAllgemeinerRabattsatz(rahmenbestellungDto
+					.getFAllgemeinerRabattsatz());
+
+			besDto.setZahlungszielIId(rahmenbestellungDto.getZahlungszielIId());
+			besDto.setLieferartIId(rahmenbestellungDto.getLieferartIId());
+			besDto.setSpediteurIId(rahmenbestellungDto.getSpediteurIId());
+		} else {
+			if (besDto.getFAllgemeinerRabattsatz() == null) {
+				// kein rabatt->mit 0 vorbesetzen.
+				besDto.setFAllgemeinerRabattsatz(new Double(0));
+			}
+
+			besDto.setZahlungszielIId(getInternalFrameBestellung()
+					.getTabbedPaneBestellung().getLieferantDto()
+					.getZahlungszielIId());
+			besDto.setLieferartIId(getInternalFrameBestellung()
+					.getTabbedPaneBestellung().getLieferantDto()
+					.getLieferartIId());
+			besDto.setSpediteurIId(getInternalFrameBestellung()
+					.getTabbedPaneBestellung().getLieferantDto()
+					.getIdSpediteur());
 		}
 
-		besDto.setZahlungszielIId(getInternalFrameBestellung()
-				.getTabbedPaneBestellung().getLieferantDto()
-				.getZahlungszielIId());
-		besDto.setLieferartIId(getInternalFrameBestellung()
-				.getTabbedPaneBestellung().getLieferantDto().getLieferartIId());
-		besDto.setSpediteurIId(getInternalFrameBestellung()
-				.getTabbedPaneBestellung().getLieferantDto().getIdSpediteur());
 	}
 
 	protected void dto2Components() throws Throwable {
@@ -1836,6 +1877,8 @@ public class PanelBestellungKopfdaten extends PanelBasis {
 
 			wtfAbrufausrahmencnr.setText(getInternalFrameBestellung()
 					.getTabbedPaneBestellung().getRahmBesDto().getCNr());
+			wbuRahmenauswahl.setOKey(getInternalFrameBestellung()
+					.getTabbedPaneBestellung().getRahmBesDto().getIId());
 			wtfAbrufausrahmenbez.setText(getInternalFrameBestellung()
 					.getTabbedPaneBestellung().getRahmBesDto().getCBez());
 		}
@@ -1858,6 +1901,29 @@ public class PanelBestellungKopfdaten extends PanelBasis {
 		holeAuftrag(getInternalFrameBestellung().getTabbedPaneBestellung()
 				.getBesDto().getAuftragIId());
 
+		StringBuffer sb = new StringBuffer();
+		wlaAnzahlungen.setVisible(true);
+		wtfAnzahlungen.setVisible(true);
+		EingangsrechnungDto[] dtos = DelegateFactory
+				.getInstance()
+				.getEingangsrechnungDelegate()
+				.findByBestellungIId(
+						getTabbedPaneBestellung().getBesDto().getIId());
+		for (EingangsrechnungDto dto : dtos) {
+			if (dto.getStatusCNr().equals(EingangsrechnungFac.STATUS_STORNIERT))
+				continue;
+			if (dto.getEingangsrechnungartCNr().equals(
+					EingangsrechnungFac.EINGANGSRECHNUNGART_ANZAHLUNG))
+				sb.append("A ");
+			else if (dto.getEingangsrechnungartCNr().equals(
+					EingangsrechnungFac.EINGANGSRECHNUNGART_SCHLUSSZAHLUNG))
+				sb.append("S ");
+			else
+				continue;
+			sb.append(dto.getCNr() + ", ");
+		}
+		wtfAnzahlungen.setText(sb.toString());
+
 		refreshStatusbar();
 	}
 
@@ -1869,7 +1935,15 @@ public class PanelBestellungKopfdaten extends PanelBasis {
 
 		if (aBestellungDtoI != null && aBestellungDtoI.length > 0) {
 			for (int i = 0; i < aBestellungDtoI.length; i++) {
-				cFormat += aBestellungDtoI[i].getCNr();
+				
+				if (aBestellungDtoI[i].getStatusCNr().equals(
+						LocaleFac.STATUS_STORNIERT)) {
+					cFormat += "(" + aBestellungDtoI[i].getCNr() + ")";
+				} else {
+					cFormat += aBestellungDtoI[i].getCNr();
+				}
+				
+				
 				iAnzahl++;
 
 				if (iAnzahl == 5) {

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -60,6 +60,7 @@ public class ReportProduktivitaetsstatistik extends ReportZeiterfassung
 	private JButton wbuGestern = null;
 
 	private WrapperCheckBox wcbVerdichtet = new WrapperCheckBox();
+	private WrapperCheckBox wcbMonatsstatstik = new WrapperCheckBox();
 
 	public ReportProduktivitaetsstatistik(
 			InternalFrameZeiterfassung internalFrame, String add2Title)
@@ -83,6 +84,7 @@ public class ReportProduktivitaetsstatistik extends ReportZeiterfassung
 
 	private void jbInit() throws Throwable {
 		wcbVerdichtet.setText(LPMain.getTextRespectUISPr("lp.verdichtet"));
+		wcbMonatsstatstik.setText(LPMain.getTextRespectUISPr("pers.report.produktivitaetsstatistik.monatsbetrachtung"));
 
 		wbuGestern = new JButton(new ImageIcon(getClass().getResource(
 				"/com/lp/client/res/table_selection_cell.png")));
@@ -93,7 +95,8 @@ public class ReportProduktivitaetsstatistik extends ReportZeiterfassung
 
 		wcbVerdichtet.setSelected(true);
 
-		jpaWorkingOn.add(wcbVerdichtet, "cell 1 5, wrap");
+		jpaWorkingOn.add(wcbVerdichtet, "cell 1 5");
+		jpaWorkingOn.add(wcbMonatsstatstik, "cell 2 5, wrap");
 		
 		addZeitraumAuswahl();
 		
@@ -102,6 +105,7 @@ public class ReportProduktivitaetsstatistik extends ReportZeiterfassung
 	}
 
 	protected void eventActionSpecial(ActionEvent e) throws Throwable {
+		super.eventActionSpecial(e);
 		if (e.getSource().equals(wbuGestern)) {
 			wdfVon.setTimestamp(Helper.cutTimestamp(new Timestamp(System
 					.currentTimeMillis() - 24 * 3600000)));
@@ -126,8 +130,8 @@ public class ReportProduktivitaetsstatistik extends ReportZeiterfassung
 
 		jasperPrint = DelegateFactory.getInstance().getZeiterfassungDelegate()
 				.printProduktivitaetsstatistik(getPersonalIId(),
-						wdfVon.getTimestamp(), wdfBisTemp, mitVersteckten(),
-						wcbVerdichtet.isSelected(), getPersonAuswahl());
+						wdfVon.getTimestamp(), wdfBisTemp, mitVersteckten(), nurAnwesende(),
+						wcbVerdichtet.isSelected(),wcbMonatsstatstik.isSelected(), getPersonAuswahl());
 
 		return jasperPrint;
 

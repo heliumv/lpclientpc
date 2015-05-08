@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -33,7 +33,6 @@
 package com.lp.client.eingangsrechnung;
 
 import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -48,15 +47,14 @@ import java.util.GregorianCalendar;
 import java.util.Map;
 import java.util.TreeMap;
 
-import javax.swing.BorderFactory;
 import javax.swing.JComponent;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JTextField;
 import javax.swing.SwingConstants;
-import javax.swing.border.Border;
 
 import com.lp.client.bestellung.BestellungFilterFactory;
 import com.lp.client.finanz.FinanzFilterFactory;
-import com.lp.client.frame.Defaults;
 import com.lp.client.frame.ExceptionLP;
 import com.lp.client.frame.HelperClient;
 import com.lp.client.frame.LockStateValue;
@@ -72,6 +70,7 @@ import com.lp.client.frame.component.WrapperComboBox;
 import com.lp.client.frame.component.WrapperDateField;
 import com.lp.client.frame.component.WrapperGotoButton;
 import com.lp.client.frame.component.WrapperLabel;
+import com.lp.client.frame.component.WrapperLabelOverlay;
 import com.lp.client.frame.component.WrapperNumberField;
 import com.lp.client.frame.component.WrapperTextField;
 import com.lp.client.frame.component.WrapperTextNumberField;
@@ -160,7 +159,6 @@ public class PanelEingangsrechnungKopfdaten extends PanelBasis {
 	private JPanel jpaWorkingOn = new JPanel();
 	private GridBagLayout gridBagLayout1 = new GridBagLayout();
 	private GridBagLayout gridBagLayout2 = new GridBagLayout();
-	private Border border1 = BorderFactory.createEmptyBorder(10, 10, 10, 10);
 	private WrapperGotoButton wbuLieferant = new WrapperGotoButton(
 			WrapperGotoButton.GOTO_LIEFERANT_AUSWAHL);
 	private WrapperTextField wtfLieferant = new WrapperTextField();
@@ -179,7 +177,7 @@ public class PanelEingangsrechnungKopfdaten extends PanelBasis {
 
 	private WrapperLabel wlaKreditorennummer = new WrapperLabel();
 
-	private WrapperTextNumberField wtnfLieferantenrechnungsnummer = null;
+	private JTextField wtnfLieferantenrechnungsnummer = null;
 	private WrapperTextField wtfText = new WrapperTextField();
 	private WrapperTextField wtfWEArtikel = new WrapperTextField();
 	private WrapperLabel wlaBetrag = new WrapperLabel();
@@ -199,7 +197,7 @@ public class PanelEingangsrechnungKopfdaten extends PanelBasis {
 	private WrapperTextField wtfKostenstelleNummer = new WrapperTextField();
 	private WrapperButton wbuZahlungsziel = new WrapperButton();
 	private WrapperTextField wtfZahlungsziel = new WrapperTextField();
-	private WrapperLabel wlaZollimportpapiere = new WrapperLabel();
+	private JLabel wlaZollimportpapiere = new JLabel();
 	private WrapperLabel wlaWiederholendErledigt = new WrapperLabel();
 
 	private WrapperTextField wtfKostenstelleBezeichnung = new WrapperTextField();
@@ -209,19 +207,18 @@ public class PanelEingangsrechnungKopfdaten extends PanelBasis {
 	private WrapperTextField wtfAbteilung = new WrapperTextField();
 	private WrapperLabel wlaAbteilung = new WrapperLabel();
 	private WrapperTextField wtfKundendaten = new WrapperTextField();
-	private WrapperLabel wlaKundendaten = new WrapperLabel();
+	private WrapperLabel wlaKundendaten = new WrapperLabelOverlay();
 
 	private WrapperLabel wlaWiederholungsintervall = null;
 	private WrapperComboBox wcoWiederholungsintervall = null;
 	private WrapperLabel wlaNachfolger = new WrapperLabel();
 	private WrapperTextField wtfNachfolger = new WrapperTextField();
 
-	private WrapperLabel wlaAbstand1 = new WrapperLabel();
-	private WrapperLabel wlaAbstand2 = new WrapperLabel();
-	private WrapperLabel wlaAbstand3 = new WrapperLabel();
-	private WrapperLabel wlaAbstand4 = new WrapperLabel();
+	private WrapperLabel wlaAnzahlungen;
+	private WrapperTextField wtfAnzahlungen;
 
 	private WrapperLabel wlaNochNichtKontiert = new WrapperLabel();
+	private BigDecimal nettoBetrag;
 
 	private boolean bMapSetAktiv = false;
 
@@ -247,7 +244,6 @@ public class PanelEingangsrechnungKopfdaten extends PanelBasis {
 	 */
 	private void jbInit() throws Throwable {
 		this.setLayout(gridBagLayout1);
-		jpaWorkingOn.setBorder(border1);
 		jpaWorkingOn.setLayout(gridBagLayout2);
 		wlaLieferantenrechnungsnummer = new WrapperLabel();
 
@@ -324,23 +320,6 @@ public class PanelEingangsrechnungKopfdaten extends PanelBasis {
 		wcbIGErwerb.setText(LPMain.getTextRespectUISPr("lp.igerwerb"));
 		wcbIGErwerb.setActionCommand(ACTION_SPECIAL_IGERWERB);
 		wcbIGErwerb.addActionListener(this);
-
-		wlaAbstand1.setMinimumSize(new Dimension(150, Defaults.getInstance()
-				.getControlHeight()));
-		wlaAbstand1.setPreferredSize(new Dimension(150, Defaults.getInstance()
-				.getControlHeight()));
-		wlaAbstand2.setMinimumSize(new Dimension(100, Defaults.getInstance()
-				.getControlHeight()));
-		wlaAbstand2.setPreferredSize(new Dimension(100, Defaults.getInstance()
-				.getControlHeight()));
-		wlaAbstand3.setMinimumSize(new Dimension(150, Defaults.getInstance()
-				.getControlHeight()));
-		wlaAbstand3.setPreferredSize(new Dimension(150, Defaults.getInstance()
-				.getControlHeight()));
-		wlaAbstand4.setMinimumSize(new Dimension(100, Defaults.getInstance()
-				.getControlHeight()));
-		wlaAbstand4.setPreferredSize(new Dimension(100, Defaults.getInstance()
-				.getControlHeight()));
 
 		wlaWiederholungsintervall = new WrapperLabel(LPMain.getInstance()
 				.getTextRespectUISPr("lp.wiederholungsintervall"));
@@ -448,25 +427,62 @@ public class PanelEingangsrechnungKopfdaten extends PanelBasis {
 				.darfAnwenderAufModulZugreifen(
 						LocaleFac.BELEGART_FINANZBUCHHALTUNG);
 
-		wtnfLieferantenrechnungsnummer = new WrapperTextNumberField();
-		wtnfLieferantenrechnungsnummer.setMandatoryField(true);
 		wcbIGErwerb.setActivatable(!bFibuInstalliert); // bei Fibu nicht
 														// aenderbar, da aus
 														// Kreditorenkonto
-		if (bFibuInstalliert) {
-			wtnfLieferantenrechnungsnummer.setMaximumDigits(20);
+		// PJ18303
+
+		wlaAnzahlungen = new WrapperLabel(
+				LPMain.getTextRespectUISPr("rech.zahlung.anzahlungen"));
+		wtfAnzahlungen = new WrapperTextField(9999);
+		wtfAnzahlungen.setActivatable(false);
+
+		ParametermandantDto parametermandantDto = DelegateFactory
+				.getInstance()
+				.getParameterDelegate()
+				.getMandantparameter(
+						LPMain.getInstance().getTheClient().getMandant(),
+						ParameterFac.KATEGORIE_EINGANGSRECHNUNG,
+						ParameterFac.PARAMETER_EINGANGSRECHNUNG_LIEFERANTENRECHNUNGSNUMMER_LAENGE);
+		iStellenLieferantenrechnungsnummer = Integer
+				.parseInt(parametermandantDto.getCWert());
+
+		if (iStellenLieferantenrechnungsnummer == -1) {
+			wtnfLieferantenrechnungsnummer = new WrapperTextField(20);
 		} else {
-			ParametermandantDto parametermandantDto = DelegateFactory
-					.getInstance()
-					.getParameterDelegate()
-					.getMandantparameter(
-							LPMain.getInstance().getTheClient().getMandant(),
-							ParameterFac.KATEGORIE_EINGANGSRECHNUNG,
-							ParameterFac.PARAMETER_EINGANGSRECHNUNG_LIEFERANTENRECHNUNGSNUMMER_LAENGE);
-			iStellenLieferantenrechnungsnummer = Integer
-					.parseInt(parametermandantDto.getCWert());
+			wtnfLieferantenrechnungsnummer = new WrapperTextNumberField();
+		}
+
+		if (wtnfLieferantenrechnungsnummer instanceof WrapperTextNumberField) {
 			((WrapperTextNumberField) wtnfLieferantenrechnungsnummer)
-					.setMaximumDigits(iStellenLieferantenrechnungsnummer);
+					.setMandatoryField(true);
+		} else if (wtnfLieferantenrechnungsnummer instanceof WrapperTextField) {
+			((WrapperTextField) wtnfLieferantenrechnungsnummer)
+					.setMandatoryField(true);
+		}
+
+		if (bFibuInstalliert) {
+
+			if (wtnfLieferantenrechnungsnummer instanceof WrapperTextNumberField) {
+				((WrapperTextNumberField) wtnfLieferantenrechnungsnummer)
+						.setMaximumDigits(20);
+			} else if (wtnfLieferantenrechnungsnummer instanceof WrapperTextField) {
+				((WrapperTextField) wtnfLieferantenrechnungsnummer)
+						.setColumnsMax(20);
+			}
+
+		} else {
+			if (iStellenLieferantenrechnungsnummer != -1) {
+				if (wtnfLieferantenrechnungsnummer instanceof WrapperTextNumberField) {
+					((WrapperTextNumberField) wtnfLieferantenrechnungsnummer)
+							.setMaximumDigits(iStellenLieferantenrechnungsnummer);
+				} else if (wtnfLieferantenrechnungsnummer instanceof WrapperTextField) {
+					((WrapperTextField) wtnfLieferantenrechnungsnummer)
+							.setColumnsMax(iStellenLieferantenrechnungsnummer);
+
+				}
+			}
+
 		}
 		// Actionpanel
 		String[] aWhichButtonIUse = { ACTION_UPDATE, ACTION_SAVE,
@@ -474,21 +490,22 @@ public class PanelEingangsrechnungKopfdaten extends PanelBasis {
 		enableToolsPanelButtons(aWhichButtonIUse);
 		JPanel panelButtonAction = getToolsPanel();
 		getInternalFrame().addItemChangedListener(this);
-		this.add(panelButtonAction, new GridBagConstraints(0, 0, 1, 1, 0.0,
-				0.0, GridBagConstraints.NORTHWEST, GridBagConstraints.NONE,
-				new Insets(0, 0, 0, 0), 0, 0));
+		this.add(panelButtonAction, new GridBagConstraints(0, 0, 1, 1, 1.0,
+				0.0, GridBagConstraints.NORTHWEST,
+				GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0));
 		this.add(jpaWorkingOn, new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0,
-				GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(
-						0, 0, 0, 0), 0, 0));
+				GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL,
+				new Insets(0, 0, 0, 0), 0, 0));
 		this.add(getPanelStatusbar(), new GridBagConstraints(0, 2, 1, 1, 1.0,
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(0, 0, 0, 0), 0, 0));
 
-		jpaWorkingOn.add(wlaZollimportpapiere, new GridBagConstraints(2,
-				iZeile, 2, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+		getToolBar().getToolsPanelRight().add(wlaZollimportpapiere);
+		// jpaWorkingOn.add(wlaZollimportpapiere, new GridBagConstraints(2,
+		// iZeile, 2, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+		// GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
 		iZeile++;
-		jpaWorkingOn.add(wlaArt, new GridBagConstraints(0, iZeile, 1, 1, 0.0,
+		jpaWorkingOn.add(wlaArt, new GridBagConstraints(0, iZeile, 1, 1, 1.0,
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(2, 2, 2, 2), 0, 0));
 		jpaWorkingOn.add(wcoArt, new GridBagConstraints(1, iZeile, 1, 1, 0.0,
@@ -551,7 +568,7 @@ public class PanelEingangsrechnungKopfdaten extends PanelBasis {
 				1, 0.0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
 		jpaWorkingOn.add(wlaKreditorennummer, new GridBagConstraints(2, iZeile,
-				1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+				2, 1, 0.0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
 		iZeile++;
 		jpaWorkingOn.add(wbuZahlungsziel, new GridBagConstraints(0, iZeile, 1,
@@ -568,7 +585,7 @@ public class PanelEingangsrechnungKopfdaten extends PanelBasis {
 				1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(2, 2, 2, 2), 0, 0));
 		jpaWorkingOn.add(wlaFreigabedatum, new GridBagConstraints(2, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.CENTER,
+				1, 1.0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
 		jpaWorkingOn.add(wdfFreigabedatum, new GridBagConstraints(3, iZeile, 1,
 				1, 1.0, 0.0, GridBagConstraints.CENTER,
@@ -670,63 +687,60 @@ public class PanelEingangsrechnungKopfdaten extends PanelBasis {
 					GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
 		}
 		iZeile++;
-		jpaWorkingOn.add(wlaAbstand1, new GridBagConstraints(0, iZeile, 1, 1,
-				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wlaAbstand2, new GridBagConstraints(1, iZeile, 1, 1,
-				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wlaAbstand3, new GridBagConstraints(2, iZeile, 1, 1,
-				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wlaAbstand4, new GridBagConstraints(3, iZeile, 1, 1,
-				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wlaAnzahlungen, new GridBagConstraints(0, iZeile, 1,
+				1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wtfAnzahlungen, new GridBagConstraints(1, iZeile, 3,
+				1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
 
 		if (tabbedPaneEingangsrechnung.isBZusatzkosten()) {
-			getToolsPanel().add(new WrapperLabel(""));
-			getToolsPanel().add(new WrapperLabel(""));
-			getToolsPanel().add(new WrapperLabel(""));
-			getToolsPanel().add(new WrapperLabel(""));
-			getToolsPanel().add(new WrapperLabel(""));
-			getToolsPanel().add(new WrapperLabel(""));
-			getToolsPanel().add(new WrapperLabel(""));
-			getToolsPanel().add(new WrapperLabel(""));
-			createAndSaveAndShowButton(
-					"/com/lp/client/res/check2.png",
-					LPMain.getTextRespectUISPr("er.zusatzkosten.wiederholungerledigen"),
-					MY_OWN_NEW_TOGGLE_WIEDERHOLEND_ERLEDIGT, null);
-			getToolsPanel().add(new WrapperLabel(""));
-			getToolsPanel().add(new WrapperLabel(""));
-			getToolsPanel().add(new WrapperLabel(""));
-			getToolsPanel().add(new WrapperLabel(""));
-			getToolsPanel().add(new WrapperLabel(""));
-			getToolsPanel().add(new WrapperLabel(""));
-			getToolsPanel().add(new WrapperLabel(""));
-			getToolsPanel().add(new WrapperLabel(""));
-			getToolsPanel().add(new WrapperLabel(""));
+			// getToolsPanel().add(new WrapperLabel(""));
+			// getToolsPanel().add(new WrapperLabel(""));
+			// getToolsPanel().add(new WrapperLabel(""));
+			// getToolsPanel().add(new WrapperLabel(""));
+			// getToolsPanel().add(new WrapperLabel(""));
+			// getToolsPanel().add(new WrapperLabel(""));
+			// getToolsPanel().add(new WrapperLabel(""));
+			// getToolsPanel().add(new WrapperLabel(""));
+			getToolBar()
+					.addButtonCenter(
+							"/com/lp/client/res/check2.png",
+							LPMain.getTextRespectUISPr("er.zusatzkosten.wiederholungerledigen"),
+							MY_OWN_NEW_TOGGLE_WIEDERHOLEND_ERLEDIGT, null, null);
+			// getToolsPanel().add(new WrapperLabel(""));
+			// getToolsPanel().add(new WrapperLabel(""));
+			// getToolsPanel().add(new WrapperLabel(""));
+			// getToolsPanel().add(new WrapperLabel(""));
+			// getToolsPanel().add(new WrapperLabel(""));
+			// getToolsPanel().add(new WrapperLabel(""));
+			// getToolsPanel().add(new WrapperLabel(""));
+			// getToolsPanel().add(new WrapperLabel(""));
+			// getToolsPanel().add(new WrapperLabel(""));
 		} else {
-			getToolsPanel().add(new WrapperLabel(""));
-			getToolsPanel().add(new WrapperLabel(""));
-			getToolsPanel().add(new WrapperLabel(""));
-			getToolsPanel().add(new WrapperLabel(""));
-			getToolsPanel().add(new WrapperLabel(""));
-			getToolsPanel().add(new WrapperLabel(""));
-			getToolsPanel().add(new WrapperLabel(""));
-			getToolsPanel().add(new WrapperLabel(""));
-			createAndSaveAndShowButton(
-					"/com/lp/client/res/document_preferences.png",
-					LPMain.getTextRespectUISPr("er.zollimportpapiere.erhalten"),
-					MY_OWN_NEW_TOGGLE_ZOLLIMPORTPAPIER_ERHALTEN, null);
-			getToolsPanel().add(new WrapperLabel(""));
-			getToolsPanel().add(new WrapperLabel(""));
-			getToolsPanel().add(new WrapperLabel(""));
-			getToolsPanel().add(new WrapperLabel(""));
-			getToolsPanel().add(new WrapperLabel(""));
-			getToolsPanel().add(new WrapperLabel(""));
-			getToolsPanel().add(new WrapperLabel(""));
-			getToolsPanel().add(new WrapperLabel(""));
-			getToolsPanel().add(new WrapperLabel(""));
+			// getToolsPanel().add(new WrapperLabel(""));
+			// getToolsPanel().add(new WrapperLabel(""));
+			// getToolsPanel().add(new WrapperLabel(""));
+			// getToolsPanel().add(new WrapperLabel(""));
+			// getToolsPanel().add(new WrapperLabel(""));
+			// getToolsPanel().add(new WrapperLabel(""));
+			// getToolsPanel().add(new WrapperLabel(""));
+			// getToolsPanel().add(new WrapperLabel(""));
+			getToolBar()
+					.addButtonCenter(
+							"/com/lp/client/res/document_preferences.png",
+							LPMain.getTextRespectUISPr("er.zollimportpapiere.erhalten"),
+							MY_OWN_NEW_TOGGLE_ZOLLIMPORTPAPIER_ERHALTEN, null,
+							null);
+			// getToolsPanel().add(new WrapperLabel(""));
+			// getToolsPanel().add(new WrapperLabel(""));
+			// getToolsPanel().add(new WrapperLabel(""));
+			// getToolsPanel().add(new WrapperLabel(""));
+			// getToolsPanel().add(new WrapperLabel(""));
+			// getToolsPanel().add(new WrapperLabel(""));
+			// getToolsPanel().add(new WrapperLabel(""));
+			// getToolsPanel().add(new WrapperLabel(""));
+			// getToolsPanel().add(new WrapperLabel(""));
 		}
 
 	}
@@ -870,6 +884,10 @@ public class PanelEingangsrechnungKopfdaten extends PanelBasis {
 				wtfBestellung.setVisible(true);
 				wtfBestellung.setMandatoryField(true);
 			}
+			boolean schlusszahlung = sArt
+					.equals(EingangsrechnungFac.EINGANGSRECHNUNGART_SCHLUSSZAHLUNG);
+			wlaAnzahlungen.setVisible(schlusszahlung);
+			wtfAnzahlungen.setVisible(schlusszahlung);
 		} else if (e.getActionCommand().equals(ACTION_SPECIAL_KONTO)) {
 			dialogQueryKonto(e);
 		} else if (e.getActionCommand().equals(ACTION_SPECIAL_IGERWERB)) {
@@ -1072,6 +1090,12 @@ public class PanelEingangsrechnungKopfdaten extends PanelBasis {
 					.getNBetragfw();
 		}
 
+		
+		//SP3255
+		if (wnfBetrag.hasFocus()) {
+			updateMwst();
+		} 
+		
 		try {
 			if (allMandatoryFieldsSetDlg()) {
 				if (getTabbedPane().getEingangsrechnungDto() == null) {
@@ -1079,7 +1103,8 @@ public class PanelEingangsrechnungKopfdaten extends PanelBasis {
 							.getInstance()
 							.getLieferantDelegate()
 							.pruefeLieferant(
-									getTabbedPane().getLieferantDto().getIId());
+									getTabbedPane().getLieferantDto().getIId(),LocaleFac.BELEGART_EINGANGSRECHNUNG,
+									getInternalFrame());
 				}
 				components2Dto();
 				// Betrag prufen
@@ -1203,6 +1228,7 @@ public class PanelEingangsrechnungKopfdaten extends PanelBasis {
 				if (bIsNewER) {
 					getTabbedPane().setSelectedEingangsrechnungIId();
 				}
+				nettoBetrag = null;
 			}
 		} catch (ExceptionLP t) {
 			switch (t.getICode()) {
@@ -1491,8 +1517,6 @@ public class PanelEingangsrechnungKopfdaten extends PanelBasis {
 								.getIIdKostenstelle());
 					}
 				}
-				wcbReversecharge.setShort(getTabbedPane().getLieferantDto()
-						.getBReversecharge());
 
 				// Feld Kundendaten ist vorbesetzt mit der Kundennummer d.
 				// Lieferanten
@@ -1705,6 +1729,7 @@ public class PanelEingangsrechnungKopfdaten extends PanelBasis {
 		wlaWaehrung1.setText(wtfWaehrung.getText());
 		wlaWaehrung2.setText(wtfWaehrung.getText());
 		setzeWechselkurs(wtfWaehrung.getText());
+		nettoBetrag = null;
 	}
 
 	private void components2Dto() throws Throwable {
@@ -2022,17 +2047,26 @@ public class PanelEingangsrechnungKopfdaten extends PanelBasis {
 			wtfAdresse.setText(lieferant.getPartnerDto().formatAdresse());
 			wtfAbteilung.setText(lieferant.getPartnerDto()
 					.getCName3vorname2abteilung());
-			if (bFibuInstalliert) {
-				boolean istIgErwerb = DelegateFactory
-						.getInstance()
-						.getFinanzServiceDelegate()
-						.istIgErwerb(
-								getTabbedPane().getLieferantDto()
-										.getKontoIIdKreditorenkonto());
-				wcbIGErwerb.setSelected(istIgErwerb);
+			wcbReversecharge.setShort(getTabbedPane().getLieferantDto()
+					.getBReversecharge());
+			wcbIGErwerb.setShort(getTabbedPane().getLieferantDto()
+					.getBIgErwerb());
+			if (wcbReversecharge.isSelected()) {
+				wcbIGErwerb.setSelected(false);
 			} else {
-				wcbIGErwerb.setSelected(lieferant.getBIgErwerbBoolean());
+				if (bFibuInstalliert) {
+					boolean istIgErwerb = DelegateFactory
+							.getInstance()
+							.getFinanzServiceDelegate()
+							.istIgErwerb(
+									getTabbedPane().getLieferantDto()
+											.getKontoIIdKreditorenkonto());
+					wcbIGErwerb.setSelected(istIgErwerb);
+				} else {
+					wcbIGErwerb.setSelected(lieferant.getBIgErwerbBoolean());
+				}
 			}
+			setIGErwerbReverseCharge();
 		} else {
 			wbuLieferant.setOKey(null);
 			wtfLieferant.setText(null);
@@ -2043,11 +2077,38 @@ public class PanelEingangsrechnungKopfdaten extends PanelBasis {
 		}
 	}
 
-	private void dto2ComponentsBestellung() {
+	private void dto2ComponentsBestellung() throws ExceptionLP, Throwable {
 		if (bestellungDto != null) {
 			wtfBestellung.setText(bestellungDto.getCNr());
+			String art = getTabbedPane().getEingangsrechnungDto() == null ? wcoArt
+					.getSelectedItem().toString() : getTabbedPane()
+					.getEingangsrechnungDto().getEingangsrechnungartCNr();
+			if (EingangsrechnungFac.EINGANGSRECHNUNGART_SCHLUSSZAHLUNG.trim()
+					.equals(art.trim())) {
+				StringBuffer sb = new StringBuffer();
+				wlaAnzahlungen.setVisible(true);
+				wtfAnzahlungen.setVisible(true);
+				EingangsrechnungDto[] dtos = DelegateFactory.getInstance()
+						.getEingangsrechnungDelegate()
+						.findByBestellungIId(bestellungDto.getIId());
+				for (EingangsrechnungDto dto : dtos) {
+					if (!dto.getEingangsrechnungartCNr().equals(
+							EingangsrechnungFac.EINGANGSRECHNUNGART_ANZAHLUNG))
+						continue;
+					if (dto.getStatusCNr().equals(
+							EingangsrechnungFac.STATUS_STORNIERT))
+						continue;
+					sb.append(dto.getCNr() + ", ");
+				}
+				wtfAnzahlungen.setText(sb.toString());
+			} else {
+				wlaAnzahlungen.setVisible(false);
+				wtfAnzahlungen.setVisible(false);
+			}
 		} else {
 			wtfBestellung.setText(null);
+			wlaAnzahlungen.setVisible(false);
+			wtfAnzahlungen.setVisible(false);
 		}
 	}
 
@@ -2080,13 +2141,25 @@ public class PanelEingangsrechnungKopfdaten extends PanelBasis {
 				wnfMwst.setBigDecimal(null);
 			} else {
 				mwst = getMwstsatzForSelected();
+
 				if (wcbIGErwerb.isSelected() || wcbReversecharge.isSelected()) {
+					if (nettoBetrag != null) {
+						wnfBetrag.setBigDecimal(nettoBetrag);
+					}
 					// IG Erwerb und Reverse Charge rechnen netto
 					wnfMwst.setBigDecimal(Helper.getProzentWert(
 							wnfBetrag.getBigDecimal(),
 							new BigDecimal(mwst.getFMwstsatz()),
 							FinanzFac.NACHKOMMASTELLEN));
 				} else {
+					if (nettoBetrag != null) {
+						// wenn nettoBetrag gesetzt ist, rechnen wir immer
+						// von diesem ausgehend. Netto bleibt also immer gleich.
+						wnfBetrag.setBigDecimal(nettoBetrag.add(Helper
+								.getProzentWert(nettoBetrag, new BigDecimal(
+										mwst.getFMwstsatz()),
+										FinanzFac.NACHKOMMASTELLEN)));
+					}
 					wnfMwst.setBigDecimal(Helper.getMehrwertsteuerBetrag(
 							wnfBetrag.getBigDecimal(), mwst.getFMwstsatz()
 									.doubleValue()));
@@ -2127,6 +2200,7 @@ public class PanelEingangsrechnungKopfdaten extends PanelBasis {
 	}
 
 	private void dialogQueryKonto(ActionEvent e) throws Throwable {
+		wbuKonto.setEnabled(false);
 		String[] aWhichButtonIUse = { PanelBasis.ACTION_REFRESH, };
 		QueryType[] qt = null;
 		// nur Sachkonten dieses Mandanten
@@ -2148,6 +2222,7 @@ public class PanelEingangsrechnungKopfdaten extends PanelBasis {
 			panelQueryFLRKonto.setSelectedId(kontoDto.getIId());
 		}
 		new DialogQuery(panelQueryFLRKonto);
+		wbuKonto.setEnabled(true);
 	}
 
 	protected void eventActionUpdate(ActionEvent aE, boolean bNeedNoUpdateI)
@@ -2190,9 +2265,20 @@ public class PanelEingangsrechnungKopfdaten extends PanelBasis {
 		super.eventActionUpdate(aE, false);
 		setzeWechselkurs(wtfWaehrung.getText());
 		updateMehrfach();
+
+		if (erDto.getStatusCNr().equals(EingangsrechnungFac.STATUS_ANGELEGT)
+				&& getTabbedPane().getEingangsrechnungDto().getTGedruckt() != null) {
+			boolean bFrage = DialogFactory.showModalJaNeinDialog(
+					getInternalFrame(), LPMain.getInstance()
+							.getTextRespectUISPr("er.gedruckt.zuruecksetzen"));
+			if (bFrage == true) {
+				getTabbedPane().getEingangsrechnungDto().setTGedruckt(null);
+			}
+		}
+
 	}
 
-	public Map getMapSieheKontierung() {
+	public Map<String, String> getMapSieheKontierung() {
 		TreeMap<String, String> tm = new TreeMap<String, String>();
 		tm.put(MEHRFACH,
 				LPMain.getInstance().getTextRespectUISPr("er.siehekontierung"));
@@ -2214,6 +2300,8 @@ public class PanelEingangsrechnungKopfdaten extends PanelBasis {
 		getTabbedPane().enablePanels();
 		getTabbedPane().setWareneingangDto(null);
 		getTabbedPane().setInseratIIds(null);
+
+		nettoBetrag = null;
 	}
 
 	protected void eventActionPrint(ActionEvent e) throws Throwable {
@@ -2266,6 +2354,15 @@ public class PanelEingangsrechnungKopfdaten extends PanelBasis {
 					+ ": " + status;
 		}
 		setStatusbarSpalte5(status);
+	}
+
+	public void setNettoBetrag(BigDecimal nettoBetrag) throws ExceptionLP,
+			Throwable {
+		this.nettoBetrag = nettoBetrag;
+		updateMwst();
+		
+		//SP2896
+		this.nettoBetrag=null;
 	}
 }
 

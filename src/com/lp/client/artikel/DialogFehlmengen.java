@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -48,7 +48,7 @@ import com.lp.client.frame.component.PanelQuery;
 import com.lp.client.frame.component.PanelSplit;
 import com.lp.client.pc.LPMain;
 import com.lp.server.artikel.service.ArtikelDto;
-import com.lp.server.artikel.service.ArtikelFac;
+import com.lp.server.system.service.MandantFac;
 import com.lp.server.util.fastlanereader.service.query.FilterKriterium;
 import com.lp.server.util.fastlanereader.service.query.QueryParameters;
 
@@ -88,6 +88,7 @@ public class DialogFehlmengen extends JDialog {
 
 		jbInit();
 		pack();
+		setSize(800, 700);
 
 		panelQueryFehlmengen.updateButtons(new LockStateValue(
 				PanelBasis.LOCK_IS_NOT_LOCKED));
@@ -106,11 +107,28 @@ public class DialogFehlmengen extends JDialog {
 
 	private void jbInit() throws Throwable {
 
-		FilterKriterium[] kriterien = new FilterKriterium[1];
+		FilterKriterium[] kriterien = null;
+		if (LPMain
+				.getInstance()
+				.getDesktop()
+				.darfAnwenderAufZusatzfunktionZugreifen(
+						MandantFac.ZUSATZFUNKTION_RESERVIERUNGEN_AUFLOESEN)) {
 
-		kriterien[0] = new FilterKriterium(
-				ArtikelFac.FLR_FEHLMENGE_ARTIKEL_I_ID, true,
-				artikelDto.getIId() + "", FilterKriterium.OPERATOR_EQUAL, false);
+			kriterien = new FilterKriterium[1];
+
+			kriterien[0] = new FilterKriterium("flrartikelliste.i_id", true,
+					artikelDto.getIId() + "", FilterKriterium.OPERATOR_EQUAL,
+					false);
+		} else {
+			kriterien = new FilterKriterium[2];
+
+			kriterien[0] = new FilterKriterium("flrartikelliste.i_id", true,
+					artikelDto.getIId() + "", FilterKriterium.OPERATOR_EQUAL,
+					false);
+			kriterien[1] = new FilterKriterium("compId.typ", true,
+					"'F'", FilterKriterium.OPERATOR_EQUAL,
+					false);
+		}
 
 		panelQueryFehlmengen = new PanelQuery(null, kriterien,
 				QueryParameters.UC_ID_FEHLMENGEAUFLOESEN, null, internalFrame,

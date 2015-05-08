@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -238,7 +238,7 @@ public class PanelPartnerDetail extends PanelBasis {
 		wcoPartnerart.setMap(tmPartnerarten);
 	}
 
-	private TabbedPanePartner getTabbedPanePartner() {
+	public TabbedPanePartner getTabbedPanePartner() {
 		return tpPartner;
 	}
 
@@ -455,7 +455,8 @@ public class PanelPartnerDetail extends PanelBasis {
 
 		wbuBranche.setText(LPMain.getInstance().getTextRespectUISPr(
 				"button.branche"));
-
+		
+		
 		wtfBranche = new WrapperTextField(PartnerFac.MAX_BRANCHE);
 		wtfBranche.setActivatable(false);
 
@@ -501,6 +502,10 @@ public class PanelPartnerDetail extends PanelBasis {
 				LPMain.getTextRespectUISPr("lp.homepage"));
 		wtfHomepage = new WrapperURLField();
 
+		wtfHomepage.setColumnsMax(80);
+		wtfEmail.setColumnsMax(80);
+
+
 		wlaDirektfax = new WrapperLabel(
 				LPMain.getTextRespectUISPr("lp.direktfax"));
 		wtfDirektfax = new WrapperTextField(PartnerFac.MAX_KOMMART_INHALT);
@@ -527,9 +532,9 @@ public class PanelPartnerDetail extends PanelBasis {
 
 		// Leerabstand
 
-		jpaWorkingOn.add(wlaKurzbezeichnung, new GridBagConstraints(4, iZeile, 2, 1, 0, 0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wlaKurzbezeichnung, new GridBagConstraints(4, iZeile, 2, 1, 0.4, 0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
 
-		jpaWorkingOn.add(wtfKurzbezeichnung, new GridBagConstraints(6, iZeile, 2, 1, 0, 0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wtfKurzbezeichnung, new GridBagConstraints(6, iZeile, 2, 1, 0.4, 0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
 
 		// Zeile
 		iZeile++;
@@ -588,13 +593,13 @@ public class PanelPartnerDetail extends PanelBasis {
 
 		jpaWorkingOn.add(wnfGmtVersatz, new GridBagConstraints(3, iZeile, 1, 1, 0.15, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), -40, 0));
 
-		jpaWorkingOn.add(wlaIln, new GridBagConstraints(4, iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wlaIln, new GridBagConstraints(4, iZeile, 1, 1, 0.2, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
 
-		jpaWorkingOn.add(wtfIln, new GridBagConstraints(5, iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wtfIln, new GridBagConstraints(5, iZeile, 1, 1, 0.2, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
 
-		jpaWorkingOn.add(wlaFilialnr, new GridBagConstraints(6, iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wlaFilialnr, new GridBagConstraints(6, iZeile, 1, 1, 0.2, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
 
-		jpaWorkingOn.add(wtfFilialnr, new GridBagConstraints(7, iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wtfFilialnr, new GridBagConstraints(7, iZeile, 1, 1, 0.2, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
 
 		// Zeile
 		iZeile++;

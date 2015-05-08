@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -185,6 +185,16 @@ public class RechnungFilterFactory {
 		}
 	}
 
+	
+	public FilterKriteriumDirekt createFKDProjekt() throws Throwable {
+		return new FilterKriteriumDirekt("c_bez", "",
+				FilterKriterium.OPERATOR_LIKE, LPMain
+						.getTextRespectUISPr("label.projekt"),
+				FilterKriteriumDirekt.PROZENT_BOTH, // Auswertung als '%XX'
+				true, // wrapWithSingleQuotes
+				false, Facade.MAX_UNBESCHRAENKT); // ignore case
+	}
+	
 	public FilterKriterium[] createFKRechnungKey(Integer artikelIId)
 			throws Throwable {
 		// Handartikel nicht anzeigen
@@ -485,12 +495,13 @@ public class RechnungFilterFactory {
 		FilterKriterium[] kriterien = null;
 
 		if (iIdRechnungI != null) {
-			kriterien = new FilterKriterium[1];
+			kriterien = new FilterKriterium[2];
 
-			kriterien[0] = new FilterKriterium(
-					RechnungFac.FLR_RECHNUNGPOSITION_FLRRECHNUNG + "."
-							+ RechnungFac.FLR_RECHNUNG_I_ID, true, iIdRechnungI
+			kriterien[0] = new FilterKriterium("rechnung_i_id", true, iIdRechnungI
 							.toString(), FilterKriterium.OPERATOR_EQUAL, false);
+			
+			kriterien[1] = new FilterKriterium("auftragposition_i_id", true, "", FilterKriterium.OPERATOR_IS + " "
+							+ FilterKriterium.OPERATOR_NOT_NULL, false);
 		}
 
 		return kriterien;

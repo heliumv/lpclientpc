@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -39,7 +39,6 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.util.EventObject;
 
-import javax.swing.BorderFactory;
 import javax.swing.JPanel;
 import javax.swing.border.Border;
 
@@ -52,6 +51,7 @@ import com.lp.client.frame.component.ItemChangedEvent;
 import com.lp.client.frame.component.PanelBasis;
 import com.lp.client.frame.component.PanelQueryFLR;
 import com.lp.client.frame.component.WrapperButton;
+import com.lp.client.frame.component.WrapperCheckBox;
 import com.lp.client.frame.component.WrapperIBANField;
 import com.lp.client.frame.component.WrapperLabel;
 import com.lp.client.frame.component.WrapperTextField;
@@ -64,6 +64,7 @@ import com.lp.server.finanz.service.BankverbindungDto;
 import com.lp.server.finanz.service.FinanzFac;
 import com.lp.server.finanz.service.KontoDtoSmall;
 import com.lp.server.partner.service.BankDto;
+import com.lp.server.util.Facade;
 import com.lp.server.util.fastlanereader.service.query.FilterKriterium;
 import com.lp.server.util.fastlanereader.service.query.QueryParameters;
 import com.lp.util.EJBExceptionLP;
@@ -119,6 +120,7 @@ private TabbedPaneBankverbindung tabbedPaneBankverbindung = null;
   private WrapperLabel wlaButtonBreiteRechts = new WrapperLabel();
   private WrapperLabel wlaBic=new WrapperLabel();
   private WrapperTextField wtfBic=new WrapperTextField();
+  private WrapperCheckBox wcbInLiquiditaetsvorschau;
 
   public PanelFinanzBankverbindungKopfdaten(InternalFrame internalFrame,
                                             String add2TitleI, Object key,
@@ -138,13 +140,12 @@ private TabbedPaneBankverbindung tabbedPaneBankverbindung = null;
    * @throws Throwable
    */
   private void jbInit() throws Throwable {
-    border2 = BorderFactory.createEmptyBorder(10, 10, 10, 10);
-    border1 = BorderFactory.createEmptyBorder(10, 10, 10, 10);
 
     JPanel panelButtonAction = getToolsPanel();
     getInternalFrame().addItemChangedListener(this);
     jPanelWorkingOn.setLayout(gridBagLayout1);
-    jPanelWorkingOn.setBorder(border2);
+    
+    wcbInLiquiditaetsvorschau = new WrapperCheckBox(LPMain.getTextRespectUISPr("fb.inliquiditaetsvorschau"));
     wtfKontoNummer.setMandatoryField(true);
     wtfKontoNummer.setActivatable(false);
     wlaBankkontoNummer.setText(LPMain.getInstance().getTextRespectUISPr("lp.kontonr"));
@@ -172,6 +173,7 @@ private TabbedPaneBankverbindung tabbedPaneBankverbindung = null;
     wbuKonto.addActionListener(this);
     wbuKonto.setActionCommand(ACTION_SPECIAL_KONTO);
     wtfKontoBezeichnung.setActivatable(false);
+    wtfKontoBezeichnung.setColumnsMax(Facade.MAX_UNBESCHRAENKT);
     wlaAbstand.setText("  ");
     wlaBezeichnung.setRequestFocusEnabled(true);
     wlaBezeichnung.setText(LPMain.getInstance().getTextRespectUISPr("lp.bezeichnung"));
@@ -214,7 +216,7 @@ private TabbedPaneBankverbindung tabbedPaneBankverbindung = null;
                                                GridBagConstraints.HORIZONTAL,
                                                new Insets(2, 2, 2, 2), 0, 0));
     jPanelWorkingOn.add(wtfBlz,
-                        new GridBagConstraints(1, iZeile, 1, 1, 1.0, 0.0,
+                        new GridBagConstraints(1, iZeile, 4, 1, 1.0, 0.0,
                                                GridBagConstraints.CENTER,
                                                GridBagConstraints.HORIZONTAL,
                                                new Insets(2, 2, 2, 2), 0, 0));
@@ -225,7 +227,7 @@ private TabbedPaneBankverbindung tabbedPaneBankverbindung = null;
                                                GridBagConstraints.HORIZONTAL,
                                                new Insets(2, 2, 2, 2), 0, 0));
     jPanelWorkingOn.add(wtfBic,
-                        new GridBagConstraints(1, iZeile, 1, 1, 0.0, 0.0,
+                        new GridBagConstraints(1, iZeile, 4, 1, 0.0, 0.0,
                                                GridBagConstraints.CENTER,
                                                GridBagConstraints.HORIZONTAL,
                                                new Insets(2, 2, 2, 2), 0, 0));
@@ -236,7 +238,7 @@ private TabbedPaneBankverbindung tabbedPaneBankverbindung = null;
                                                GridBagConstraints.HORIZONTAL,
                                                new Insets(2, 2, 2, 2), 0, 0));
     jPanelWorkingOn.add(wtfBankkontoNummer,
-                        new GridBagConstraints(1, iZeile, 1, 1, 0.0, 0.0,
+                        new GridBagConstraints(1, iZeile, 4, 1, 0.0, 0.0,
                                                GridBagConstraints.CENTER,
                                                GridBagConstraints.HORIZONTAL,
                                                new Insets(2, 2, 2, 2), 0, 0));
@@ -277,11 +279,17 @@ private TabbedPaneBankverbindung tabbedPaneBankverbindung = null;
                         new GridBagConstraints(1, iZeile, 1, 1, 0.0, 0.0,
                                                GridBagConstraints.CENTER,
                                                GridBagConstraints.HORIZONTAL,
-                                               new Insets(2, 2, 2, 2), 0, 0));
+                                               new Insets(2, 2, 2, 2), 80, 0));
     jPanelWorkingOn.add(wtfKontoBezeichnung,
                         new GridBagConstraints(3, iZeile, 2, 1, 0.0, 0.0,
                                                GridBagConstraints.CENTER,
                                                GridBagConstraints.HORIZONTAL,
+                                               new Insets(2, 2, 2, 2), 500, 0));
+    iZeile++;
+    jPanelWorkingOn.add(wcbInLiquiditaetsvorschau,
+                        new GridBagConstraints(0, iZeile, 2, 1, 0.0, 0.0,
+                                               GridBagConstraints.CENTER,
+                                               GridBagConstraints.BOTH,
                                                new Insets(2, 2, 2, 2), 0, 0));
     iZeile++;
     jPanelWorkingOn.add(wlaButtonBreiteLinks,
@@ -309,7 +317,7 @@ private TabbedPaneBankverbindung tabbedPaneBankverbindung = null;
       wtfBankkontoNummer.setText(bankverbindungDto.getCKontonummer());
       wtfIban.setIban(bankverbindungDto.getCIban());
       wtfBezeichnung.setText(bankverbindungDto.getCBez());
-
+      wcbInLiquiditaetsvorschau.setSelected(bankverbindungDto.isbInLiquiditaetsVorschau());
       setStatusbarModification(bankverbindungDto) ;
 
       // Konto und Bank holen
@@ -341,6 +349,7 @@ private TabbedPaneBankverbindung tabbedPaneBankverbindung = null;
     bankverbindungDto.setCBez(wtfBezeichnung.getText());
     bankverbindungDto.setCIban(wtfIban.getIban());
     bankverbindungDto.setCKontonummer(wtfBankkontoNummer.getText());
+    bankverbindungDto.setbInLiquiditaetsVorschau(wcbInLiquiditaetsvorschau.isSelected());
     getTabbedPaneBankverbindung().setBankverbindungDto(bankverbindungDto);
   }
 

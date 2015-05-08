@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -42,13 +42,11 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.EventObject;
 
-import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
-import javax.swing.border.Border;
 
 import jxl.Cell;
 import jxl.CellType;
@@ -57,10 +55,12 @@ import jxl.LabelCell;
 import jxl.NumberCell;
 import jxl.Sheet;
 import jxl.Workbook;
+import net.miginfocom.swing.MigLayout;
 
+import com.lp.client.frame.HelperClient;
 import com.lp.client.frame.component.InternalFrame;
-import com.lp.client.frame.component.ItemChangedEvent;
 import com.lp.client.frame.component.PanelBasis;
+import com.lp.client.frame.component.WrapperButton;
 import com.lp.client.frame.component.WrapperCheckBox;
 import com.lp.client.frame.component.WrapperLabel;
 import com.lp.client.frame.component.WrapperNumberField;
@@ -104,8 +104,6 @@ public class ReportLiquiditaetsvorschau extends PanelBasis implements
 	 */
 	private static final long serialVersionUID = 1L;
 
-	private Border border1;
-
 	private WrapperLabel wlaKontostand = new WrapperLabel();
 	private WrapperLabel wlaBetrachtungszeitraum = new WrapperLabel();
 	private WrapperLabel wlaKreditlimit = new WrapperLabel();
@@ -117,6 +115,7 @@ public class ReportLiquiditaetsvorschau extends PanelBasis implements
 	private WrapperCheckBox wcbMitOffenenAngeboten = new WrapperCheckBox();
 	private WrapperCheckBox wcbMitOffenenBestellungen = new WrapperCheckBox();
 	private WrapperCheckBox wcbMitOffenenAuftraegen = new WrapperCheckBox();
+	private WrapperButton wbRefreshKontostand;
 
 	private ButtonGroup buttonGroup = new ButtonGroup();
 	WrapperRadioButton wrbZahlungsmoral = new WrapperRadioButton();
@@ -138,14 +137,15 @@ public class ReportLiquiditaetsvorschau extends PanelBasis implements
 	}
 
 	protected void jbInit() throws Throwable {
-		border1 = BorderFactory.createEmptyBorder(10, 10, 10, 10);
+		
 		this.setLayout(new GridBagLayout());
 		this.add(jpaWorkingOn, new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
 				GridBagConstraints.WEST, GridBagConstraints.BOTH, new Insets(0,
 						0, 0, 0), 0, 0));
-		jpaWorkingOn.setLayout(new GridBagLayout());
-		jpaWorkingOn.setBorder(border1);
 
+		wbRefreshKontostand = new WrapperButton("", HelperClient.createImageIcon("refresh.png"));
+		wbRefreshKontostand.addActionListener(this);
+		
 		wlaKontostand
 				.setText(LPMain
 						.getTextRespectUISPr("fb.report.liquiditaetsvorschau.kontostand"));
@@ -202,73 +202,33 @@ public class ReportLiquiditaetsvorschau extends PanelBasis implements
 		wnfKontostand.setMandatoryField(true);
 		wnfKreditlimit.setMandatoryField(true);
 
-		iZeile++;
-		jpaWorkingOn.add(wlaKontostand, new GridBagConstraints(0, iZeile, 1, 1,
-				0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 100, 0));
-		jpaWorkingOn.add(wnfKontostand, new GridBagConstraints(1, iZeile, 1, 1,
-				0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 60, 0));
+		jpaWorkingOn.setLayout(new MigLayout("wrap 11", "[15%,fill|10%,fill|5%,fill|5%,fill|10%,fill|10%,fill|5%,fill|10%,fill|10%,fill|10%,fill|5%,fill]"));
+		
+		jpaWorkingOn.add(wlaKontostand);
+		jpaWorkingOn.add(wnfKontostand);
 		jpaWorkingOn.add(new JLabel(LPMain.getTheClient()
-				.getSMandantenwaehrung()), new GridBagConstraints(2, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 10, 0));
+				.getSMandantenwaehrung()));
+		jpaWorkingOn.add(wbRefreshKontostand);
+		jpaWorkingOn.add(wlaBetrachtungszeitraum, "span 2");
+		jpaWorkingOn.add(wspBetrachtungszeitraum);
+		jpaWorkingOn.add(new JLabel(LPMain.getTextRespectUISPr("fb.report.liquiditaetsvorschau.wochen")));
+		jpaWorkingOn.add(wlaKreditlimit);
+		jpaWorkingOn.add(wnfKreditlimit);
+		jpaWorkingOn.add(new JLabel(LPMain.getTheClient().getSMandantenwaehrung()));
 
-		jpaWorkingOn.add(wlaBetrachtungszeitraum, new GridBagConstraints(3,
-				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.WEST,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 100, 0));
-		jpaWorkingOn.add(wspBetrachtungszeitraum, new GridBagConstraints(4,
-				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.WEST,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 20, 0));
+		jpaWorkingOn.add(wlaBerechnungZieltage, "span 2");
+		jpaWorkingOn.add(wrbZahlungsmoral, "span 3");
+		jpaWorkingOn.add(wcbMitPlankosten, "span 3");
+		jpaWorkingOn.add(wcbMitOffenenAuftraegen, "span");
 
-		jpaWorkingOn
-				.add(new JLabel(
-						LPMain.getTextRespectUISPr("fb.report.liquiditaetsvorschau.wochen")),
-						new GridBagConstraints(5, iZeile, 1, 1, 0.0, 0.0,
-								GridBagConstraints.WEST,
-								GridBagConstraints.BOTH,
-								new Insets(2, 2, 2, 2), 30, 0));
-
-		jpaWorkingOn.add(wlaKreditlimit, new GridBagConstraints(6, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 120, 0));
-		jpaWorkingOn.add(wnfKreditlimit, new GridBagConstraints(7, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 80, 0));
-		jpaWorkingOn.add(new JLabel(LPMain.getTheClient()
-				.getSMandantenwaehrung()), new GridBagConstraints(8, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 30, 0));
-		iZeile++;
-
-		jpaWorkingOn.add(wlaBerechnungZieltage, new GridBagConstraints(0,
-				iZeile, 2, 1, 0.0, 0.0, GridBagConstraints.WEST,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wrbZahlungsmoral, new GridBagConstraints(2, iZeile, 2,
-				1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wrbVereinbZahlungsziel, new GridBagConstraints(4,
-				iZeile, 2, 1, 0.0, 0.0, GridBagConstraints.WEST,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wcbMitPlankosten, new GridBagConstraints(6, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 120, 0));
-		jpaWorkingOn.add(wcbMitOffenenAuftraegen, new GridBagConstraints(7,
-				iZeile, 2, 1, 0.0, 0.0, GridBagConstraints.WEST,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-
-		iZeile++;
-		jpaWorkingOn.add(wcbMitOffenenBestellungen, new GridBagConstraints(6,
-				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.WEST,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 135, 0));
-		jpaWorkingOn.add(wcbMitOffenenAngeboten, new GridBagConstraints(7,
-				iZeile, 2, 1, 0.0, 0.0, GridBagConstraints.WEST,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 120, 0));
+		jpaWorkingOn.add(wrbVereinbZahlungsziel, "skip 2, span 3");
+		jpaWorkingOn.add(wcbMitOffenenBestellungen, "span 3");
+		jpaWorkingOn.add(wcbMitOffenenAngeboten, "span");
 
 	}
 
 	protected void eventItemchanged(EventObject eI) throws Throwable {
-		ItemChangedEvent e = (ItemChangedEvent) eI;
+//		ItemChangedEvent e = (ItemChangedEvent) eI;
 	}
 
 	private void initPanel() throws Throwable {
@@ -280,6 +240,10 @@ public class ReportLiquiditaetsvorschau extends PanelBasis implements
 	}
 
 	protected void eventActionSpecial(ActionEvent e) throws Throwable {
+		if(e.getSource() ==  wbRefreshKontostand) {
+			Integer geschaeftsjahrIId = LPMain.getTheClient().getGeschaeftsJahr();
+			wnfKontostand.setBigDecimal(DelegateFactory.getInstance().getFinanzServiceDelegate().getLiquiditaetsKontostand(geschaeftsjahrIId));
+		}
 	}
 
 	public String getModul() {

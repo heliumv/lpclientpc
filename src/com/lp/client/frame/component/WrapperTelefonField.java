@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -40,19 +40,35 @@ import java.util.regex.Pattern;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JPanel;
 
+import com.lp.client.artikel.ArtikelFilterFactory;
+import com.lp.client.artikel.InternalFrameArtikel;
+import com.lp.client.artikel.TabbedPaneArtikel;
 import com.lp.client.frame.ExceptionLP;
 import com.lp.client.frame.component.jtapi.Outcall;
 import com.lp.client.frame.component.phone.HttpPhoneDialer;
 import com.lp.client.frame.component.phone.HttpPhoneDialerAuth;
 import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.frame.dialog.DialogFactory;
+import com.lp.client.partner.InternalFrameKunde;
+import com.lp.client.partner.InternalFrameLieferant;
+import com.lp.client.partner.InternalFramePartner;
+import com.lp.client.partner.PanelAnsprechpartner;
+import com.lp.client.partner.PanelPartnerDetail;
 import com.lp.client.pc.LPMain;
+import com.lp.client.personal.PersonalFilterFactory;
+import com.lp.client.projekt.InternalFrameProjekt;
+import com.lp.client.projekt.PanelProjektKopfdaten;
 import com.lp.client.util.logger.LpLogger;
+import com.lp.client.zeiterfassung.InternalFrameZeiterfassung;
+import com.lp.client.zeiterfassung.TabbedPaneZeiterfassung;
 import com.lp.server.finanz.service.FinanzFac;
 import com.lp.server.partner.service.PartnerDto;
 import com.lp.server.partner.service.PartnerFac;
+import com.lp.server.personal.service.PersonalDto;
 import com.lp.server.system.service.ArbeitsplatzparameterDto;
+import com.lp.server.system.service.LocaleFac;
 import com.lp.server.system.service.MandantFac;
 import com.lp.server.system.service.ParameterFac;
 import com.lp.server.system.service.ParametermandantDto;
@@ -60,9 +76,8 @@ import com.lp.util.Helper;
 
 /**
  * <p>
- * Diese Klasse beinhaltet ein TextField mit Button.
- * Eingegebene Telefonnummern werden automatisch formatiert.
- * Ein Buttonklick setzt einen TAPI-Anruf ab.
+ * Diese Klasse beinhaltet ein TextField mit Button. Eingegebene Telefonnummern
+ * werden automatisch formatiert. Ein Buttonklick setzt einen TAPI-Anruf ab.
  * </p>
  * 
  * <p>
@@ -86,7 +101,7 @@ public class WrapperTelefonField extends WrapperTextFieldWithIconButton {
 	 * 
 	 */
 	private static final long serialVersionUID = 4229623131816216716L;
-	
+
 	private final static int DEFAULT_MAXIMUMDIGITS = 25;
 	private int maximumDigits = 0;
 	private String cTelefon = null;
@@ -100,15 +115,20 @@ public class WrapperTelefonField extends WrapperTextFieldWithIconButton {
 	}
 
 	public WrapperTelefonField(int maximumDigits) throws Throwable {
-		super(new ImageIcon(WrapperTelefonField.class.getResource("/com/lp/client/res/mobilephone2.png")),
+		super(new ImageIcon(
+				WrapperTelefonField.class
+						.getResource("/com/lp/client/res/mobilephone2.png")),
 				"lp.nummerwaehlen");
 		this.setMaximumDigits(maximumDigits);
 	}
-	
+
 	@Override
 	protected boolean installComponent(JButton jButton) {
-		return LPMain.getInstance().getDesktop().darfAnwenderAufZusatzfunktionZugreifen(
-				MandantFac.ZUSATZFUNKTION_TAPISERVICE);
+		return LPMain
+				.getInstance()
+				.getDesktop()
+				.darfAnwenderAufZusatzfunktionZugreifen(
+						MandantFac.ZUSATZFUNKTION_TAPISERVICE);
 	}
 
 	public void setIstAnsprechpartner(boolean bIstAbsprechpartner) {
@@ -153,7 +173,8 @@ public class WrapperTelefonField extends WrapperTextFieldWithIconButton {
 		wtfText.setText(durchwahl);
 	}
 
-	public void setPartnerKommunikationDto(PartnerDto partnerDto,String cTelefon) throws Throwable {
+	public void setPartnerKommunikationDto(PartnerDto partnerDto,
+			String cTelefon) throws Throwable {
 		wtfText.setForeground(new WrapperTextField().getForeground());
 		this.cTelefon = cTelefon;
 		this.partnerDto = partnerDto;
@@ -185,8 +206,7 @@ public class WrapperTelefonField extends WrapperTextFieldWithIconButton {
 								.getParametermandant(
 										ParameterFac.PARAMETER_AUSLANDSVORWAHL,
 										ParameterFac.KATEGORIE_ALLGEMEIN,
-										LPMain.getTheClient()
-												.getMandant());
+										LPMain.getTheClient().getMandant());
 						String sAuslandsvorwahl = parameter.getCWert();
 						// "+" durch "00" ersetzen
 						if (sVorwahl.startsWith("+")) {
@@ -208,14 +228,12 @@ public class WrapperTelefonField extends WrapperTextFieldWithIconButton {
 			wtfText.setText("");
 		}
 	}
-	
-	/* FocusListener noch nicht implementiert
-	protected void focusGained() {
-		if (getText() != null) {
-			wtfText.setSelectionStart(0);
-			wtfText.setSelectionEnd(getText().length());
-		}
-	}*/
+
+	/*
+	 * FocusListener noch nicht implementiert protected void focusGained() { if
+	 * (getText() != null) { wtfText.setSelectionStart(0);
+	 * wtfText.setSelectionEnd(getText().length()); } }
+	 */
 
 	@Override
 	protected void actionEventImpl(ActionEvent e) {
@@ -229,10 +247,159 @@ public class WrapperTelefonField extends WrapperTextFieldWithIconButton {
 						return;
 					}
 				}
+
+				// PJ18270
+
+				PersonalDto persDto = DelegateFactory
+						.getInstance()
+						.getPersonalDelegate()
+						.personalFindByPrimaryKey(
+								LPMain.getTheClient().getIDPersonal());
+
+				if (Helper.short2boolean(persDto.getBTelefonzeitstarten())) {
+
+					if (LPMain
+							.getInstance()
+							.getDesktop()
+							.darfAnwenderAufModulZugreifen(
+									LocaleFac.BELEGART_ZEITERFASSUNG)) {
+
+						if (LPMain
+								.getInstance()
+								.getDesktop()
+								.darfAnwenderAufZusatzfunktionZugreifen(
+										MandantFac.ZUSATZFUNKTION_TELEFONZEITERFASSUNG)) {
+							InternalFrameZeiterfassung ifZE = (InternalFrameZeiterfassung) LPMain
+									.getInstance()
+									.getDesktop()
+									.holeModul(LocaleFac.BELEGART_ZEITERFASSUNG);
+							ifZE.geheZu(
+									InternalFrameZeiterfassung.IDX_TABBED_PANE_ZEITERFASSUNG,
+									TabbedPaneZeiterfassung.IDX_PANEL_TELEFONZEITEN,
+									LPMain.getTheClient().getIDPersonal(),
+									null,
+									PersonalFilterFactory.getInstance()
+											.createFKPersonalKey(
+													(Integer) LPMain
+															.getTheClient()
+															.getIDPersonal()));
+
+							Integer projektIId = null;
+							Integer partnerIId = partnerDto.getIId();
+							Integer abnsprechpartnerIId = null;
+
+							if (this.getParent() instanceof JPanel) {
+								JPanel panel = (JPanel) this.getParent();
+
+								if (panel.getParent() instanceof PanelProjektKopfdaten) {
+									PanelProjektKopfdaten pb = (PanelProjektKopfdaten) panel
+											.getParent();
+
+									if (pb.getInternalFrame() instanceof InternalFrameProjekt) {
+										InternalFrameProjekt ip = (InternalFrameProjekt) pb
+												.getInternalFrame();
+										if (ip.getTabbedPaneProjekt()
+												.getProjektDto() != null) {
+											projektIId = ip
+													.getTabbedPaneProjekt()
+													.getProjektDto().getIId();
+											partnerIId = ip
+													.getTabbedPaneProjekt()
+													.getProjektDto()
+													.getPartnerIId();
+											abnsprechpartnerIId = ip
+													.getTabbedPaneProjekt()
+													.getProjektDto()
+													.getAnsprechpartnerIId();
+
+										}
+									}
+
+								}
+
+								else if (panel.getParent() instanceof PanelPartnerDetail) {
+									PanelPartnerDetail pb = (PanelPartnerDetail) panel
+											.getParent();
+
+									if (pb.getInternalFrame() instanceof InternalFrameKunde) {
+										InternalFrameKunde ip = (InternalFrameKunde) pb
+												.getInternalFrame();
+										if (ip.getKundeDto() != null) {
+											partnerIId = ip.getKundeDto()
+													.getPartnerIId();
+										}
+									}
+
+									else if (pb.getInternalFrame() instanceof InternalFramePartner) {
+
+										if (pb.getTabbedPanePartner()
+												.getPartnerDto() != null) {
+											partnerIId = pb
+													.getTabbedPanePartner()
+													.getPartnerDto().getIId();
+										}
+									}
+
+									else if (pb.getInternalFrame() instanceof InternalFrameLieferant) {
+										InternalFrameLieferant ip = (InternalFrameLieferant) pb
+												.getInternalFrame();
+										if (ip.getLieferantDto() != null) {
+											partnerIId = ip.getLieferantDto()
+													.getPartnerIId();
+										}
+									}
+
+								}
+
+								else if (panel.getParent() instanceof PanelProjektKopfdaten) {
+									PanelProjektKopfdaten pb = (PanelProjektKopfdaten) panel
+											.getParent();
+
+									if (pb.getInternalFrame() instanceof InternalFrameProjekt) {
+										InternalFrameProjekt ip = (InternalFrameProjekt) pb
+												.getInternalFrame();
+										if (ip.getTabbedPaneProjekt()
+												.getProjektDto() != null) {
+											projektIId = ip
+													.getTabbedPaneProjekt()
+													.getProjektDto().getIId();
+											partnerIId = ip
+													.getTabbedPaneProjekt()
+													.getProjektDto()
+													.getPartnerIId();
+											abnsprechpartnerIId = ip
+													.getTabbedPaneProjekt()
+													.getProjektDto()
+													.getAnsprechpartnerIId();
+
+										}
+									}
+
+								} else if (panel.getParent() instanceof PanelAnsprechpartner) {
+									PanelAnsprechpartner pb = (PanelAnsprechpartner) panel
+											.getParent();
+									if (pb.getAnsprechpartnerDto() != null) {
+										partnerIId = pb.getAnsprechpartnerDto()
+												.getPartnerIId();
+										abnsprechpartnerIId = pb
+												.getAnsprechpartnerDto()
+												.getIId();
+									}
+								}
+
+							}
+
+							ifZE.getTabbedPaneZeiterfassung()
+									.telefonzeitStarten(partnerIId,
+											abnsprechpartnerIId, projektIId);
+						}
+					}
+				}
 				nummerFertig = DelegateFactory
 						.getInstance()
 						.getPartnerDelegate()
-						.passeInlandsAuslandsVorwahlAn(partnerDto.getIId(),cTelefon);
+						.passeInlandsAuslandsVorwahlAn(partnerDto.getIId(),
+								cTelefon);
 				if (bIstAbsprechpartner) {
 					nummerFertig = DelegateFactory
 							.getInstance()
@@ -243,31 +410,30 @@ public class WrapperTelefonField extends WrapperTextFieldWithIconButton {
 					nummerFertig = DelegateFactory
 							.getInstance()
 							.getPartnerDelegate()
-							.passeInlandsAuslandsVorwahlAn(
-									partnerDto.getIId(), nummerFertig);
+							.passeInlandsAuslandsVorwahlAn(partnerDto.getIId(),
+									nummerFertig);
 				}
-	
+
 				ArbeitsplatzparameterDto parameter = DelegateFactory
 						.getInstance()
 						.getParameterDelegate()
 						.holeArbeitsplatzparameter(
 								ParameterFac.ARBEITSPLATZPARAMETER_TELEFONWAHL_HTTP_REQUEST);
-				
+
 				if (parameter != null) {
-					if (nummerFertig != null
-							&& parameter.getCWert() != null) {
-						
+					if (nummerFertig != null && parameter.getCWert() != null) {
+
 						String nummer = Helper
 								.befreieNummerVonSonderzeichenInklisiveLeerzeichen(nummerFertig);
-	
+
 						String aufruf = parameter.getCWert();
-	
+
 						aufruf = aufruf.replaceAll("###NUMMER###", nummer);
-	
+
 						try {
 							HttpPhoneDialer dialer = new HttpPhoneDialerAuth();
 							dialer.dial(aufruf.trim());
-	
+
 							// java.awt.Desktop.getDesktop().browse(
 							// new URI(aufruf.trim()));
 							//
@@ -279,13 +445,11 @@ public class WrapperTelefonField extends WrapperTextFieldWithIconButton {
 							// +": "+aufruf.trim());
 							// }
 						} catch (ExceptionLP ex) {
-							DialogFactory
-									.showModalDialog(
-											LPMain.getTextRespectUISPr("lp.error"),
-											LPMain.getMessageTextRespectUISPr(
-													"lp.fehlerbeimwahlvorgang",
-													new Object[] { ex
-															.getMessage() }));
+							DialogFactory.showModalDialog(LPMain
+									.getTextRespectUISPr("lp.error"), LPMain
+									.getMessageTextRespectUISPr(
+											"lp.fehlerbeimwahlvorgang",
+											new Object[] { ex.getMessage() }));
 						}
 					}
 				} else {
@@ -294,12 +458,12 @@ public class WrapperTelefonField extends WrapperTextFieldWithIconButton {
 							.getParameterDelegate()
 							.holeArbeitsplatzparameter(
 									ParameterFac.ARBEITSPLATZPARAMETER_PFAD_MIT_PARAMETER_TAPITOOL);
-	
+
 					if (parameter != null) {
 						if (nummerFertig != null) {
-	
+
 							String amtsholung = "";
-	
+
 							ParametermandantDto parameterAmt = (ParametermandantDto) DelegateFactory
 									.getInstance()
 									.getParameterDelegate()
@@ -307,35 +471,33 @@ public class WrapperTelefonField extends WrapperTextFieldWithIconButton {
 											ParameterFac.PARAMETER_AMTSLEITUNGSVORWAHL_TELEFON,
 											ParameterFac.KATEGORIE_ALLGEMEIN,
 											LPMain.getTheClient().getMandant());
-	
+
 							if (parameter.getCWert() != null
 									&& !parameter.getCWert().equals(" ")) {
 								amtsholung = parameterAmt.getCWert();
 							}
-	
+
 							String command = parameter.getCWert()
 									+ amtsholung
-									+ Helper.befreieNummerVonSonderzeichen(nummerFertig);
+									+ Helper.befreieNummerVonSonderzeichenInklisiveLeerzeichen(nummerFertig);
 							Process p = Runtime.getRuntime().exec(command);
 							BufferedReader input = new BufferedReader(
-									new InputStreamReader(
-											p.getInputStream()));
+									new InputStreamReader(p.getInputStream()));
 							String output = "";
 							String line;
 							while ((line = input.readLine()) != null) {
 								output = line + "\n";
 							}
 							if (output.length() > 0) {
-								DialogFactory.showModalDialog("Fehler",
-										output);
+								DialogFactory.showModalDialog("Fehler", output);
 							}
 							input.close();
 						}
-	
+
 					} else {
-	
+
 						Outcall outcall = Outcall.getInstance();
-	
+
 						if (outcall != null && nummerFertig != null
 								&& nummerFertig.length() > 0) {
 							outcall.call(Helper
@@ -347,7 +509,7 @@ public class WrapperTelefonField extends WrapperTextFieldWithIconButton {
 		} catch (Throwable ex) {
 			ex.printStackTrace();
 		}
-		
+
 	}
 
 }

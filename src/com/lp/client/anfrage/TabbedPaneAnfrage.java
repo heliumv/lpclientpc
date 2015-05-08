@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -50,6 +50,8 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import org.xml.sax.SAXException;
 
+import com.lp.client.angebot.AngebotFilterFactory;
+import com.lp.client.artikel.DialogNeueArtikelnummer;
 import com.lp.client.frame.ExceptionLP;
 import com.lp.client.frame.ICopyPaste;
 import com.lp.client.frame.LockStateValue;
@@ -74,6 +76,10 @@ import com.lp.server.anfrage.service.AnfrageDto;
 import com.lp.server.anfrage.service.AnfrageServiceFac;
 import com.lp.server.anfrage.service.AnfragepositionDto;
 import com.lp.server.anfrage.service.AnfragepositionlieferdatenDto;
+import com.lp.server.angebot.service.AngebotServiceFac;
+import com.lp.server.angebot.service.AngebotpositionDto;
+import com.lp.server.artikel.service.ArtikelDto;
+import com.lp.server.artikel.service.ArtikelFac;
 import com.lp.server.artikel.service.ArtikellieferantDto;
 import com.lp.server.artikel.service.ArtikellieferantstaffelDto;
 import com.lp.server.benutzer.service.RechteFac;
@@ -104,6 +110,7 @@ public class TabbedPaneAnfrage extends TabbedPane implements ICopyPaste {
 	private PanelQuery anfrageAuswahl = null;
 	private PanelAnfrageKopfdaten anfrageKopfdaten = null;
 	private PanelBasis anfrageKonditionen = null;
+	private PanelBasis anfrageLieferKonditionen = null;
 
 	private PanelQuery anfragePositionenTop = null;
 	private PanelAnfragePositionen anfragePositionenBottom = null;
@@ -115,12 +122,17 @@ public class TabbedPaneAnfrage extends TabbedPane implements ICopyPaste {
 
 	private PanelQueryFLR panelQueryFLRLiefergruppeAuswahl = null;
 
+	private PanelQueryFLR panelQueryFLRAnfrageerledigungsgrund = null;
+
+	private PanelQueryFLR panelQueryFLRAnfrageAuswahl = null;
+
 	public static final int IDX_PANEL_AUSWAHL = 0;
 	private static final int IDX_PANEL_KOPFDATEN = 1;
 	private static final int IDX_PANEL_POSITIONEN = 2;
-	private static final int IDX_PANEL_POSITIONENLIEFERDATEN = 3;
-	private static final int IDX_PANEL_KONDITIONEN = 4;
 
+	private static final int IDX_PANEL_KONDITIONEN = 3;
+	private static final int IDX_PANEL_LIEFERKONDITIONEN = 4;
+	private static final int IDX_PANEL_POSITIONENLIEFERDATEN = 5;
 	// dtos, die in mehr als einem panel benoetigt werden
 	private AnfrageDto anfrageDto = null;
 	private LieferantDto lieferantDto = null;
@@ -129,6 +141,8 @@ public class TabbedPaneAnfrage extends TabbedPane implements ICopyPaste {
 	private static final String MENU_ACTION_DATEI_ANFRAGE = "MENU_ACTION_DATEI_ANFRAGE";
 
 	private static final String MENU_BEARBEITEN_MANUELL_ERLEDIGEN = "MENU_BEARBEITEN_MANUELL_ERLEDIGEN";
+
+	private final String MENU_BEARBEITEN_HANDARTIKEL_UMANDELN = "MENU_BEARBEITEN_HANDARTIKEL_UMANDELN";
 
 	private static final String MENU_JOURNAL_ANFRAGE_LIEFERDATENUEBERSICHT = "MENU_JOURNAL_ANFRAGE_LIEFERDATENUEBERSICHT";
 
@@ -149,6 +163,8 @@ public class TabbedPaneAnfrage extends TabbedPane implements ICopyPaste {
 	private static final String ACTION_SPECIAL_NEU_AUS_PROJEKT = PanelBasis.ACTION_MY_OWN_NEW
 			+ "ACTION_SPECIAL_NEU_AUS_PROJEKT";
 
+	private final static String ACTION_SPECIAL_NEU_AUS_ANFRAGE = PanelBasis.ACTION_MY_OWN_NEW
+			+ "extra_neu_aus_anfrage";
 	private final static String ACTION_SPECIAL_RUECKPFLEGE_ALS_ERSTER = PanelBasis.ACTION_MY_OWN_NEW
 			+ "ACTION_SPECIAL_RUECKPFLEGE_ALS_ERSTER";
 
@@ -200,6 +216,10 @@ public class TabbedPaneAnfrage extends TabbedPane implements ICopyPaste {
 		return anfrageKonditionen;
 	}
 
+	public PanelBasis getAnfrageLieferKonditionen() {
+		return anfrageLieferKonditionen;
+	}
+
 	public PanelQuery getAnfragePositionenTop() {
 		return anfragePositionenTop;
 	}
@@ -243,19 +263,27 @@ public class TabbedPaneAnfrage extends TabbedPane implements ICopyPaste {
 						"anf.panel.positionen.tooltip"), IDX_PANEL_POSITIONEN);
 		insertTab(
 				LPMain.getInstance().getTextRespectUISPr(
+						"anf.panel.konditionen"),
+				null,
+				null,
+				LPMain.getInstance().getTextRespectUISPr(
+						"anf.panel.konditionen.tooltip"), IDX_PANEL_KONDITIONEN);
+		insertTab(
+				LPMain.getInstance().getTextRespectUISPr(
+						"anf.panel.lieferkonditionen"),
+				null,
+				null,
+				LPMain.getInstance().getTextRespectUISPr(
+						"anf.panel.lieferkonditionenp"),
+				IDX_PANEL_LIEFERKONDITIONEN);
+		insertTab(
+				LPMain.getInstance().getTextRespectUISPr(
 						"anf.panel.positionlieferdaten"),
 				null,
 				null,
 				LPMain.getInstance().getTextRespectUISPr(
 						"anf.panel.positionlieferdaten.tooltip"),
 				IDX_PANEL_POSITIONENLIEFERDATEN);
-		insertTab(
-				LPMain.getInstance().getTextRespectUISPr(
-						"anf.panel.konditionen"),
-				null,
-				null,
-				LPMain.getInstance().getTextRespectUISPr(
-						"anf.panel.konditionen.tooltip"), IDX_PANEL_KONDITIONEN);
 
 		// die Liste der Anfragen aufbauen und sofort laden
 		refreshAnfrageAuswahl();
@@ -314,6 +342,13 @@ public class TabbedPaneAnfrage extends TabbedPane implements ICopyPaste {
 			anfrageAuswahl
 					.befuelleFilterkriteriumSchnellansicht(AnfrageFilterFactory
 							.getInstance().createFKAnfrageSchnellansicht());
+
+			anfrageAuswahl
+					.createAndSaveAndShowButton(
+							"/com/lp/client/res/note_find16x16.png",
+							LPMain.getTextRespectUISPr("anf.anfrageausanfragekopieren"),
+							ACTION_SPECIAL_NEU_AUS_ANFRAGE,
+							RechteFac.RECHT_ANF_ANFRAGE_CUD);
 
 			if (LPMain
 					.getInstance()
@@ -484,6 +519,31 @@ public class TabbedPaneAnfrage extends TabbedPane implements ICopyPaste {
 		return anfrageKonditionen;
 	}
 
+	private PanelBasis refreshAnfrageLieferKonditionen() throws Throwable {
+		Integer iIdAnfrage = null;
+
+		if (anfrageLieferKonditionen == null) {
+
+			// Die Anfrage hat einen Key vom Typ Integer
+			if (getInternalFrame().getKeyWasForLockMe() != null) {
+				iIdAnfrage = new Integer(Integer.parseInt(getInternalFrame()
+						.getKeyWasForLockMe()));
+			}
+
+			anfrageLieferKonditionen = new PanelAnfrageLieferkonditionen(
+					getInternalFrame(),
+					LPMain.getInstance().getTextRespectUISPr(
+							"anf.panel.lieferkonditionen"), iIdAnfrage); // empty
+																			// bei
+																			// leerer
+																			// auftragsliste
+			setComponentAt(IDX_PANEL_LIEFERKONDITIONEN,
+					anfrageLieferKonditionen);
+		}
+
+		return anfrageLieferKonditionen;
+	}
+
 	// TODO-AGILCHANGES
 	/**
 	 * AGILPRO CHANGES Changed visiblity from protected to public
@@ -568,6 +628,16 @@ public class TabbedPaneAnfrage extends TabbedPane implements ICopyPaste {
 			// richtig
 			// gesetzt!
 			break;
+
+		case IDX_PANEL_LIEFERKONDITIONEN:
+			refreshAnfrageLieferKonditionen().eventYouAreSelected(false); // sonst
+			// werden
+			// die
+			// buttons
+			// nicht
+			// richtig
+			// gesetzt!
+			break;
 		}
 
 		enableLieferdaten();
@@ -620,6 +690,10 @@ public class TabbedPaneAnfrage extends TabbedPane implements ICopyPaste {
 					setSelectedComponent(anfrageKopfdaten);
 				} else if (sAspectInfo.endsWith(ACTION_SPECIAL_NEU_AUS_PROJEKT)) {
 					dialogQueryProjektFromListe(null);
+				} else if (sAspectInfo.endsWith(ACTION_SPECIAL_NEU_AUS_ANFRAGE)) {
+					if (eI.getSource() == anfrageAuswahl) {
+						dialogQueryAnfrageFromListe(null);
+					}
 				} else if (sAspectInfo
 						.equals(MY_OWN_NEW_ANFRAGEN_ZU_LIEFERGRUPPENANFRAGE)) {
 					// der Benutzer muss auf einen Liefergruppenanfrage stehen
@@ -670,7 +744,9 @@ public class TabbedPaneAnfrage extends TabbedPane implements ICopyPaste {
 					}
 				}
 			} else if (sAspectInfo.equals(PanelBasis.ACTION_EINFUEGEN_LIKE_NEW)) {
-				einfuegenHV();
+				if (eI.getSource() == anfragePositionenTop) {
+					einfuegenHV();
+				}
 			} else if (eI.getSource() == anfragePositionenlieferdatenTop) {
 				if (sAspectInfo.equals(ACTION_SPECIAL_RUECKPFLEGE)
 						|| sAspectInfo
@@ -770,9 +846,11 @@ public class TabbedPaneAnfrage extends TabbedPane implements ICopyPaste {
 					setSelectedComponent(anfragePositionen); // ui
 				}
 			}
-		}
-
-		else if (eI.getID() == ItemChangedEvent.ACTION_DISCARD) {
+		} else if (eI.getID() == ItemChangedEvent.ACTION_DELETE) {
+			if (eI.getSource() == anfrageLieferKonditionen) {
+				anfrageLieferKonditionen.eventYouAreSelected(false);
+			}
+		} else if (eI.getID() == ItemChangedEvent.ACTION_DISCARD) {
 			// wir landen hier bei der Abfolge Button Aendern -> xx -> Button
 			// Discard
 			if (eI.getSource() == anfrageKopfdaten) {
@@ -857,6 +935,12 @@ public class TabbedPaneAnfrage extends TabbedPane implements ICopyPaste {
 				// :
 				// n
 				// panel
+			} else if (eI.getSource() == anfrageLieferKonditionen) {
+
+				setKeyWasForLockMe();
+
+				anfrageLieferKonditionen.eventYouAreSelected(false); // refresh
+
 			}
 		}
 
@@ -940,7 +1024,9 @@ public class TabbedPaneAnfrage extends TabbedPane implements ICopyPaste {
 		}
 
 		else if (eI.getID() == ItemChangedEvent.ACTION_KOPIEREN) {
-			copyHV();
+			if (eI.getSource() == anfragePositionenTop) {
+				copyHV();
+			}
 		}
 	}
 
@@ -949,6 +1035,21 @@ public class TabbedPaneAnfrage extends TabbedPane implements ICopyPaste {
 				.createPanelFLRProjekt(getInternalFrame());
 
 		new DialogQuery(panelQueryFLRProjekt);
+	}
+
+	public void dialogQueryAnfrageFromListe(ActionEvent e) throws Throwable {
+		panelQueryFLRAnfrageAuswahl = AnfrageFilterFactory.getInstance()
+				.createPanelFLRAlleAnfragenOhneLiefergruppenanfragen(
+						getInternalFrame(), false, false);
+		new DialogQuery(panelQueryFLRAnfrageAuswahl);
+	}
+
+	public void dialogQueryAnfrageerledigungsgrundFromListe(ActionEvent e)
+			throws Throwable {
+		panelQueryFLRAnfrageerledigungsgrund = AnfrageFilterFactory
+				.getInstance().createPanelFLRAnfrageerledigungsgrund(
+						getInternalFrame(), false, false);
+		new DialogQuery(panelQueryFLRAnfrageerledigungsgrund);
 	}
 
 	public void copyHV() throws ExceptionLP, Throwable {
@@ -1145,6 +1246,34 @@ public class TabbedPaneAnfrage extends TabbedPane implements ICopyPaste {
 
 			if (projektIId != null) {
 				erstelleAanfrageAusProjekt(projektIId);
+			}
+		} else if (e.getSource() == panelQueryFLRAnfrageerledigungsgrund) {
+			Integer erledigungsgrundIId = (Integer) ((ISourceEvent) e
+					.getSource()).getIdSelected();
+			DelegateFactory.getInstance().getAnfrageDelegate()
+					.manuellErledigen(anfrageDto.getIId(), erledigungsgrundIId);
+			initializeDtos(anfrageDto.getIId());
+			refreshAktuellesPanel();
+		} else if (e.getSource() == panelQueryFLRAnfrageAuswahl) {
+			// Eine Bestellung aus der gewaehlten Anfrage erzeugen.
+			Integer iIdAnfrage = (Integer) ((ISourceEvent) e.getSource())
+					.getIdSelected();
+			Integer iIdAnfrageNeu = DelegateFactory.getInstance()
+					.getAnfrageDelegate()
+					.erzeugeAnfrageAusAnfrage(iIdAnfrage, getInternalFrame());
+			if (iIdAnfrageNeu != null) {
+				resetDtos();
+
+				anfrageAuswahl.eventYouAreSelected(false);
+				initializeDtos(iIdAnfrageNeu);
+
+				// wenn es bisher keine Bestellung gegeben hat
+				if (anfrageAuswahl.getSelectedId() == null) {
+					getInternalFrame().enableAllPanelsExcept(true);
+				}
+				anfrageAuswahl.setSelectedId(iIdAnfrageNeu);
+				getInternalFrame().setKeyWasForLockMe(iIdAnfrageNeu + "");
+				setSelectedComponent(refreshAnfrageKopfdaten());
 			}
 		}
 	}
@@ -1440,16 +1569,16 @@ public class TabbedPaneAnfrage extends TabbedPane implements ICopyPaste {
 						.getAnzahlMengenbehafteteAnfragepositionen(
 								afDto.getIId()) > 0) {
 					// Aktivieren
-					Timestamp t = DelegateFactory
-							.getInstance()
+					Timestamp t = DelegateFactory.getInstance()
 							.getAnfrageDelegate()
 							.berechneBelegControlled(afDto.getIId());
-					DelegateFactory.getInstance().getAnfrageDelegate().aktiviereBelegControlled(afDto.getIId(), t);
+					DelegateFactory.getInstance().getAnfrageDelegate()
+							.aktiviereBelegControlled(afDto.getIId(), t);
 					// DruckPanel instantiieren
 					PanelReportKriterien krit = new PanelReportKriterien(
 							getInternalFrame(), new ReportAnfrage(
-									getInternalFrame(), getAktuellesPanel(), afDto, ""), "",
-							lfDto.getPartnerDto(),
+									getInternalFrame(), getAktuellesPanel(),
+									afDto, ""), "", lfDto.getPartnerDto(),
 							afDto.getAnsprechpartnerIIdLieferant(), true, true,
 							false);
 
@@ -1464,7 +1593,8 @@ public class TabbedPaneAnfrage extends TabbedPane implements ICopyPaste {
 					 * "lp.drucken.reportkonntenichtgedrucktwerden") + " " +
 					 * afDto.getCNr(); Object[] options = {
 					 * LPMain.getTextRespectUISPr("lp.druckerror.wiederholen"),
-					 * LPMain.getTextRespectUISPr("lp.druckerror.&uuml;berspringen"),
+					 * LPMain
+					 * .getTextRespectUISPr("lp.druckerror.&uuml;berspringen"),
 					 * LPMain.getTextRespectUISPr("lp.abbrechen"), }; iChoice =
 					 * DialogFactory.showModalDialog( this.getInternalFrame(),
 					 * sMsg, LPMain.getTextRespectUISPr("lp.error"), options,
@@ -1531,11 +1661,20 @@ public class TabbedPaneAnfrage extends TabbedPane implements ICopyPaste {
 											"lp.hint"),
 									javax.swing.JOptionPane.YES_NO_OPTION) == javax.swing.JOptionPane.YES_OPTION) {
 
-								DelegateFactory.getInstance()
-										.getAnfrageDelegate()
-										.manuellErledigen(anfrageDto.getIId());
-								initializeDtos(anfrageDto.getIId());
-								refreshAktuellesPanel();
+								if (DelegateFactory.getInstance()
+										.getAnfrageServiceDelegate()
+										.sindErledigugnsgruendeVorhanden()) {
+									dialogQueryAnfrageerledigungsgrundFromListe(e);
+								} else {
+									DelegateFactory
+											.getInstance()
+											.getAnfrageDelegate()
+											.manuellErledigen(
+													anfrageDto.getIId(), null);
+									initializeDtos(anfrageDto.getIId());
+									refreshAktuellesPanel();
+								}
+
 							}
 						} else {
 							if (anfrageDto.getStatusCNr().equals(
@@ -1565,6 +1704,66 @@ public class TabbedPaneAnfrage extends TabbedPane implements ICopyPaste {
 					}
 				}
 			}
+		} else if (e.getActionCommand().equals(
+				MENU_BEARBEITEN_HANDARTIKEL_UMANDELN)) {
+			if (anfragePositionenTop != null
+					&& anfragePositionenTop.getSelectedId() != null) {
+
+				AnfragepositionDto posDto = DelegateFactory
+						.getInstance()
+						.getAnfragepositionDelegate()
+						.anfragepositionFindByPrimaryKey(
+								(Integer) anfragePositionenTop.getSelectedId());
+
+				if (posDto.getArtikelIId() != null
+						&& getAnfrageDto() != null
+						&& getAnfrageDto().getStatusCNr().equals(
+								AngebotServiceFac.ANGEBOTSTATUS_OFFEN)) {
+
+					ArtikelDto aDto = DelegateFactory.getInstance()
+							.getArtikelDelegate()
+							.artikelFindByPrimaryKey(posDto.getArtikelIId());
+					if (aDto.getArtikelartCNr().equals(
+							ArtikelFac.ARTIKELART_HANDARTIKEL)) {
+						DialogNeueArtikelnummer d = new DialogNeueArtikelnummer(
+								getInternalFrame());
+						LPMain.getInstance().getDesktop()
+								.platziereDialogInDerMitteDesFensters(d);
+						d.setVisible(true);
+						if (d.getArtikelnummerNeu() != null) {
+
+							DelegateFactory
+									.getInstance()
+									.getArtikelDelegate()
+									.wandleHandeingabeInArtikelUm(
+											posDto.getIId(),
+											ArtikelFac.HANDARTIKEL_UMWANDELN_ANFRAGE,
+											d.getArtikelnummerNeu());
+						}
+
+					} else {
+						DialogFactory
+								.showModalDialog(
+										LPMain.getInstance()
+												.getTextRespectUISPr("lp.info"),
+										LPMain.getInstance()
+												.getTextRespectUISPr(
+														"angebot.bearbeiten.handartikelumwandeln.error"));
+					}
+
+				} else {
+					DialogFactory
+							.showModalDialog(
+									LPMain.getInstance().getTextRespectUISPr(
+											"lp.info"),
+									LPMain.getInstance()
+											.getTextRespectUISPr(
+													"angebot.bearbeiten.handartikelumwandeln.error1"));
+				}
+				anfragePositionen.eventYouAreSelected(false);
+				anfragePositionenTop.setSelectedId(posDto.getIId());
+			}
+
 		} else if (e.getActionCommand().equals(
 				MENU_JOURNAL_ANFRAGE_LIEFERDATENUEBERSICHT)) {
 			getInternalFrame().showReportKriterien(
@@ -1732,7 +1931,7 @@ public class TabbedPaneAnfrage extends TabbedPane implements ICopyPaste {
 
 		return bIstAktualisierenErlaubt;
 	}
-	
+
 	@Override
 	protected void initDtos() throws Throwable {
 		initializeDtos(anfrageDto.getIId());
@@ -1765,6 +1964,14 @@ public class TabbedPaneAnfrage extends TabbedPane implements ICopyPaste {
 		JMenu jmBearbeiten = (JMenu) wrapperMenuBar
 				.getComponent(WrapperMenuBar.MENU_BEARBEITEN);
 
+		JMenuItem menuItemHandartikelUmwandeln = new JMenuItem(LPMain
+				.getInstance().getTextRespectUISPr(
+						"angebot.bearbeiten.handartikelumwandeln"));
+		menuItemHandartikelUmwandeln.addActionListener(this);
+		menuItemHandartikelUmwandeln
+				.setActionCommand(MENU_BEARBEITEN_HANDARTIKEL_UMANDELN);
+		jmBearbeiten.add(menuItemHandartikelUmwandeln, 0);
+
 		JMenuItem menuItemBearbeitenManuellErledigen = new JMenuItem(LPMain
 				.getInstance().getTextRespectUISPr("lp.menu.menuellerledigen"));
 		menuItemBearbeitenManuellErledigen.addActionListener(this);
@@ -1794,16 +2001,8 @@ public class TabbedPaneAnfrage extends TabbedPane implements ICopyPaste {
 	}
 
 	public String getAnfrageStatus() throws Throwable {
-		StatusDto statusDto = DelegateFactory.getInstance().getLocaleDelegate()
-				.statusFindByPrimaryKey(getAnfrageDto().getStatusCNr());
-
-		String cNrStatus = statusDto.getCNr();
-
-		if (statusDto.getStatussprDto() != null) {
-			cNrStatus = statusDto.getStatussprDto().getCBez();
-		}
-
-		return cNrStatus;
+		return DelegateFactory.getInstance().getLocaleDelegate()
+				.getStatusCBez(getAnfrageDto().getStatusCNr());
 	}
 
 	private String getTitleDruck() {
@@ -1883,6 +2082,12 @@ public class TabbedPaneAnfrage extends TabbedPane implements ICopyPaste {
 		return anfrageKonditionen;
 	}
 
+	public PanelBasis getPanelLieferKonditionen() {
+		setSelectedIndex(IDX_PANEL_LIEFERKONDITIONEN);
+		this.getInternalFrame().enableAllPanelsExcept(false);
+		return anfrageLieferKonditionen;
+	}
+
 	public PanelSplit getPanelPositionen() {
 		setSelectedIndex(IDX_PANEL_POSITIONEN);
 		this.getInternalFrame().enableAllPanelsExcept(false);
@@ -1900,7 +2105,7 @@ public class TabbedPaneAnfrage extends TabbedPane implements ICopyPaste {
 	 * 
 	 * @return Object
 	 */
-	public Object getInseratDto() {
+	public Object getDto() {
 		return anfrageDto;
 	}
 

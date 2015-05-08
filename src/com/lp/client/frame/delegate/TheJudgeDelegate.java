@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -38,9 +38,11 @@ import javax.naming.InitialContext;
 import com.lp.client.frame.ExceptionLP;
 import com.lp.client.pc.LPMain;
 import com.lp.server.system.service.LockMeDto;
+import com.lp.server.system.service.TheClientDto;
 import com.lp.server.system.service.TheJudgeFac;
+import com.lp.util.EJBExceptionLP;
 
-@SuppressWarnings("static-access") 
+//@SuppressWarnings("static-access") 
 public class TheJudgeDelegate extends Delegate {
 	private Context context;
 	private TheJudgeFac theJudgeFac;
@@ -59,8 +61,7 @@ public class TheJudgeDelegate extends Delegate {
 		try {
 			if (lockMeDto.getPersonalIIdLocker() == null) {
 				// alle bis auf SCRUD-Lockme
-				lockMeDto.setPersonalIIdLocker(LPMain.getInstance()
-						.getTheClient().getIDPersonal());
+				lockMeDto.setPersonalIIdLocker(LPMain.getTheClient().getIDPersonal());
 			}
 
 			theJudgeFac.removeLockedObject(lockMeDto);
@@ -96,12 +97,29 @@ public class TheJudgeDelegate extends Delegate {
 		return lockMeDto;
 	}
 
+	public LockMeDto[] findMyLocks() throws ExceptionLP {
+		LockMeDto[] lockMeDto = null;
+		try {
+			lockMeDto = theJudgeFac.findMyLocks(LPMain.getTheClient());
+		} catch (Throwable t) {
+			handleThrowable(t);
+		}
+		return lockMeDto;		
+	}
+	
+	public void removeMyLocks(TheClientDto theClientDto) throws ExceptionLP {
+		try {
+			theJudgeFac.removeMyLocks(theClientDto);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+	}
+
 	public void addLockedObject(LockMeDto lockMeDto) throws ExceptionLP {
 		try {
-			lockMeDto.setPersonalIIdLocker(LPMain.getInstance().getTheClient()
+			lockMeDto.setPersonalIIdLocker(LPMain.getTheClient()
 					.getIDPersonal());
-			theJudgeFac.addLockedObject(lockMeDto, LPMain.getInstance()
-					.getTheClient());
+			theJudgeFac.addLockedObject(lockMeDto, LPMain.getTheClient());
 		} catch (Throwable t) {
 			handleThrowable(t);
 		}
@@ -110,8 +128,7 @@ public class TheJudgeDelegate extends Delegate {
 	public boolean isLocked(LockMeDto lockMeDto) throws ExceptionLP {
 		boolean b = false;
 		try {
-			b = theJudgeFac.isLocked(lockMeDto, LPMain.getInstance()
-					.getTheClient());
+			b = theJudgeFac.isLocked(lockMeDto, LPMain.getTheClient());
 		} catch (Throwable t) {
 			handleThrowable(t);
 		}
@@ -122,8 +139,7 @@ public class TheJudgeDelegate extends Delegate {
 
 		boolean b = false;
 		try {
-			return theJudgeFac.hatRecht(rechtCNr, LPMain.getInstance()
-					.getTheClient());
+			return theJudgeFac.hatRecht(rechtCNr, LPMain.getTheClient());
 		} catch (Throwable t) {
 			handleThrowable(t);
 		}
@@ -134,8 +150,7 @@ public class TheJudgeDelegate extends Delegate {
 
 		Integer b = null;
 		try {
-			return theJudgeFac.getSystemrolleIId(LPMain.getInstance()
-					.getTheClient());
+			return theJudgeFac.getSystemrolleIId(LPMain.getTheClient());
 		} catch (Throwable t) {
 			handleThrowable(t);
 		}

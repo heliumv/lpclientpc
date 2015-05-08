@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -38,6 +38,7 @@ import java.awt.GridBagConstraints;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.awt.event.KeyEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -48,6 +49,7 @@ import java.util.ArrayList;
 import java.util.EventObject;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import javax.swing.ButtonGroup;
 import javax.swing.JScrollPane;
@@ -163,9 +165,9 @@ public class PanelFinanzSplittbuchung extends PanelDialogKriterien implements Li
 	private WrapperNumberField wnfTeilBetrag = new WrapperNumberField();
 	private WrapperComboBox wcbSollHaben = new WrapperComboBox();
 
-	private WrapperRadioButton wrbKontoSachkonto = new WrapperRadioButton();
-	private WrapperRadioButton wrbKontoDebitorenkonto = new WrapperRadioButton();
-	private WrapperRadioButton wrbKontoKreditorenkonto = new WrapperRadioButton();
+	private WrapperRadioButton wrbKontoSachkonto;
+	private WrapperRadioButton wrbKontoDebitorenkonto;
+	private WrapperRadioButton wrbKontoKreditorenkonto;
 	private WrapperLabel wlaAbstandOben = new WrapperLabel();
 	private WrapperButton wbuKonto = new WrapperButton();
 	private WrapperTextField wtfKontoNummer = new WrapperTextField();
@@ -197,7 +199,7 @@ public class PanelFinanzSplittbuchung extends PanelDialogKriterien implements Li
 
 	public PanelFinanzSplittbuchung(InternalFrame internalFrame)
 			throws Throwable {
-		super(internalFrame, LPMain.getTextRespectUISPr("fb.menu.umbuchung"));
+		super(internalFrame, LPMain.getTextRespectUISPr("fb.menu.umbuchung"),"/com/lp/client/res/server_ok.png");
 		jbInit();
 		setDefaults();
 		initComponents();
@@ -207,6 +209,7 @@ public class PanelFinanzSplittbuchung extends PanelDialogKriterien implements Li
 				LOCK_NO_LOCKING);
 		this.updateButtons(lockstateValue);
 		enableDetailComponents(false);
+		setFirstFocusableComponent();
 	}
 
 	private void jbInit() throws Throwable {
@@ -313,11 +316,9 @@ public class PanelFinanzSplittbuchung extends PanelDialogKriterien implements Li
 		wtfBeleg.setEditable(true);
 
 		// Splittdetail
-		wrbKontoSachkonto.setText(LPMain.getTextRespectUISPr("lp.sachkonto"));
-		wrbKontoDebitorenkonto.setText(LPMain
-				.getTextRespectUISPr("lp.debitorenkonto"));
-		wrbKontoKreditorenkonto.setText(LPMain
-				.getTextRespectUISPr("lp.kreditorenkonto"));
+		wrbKontoSachkonto = new WrapperRadioButton(true, LPMain.getTextRespectUISPr("lp.shortcut.sachkonto"));
+		wrbKontoDebitorenkonto = new WrapperRadioButton(true, LPMain.getTextRespectUISPr("lp.shortcut.debitorenkonto"));
+		wrbKontoKreditorenkonto = new WrapperRadioButton(true, LPMain.getTextRespectUISPr("lp.shortcut.kreditorenkonto"));
 		wrbKontoDebitorenkonto.setActionCommand(ACTION_SPECIAL_RB_KONTO);
 		wrbKontoKreditorenkonto.setActionCommand(ACTION_SPECIAL_RB_KONTO);
 		wrbKontoSachkonto.setActionCommand(ACTION_SPECIAL_RB_KONTO);
@@ -332,7 +333,26 @@ public class PanelFinanzSplittbuchung extends PanelDialogKriterien implements Li
 		wbuKonto.addActionListener(this);
 		wtfKontoNummer.setMinimumSize(new Dimension(100, 23));
 		wtfKontoNummer.setPreferredSize(new Dimension(100, 23));
-		wtfKontoNummer.setActivatable(false);
+		wtfKontoNummer.addFocusListener(new FocusListener() {
+			
+			@Override
+			public void focusLost(FocusEvent arg0) {
+				try {
+					kontoDto = DelegateFactory.getInstance().getFinanzDelegate()
+							.kontoFindByCnrKontotypMandantOhneExc(wtfKontoNummer.getText().trim(),
+									kontotypKonto, LPMain.getTheClient().getMandant());
+					dto2ComponentsKonto();
+				} catch (Throwable t) {
+					handleException(t, false);
+					wtfKontoNummer.removeContent();
+				}
+			}
+			
+			@Override
+			public void focusGained(FocusEvent arg0) {
+				wtfKontoNummer.selectAll();
+			}
+		});
 		// wtfKontoNummer.setMandatoryField(true);
 		wtfKontoBezeichnung.setActivatable(false);
 		buttongroupKonto.add(wrbKontoDebitorenkonto);
@@ -440,6 +460,10 @@ public class PanelFinanzSplittbuchung extends PanelDialogKriterien implements Li
 		jpaWorkingOn.add(wtfBeleg, new GridBagConstraints(3, iZeile, 2, 1, 0.0,
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wcoBuchungsart, new GridBagConstraints(5, iZeile, 3, 1, 0.0,
+				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
+				new Insets(2, 2, 2, 2), 0, 0));
+		
 		iZeile++;
 
 		// Detail
@@ -553,7 +577,6 @@ public class PanelFinanzSplittbuchung extends PanelDialogKriterien implements Li
 	 * Defaults setzen.
 	 * 
 	 * @throws Exception
-	 * @throws ExceptionForLPClients
 	 * @throws Throwable
 	 */
 	private void setDefaults() throws Throwable {
@@ -563,10 +586,13 @@ public class PanelFinanzSplittbuchung extends PanelDialogKriterien implements Li
 		wcoWaehrung.setMap(waehrungen);
 		wcoWaehrung.setKeyOfSelectedItem(LPMain.getTheClient()
 				.getSMandantenwaehrung());
-		wcoBuchungsart.setMap(DelegateFactory.getInstance()
-				.getFinanzServiceDelegate().getAllBuchungsarten());
+		TreeMap<?, ?> buchungsarten = DelegateFactory.getInstance().getFinanzServiceDelegate().getAllBuchungsarten();
+		buchungsarten.remove(FinanzFac.BUCHUNGSART_MWST_ABSCHLUSS);
+		wcoBuchungsart.setMap(buchungsarten);
 		wcoBuchungsart.setKeyOfSelectedItem(FinanzFac.BUCHUNGSART_UMBUCHUNG);
 		wdfDatum.setDefaultDate();
+		
+		
 	}
 
 	private void setAutoAuszugNummer() {
@@ -616,7 +642,8 @@ public class PanelFinanzSplittbuchung extends PanelDialogKriterien implements Li
 		dto2Components();
 		if(!bearbeiten)
 			wdfDatum.removeContent();
-		wcoBuchungsart.setEnabled(false);
+//		wcoBuchungsart.setEnabled(false); (rk) ich habe ja mit der buchung
+//		vielleicht was ganz anderes vor, warum also die buchungsart vorschreiben?
 	}
 
 	protected InternalFrameFinanz getInternalFrameFinanz() {
@@ -630,8 +657,6 @@ public class PanelFinanzSplittbuchung extends PanelDialogKriterien implements Li
 	 *            ActionEvent
 	 * @param bNeedNoSaveI
 	 *            boolean
-	 * @throws ExitFrameException
-	 * @throws ExceptionForLPClients
 	 * @throws Throwable
 	 */
 	public void eventActionSave(ActionEvent e, boolean bNeedNoSaveI)
@@ -787,6 +812,7 @@ public class PanelFinanzSplittbuchung extends PanelDialogKriterien implements Li
 			resetDetails();
 			enableDetailComponents(true);
 			setButtons();
+			wtfKontoNummer.requestFocus();
 		}
 	}
 
@@ -846,7 +872,7 @@ public class PanelFinanzSplittbuchung extends PanelDialogKriterien implements Li
 	private void components2Dto() throws Throwable {
 		// zuerst die Kopfdaten der Buchung
 		buchungDto = new BuchungDto();
-		buchungDto.setBuchungsartCNr(FinanzFac.BUCHUNGSART_UMBUCHUNG);
+		buchungDto.setBuchungsartCNr(wcoBuchungsart.getSelectedItem().toString());
 		buchungDto.setCBelegnummer(wtfBeleg.getText());
 		buchungDto.setCText(wtfText.getText());
 		buchungDto.setDBuchungsdatum(wdfDatum.getDate());
@@ -864,7 +890,7 @@ public class PanelFinanzSplittbuchung extends PanelDialogKriterien implements Li
 
 	private void dto2Components() throws ExceptionLP, Throwable {
 		wcoBuchungsart.setSelectedItem(buchungDto.getBuchungsartCNr());
-		wtfBeleg.setText(buchungDto.getCBelegnummer());
+		wtfBeleg.setText(buchungDto.getCBelegnummer().trim());
 		wtfText.setText(buchungDto.getCText());
 		wdfDatum.setDate(buchungDto.getDBuchungsdatum());
 		wrbBelegHand.setSelected(true);
@@ -997,6 +1023,7 @@ public class PanelFinanzSplittbuchung extends PanelDialogKriterien implements Li
 		wrbKontoKreditorenkonto.setEnabled(enable);
 		wrbKontoSachkonto.setEnabled(enable);
 		wbuKonto.setEnabled(enable);
+		wtfKontoNummer.setEnabled(enable);
 		wtfKontoNummer.setMandatoryField(enable);
 		wnfTeilBetrag.setEnabled(enable);
 		wnfTeilBetrag.setMandatoryField(enable);
@@ -1019,7 +1046,7 @@ public class PanelFinanzSplittbuchung extends PanelDialogKriterien implements Li
 		wnfSaldo.setBigDecimal(soll.subtract(haben));
 	}
 
-	void reset() throws ExceptionLP {
+	void reset() throws Throwable {
 		this.wnfBetragSoll.setBigDecimal(BigDecimal.ZERO);
 		this.wnfBetragHaben.setBigDecimal(BigDecimal.ZERO);
 		detailList = new ArrayList<BuchungdetailDto>();
@@ -1035,6 +1062,9 @@ public class PanelFinanzSplittbuchung extends PanelDialogKriterien implements Li
 		wcbInSplittbuchungBleiben.setVisible(true);
 		wtfBeleg.removeContent();
 		setButtons();
+
+		kostenstelleDto = getInternalFrameFinanz().getDefaultKostenstelle();
+		dto2ComponentsKostenstelle();
 	}
 
 	protected javax.swing.JComponent getFirstFocusableComponent()

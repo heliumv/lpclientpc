@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -46,6 +46,7 @@ package com.lp.client.frame.delegate;
  */
 import java.rmi.RemoteException;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -100,6 +101,17 @@ public class VersandDelegate extends Delegate {
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 			return null;
+		}
+	}
+
+	public void createVersandanhaenge(ArrayList<VersandanhangDto> alAnhaenge)
+			throws ExceptionLP {
+		try {
+			versandFac.createVersandanhaenge(alAnhaenge, LPMain.getInstance()
+					.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+
 		}
 	}
 
@@ -164,6 +176,17 @@ public class VersandDelegate extends Delegate {
 		try {
 			return versandFac.getDefaultTextForBelegEmail(mailtextDto, LPMain
 					.getInstance().getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
+
+	public String getDefaultTextForBelegHtmlEmail(MailtextDto mailtextDto)
+			throws ExceptionLP {
+		try {
+			return versandFac.getDefaultTextForBelegHtmlEmail(mailtextDto,
+					LPMain.getInstance().getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 			return null;

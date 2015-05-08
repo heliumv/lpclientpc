@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -46,6 +46,7 @@ import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 
+import javax.swing.BorderFactory;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
@@ -54,6 +55,7 @@ import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 
 import com.lp.client.frame.Defaults;
@@ -76,6 +78,7 @@ public class PanelDialogFontStyle extends JDialog implements ItemListener,
 	private WrapperLabel beispielTitel;
 	private WrapperTextField beispielEingabe;
 	private WrapperLabel beispielLabel;
+	private WrapperCheckBox redGreenBlindness;
 	private WrapperButton okay;
 	private WrapperButton cancel;
 	private WrapperButton reset;
@@ -86,8 +89,7 @@ public class PanelDialogFontStyle extends JDialog implements ItemListener,
 		initComponents();
 		
 //		updateUI();
-		double f = Defaults.getInstance().getSizeFactor();
-		setSize((int)(400*f), (int)(300*f));
+		setSize(Defaults.getInstance().bySizeFactor(400, 400));
 		setModal(true);
 		setLocationRelativeTo(owner);
 		setVisible(true);
@@ -99,6 +101,7 @@ public class PanelDialogFontStyle extends JDialog implements ItemListener,
 		fontsize.setSelectedItem(currentFont.getSize() + "");
 		bold.setSelected(currentFont.getStyle() != Font.PLAIN
 				&& currentFont.getStyle() != Font.ITALIC);
+		redGreenBlindness.setSelected(HelperClient.COLOR_RED_GREEN_BLINDNESS.equals(Defaults.getInstance().getColorVision()));
 	}
 
 	private void initComponents() {
@@ -139,8 +142,10 @@ public class PanelDialogFontStyle extends JDialog implements ItemListener,
 		beispielTitel.setHorizontalAlignment(JLabel.LEFT);
 		beispielEingabe = new WrapperTextField();
 		beispielEingabe.setText("aAbBcCdDeEfFgGhHiIjJkKlLmM...");
+		beispielEingabe.setMandatoryField(true);
 		beispielLabel = new WrapperLabel("");
 		beispielLabel.setHorizontalAlignment(JLabel.LEFT);
+		redGreenBlindness = new WrapperCheckBox(LPMain.getTextRespectUISPr("lp.layout.redgreenblindness"));
 		updateBeispielText();
 		fontToComponents();
 
@@ -148,7 +153,8 @@ public class PanelDialogFontStyle extends JDialog implements ItemListener,
 		fontsize.addItemListener(this);
 		bold.addItemListener(this);
 		beispielEingabe.addKeyListener(this);
-
+		redGreenBlindness.addActionListener(this);
+		
 		okay = new WrapperButton(LPMain.getTextRespectUISPr("button.ok"));
 		cancel = new WrapperButton(LPMain.getTextRespectUISPr("lp.abbrechen"));
 		reset = new WrapperButton(LPMain.getTextRespectUISPr("button.reset"));
@@ -161,42 +167,46 @@ public class PanelDialogFontStyle extends JDialog implements ItemListener,
 
 		panel.setLayout(new GridBagLayout());
 		panel.add(hint, new GridBagConstraints(0, 0, 3, 1, 0, 1,
-				GridBagConstraints.PAGE_START, GridBagConstraints.BOTH,
+				GridBagConstraints.PAGE_START, GridBagConstraints.HORIZONTAL,
 				new Insets(0, 0, 0, 0), 0, 0));
 		panel.add(fontnameLabel, new GridBagConstraints(0, 1, 2, 1, 1, 1,
-				GridBagConstraints.WEST, GridBagConstraints.BOTH,
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(0, 0, 0, 0), 0, 0));
 		panel.add(fontsizeLabel, new GridBagConstraints(2, 1, 1, 1, 1, 1,
-				GridBagConstraints.WEST, GridBagConstraints.BOTH,
+				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(0, 0, 0, 0), 0, 0));
 
 		panel.add(fontname, new GridBagConstraints(0, 2, 2, 1, 1, 1,
-				GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(
 						0, 0, 0, 0), 0, 0));
 		panel.add(fontsize, new GridBagConstraints(2, 2, 1, 1, 1, 1,
-				GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(
 						0, 0, 0, 0), 0, 0));
 		panel.add(bold, new GridBagConstraints(0, 3, 3, 1, 1, 1,
-				GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(
 						0, 0, 0, 0), 0, 0));
 		panel.add(beispielTitel, new GridBagConstraints(0, 4, 3, 1, 1, 1,
-				GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(
 						0, 0, 0, 0), 0, 0));
 		panel.add(beispielEingabe, new GridBagConstraints(0, 5, 3, 1, 1, 1,
-				GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(
 						0, 0, 0, 0), 0, 0));
 		panel.add(beispielLabel, new GridBagConstraints(0, 6, 3, 1, 1, 1,
-				GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(
+						0, 0, 0, 0), 0, 0));
+
+		panel.add(redGreenBlindness, new GridBagConstraints(0, 7, 3, 1, 1, 1,
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(
 						0, 0, 0, 0), 0, 0));
 		
-		panel.add(okay, new GridBagConstraints(0, 7, 1, 1, 1, 1,
-				GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(
+		panel.add(okay, new GridBagConstraints(0, 9, 1, 1, 1, 1,
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(
 						0, 0, 0, 0), 0, 0));
-		panel.add(cancel, new GridBagConstraints(1, 7, 1, 1, 1, 1,
-				GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(
+		panel.add(cancel, new GridBagConstraints(1, 9, 1, 1, 1, 1,
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(
 						0, 0, 0, 0), 0, 0));
-		panel.add(reset, new GridBagConstraints(2, 7, 1, 1, 1, 1,
-				GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(
+		panel.add(reset, new GridBagConstraints(2, 9, 1, 1, 1, 1,
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(
 						0, 0, 0, 0), 0, 0));
 		this.getContentPane().add(panel);
 	}
@@ -224,6 +234,11 @@ public class PanelDialogFontStyle extends JDialog implements ItemListener,
 	private void okayPressed() {
 		Desktop.setFontChanged(!beispielLabel.getFont().equals(beispielTitel.getFont()));
 		ClientPerspectiveManager.getInstance().saveFont(beispielLabel.getFont());
+		
+		String colorVision = redGreenBlindness.isSelected() ?
+				HelperClient.COLOR_RED_GREEN_BLINDNESS : HelperClient.COLOR_NORMAL;
+		ClientPerspectiveManager.getInstance().saveColorVision(colorVision);
+		Defaults.getInstance().setColorVision(colorVision);
 		updateUI();
 		this.dispose();
 	}
@@ -266,6 +281,12 @@ public class PanelDialogFontStyle extends JDialog implements ItemListener,
 		// TODO Auto-generated method stub
 
 	}
+	
+	protected void colorVisionChanged() {
+		String colorVision = redGreenBlindness.isSelected() ? HelperClient.COLOR_RED_GREEN_BLINDNESS : HelperClient.COLOR_NORMAL;
+		Border b = BorderFactory.createLineBorder(HelperClient.getMandatoryFieldBorderColor(colorVision));
+		beispielEingabe.setBorder(b);
+	}
 
 	@Override
 	public void actionPerformed(ActionEvent ev) {
@@ -275,6 +296,8 @@ public class PanelDialogFontStyle extends JDialog implements ItemListener,
 			cancelPressed();
 		} else if(ev.getSource() == reset) {
 			resetPressed();
+		} else if(ev.getSource() == redGreenBlindness) {
+			colorVisionChanged();
 		}
 	}
 

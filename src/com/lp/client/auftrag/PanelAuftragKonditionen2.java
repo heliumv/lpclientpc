@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -115,6 +115,7 @@ public class PanelAuftragKonditionen2 extends PanelKonditionen {
 
 	private WrapperLabel wlaAuftragwertInAuftragwaehrung = null;
 	private WrapperLabel wlaAuftragwaehrung = null;
+	private WrapperLabel wlaAuftragwaehrung2 = null;
 	private WrapperLabel wlaRohdeckungAltInMandantenwaehrung = null;
 	private WrapperLabel wlaMandantenwaehrung3 = null;
 
@@ -218,8 +219,10 @@ public class PanelAuftragKonditionen2 extends PanelKonditionen {
 		wnfRohdeckungInMandantenwaehrung.setFractionDigits(Defaults
 				.getInstance().getIUINachkommastellenPreiseVK());
 		wlaAuftragwertInAuftragwaehrung = new WrapperLabel(LPMain.getInstance()
-				.getTextRespectUISPr("kond.label.auftragswert"));
+				.getTextRespectUISPr("kond.label.manueller.auftragswert"));
 		wlaAuftragwaehrung = new WrapperLabel(tpAuftrag.getAuftragDto()
+				.getCAuftragswaehrung());
+		wlaAuftragwaehrung2 = new WrapperLabel(tpAuftrag.getAuftragDto()
 				.getCAuftragswaehrung());
 
 		wlaAuftragwaehrung.setMaximumSize(new Dimension(25, Defaults
@@ -229,6 +232,14 @@ public class PanelAuftragKonditionen2 extends PanelKonditionen {
 		wlaAuftragwaehrung.setPreferredSize(new Dimension(25, Defaults
 				.getInstance().getControlHeight()));
 		wlaAuftragwaehrung.setHorizontalAlignment(SwingConstants.LEFT);
+		
+		wlaAuftragwaehrung2.setMaximumSize(new Dimension(25, Defaults
+				.getInstance().getControlHeight()));
+		wlaAuftragwaehrung2.setMinimumSize(new Dimension(25, Defaults
+				.getInstance().getControlHeight()));
+		wlaAuftragwaehrung2.setPreferredSize(new Dimension(25, Defaults
+				.getInstance().getControlHeight()));
+		wlaAuftragwaehrung2.setHorizontalAlignment(SwingConstants.LEFT);
 
 		wlaAuftragwertInMandantenwaehrung = new WrapperLabel(LPMain
 				.getInstance().getTextRespectUISPr("kond.label.auftragswert"));
@@ -375,7 +386,7 @@ public class PanelAuftragKonditionen2 extends PanelKonditionen {
 				new GridBagConstraints(4, iZeile, 1, 1, 0.0, 0.0,
 						GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 						new Insets(2, 2, 2, 2), 100, 0));
-		jPanelWorkingOn.add(wlaAuftragwaehrung, new GridBagConstraints(5,
+		jPanelWorkingOn.add(wlaAuftragwaehrung2, new GridBagConstraints(5,
 				iZeile, 1, 1, 0.05, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
 
@@ -438,6 +449,8 @@ public class PanelAuftragKonditionen2 extends PanelKonditionen {
 		wlaMandantenwaehrung3.setText(cNrMandantenwaehrung);
 
 		wlaAuftragwaehrung.setText(tpAuftrag.getAuftragDto()
+				.getCAuftragswaehrung());
+		wlaAuftragwaehrung2.setText(tpAuftrag.getAuftragDto()
 				.getCAuftragswaehrung());
 
 		// belegartkonditionen: 8 die Default Texte zum Ruecksetzen hinterlegen
@@ -566,7 +579,7 @@ public class PanelAuftragKonditionen2 extends PanelKonditionen {
 				.getAuftragDto().getNRohdeckungaltInMandantenwaehrung();
 
 		if (bdAuftragwertInAuftragwaehrung == null
-				|| tpAuftrag.getAuftragDto().getAuftragstatusCNr()
+				|| tpAuftrag.getAuftragDto().getStatusCNr()
 						.equals(AuftragServiceFac.AUFTRAGSTATUS_STORNIERT)) {
 			bdAuftragwertInAuftragwaehrung = DelegateFactory
 					.getInstance()
@@ -831,13 +844,13 @@ public class PanelAuftragKonditionen2 extends PanelKonditionen {
 		LockStateValue lockStateValue = super.getLockedstateDetailMainKey();
 
 		if (tpAuftrag.getAuftragDto().getIId() != null) {
-			if (tpAuftrag.getAuftragDto().getAuftragstatusCNr()
+			if (tpAuftrag.getAuftragDto().getStatusCNr()
 					.equals(AuftragServiceFac.AUFTRAGSTATUS_STORNIERT)
 					|| tpAuftrag
 							.getAuftragDto()
-							.getAuftragstatusCNr()
+							.getStatusCNr()
 							.equals(AuftragServiceFac.AUFTRAGSTATUS_TEILERLEDIGT)
-					|| tpAuftrag.getAuftragDto().getAuftragstatusCNr()
+					|| tpAuftrag.getAuftragDto().getStatusCNr()
 							.equals(AuftragServiceFac.AUFTRAGSTATUS_ERLEDIGT)) {
 				lockStateValue = new LockStateValue(
 						PanelBasis.LOCK_ENABLE_REFRESHANDPRINT_ONLY);

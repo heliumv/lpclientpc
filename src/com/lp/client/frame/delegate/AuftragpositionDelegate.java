@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -46,7 +46,6 @@ import com.lp.client.pc.LPMain;
 import com.lp.server.auftrag.service.AuftragpositionDto;
 import com.lp.server.auftrag.service.AuftragpositionFac;
 import com.lp.server.auftrag.service.AuftragseriennrnDto;
-import com.lp.server.system.service.TheClientDto;
 import com.lp.service.Artikelset;
 import com.lp.util.EJBExceptionLP;
 
@@ -215,6 +214,18 @@ public class AuftragpositionDelegate extends Delegate {
 
 		try {
 			dto = this.auftragpositionFac.auftragpositionFindByPrimaryKey(pKey);
+		} catch (Throwable t) {
+			handleThrowable(t);
+		}
+
+		return dto;
+	}
+	public AuftragpositionDto auftragpositionFindByPrimaryKeyOhneExc(Integer pKey)
+			throws ExceptionLP {
+		AuftragpositionDto dto = null;
+
+		try {
+			dto = this.auftragpositionFac.auftragpositionFindByPrimaryKeyOhneExc(pKey);
 		} catch (Throwable t) {
 			handleThrowable(t);
 		}
@@ -709,5 +720,4 @@ public class AuftragpositionDelegate extends Delegate {
 
 		return false;
 	}
-
 }

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -33,10 +33,13 @@
 package com.lp.client.frame.component;
 
 import java.awt.Dimension;
+import java.awt.FontMetrics;
+import java.awt.Rectangle;
 
 import javax.swing.Icon;
 import javax.swing.JLabel;
 import javax.swing.SwingConstants;
+import javax.swing.plaf.basic.BasicLabelUI;
 
 import com.lp.client.frame.Defaults;
 import com.lp.client.frame.HelperClient;
@@ -62,6 +65,7 @@ public class WrapperLabel extends JLabel {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
+	private boolean cutOffEnd = true;
 
 	public WrapperLabel() {
 		setDefaults();
@@ -91,8 +95,24 @@ public class WrapperLabel extends JLabel {
 		super(p0, p1, p2);
 		setDefaults();
 	}
+	
+	/**
+	 * Wenn ein Text zu lang ist wird er gek&uuml;rzt und '...'
+	 * anstatt des entfernten Textes angef&uuml;gt.<br>
+	 * Mit dieser Methode kann man bestimmen, ob der Text am Anfang
+	 * oder am Ende gek&uuml;rzt werden soll.
+	 * @param b <code>true</code> am Ende k&uuml;rzen, <code>false</code> am Anfang 
+	 */
+	public void setCutOffEnd(boolean b) {
+		cutOffEnd = b;
+	}
+	
+	protected boolean isCutOffEnd() {
+		return cutOffEnd;
+	}
 
-	private void setDefaults() {
+	protected void setDefaults() {
+		setUI(new WrapperLabelUI());
 		HelperClient.setDefaultsToComponent(this);
 		setHorizontalAlignment(SwingConstants.RIGHT);
 	}
@@ -110,5 +130,23 @@ public class WrapperLabel extends JLabel {
 	public void setPreferredSize(Dimension d) {
 		super.setPreferredSize(new Dimension(d.width, Defaults.getInstance()
 				.getControlHeight()));
+	}
+	
+	@Override
+	public void updateUI() {
+		super.updateUI();
+		setUI(new WrapperLabelUI());
+	}
+	
+	protected class WrapperLabelUI extends BasicLabelUI {
+		
+		@Override
+		protected String layoutCL(JLabel label, FontMetrics fontMetrics,
+				String text, Icon icon, Rectangle viewR, Rectangle iconR,
+				Rectangle textR) {
+			text = cutOffEnd ? text : new StringBuilder(text).reverse().toString();
+			String s = super.layoutCL(label, fontMetrics, text, icon, viewR, iconR, textR);
+			return cutOffEnd ? s : new StringBuilder(s).reverse().toString();
+		}
 	}
 }

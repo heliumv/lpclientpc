@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -428,6 +428,7 @@ public class TabbedPaneRollen extends TabbedPane {
 				this.setSelectedComponent(panelSplitFertigungsgrupperolle);
 			}
 		}
+		disableChangingIfUserCount();
 	}
 
 	public InternalFrameBenutzer getInternalFrameBenutzer() {
@@ -493,11 +494,29 @@ public class TabbedPaneRollen extends TabbedPane {
 			panelSplitFertigungsgrupperolle.eventYouAreSelected(false);
 			panelQueryFertigungsgrupperolle.updateButtons();
 		}
+		disableChangingIfUserCount();
 		refreshTitle();
+	}
+	
+	protected void disableChangingIfUserCount() {
+		if(getInternalFrameBenutzer().getSystemrolleDto() != null) {
+			if(getInternalFrameBenutzer().getSystemrolleDto().getIMaxUsers() != null) {
+				panelDetailSystemrolle.enableToolsPanelButtons(false, PanelBasis.ACTION_DELETE, PanelBasis.ACTION_UPDATE);
+				panelDetailRollerecht.enableToolsPanelButtons(false, PanelBasis.ACTION_DELETE, PanelBasis.ACTION_UPDATE, PanelBasis.ACTION_REFRESH);
+				panelQueryRollerecht.enableToolsPanelButtons(false, PanelBasis.ACTION_NEW, BUTTON_RESTLICHERECHTESPEICHERN);
+				if(panelQueryFertigungsgrupperolle != null) {
+					panelQueryFertigungsgrupperolle.enableToolsPanelButtons(false, PanelBasis.ACTION_NEW, BUTTON_RESTLICHERECHTESPEICHERN);
+					panelQueryFertigungsgrupperolle.enableToolsPanelButtons(false, PanelBasis.ACTION_NEW);
+					panelDetailFertigungsgrupperolle.enableToolsPanelButtons(false, PanelBasis.ACTION_UPDATE, PanelBasis.ACTION_DELETE, PanelBasis.ACTION_REFRESH);
+				}
+				panelQueryLagerrolle.enableToolsPanelButtons(false, PanelBasis.ACTION_NEW, BUTTON_RESTLICHELAGERRECHTESPEICHERN);
+				panelDetailLagerrolle.enableToolsPanelButtons(false, PanelBasis.ACTION_UPDATE, PanelBasis.ACTION_DELETE, PanelBasis.ACTION_REFRESH);
+			}
+		}
 	}
 
 	protected void lPActionEvent(java.awt.event.ActionEvent e) {
-
+		
 	}
 
 	public javax.swing.JMenuBar getJMenuBar() throws Throwable {

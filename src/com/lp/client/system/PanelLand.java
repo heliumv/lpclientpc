@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -109,6 +109,7 @@ public class PanelLand extends PanelBasis {
 	private WrapperLabel wlaLaengeUIDNummer = new WrapperLabel();
 	private WrapperNumberField wnfLaengeUIDNummer = new WrapperNumberField();
 	private WrapperCheckBox wcbSepa = new WrapperCheckBox();
+	private WrapperCheckBox wcbPlzNachOrt = new WrapperCheckBox();
 
 	private WrapperSelectField wsfGemeinsamesPostland = new WrapperSelectField(
 			WrapperSelectField.LAND, getInternalFrame(), true);
@@ -191,6 +192,7 @@ public class PanelLand extends PanelBasis {
 		getLandDto().setNMuenzRundung(
 				(BigDecimal) wcbRundungswerte.getKeyOfSelectedItem());
 		getLandDto().setLandIIdGemeinsamespostland(wsfGemeinsamesPostland.getIKey());
+		getLandDto().setBPlznachort(wcbPlzNachOrt.getShort());
 	}
 
 	protected void dto2Components() throws Throwable {
@@ -207,6 +209,7 @@ public class PanelLand extends PanelBasis {
 		wnfGmtVersatz.setDouble(getLandDto().getFGmtversatz());
 		wcbRundungswerte.setKeyOfSelectedItem(getLandDto().getNMuenzRundung());
 		wsfGemeinsamesPostland.setKey(getLandDto().getLandIIdGemeinsamespostland());
+		wcbPlzNachOrt.setShort(getLandDto().getBPlznachort());
 	}
 
 	public void eventActionSave(ActionEvent e, boolean bNeedNoSaveI)
@@ -286,6 +289,10 @@ public class PanelLand extends PanelBasis {
 
 		wcbSepa.setText(LPMain.getInstance()
 				.getTextRespectUISPr("lp.land.sepa"));
+		wcbPlzNachOrt.setText(LPMain.getInstance()
+				.getTextRespectUISPr("lp.land.plznachort"));
+		
+		
 		wlaGmtVersatz.setText(LPMain.getInstance().getTextRespectUISPr(
 				"lp.land.gmtversatz"));
 
@@ -324,9 +331,15 @@ public class PanelLand extends PanelBasis {
 		jPanelWorkingOn.add(wlaLKZ, new GridBagConstraints(0, iZeile, 1, 1,
 				1.0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jPanelWorkingOn.add(wtfLKZ, new GridBagConstraints(1, iZeile, 3, 1,
+		jPanelWorkingOn.add(wtfLKZ, new GridBagConstraints(1, iZeile, 1, 1,
 				1.0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jPanelWorkingOn.add(wcbPlzNachOrt, new GridBagConstraints(2, iZeile, 2, 1,
+				1.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		
+		
+		
 		iZeile++;
 		jPanelWorkingOn.add(wlaLand, new GridBagConstraints(0, iZeile, 1, 1,
 				0.0, 0.0, GridBagConstraints.CENTER,

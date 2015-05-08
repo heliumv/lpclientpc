@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -32,6 +32,7 @@
  ******************************************************************************/
 package com.lp.client.frame.delegate;
 
+import java.util.ArrayList;
 import java.util.Map;
 
 import javax.naming.Context;
@@ -40,14 +41,18 @@ import javax.naming.InitialContext;
 import com.lp.client.frame.ExceptionLP;
 import com.lp.client.pc.LPMain;
 import com.lp.server.partner.ejb.SerienbriefselektionPK;
+import com.lp.server.partner.ejb.SerienbriefselektionnegativPK;
 import com.lp.server.partner.service.KommunikationsartDto;
 import com.lp.server.partner.service.KontaktartDto;
 import com.lp.server.partner.service.KundeSelectCriteriaDto;
 import com.lp.server.partner.service.PartnerServicesFac;
+import com.lp.server.partner.service.PartnerkommentarDto;
+import com.lp.server.partner.service.PartnerkommentarartDto;
 import com.lp.server.partner.service.SelektionDto;
 import com.lp.server.partner.service.SelektionsprDto;
 import com.lp.server.partner.service.SerienbriefDto;
 import com.lp.server.partner.service.SerienbriefselektionDto;
+import com.lp.server.partner.service.SerienbriefselektionnegativDto;
 import com.lp.server.stueckliste.service.StuecklisteDto;
 
 @SuppressWarnings("static-access")
@@ -333,10 +338,52 @@ public class PartnerServicesDelegate extends Delegate {
 		return iId;
 	}
 
+	public Integer createPartnerkommentarart(PartnerkommentarartDto artDto)
+			throws Exception {
+		Integer iId = null;
+		try {
+			iId = partnerServicesFac.createPartnerkommentarart(artDto, LPMain
+					.getInstance().getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+		return iId;
+	}
+
+	public Integer createPartnerkommentar(PartnerkommentarDto dto)
+			throws Exception {
+		Integer iId = null;
+		try {
+			iId = partnerServicesFac.createPartnerkommentar(dto, LPMain
+					.getInstance().getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+		return iId;
+	}
+
 	public void removeSerienbrief(Integer iId) throws Exception {
 		try {
 			partnerServicesFac.removeSerienbrief(iId, LPMain.getInstance()
 					.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+	}
+
+	public void removePartnerkommentarart(PartnerkommentarartDto artDto)
+			throws Exception {
+		try {
+			partnerServicesFac.removePartnerkommentarart(artDto);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+	}
+
+	public void removePartnerkommentar(PartnerkommentarDto dto)
+			throws Exception {
+		try {
+			partnerServicesFac.removePartnerkommentar(dto);
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 		}
@@ -352,6 +399,26 @@ public class PartnerServicesDelegate extends Delegate {
 		}
 	}
 
+	public void updatePartnerkommentarart(PartnerkommentarartDto artDto)
+			throws Exception {
+		try {
+			partnerServicesFac.updatePartnerkommentarart(artDto, LPMain
+					.getInstance().getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+	}
+
+	public void updatePartnerkommentar(PartnerkommentarDto dto)
+			throws Exception {
+		try {
+			partnerServicesFac.updatePartnerkommentar(dto, LPMain.getInstance()
+					.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+	}
+
 	public SerienbriefDto serienbriefFindByPrimaryKey(Integer iId)
 			throws Exception {
 		SerienbriefDto serienbriefDto = null;
@@ -362,6 +429,32 @@ public class PartnerServicesDelegate extends Delegate {
 			handleThrowable(ex);
 		}
 		return serienbriefDto;
+	}
+
+	public PartnerkommentarartDto partnerkommentarartFindByPrimaryKey(
+			Integer iId) throws Exception {
+		PartnerkommentarartDto partnerkommentarartDto = null;
+		try {
+			partnerkommentarartDto = partnerServicesFac
+					.partnerkommentarartFindByPrimaryKey(iId, LPMain
+							.getInstance().getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+		return partnerkommentarartDto;
+	}
+
+	public PartnerkommentarDto partnerkommentarFindByPrimaryKey(Integer iId)
+			throws Exception {
+		PartnerkommentarDto partnerkommentarDto = null;
+		try {
+			partnerkommentarDto = partnerServicesFac
+					.partnerkommentarFindByPrimaryKey(iId, LPMain.getInstance()
+							.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+		return partnerkommentarDto;
 	}
 
 	// **************************************************************************
@@ -413,6 +506,89 @@ public class PartnerServicesDelegate extends Delegate {
 		}
 
 		return serienbriefselektionDto;
+	}
+
+	public SerienbriefselektionnegativPK createSerienbriefselektionnegativ(
+			SerienbriefselektionnegativDto serienbriefselektionnegativDto)
+			throws Exception {
+
+		SerienbriefselektionnegativPK serienbriefselektionnegativPK = null;
+		try {
+			serienbriefselektionnegativPK = partnerServicesFac
+					.createSerienbriefselektionnegativ(
+							serienbriefselektionnegativDto, LPMain
+									.getInstance().getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+		return serienbriefselektionnegativPK;
+	}
+
+	public void removeSerienbriefselektionnegativ(Integer serienbriefIId,
+			Integer selektionIId) throws Exception {
+		try {
+			partnerServicesFac.removeSerienbriefselektionnegativ(
+					serienbriefIId, selektionIId, LPMain.getInstance()
+							.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+	}
+
+	public void updateSerienbriefselektionnegativ(
+			SerienbriefselektionnegativDto serienbriefselektionnegativDto)
+			throws Exception {
+		try {
+			partnerServicesFac.updateSerienbriefselektionnegativ(
+					serienbriefselektionnegativDto, LPMain.getInstance()
+							.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+	}
+
+	public SerienbriefselektionnegativDto serienbriefselektionnegativFindByPrimaryKey(
+			Integer serienbriefIId, Integer selektionIId) throws Exception {
+		SerienbriefselektionnegativDto serienbriefselektionnegativDto = null;
+		try {
+			serienbriefselektionnegativDto = partnerServicesFac
+					.serienbriefselektionnegativFindByPrimaryKey(
+							serienbriefIId, selektionIId, LPMain.getInstance()
+									.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+
+		return serienbriefselektionnegativDto;
+	}
+
+	public String[] getPartnerhinweise(Integer partnerIId, boolean bKunde,
+			String belegartCNr) throws Exception {
+		String[] s = null;
+		try {
+			s = partnerServicesFac.getPartnerhinweise(partnerIId, bKunde,
+					belegartCNr, LPMain.getInstance().getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+
+		return s;
+	}
+
+	public ArrayList<byte[]> getPartnerkommentarBilderUndPDFAlsBilderUmgewandelt(
+			Integer partnerIId, boolean bKunde, String belegartCNr, Integer iArt)
+			throws Exception {
+		ArrayList<byte[]> s = null;
+		try {
+			s = partnerServicesFac
+					.getPartnerkommentarBilderUndPDFAlsBilderUmgewandelt(
+							partnerIId, bKunde, belegartCNr, iArt, LPMain
+									.getInstance().getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+
+		return s;
 	}
 
 }

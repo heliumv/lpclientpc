@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -239,6 +239,19 @@ public class TabbedPaneZahlungsvorschlag extends TabbedPane {
 			if (eI.getSource() == getPanelQueryZVlauf()) {
 				if (sAspectInfo.equals(ACTION_SPECIAL_REMOVE_ZV)) {
 					if (getZVlaufDto() != null) {
+
+						if (getZVlaufDto().getTGespeichert() != null) {
+
+							boolean b = DialogFactory
+									.showModalJaNeinDialog(
+											getInternalFrame(),
+											LPMain.getTextRespectUISPr("er.zahlungsvorschlag.gespeichert.warning.loeschen"));
+							if (b == false) {
+								return;
+							}
+
+						}
+
 						DelegateFactory
 								.getInstance()
 								.getEingangsrechnungDelegate()
@@ -249,6 +262,19 @@ public class TabbedPaneZahlungsvorschlag extends TabbedPane {
 					getPanelQueryZVlauf().eventYouAreSelected(false);
 				} else if (sAspectInfo.equals(ACTION_SPECIAL_EXPORTIERE_ZV)) {
 					if (getZVlaufDto() != null) {
+
+						if (getZVlaufDto().getTGespeichert() != null) {
+
+							boolean b = DialogFactory
+									.showModalJaNeinDialog(
+											getInternalFrame(),
+											LPMain.getTextRespectUISPr("er.zahlungsvorschlag.gespeichert.warning.nochmal"));
+							if (b == false) {
+								return;
+							}
+
+						}
+
 						// Parameter holen
 						ParametermandantDto parameter = DelegateFactory
 								.getInstance()
@@ -274,6 +300,8 @@ public class TabbedPaneZahlungsvorschlag extends TabbedPane {
 											LPMain.getTextRespectUISPr("lp.hint"),
 											LPMain.getTextRespectUISPr("fb.export.keinebelegezuexportieren"));
 						}
+						getPanelQueryZVlauf().eventYouAreSelected(false);
+
 					}
 				}
 			}
@@ -321,8 +349,11 @@ public class TabbedPaneZahlungsvorschlag extends TabbedPane {
 						setSelectedComponent(getPanelSplitZV());
 						getPanelSplitZV().eventYouAreSelected(false);
 					} else {
-						//Es wurden keine offenen ERs gefunden
-						DialogFactory.showModalDialog(LPMain.getTextRespectUISPr("lp.info"), LPMain.getTextRespectUISPr("fb.zahlungsvorschlag.keineoffeneners"));
+						// Es wurden keine offenen ERs gefunden
+						DialogFactory
+								.showModalDialog(
+										LPMain.getTextRespectUISPr("lp.info"),
+										LPMain.getTextRespectUISPr("fb.zahlungsvorschlag.keineoffeneners"));
 					}
 				} else {
 					getPanelQueryZVlauf().eventYouAreSelected(false);
@@ -426,7 +457,7 @@ public class TabbedPaneZahlungsvorschlag extends TabbedPane {
 		return panelDialogKriterienZV;
 	}
 
-	public Object getInseratDto() {
+	public Object getDto() {
 		return zvlaufDto;
 	}
 

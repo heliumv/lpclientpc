@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -58,15 +59,18 @@ public class ClientPerspectiveFileIO implements IClientPerspectiveIO {
 	private static final String WIDTHSFILE = "columnwidth_";
 	private static final String SORTINGFILE = "sorting_";
 	private static final String FONTFILE = "font";
+	private static final String PROPERTIES = "properties";
 
 	private String layoutPath;
 	private String fontPath;
 	private String queryPath;
+	private String propertiesPath;
 	
 	public ClientPerspectiveFileIO(String path) {
 		layoutPath = path + LAYOUT_DIR + SEP;
 		queryPath = path + QUERY_DIR + SEP;
 		fontPath = path + FONT_DIR + SEP;
+		propertiesPath = path;
 	}
 	
 	@Override
@@ -199,5 +203,17 @@ public class ClientPerspectiveFileIO implements IClientPerspectiveIO {
 			file.delete();
 		}
 		layoutDir.delete();
+	}
+
+	@Override
+	public void persistPropertyMap(HashMap<String, String> properties)
+			throws Exception {
+		saveObject(properties, propertiesPath, PROPERTIES);
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public HashMap<String, String> readPropertyMap() throws Exception {
+		return (HashMap<String, String>)readObject(propertiesPath, PROPERTIES);
 	}
 }

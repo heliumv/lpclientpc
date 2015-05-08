@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -91,9 +91,9 @@ import javax.swing.JWindow;
 import javax.swing.SwingUtilities;
 import javax.swing.event.InternalFrameAdapter;
 import javax.swing.event.InternalFrameEvent;
-import javax.swing.text.StyledEditorKit;
 import javax.swing.text.html.HTMLEditorKit;
 
+import com.lp.client.frame.DirekthilfeCache;
 import com.lp.client.frame.HelperClient;
 import com.lp.client.pc.LPMain;
 import com.lp.client.pc.SystemProperties;
@@ -114,6 +114,9 @@ public class WrapperToolTip extends JWindow implements ActionListener,
 	private static final Dimension SCREENSIZE = Toolkit.getDefaultToolkit()
 			.getScreenSize();
 	private static final int INSETS = 2;
+
+	private static final String HV_COLOR = Integer.toHexString(Color.blue.darker().getRGB()).substring(2);
+	private static final String ANWENDER_COLOR = Integer.toHexString(Color.green.darker().darker().getRGB()).substring(2);
 
 	private static final List<String> standardNames = Arrays.asList("Desktop",
 			"JDesktopPane", "JRootPane", "JLayeredPane", "JPanel",
@@ -153,14 +156,24 @@ public class WrapperToolTip extends JWindow implements ActionListener,
 	private String token;
 	private String fullToken;
 	private boolean mouseHover = false;
+	
+	private String hvText;
+	private String anwenderText;
+	
+	private boolean darfAnwenderTexteEditieren;
+	private boolean darfHvTexteEditieren;
 
 	private static WrapperToolTip existingToolTip = null;
+	private boolean openWithWindow = false;
+	private boolean openWithIFrame = false;
 
 	WrapperToolTip(JComponent parentComponent, String toolTipToken) {
 		super(SwingUtilities.getWindowAncestor(parentComponent));
+		darfAnwenderTexteEditieren = LPMain.getInstance().getDesktop().darfDirekthilfeTexteEditieren();
+		darfHvTexteEditieren = LPMain.getInstance().isLPAdmin();
 		this.parentComponent = parentComponent;
 		super.setVisible(false);
-		setFocusableWindowState(true);
+		setFocusableWindowState(false);
 
 		setAlwaysOnTop(true);
 		setSize(TOOLTIP_MINSIZE);
@@ -180,6 +193,7 @@ public class WrapperToolTip extends JWindow implements ActionListener,
 		textPane.setEditorKit(new HTMLEditorKit());
 		textPane.setFocusable(false);
 		textPane.setText(null);
+		textPane.setFont(HelperClient.getDefaultFont());
 
 		scrollPane = new JScrollPane(textPane);
 
@@ -233,14 +247,31 @@ public class WrapperToolTip extends JWindow implements ActionListener,
 			internalFrame.addInternalFrameListener(new InternalFrameAdapter() {
 				@Override
 				public void internalFrameDeactivated(InternalFrameEvent arg0) {
+					boolean visible = isVisible();
 					setVisible(false);
+					openWithIFrame = visible;
+				}
+				@Override
+				public void internalFrameActivated(InternalFrameEvent arg0) {
+					if(openWithIFrame) {
+						setVisible(true);
+						setStandalone(true);
+					}
 				}
 			});
 		if (SwingUtilities.getWindowAncestor(parentComponent) != null) {
 			SwingUtilities.getWindowAncestor(parentComponent)
 					.addWindowListener(new WindowAdapter() {
 						public void windowDeactivated(WindowEvent arg0) {
+							boolean visible = isVisible();
 							setVisible(false);
+							openWithWindow = visible;
+						}
+						public void windowActivated(WindowEvent arg0) {
+							if(openWithWindow) {
+								setVisible(true);
+								setStandalone(true);
+							}
 						}
 					});
 		}
@@ -255,6 +286,10 @@ public class WrapperToolTip extends JWindow implements ActionListener,
 
 	protected static boolean hasToolTip() {
 		return existingToolTip != null;
+	}
+	
+	protected boolean darfEditieren() {
+		return darfAnwenderTexteEditieren || darfHvTexteEditieren;
 	}
 
 	private void packComponents() {
@@ -271,7 +306,7 @@ public class WrapperToolTip extends JWindow implements ActionListener,
 								- (hasCustomPosition() ? imageIconDock
 										.getIconWidth() + INSETS : 0)
 								- (isStandalone()
-										&& LPMain.getInstance().isLPAdmin() ? imageIconEdit
+										&& darfEditieren() ? imageIconEdit
 										.getIconWidth() + INSETS
 										: 0), imageIconClose.getIconHeight());
 		scrollPane.setBounds(INSETS, imageIconClose.getIconHeight() + INSETS
@@ -330,7 +365,7 @@ public class WrapperToolTip extends JWindow implements ActionListener,
 		scrollPane.getViewport().setBackground(jPanel.getBackground());
 		scrollPane.setBorder(jPanel.getBorder());
 		exitButton.setVisible(b);
-		if (LPMain.getInstance().isLPAdmin()) {
+		if (darfEditieren()) {
 			editButton.setVisible(b);
 		}
 		updateToolTipLocation();
@@ -439,24 +474,30 @@ public class WrapperToolTip extends JWindow implements ActionListener,
 	}
 
 	public void setVisible(boolean b) {
-		if (b && (!isEmptyTip() || LPMain.getInstance().isLPAdmin())) {
+		if (b && (!isEmptyTip() || darfEditieren())) {
 			replaceExistingToolTip(this);
 		} else {
 			super.setVisible(false);
-			if (textPane.isEditable()) {
-				String t = token;
-				setToolTipToken(null);
-				setToolTipToken(t);
-				setEditable(false);
-			}
+			openWithWindow = false;
+			openWithIFrame = false;
+			
+//			if (textPane.isEditable()) {
+//				String t = token;
+//				setToolTipToken(null);
+//				setToolTipToken(t);
+//				setEditable(false);
+//			}
 		}
 	}
 
 	private void superSetVisible(boolean b) {
 		super.setVisible(b);
+		openWithWindow = false;
+		openWithIFrame = false;
 	}
 
 	private static void replaceExistingToolTip(WrapperToolTip newTip) {
+		
 		if (newTip.equals(existingToolTip)) {
 			if (!newTip.hasCustomPosition())
 				newTip.setStandalone(false);
@@ -465,6 +506,8 @@ public class WrapperToolTip extends JWindow implements ActionListener,
 		}
 
 		if (existingToolTip != null) {
+			if(existingToolTip.textPane.isEditable())
+				return;
 			existingToolTip.setVisible(false);
 			if (existingToolTip.hasCustomPosition()) {
 				newTip.setVisible(false);
@@ -512,29 +555,36 @@ public class WrapperToolTip extends JWindow implements ActionListener,
 		}
 		if (isEmptyTip == false && token.equals(this.token))
 			return;
+		this.token = token;
 		String compPath = getParentComponentPath(parentComponent, false);
 		String searchToken = new String(compPath + token);
-		String toolTipText = ToolTipFileWriter.getToolTip(TOKEN_PREFIX
-				+ searchToken);
-		if (toolTipText == null)
-			toolTipText = LPMain.getTextRespectUISPrWithNull(TOKEN_PREFIX
-					+ searchToken);
+		// String toolTipText = ToolTipFileWriter.getToolTip(TOKEN_PREFIX
+		// + searchToken);
+		String toolTipTextAnwender = null;
 
-		this.fullToken = TOKEN_PREFIX + searchToken;
-		while (toolTipText == null && searchToken.indexOf(".") > -1) {
-			searchToken = searchToken.substring(searchToken.indexOf(".") + 1);
-			toolTipText = ToolTipFileWriter.getToolTip(TOKEN_PREFIX
+		String toolTipText = null;
+		try {
+			this.fullToken = TOKEN_PREFIX + searchToken;
+			toolTipTextAnwender = DirekthilfeCache.getAnwenderText(fullToken);
+
+			toolTipText = DirekthilfeCache.getHvText(TOKEN_PREFIX
 					+ searchToken);
-			if (toolTipText == null)
-				toolTipText = LPMain.getTextRespectUISPrWithNull(TOKEN_PREFIX
-						+ searchToken);
+			while (toolTipText == null && searchToken.indexOf(".") > -1) {
+				searchToken = searchToken
+						.substring(searchToken.indexOf(".") + 1);
+				if (toolTipText == null)
+					toolTipText = LPMain
+							.getTextRespectUISPrWithNull(TOKEN_PREFIX
+									+ searchToken);
+			}
+		} catch (Throwable e) {
+			e.printStackTrace();
 		}
 
-		textPane.setText(toolTipText);
-		textPane.setCaretPosition(0);
-		isEmptyTip = (toolTipText == null);
+		setTexts(toolTipText, toolTipTextAnwender);
+		isEmptyTip = toolTipText == null && toolTipTextAnwender == null;
 
-		if (LPMain.getInstance().isLPAdmin()) {
+		if (darfEditieren()) {
 			setTokenToTitleText(compPath + token, searchToken,
 					toolTipText != null);
 			textFieldTitle.setFocusable(!SystemProperties.isMacOs());
@@ -543,8 +593,27 @@ public class WrapperToolTip extends JWindow implements ActionListener,
 			textFieldTitle.setText("Direkthilfe");
 		}
 		updateToolTipLocation();
+	}
+	
+	private void setTexts(String hvText, String anwenderText) {
+		this.hvText = hvText;
+		this.anwenderText = anwenderText;
 
-		
+		String font = textFieldTitle.getFont().getFontName();
+		int size = textFieldTitle.getFont().getSize();
+		StringBuffer sb = new StringBuffer();
+		sb.append("<body style=\"font: " + font + "; font-size: " + size + ";\">")
+				.append("<span color=\"" + ANWENDER_COLOR + "\">")
+				.append(anwenderText == null ? "" : anwenderText)
+				.append("</span>");
+		if (anwenderText != null && !anwenderText.isEmpty() && hvText != null && !hvText.isEmpty())
+			sb.append("<hr noshade>");
+		sb.append("<span color=\"" + HV_COLOR + "\">")
+				.append(hvText == null ? "" : hvText)
+				.append("</span>")
+				.append("</body>");
+		textPane.setText(sb.toString());
+		textPane.setCaretPosition(0);
 	}
 
 	private void setTokenToTitleText(String fullToken, String workingToken,
@@ -596,30 +665,63 @@ public class WrapperToolTip extends JWindow implements ActionListener,
 	@Override
 	public void actionPerformed(ActionEvent event) {
 		if (event.getSource().equals(exitButton)) {
+			setEditable(false);
+			setTexts(hvText, anwenderText);
 			this.setVisible(false);
 		} else if (event.getSource().equals(dockButton)) {
 			setHasCustomPosition(false);
 			updateToolTipLocation();
 		} else if (event.getSource().equals(editButton)) {
 			if (textPane.isEditable()) {
-				ToolTipFileWriter.putToolTip(fullToken, textPane.getText());
-				ToolTipFileWriter.saveToolTips();
-				isEmptyTip = (textPane.getText() == null || textPane.getText().isEmpty());
+				saveText();
+			} else {
+				//rk: workaround, sonst wird der Text spaeter falsch gerendert
+				textPane.setText("a");
+				
+				setEditable(true);
+				if(darfHvTexteEditieren)
+					textPane.setText(hvText);
+				else if(darfAnwenderTexteEditieren)
+					textPane.setText(anwenderText == null ? "" : anwenderText);
+				textPane.setCaretPosition(textPane.getText().length());
 			}
-			setEditable(!textPane.isEditable());
 		}
+	}
+	
+	private void saveText() {
+		try {
+			if(darfHvTexteEditieren) {
+				String text = textPane.getText();
+				DirekthilfeCache.putHvText(fullToken, text);
+				setTexts(text, anwenderText);
+			} else if(darfAnwenderTexteEditieren) {
+				String text = textPane.getText();
+				DirekthilfeCache.putAnwenderText(fullToken, text);
+				setTexts(hvText, text);
+			}
+		} catch (Throwable e) {
+			e.printStackTrace();
+		}
+//		ToolTipFileWriter.putToolTip(fullToken, textPane.getText());
+//		ToolTipFileWriter.saveToolTips();
+		isEmptyTip = ((hvText == null ? true : hvText.isEmpty())
+				&& (anwenderText == null ? true : anwenderText.isEmpty()));
+		setEditable(false);
 	}
 
 	private void setEditable(boolean b) {
+		setFocusableWindowState(b);
 		String text = textPane.getText();
+		textPane.setFocusable(b);
 		if (b) {
-			textPane.setEditorKit(new StyledEditorKit());
+			textPane.setContentType("text/plain");
+			textPane.requestFocus();
+			textPane.setFont(textFieldTitle.getFont());
 		} else {
-			textPane.setEditorKit(new HTMLEditorKit());
+			textPane.setContentType("text/html");
 		}
 		textPane.setEditable(b);
-		textPane.setFocusable(b);
-		textPane.setText(text);
+		textPane.setText(text == null ? "" : text);
 	}
 
 	@Override
@@ -701,7 +803,7 @@ public class WrapperToolTip extends JWindow implements ActionListener,
 	}
 
 	public void tokenToClipboard() {
-		if (LPMain.getInstance().isLPAdmin() && resetTitleToTokenTimer == null) {
+		if (darfEditieren() && resetTitleToTokenTimer == null) {
 			StringSelection ss = new StringSelection(textFieldTitle.getText());
 			Toolkit.getDefaultToolkit().getSystemClipboard()
 					.setContents(ss, null);

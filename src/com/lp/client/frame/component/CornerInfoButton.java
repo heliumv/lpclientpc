@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -70,7 +70,6 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.Timer;
 
-import javax.swing.AbstractButton;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -81,6 +80,11 @@ import javax.swing.SwingUtilities;
 import javax.swing.event.InternalFrameAdapter;
 import javax.swing.event.InternalFrameEvent;
 import javax.swing.event.InternalFrameListener;
+import static com.lp.client.frame.component.CornerInfoIcon.INVALID_STATE;
+import static com.lp.client.frame.component.CornerInfoIcon.DEFAULT_STATE;
+import static com.lp.client.frame.component.CornerInfoIcon.ACTIVE_STATE;
+import static com.lp.client.frame.component.CornerInfoIcon.SET_STATE;
+import static com.lp.client.frame.component.CornerInfoIcon.EMPTY_STATE;
 
 import com.lp.client.frame.Defaults;
 import com.lp.client.pc.LPMain;
@@ -91,45 +95,46 @@ public class CornerInfoButton extends JButton implements MouseListener {
 
 	private final JComponent parent;
 
-//	private static int counter = 0;
-
-	private static final int INVALID_STATE = CornerInfoIcon.INVALID_STATE;
-	private static final int DEFAULT_STATE = CornerInfoIcon.DEFAULT_STATE;
-	private static final int ACTIVE_STATE = CornerInfoIcon.ACTIVE_STATE;
-	private static final int SET_STATE = CornerInfoIcon.SET_STATE;
-	private static final int EMPTY_STATE = CornerInfoIcon.EMPTY_STATE;
-
 	private ImageIcon imageIcon = CornerInfoIcon.getCornerIcon(DEFAULT_STATE);
 	private String toolTipToken = null;
 	private WrapperToolTip toolTip = null;
 	private Timer timer;
 	private boolean firstTimePainted = true;
 	private boolean addedToLayeredPane = false;
-	private int delayIn = 500;
 	private int delayOut = 500;
 	private Point insetsByParent = null;
 	private JLayeredPane layeredPane = null;
-	private Boolean isParentCheckBox = null;
-	private Boolean isParentRadioButton = null;
 
 	private ComponentListener componentListener;
 	private HierarchyBoundsListener hierarchyBoundsListener;
 	private HierarchyListener hierarchyListener;
 	private InternalFrameListener internalFrameListener;
 
+	private boolean darfEditieren ;
+	
 	public CornerInfoButton(IDirektHilfe parentComp) {
 		super();
-		if (!Defaults.getInstance().isDirekthilfeEnabled()) {
+		// TODO: Es ist kompliziert. Hier wird eine extrem enge Koppelung von LPMain/Desktop und CornerInfoButton
+		// hergestellt. Problem: Desktop ist unter Umstaenden im Constructor ...
+		// Das hier ist ein Workaround bis zum Refaktoring
+		if (!Defaults.getInstance().isDirekthilfeEnabled() || 
+				LPMain.getInstance().getDesktop() == null) {
 			parent = null;
 			return;
 		}
 		parent = (JComponent) parentComp;
-
+		
+		darfEditieren = LPMain.getInstance().getDesktop().darfDirekthilfeTexteEditieren() || LPMain.getInstance().isLPAdmin() ;
+		
 		setDefaults();
 		addListeners();
 		refreshState();
 	}
 
+	private boolean getDarfEditieren() {
+		return darfEditieren ;
+	}
+	
 	private void setDefaults() {
 		setVisible(true);
 		setIconState(DEFAULT_STATE);
@@ -142,11 +147,7 @@ public class CornerInfoButton extends JButton implements MouseListener {
 	}
 
 	private void addListeners() {
-		if (isParentCheckBox() || isParentRadioButton()) {
-			parent.addMouseListener(this);
-			delayIn = 1000;
-		} else
-			addMouseListener(this);
+		addMouseListener(this);
 
 		componentListener = new ComponentAdapter() {
 			@Override
@@ -202,7 +203,7 @@ public class CornerInfoButton extends JButton implements MouseListener {
 	private void addMeToLayeredPane() {
 		if (layeredPane == null)
 			layeredPane = parent.getRootPane().getLayeredPane();
-		layeredPane.add(this, JLayeredPane.DRAG_LAYER);
+		layeredPane.add(this, JLayeredPane.PALETTE_LAYER);
 		addedToLayeredPane = true;
 		addInternalFrameListener();
 
@@ -232,20 +233,14 @@ public class CornerInfoButton extends JButton implements MouseListener {
 	}
 
 	private void refreshToggleButtonIcons(int state) {
-		if (isParentCheckBox()) {
-			prepareCheckBoxIcons(state);
-			setVisible(false);
-		} else if (isParentRadioButton()) {
-			prepareRadioButtonIcons(state);
-			setVisible(false);
-		} else if (state != INVALID_STATE) {
+			if (state != INVALID_STATE) {
 			setIcon(imageIcon);
 		}
 	}
 
 	@Override
 	public void setVisible(boolean b) {
-		if (isParentCheckBox() || isParentRadioButton())
+		if (!Defaults.getInstance().isDirekthilfeVisible())
 			b = false;
 		super.setVisible(b);
 	}
@@ -264,10 +259,9 @@ public class CornerInfoButton extends JButton implements MouseListener {
 		int state = ACTIVE_STATE;
 
 		if (toolTip == null) {
-			state = LPMain.getInstance().isLPAdmin() ? EMPTY_STATE
-					: INVALID_STATE;
+			state = getDarfEditieren() ? EMPTY_STATE : INVALID_STATE;
 		} else if (!toolTip.isShowing()) {
-			if (LPMain.getInstance().isLPAdmin()) {
+			if (darfEditieren) {
 				state = toolTip.isEmptyTip() ? EMPTY_STATE : SET_STATE;
 			} else {
 				state = toolTip.isEmptyTip() ? INVALID_STATE : DEFAULT_STATE;
@@ -279,53 +273,15 @@ public class CornerInfoButton extends JButton implements MouseListener {
 
 	}
 
-	private void prepareRadioButtonIcons(int state) {
-		AbstractButton button = ((AbstractButton) parent);
-
-		button.setIcon(CornerInfoIcon.getRadioButtonIcon(state,
-				"defaultIcon.png"));
-		button.setPressedIcon(CornerInfoIcon.getRadioButtonIcon(state,
-				"pressedIcon.png"));
-		button.setRolloverIcon(CornerInfoIcon.getRadioButtonIcon(state,
-				"rollOverIcon.png"));
-		button.setSelectedIcon(CornerInfoIcon.getRadioButtonIcon(state,
-				"selectedIcon.png"));
-		button.setRolloverSelectedIcon(CornerInfoIcon.getRadioButtonIcon(state,
-				"rollOverSelectedIcon.png"));
-		button.setDisabledIcon(CornerInfoIcon.getRadioButtonIcon(state,
-				"disabledIcon.png"));
-		button.setDisabledSelectedIcon(CornerInfoIcon.getRadioButtonIcon(state,
-				"disabledSelectedIcon.png"));
-	}
-
-	private void prepareCheckBoxIcons(int state) {
-		AbstractButton button = ((AbstractButton) parent);
-
-		button.setIcon(CornerInfoIcon.getCheckBoxIcon(state, "defaultIcon.png"));
-		button.setPressedIcon(CornerInfoIcon.getCheckBoxIcon(state,
-				"pressedIcon.png"));
-		button.setRolloverIcon(CornerInfoIcon.getCheckBoxIcon(state,
-				"rollOverIcon.png"));
-		button.setSelectedIcon(CornerInfoIcon.getCheckBoxIcon(state,
-				"selectedIcon.png"));
-		button.setRolloverSelectedIcon(CornerInfoIcon.getCheckBoxIcon(state,
-				"rollOverSelectedIcon.png"));
-		button.setDisabledIcon(CornerInfoIcon.getCheckBoxIcon(state,
-				"disabledIcon.png"));
-		button.setDisabledSelectedIcon(CornerInfoIcon.getCheckBoxIcon(state,
-				"disabledSelectedIcon.png"));
-	}
 
 	@Override
 	public void setBounds(int arg0, int arg1, int arg2, int arg3) {
 		updateCornerLocation();
-//		System.out.println("setbounds");
 	}
 
 	@Override
 	public void setBounds(Rectangle arg0) {
 		updateCornerLocation();
-//		System.out.println("setbounds");
 	}
 
 	public void paint(Graphics g) {
@@ -340,19 +296,17 @@ public class CornerInfoButton extends JButton implements MouseListener {
 		final JInternalFrame frame = (JInternalFrame) SwingUtilities
 				.getAncestorOfClass(JInternalFrame.class, parent);
 		if (frame != null) {
-//			System.out.println(++counter);
 			internalFrameListener = new InternalFrameAdapter() {
 				@Override
 				public void internalFrameClosed(InternalFrameEvent arg0) {
 					finalizeCib();
 					frame.removeInternalFrameListener(this);
 					((IDirektHilfe) parent).removeCib();
-//					System.out.println(--counter);
 				}
 			};
 
 			frame.addInternalFrameListener(internalFrameListener);
-		} //else System.out.println("notadded");
+		}
 	}
 
 	private void finalizeCib() {
@@ -429,6 +383,8 @@ public class CornerInfoButton extends JButton implements MouseListener {
 
 	@Override
 	public void mouseClicked(MouseEvent event) {
+		if(event.getButton() == MouseEvent.BUTTON1)
+			openToolTip();
 		if (event.getButton() == MouseEvent.BUTTON3 && toolTip != null) {
 			toolTip.tokenToClipboard();
 		}
@@ -444,15 +400,17 @@ public class CornerInfoButton extends JButton implements MouseListener {
 		timer = new Timer("cibTimer");
 		timer.schedule(task, delayTime);
 	}
+	
+	private void openToolTip() {
+		if (toolTip == null && getDarfEditieren()) {
+			initToolTip();
+		}
+		toolTip.setVisible(true);
+	}
 
 	@Override
 	public void mouseEntered(MouseEvent arg0) {
-		if (toolTip == null && LPMain.getInstance().isLPAdmin()) {
-			initToolTip();
-		}
-		handleTimerOnCornerInfoButton(new ToolTipTimerTaskShow(toolTip),
-				delayIn);
-
+		setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 	}
 
 	@Override
@@ -493,21 +451,15 @@ public class CornerInfoButton extends JButton implements MouseListener {
 		setVisible(parent.isShowing());
 		repaintLayeredPane();
 	}
+	
+	@Override
+	public void updateUI() {
+		setVisible(Defaults.getInstance().isDirekthilfeVisible() && parent != null && parent.isShowing());
+		super.updateUI();
+	}
 
 	private void repaintLayeredPane() {
 		if (layeredPane != null)
 			layeredPane.repaint();
-	}
-
-	public boolean isParentCheckBox() {
-		if (isParentCheckBox == null)
-			isParentCheckBox = (parent instanceof WrapperCheckBox);
-		return isParentCheckBox;
-	}
-
-	public boolean isParentRadioButton() {
-		if (isParentRadioButton == null)
-			isParentRadioButton = (parent instanceof WrapperRadioButton);
-		return isParentRadioButton;
 	}
 }

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -90,8 +90,6 @@ public class PanelMaschinen
   private WrapperCheckBox wcbVersteckt = new WrapperCheckBox();
   private InternalFrameZeiterfassung internalFrameZeiterfassung = null;
 
-  private WrapperLabel wlaVerfuegbarkeit = new WrapperLabel();
-  private WrapperNumberField wnfVerfuegbarkeit = new WrapperNumberField();
 
   private WrapperLabel wlaKaufdatum = new WrapperLabel();
 
@@ -196,8 +194,6 @@ public class PanelMaschinen
     internalFrameZeiterfassung.getMaschineDto().setBAutoendebeigeht(wcbAutogehtbeiende.
         getShort());
     internalFrameZeiterfassung.getMaschineDto().setTKaufdatum(wdfKaufdatum.getTimestamp());
-    internalFrameZeiterfassung.getMaschineDto().setFVerfuegbarkeitinprozent(
-        wnfVerfuegbarkeit.getDouble());
   }
 
 
@@ -210,8 +206,6 @@ public class PanelMaschinen
                                  getCIdentifikationsnr());
     wcbAutogehtbeiende.setShort(internalFrameZeiterfassung.getMaschineDto().
                                 getBAutoendebeigeht());
-    wnfVerfuegbarkeit.setDouble(internalFrameZeiterfassung.getMaschineDto().
-                                getFVerfuegbarkeitinprozent());
     wdfKaufdatum.setTimestamp(internalFrameZeiterfassung.getMaschineDto().getTKaufdatum());
     wcbVersteckt.setShort(internalFrameZeiterfassung.getMaschineDto().getBVersteckt());
     MaschinengruppeDto maschiengruppeDto = DelegateFactory.getInstance().
@@ -290,7 +284,6 @@ public class PanelMaschinen
     wtfInventarnummer.setMandatoryField(true);
     wtfMaschinengruppe.setActivatable(false);
      wtfMaschinengruppe.setMandatoryField(true);
-    wnfVerfuegbarkeit.setMandatoryField(true);
     wtfIdentifikationsnr.setMandatoryField(true);
 
 	wcbVersteckt.setText(LPMain.getTextRespectUISPr(
@@ -303,11 +296,6 @@ public class PanelMaschinen
     wlaBezeichnung.setText(LPMain.getTextRespectUISPr("lp.bezeichnung"));
     wlaKaufdatum.setText(LPMain.getTextRespectUISPr(
         "zeiterfassung.kaufdatum"));
-    wlaVerfuegbarkeit.setText(LPMain.getTextRespectUISPr(
-        "pers.personalgehalt.verfuegbarkeit"));
-    wnfVerfuegbarkeit.setFractionDigits(2);
-    wnfVerfuegbarkeit.setMinimumValue(0);
-    wnfVerfuegbarkeit.setMaximumValue(100);
 
     wtfIdentifikationsnr.setColumnsMax(2);
     wtfIdentifikationsnr.setUppercaseField(true);
@@ -375,16 +363,7 @@ public class PanelMaschinen
     jpaWorkingOn.add(wlaIdentifikationsnr, new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0
         , GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2),
         0, 0));
-    jpaWorkingOn.add(wlaVerfuegbarkeit, new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0
-        , GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2),
-        0, 0));
-    jpaWorkingOn.add(wnfVerfuegbarkeit, new GridBagConstraints(1, 4, 1, 1, 0, 0.0
-        , GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2),
-        0, 0));
-
-    jpaWorkingOn.add(wlaEinheitProzent, new GridBagConstraints(2, 4, 1, 1, 0.0, 0.0
-        , GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2),
-        70, 0));
+ 
     jpaWorkingOn.add(wcbVersteckt, new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0
             , GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2),
             70, 0));
@@ -415,7 +394,7 @@ public class PanelMaschinen
         || (key.equals(LPMain.getLockMeForNew()))) {
       leereAlleFelder(this);
       clearStatusbar();
-      wnfVerfuegbarkeit.setInteger(100);
+   
     }
     else {
       internalFrameZeiterfassung.setMaschineDto(DelegateFactory.getInstance().

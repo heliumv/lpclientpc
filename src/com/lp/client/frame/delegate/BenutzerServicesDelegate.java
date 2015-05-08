@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -36,6 +36,7 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 
 import com.lp.client.frame.ExceptionLP;
+import com.lp.client.pc.LPMain;
 
 import com.lp.server.benutzer.service.BenutzerServicesFac;
 
@@ -58,5 +59,16 @@ public class BenutzerServicesDelegate extends Delegate {
 
 		}
 	}
+	
+	public String getTextRespectUISpr(String token) throws ExceptionLP {
+
+		try {
+			return benutzerServicesFac.getTextRespectUISpr(token, LPMain.getTheClient().getMandant(), LPMain.getTheClient().getLocUi());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
+	
 
 }

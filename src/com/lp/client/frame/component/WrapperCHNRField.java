@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -82,7 +82,12 @@ protected boolean isMandatoryField = false;
 
   private WrapperDateField wdfMHD = new WrapperDateField();
   private WrapperTextField wtfCHNR = new WrapperTextField();
-  public WrapperCHNRField()
+  public WrapperTextField getWtfCHNR() {
+	return wtfCHNR;
+}
+
+
+public WrapperCHNRField()
       throws Throwable {
 
     ParametermandantDto parameter = (ParametermandantDto)
@@ -113,11 +118,9 @@ protected boolean isMandatoryField = false;
 
   protected void setMask() {
     String sLeer="[ ]{0,}";
-    String regEinzeln="[A-Za-z0-9.-/%-&_-_]{1,}"+sLeer;
+    String regEinzeln="[A-Za-z0-9--/%-&_-_]{1,}"+sLeer;
     String regExp = sLeer + "|" + regEinzeln;
     this.regPattern = Pattern.compile(regExp);
-    
-    //!!! SIEHE AUCH Helper.istSerienChargennummerGueltig() !!!!!!
   }
 
 
@@ -284,7 +287,7 @@ protected boolean isMandatoryField = false;
   }
 
 
-  public void setDependenceField(boolean dependenceField) {
+  public void setDependenceField(boolean dependenceField)throws Throwable{
     this.dependenceField = dependenceField;
     if (dependenceField) {
       this.setBackground(HelperClient.getDependenceFieldBackgroundColor());

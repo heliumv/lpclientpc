@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -135,13 +135,17 @@ public class DialogSnrChnrauswahl extends JDialog implements KeyListener,
 		Object[][] data = null;
 		String[] colNames = null;
 		if (bSnrBehaftet) {
-			colNames = new String[] { LPMain.getInstance().getTextRespectUISPr(
-					"artikel.seriennummer") };
-			data = new String[alListeMitSelektiertenBereinigt.size()][1];
+			colNames = new String[] {
+					LPMain.getInstance().getTextRespectUISPr(
+							"artikel.seriennummer"),
+					LPMain.getInstance().getTextRespectUISPr("artikel.lager.version") };
+			data = new String[alListeMitSelektiertenBereinigt.size()][2];
 			for (int i = 0; i < alListeMitSelektiertenBereinigt.size(); i++) {
 				if (alListeMitSelektiertenBereinigt.get(i) != null) {
 					data[i][0] = alListeMitSelektiertenBereinigt.get(i)
 							.getCSeriennrChargennr();
+					data[i][1] = alListeMitSelektiertenBereinigt.get(i)
+							.getCVersion();
 				}
 			}
 		} else {
@@ -218,9 +222,14 @@ public class DialogSnrChnrauswahl extends JDialog implements KeyListener,
 					.getValueAt(rows[i], 0);
 
 			if (bSnrBehaftet) {
-				alSeriennummern.add(new SeriennrChargennrMitMengeDto(
+
+				SeriennrChargennrMitMengeDto snrDto = new SeriennrChargennrMitMengeDto(
 						(String) jTableSnrChnrs.getModel().getValueAt(rows[i],
-								0), new BigDecimal(1)));
+								0), new BigDecimal(1));
+				snrDto.setCVersion((String) jTableSnrChnrs.getModel()
+						.getValueAt(rows[i], 1));
+
+				alSeriennummern.add(snrDto);
 			} else {
 				alSeriennummern.add(new SeriennrChargennrMitMengeDto(
 						(String) jTableSnrChnrs.getModel().getValueAt(rows[i],

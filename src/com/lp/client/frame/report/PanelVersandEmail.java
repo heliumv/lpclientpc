@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -32,10 +32,12 @@
  ******************************************************************************/
 package com.lp.client.frame.report;
 
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.EventObject;
 
 import javax.swing.ImageIcon;
@@ -43,6 +45,7 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 
 import com.lp.client.bestellung.ReportAbholauftrag;
+import com.lp.client.frame.Defaults;
 import com.lp.client.frame.ExceptionLP;
 import com.lp.client.frame.component.DialogQuery;
 import com.lp.client.frame.component.ISourceEvent;
@@ -76,7 +79,6 @@ import com.lp.server.system.service.VersandauftragDto;
 import com.lp.util.EJBExceptionLP;
 import com.lp.util.Helper;
 
-@SuppressWarnings("static-access")
 /*
  * <p><I>Diese Klasse kuemmert sich ...</I> </p>
  * 
@@ -113,9 +115,11 @@ public class PanelVersandEmail extends PanelVersand {
 	private WrapperButton wbuEmpfaengerAnspCC = null;
 	private JTextField jtfAnhaenge = null;
 	private WrapperButton wbuAnhangWaehlen = null;
+	private WrapperButton wbuAnhangLoeschen = null;
 	private WrapperLabel wlaAnhaenge = null;
 	private PanelReportKriterien panelReportKriterien = null;
 	public static final String ACTION_SPECIAL_ATTACHMENT = "ACTION_SPECIAL_ATTACHMENT";
+	public static final String ACTION_SPECIAL_REMOVE_ATTACHMENT = "ACTION_SPECIAL_REMOVE_ATTACHMENT";
 	protected static final String ACTION_SPECIAL_PARTNERCC = "action_special_partnercc";
 	protected static final String ACTION_SPECIAL_ANSPRECHPARTNERCC = "action_special_ansprechpartnercc";
 	protected PanelQueryFLR panelQueryFLRPartnerCC = null;
@@ -138,23 +142,34 @@ public class PanelVersandEmail extends PanelVersand {
 		setDefaultsPanel();
 	}
 
-	private void setDefaultsPanel() throws Throwable {
-		PersonalDto personalDto = DelegateFactory
-				.getInstance()
-				.getPersonalDelegate()
-				.personalFindByPrimaryKey(
-						LPMain.getInstance().getTheClient().getIDPersonal());
-
-		if (personalDto.getCEmail() != null) {
-			wtfAbsender.setText(personalDto.getCEmail());
-		}
+	protected void setDefaultText() throws Throwable {
 		String sDefaulttext = DelegateFactory.getInstance()
 				.getVersandDelegate().getDefaultTextForBelegEmail(mailtextDto);
 		wefText.setText(sDefaulttext);
 		wefText.setDefaultText(sDefaulttext);
-		wtfBetreff.setText(DelegateFactory.getInstance()
-				.getVersandDelegate().getDefaultBetreffForBelegEmail(mailtextDto, getbelegartCNr(), getbelegIId()));
+		setupEditorProperties();
+	}
 
+	protected void setDefaultBetreff() throws Throwable {
+		String betreff = DelegateFactory
+				.getInstance()
+				.getVersandDelegate()
+				.getDefaultBetreffForBelegEmail(mailtextDto, getbelegartCNr(),
+						getbelegIId());
+		wtfBetreff.setText(betreff);
+	}
+
+	protected void setDefaultsPanel() throws Throwable {
+		PersonalDto personalDto = DelegateFactory
+				.getInstance()
+				.getPersonalDelegate()
+				.personalFindByPrimaryKey(LPMain.getTheClient().getIDPersonal());
+
+		if (personalDto.getCEmail() != null) {
+			wtfAbsender.setText(personalDto.getCEmail());
+		}
+		setDefaultText();
+		setDefaultBetreff();
 		setupEditorProperties();
 
 		// PJ18083
@@ -197,11 +212,6 @@ public class PanelVersandEmail extends PanelVersand {
 		}
 	}
 
-	/**
-	 * jbInit
-	 * 
-	 * @throws Throwable
-	 */
 	private void jbInitPanel() throws Throwable {
 		wlaCCEmpfaenger = new WrapperLabel(
 				LPMain.getTextRespectUISPr("label.cc"));
@@ -218,13 +228,13 @@ public class PanelVersandEmail extends PanelVersand {
 		wcbDokumenteAnhaengen = new WrapperCheckBox(
 				LPMain.getTextRespectUISPr("lp.dokumenteanhaengen"));
 
-		wbuEmpfaengerCC = new WrapperButton(LPMain.getInstance()
-				.getTextRespectUISPr("lp.versand.partner"));
+		wbuEmpfaengerCC = new WrapperButton(
+				LPMain.getTextRespectUISPr("lp.versand.partner"));
 		wbuEmpfaengerCC.setActionCommand(ACTION_SPECIAL_PARTNERCC);
 		wbuEmpfaengerCC.addActionListener(this);
 
-		wbuEmpfaengerAnspCC = new WrapperButton(LPMain.getInstance()
-				.getTextRespectUISPr("lp.versand.ansprechpartner"));
+		wbuEmpfaengerAnspCC = new WrapperButton(
+				LPMain.getTextRespectUISPr("lp.versand.ansprechpartner"));
 		wbuEmpfaengerAnspCC.setActionCommand(ACTION_SPECIAL_ANSPRECHPARTNERCC);
 		wbuEmpfaengerAnspCC.addActionListener(this);
 
@@ -237,6 +247,19 @@ public class PanelVersandEmail extends PanelVersand {
 		wbuAnhangWaehlen = new WrapperButton(
 				LPMain.getTextRespectUISPr("label.hinzufuegen"));
 		wbuAnhangWaehlen.setActionCommand(ACTION_SPECIAL_ATTACHMENT);
+		wbuAnhangLoeschen = new WrapperButton("");
+		wbuAnhangLoeschen.setActionCommand(ACTION_SPECIAL_REMOVE_ATTACHMENT);
+		wbuAnhangLoeschen.setIcon(new ImageIcon(getClass().getResource(
+				"/com/lp/client/res/leeren.png")));
+		wbuAnhangLoeschen
+				.setMinimumSize(new Dimension(Defaults.getInstance()
+						.getControlHeight(), Defaults.getInstance()
+						.getControlHeight()));
+		wbuAnhangLoeschen
+				.setPreferredSize(new Dimension(Defaults.getInstance()
+						.getControlHeight(), Defaults.getInstance()
+						.getControlHeight()));
+
 		getInternalFrame().addItemChangedListener(this);
 		ImageIcon imageIcon = new ImageIcon(getClass().getResource(
 				"/com/lp/client/res/mail.png"));
@@ -303,7 +326,10 @@ public class PanelVersandEmail extends PanelVersand {
 		attachPanel.add(jtfAnhaenge, new GridBagConstraints(2, 0, 2, 1, 5.0,
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 2, 2, 2), 0, 0));
-		attachPanel.add(wbuAnhangWaehlen, new GridBagConstraints(4, 0, 2, 1,
+		attachPanel.add(wbuAnhangLoeschen, new GridBagConstraints(4, 0, 1, 1, 0,
+				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+				new Insets(2, 0, 2, 0), 0, 0));
+		attachPanel.add(wbuAnhangWaehlen, new GridBagConstraints(5, 0, 2, 1,
 				2.0, 0.0, GridBagConstraints.EAST,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
 		jpaWorkingOn.add(attachPanel, new GridBagConstraints(2, iZeile, 3, 1,
@@ -511,6 +537,10 @@ public class PanelVersandEmail extends PanelVersand {
 		wtfCCEmpfaenger.setText(sEmpfaenger);
 	}
 
+	public void setBetreff(String betreff) {
+		wtfBetreff.setText(betreff);
+	}
+
 	public void setEditorFieldVisible(boolean bVisible) {
 		wefText.setVisible(bVisible);
 		wlaText.setVisible(bVisible);
@@ -519,12 +549,19 @@ public class PanelVersandEmail extends PanelVersand {
 	protected WrapperButton getwbuAnhangWaehlen() {
 		return wbuAnhangWaehlen;
 	}
+	protected WrapperButton getwbuAnhangLoeschen() {
+		return wbuAnhangLoeschen;
+	}
 
-	protected void setjtfAnhaengeText(String text) {
+	protected WrapperTextField getwtfCCEmpfaenger() {
+		return wtfCCEmpfaenger;
+	}
+
+	public void setjtfAnhaengeText(String text) {
 		jtfAnhaenge.setText(text);
 	}
 
-	protected String getjtfAnhaengeText() {
+	public String getjtfAnhaengeText() {
 		return jtfAnhaenge.getText();
 	}
 
@@ -697,4 +734,9 @@ public class PanelVersandEmail extends PanelVersand {
 		}
 	}
 
+	public void installActionListeners(ActionListener l) {
+		getWbuSenden().addActionListener(l);
+		getwbuAnhangWaehlen().addActionListener(l);
+		getwbuAnhangLoeschen().addActionListener(l);
+	}
 }

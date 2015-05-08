@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -88,6 +88,8 @@ public class ReportFehlerstatistik extends PanelBasis implements
 	private WrapperRadioButton wrbFehler = new WrapperRadioButton();
 	private ButtonGroup buttonGroup = new ButtonGroup();
 
+	private WrapperCheckBox wcbAlle = new WrapperCheckBox();
+
 	protected JPanel jpaWorkingOn = new JPanel();
 
 	private WrapperDateRangeController wdrBereich = null;
@@ -115,6 +117,10 @@ public class ReportFehlerstatistik extends PanelBasis implements
 		wrbBelegnummer.setText(LPMain.getInstance().getTextRespectUISPr(
 				"label.losnummer"));
 		wlaBis.setText(LPMain.getInstance().getTextRespectUISPr("lp.bis"));
+
+		wcbAlle.setText(LPMain.getInstance().getTextRespectUISPr(
+				"fert.fehlerstatistik.alle"));
+
 		wdfVon.setMandatoryField(true);
 		wdfBis.setMandatoryField(true);
 
@@ -123,7 +129,7 @@ public class ReportFehlerstatistik extends PanelBasis implements
 		wrbArtikel.setText(LPMain.getInstance().getTextRespectUISPr(
 				"artikel.artikelnummer"));
 		wrbFehler.setText(LPMain.getInstance().getTextRespectUISPr(
-		"rekla.fehler"));
+				"rekla.fehler"));
 
 		buttonGroup.add(wrbBelegnummer);
 		buttonGroup.add(wrbArtikel);
@@ -152,23 +158,27 @@ public class ReportFehlerstatistik extends PanelBasis implements
 				new Insets(2, 2, 2, 2), 0, 0));
 
 		iZeile++;
-		jpaWorkingOn.add(new WrapperLabel(LPMain.getInstance().getTextRespectUISPr(
-		"label.sortierung")), new GridBagConstraints(0, iZeile, 1, 1,
-				0.1, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		
-		jpaWorkingOn.add(wrbBelegnummer, new GridBagConstraints(1, iZeile, 1, 1,
-				0, 0.0, GridBagConstraints.CENTER,
+		jpaWorkingOn.add(new WrapperLabel(LPMain.getInstance()
+				.getTextRespectUISPr("label.sortierung")),
+				new GridBagConstraints(0, iZeile, 1, 1, 0.1, 0.0,
+						GridBagConstraints.CENTER,
+						GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2),
+						0, 0));
+		jpaWorkingOn.add(wcbAlle, new GridBagConstraints(3, iZeile, 1, 1, 0.1,
+				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+				new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wrbBelegnummer, new GridBagConstraints(1, iZeile, 1,
+				1, 0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
 		iZeile++;
 
-		jpaWorkingOn.add(wrbArtikel, new GridBagConstraints(1, iZeile, 1, 1,
-				0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wrbArtikel, new GridBagConstraints(1, iZeile, 1, 1, 0,
+				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+				new Insets(2, 2, 2, 2), 0, 0));
 		iZeile++;
-		jpaWorkingOn.add(wrbFehler, new GridBagConstraints(1, iZeile, 1, 1,
-				0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wrbFehler, new GridBagConstraints(1, iZeile, 1, 1, 0,
+				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+				new Insets(2, 2, 2, 2), 0, 0));
 		iZeile++;
 
 	}
@@ -213,7 +223,8 @@ public class ReportFehlerstatistik extends PanelBasis implements
 				.getFertigungDelegate()
 				.printFehlerstatistik(
 						Helper.cutTimestamp(wdfVon.getTimestamp()),
-						Helper.cutTimestamp(wdfBisTemp), iSortierung);
+						Helper.cutTimestamp(wdfBisTemp), iSortierung,
+						wcbAlle.isSelected());
 
 		return jasperPrint;
 

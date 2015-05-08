@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -38,10 +38,8 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.util.EventObject;
 
-import javax.swing.BorderFactory;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
-import javax.swing.SwingConstants;
 import javax.swing.border.Border;
 
 import com.lp.client.frame.ExceptionLP;
@@ -60,7 +58,6 @@ import com.lp.client.frame.component.WrapperEditorField;
 import com.lp.client.frame.component.WrapperEditorFieldKommentar;
 import com.lp.client.frame.component.WrapperEmailField;
 import com.lp.client.frame.component.WrapperLabel;
-import com.lp.client.frame.component.WrapperNumberField;
 import com.lp.client.frame.component.WrapperPasswordField;
 import com.lp.client.frame.component.WrapperTelefonField;
 import com.lp.client.frame.component.WrapperTextField;
@@ -83,9 +80,8 @@ import com.lp.server.system.service.LandDto;
 import com.lp.server.system.service.LandplzortDto;
 import com.lp.server.system.service.SystemFac;
 import com.lp.server.util.fastlanereader.service.query.QueryParameters;
-import com.lp.util.Helper;
 
-@SuppressWarnings("static-access")
+//@SuppressWarnings("static-access")
 public class PanelPersonaldaten extends PanelBasis {
 	/**
 	 * 
@@ -130,7 +126,7 @@ public class PanelPersonaldaten extends PanelBasis {
 	private WrapperTextField wtfFirmenzugehoerigkeit = new WrapperTextField();
 	private WrapperButton wbuFirmenzugehoerigkeit = new WrapperButton();
 
-	private WrapperLabel wlaAbsenderdaten = null;
+	private WrapperCheckBox wcbTelefonzeitStarten = null;
 	private WrapperLabel wlaDurchwahl = null;
 	private WrapperTextField wtfDurchwahl = null;
 	private WrapperLabel wlaEmail = null;
@@ -163,6 +159,9 @@ public class PanelPersonaldaten extends PanelBasis {
 	private WrapperLabel wlaImapKennwort = new WrapperLabel();
 	private WrapperPasswordField wtfImapKennwort = new WrapperPasswordField();
 
+	private WrapperLabel wlaImapInboxFolder = new WrapperLabel() ;
+	private WrapperTextField wtfImapInboxFolder = new WrapperTextField() ;
+	
 	static final public String ACTION_SPECIAL_GEBURTSORT_FROM_LISTE = "action_geburtsort_from_liste";
 	static final public String ACTION_SPECIAL_SOZIALVERISCHERER_FROM_LISTE = "action_sozialversicherer_from_liste";
 	static final public String ACTION_SPECIAL_STAATSANGEHOERIGKEIT_FROM_LISTE = "action_staatsangehoerigkeit_from_liste";
@@ -217,16 +216,16 @@ public class PanelPersonaldaten extends PanelBasis {
 		jpaWorkingOn = new JPanel();
 		gridBagLayoutWorkingPanel = new GridBagLayout();
 		jpaWorkingOn.setLayout(gridBagLayoutWorkingPanel);
-		wlaGeburtsdatum.setText(LPMain.getInstance().getTextRespectUISPr(
+		wlaGeburtsdatum.setText(LPMain.getTextRespectUISPr(
 				"pers.personalangehoerige.geburtsdatum"));
-		wbuGeburtsort.setText(LPMain.getInstance().getTextRespectUISPr(
+		wbuGeburtsort.setText(LPMain.getTextRespectUISPr(
 				"pers.personaldaten.geburtsort")
 				+ "...");
 
-		wlaSignatur.setText(LPMain.getInstance().getTextRespectUISPr(
+		wlaSignatur.setText(LPMain.getTextRespectUISPr(
 				"pers.signatur"));
 		wefSignatur = new WrapperEditorFieldKommentar(getInternalFrame(),
-				LPMain.getInstance().getTextRespectUISPr("pers.signatur"));
+				LPMain.getTextRespectUISPr("pers.signatur"));
 
 		wefSignatur.getLpEditor().getTextBlockAttributes(-1).capacity = SystemFac.MAX_LAENGE_EDITORTEXT_WENN_NTEXT;
 
@@ -236,19 +235,18 @@ public class PanelPersonaldaten extends PanelBasis {
 		wtfGeburtsort.setActivatable(false);
 		wtfGeburtsort.setText("");
 		wtfGeburtsort.setColumnsMax(200);
-		wlaSozialversicherungsnummer.setText(LPMain.getInstance()
-				.getTextRespectUISPr(
+		wlaSozialversicherungsnummer.setText(LPMain.getTextRespectUISPr(
 						"pers.personalangehoerige.sozialversicherungsnummer"));
 		wtfsozialversicherungsnummer.setText("");
 		wtfsozialversicherungsnummer
 				.setColumnsMax(PersonalFac.MAX_PERSONAL_SOZIALVERSNR);
-		wbuSozialversicherer.setText(LPMain.getInstance().getTextRespectUISPr(
+		wbuSozialversicherer.setText(LPMain.getTextRespectUISPr(
 				"pers.personaldaten.sozialversicherer")
 				+ "...");
 		wbuSozialversicherer
 				.setActionCommand(PanelPersonaldaten.ACTION_SPECIAL_SOZIALVERISCHERER_FROM_LISTE);
 		wbuSozialversicherer.addActionListener(this);
-		wbuKollektiv.setText(LPMain.getInstance().getTextRespectUISPr(
+		wbuKollektiv.setText(LPMain.getTextRespectUISPr(
 				"pers.personaldaten.kollektiv")
 				+ "...");
 		wbuKollektiv
@@ -259,7 +257,7 @@ public class PanelPersonaldaten extends PanelBasis {
 		wtfKollektiv.setColumnsMax(80);
 		wtfSozialversicherer.setActivatable(false);
 		wtfSozialversicherer.setColumnsMax(200);
-		wbuBeruf.setText(LPMain.getInstance().getTextRespectUISPr(
+		wbuBeruf.setText(LPMain.getTextRespectUISPr(
 				"pers.personaldaten.beruf")
 				+ "...");
 		wbuBeruf.setActionCommand(PanelPersonaldaten.ACTION_SPECIAL_BERUF_FROM_LISTE);
@@ -268,7 +266,7 @@ public class PanelPersonaldaten extends PanelBasis {
 		wtfBeruf.setText("");
 		wtfBeruf.setColumnsMax(80);
 
-		wbuLohngruppe.setText(LPMain.getInstance().getTextRespectUISPr(
+		wbuLohngruppe.setText(LPMain.getTextRespectUISPr(
 				"pers.personaldaten.lohngruppe")
 				+ "...");
 		wbuLohngruppe
@@ -277,44 +275,39 @@ public class PanelPersonaldaten extends PanelBasis {
 		wtfLohngruppe.setActivatable(false);
 		wtfLohngruppe.setText("");
 		wtfLohngruppe.setColumnsMax(80);
-		wcbKeineAnzeigeInAnwesenheitsliste.setText(LPMain.getInstance()
-				.getTextRespectUISPr(
+		wcbKeineAnzeigeInAnwesenheitsliste.setText(LPMain.getTextRespectUISPr(
 						"pers.personaldaten.keineanzeigeinanwesenheitsliste"));
-		wcbBekommtUeberstundenausbezahlt.setText(LPMain.getInstance()
-				.getTextRespectUISPr(
+		wcbBekommtUeberstundenausbezahlt.setText(LPMain.getTextRespectUISPr(
 						"pers.personaldaten.keineueberstundenauszahlung"));
-		wcbAnwesenheitslisteTermial.setText(LPMain.getInstance()
-				.getTextRespectUISPr(
+		wcbAnwesenheitslisteTermial.setText(LPMain.getTextRespectUISPr(
 						"pers.personaldaten.anwesenheitslisteterminal"));
-		wcbAnwesenheitslisteAlleTermial.setText(LPMain.getInstance()
-				.getTextRespectUISPr(
+		wcbAnwesenheitslisteAlleTermial.setText(LPMain.getTextRespectUISPr(
 						"pers.personaldaten.anwesenheitslistealleterminal"));
 
 		wtfPendlerpauschale.setSelectionStart(17);
 		wtfPendlerpauschale.setActivatable(false);
 		wtfPendlerpauschale.setText("");
 		wtfPendlerpauschale.setColumnsMax(80);
-		wbuPendlerpauschale.setText(LPMain.getInstance().getTextRespectUISPr(
+		wbuPendlerpauschale.setText(LPMain.getTextRespectUISPr(
 				"pers.personaldaten.pendlerpauschale")
 				+ "...");
 		wbuPendlerpauschale
 				.setActionCommand(PanelPersonaldaten.ACTION_SPECIAL_PENDLERPAUSCHALE_FROM_LISTE);
 		wbuPendlerpauschale.addActionListener(this);
-		wlaFamilienstand.setText(LPMain.getInstance().getTextRespectUISPr(
+		wlaFamilienstand.setText(LPMain.getTextRespectUISPr(
 				"pers.personaldaten.familienstand"));
 		wtfStaatsangehoerigkeit.setActivatable(false);
 		wtfStaatsangehoerigkeit.setText("");
 		wtfStaatsangehoerigkeit.setColumnsMax(80);
-		wbuStaatsangehoerigkeit.setText(LPMain.getInstance()
-				.getTextRespectUISPr("pers.personaldaten.staatsangehoerigkeit")
-				+ "...");
+		wbuStaatsangehoerigkeit.setText(LPMain.getTextRespectUISPr(
+				"pers.personaldaten.staatsangehoerigkeit") + "...");
 		wbuStaatsangehoerigkeit
 				.setActionCommand(PanelPersonaldaten.ACTION_SPECIAL_STAATSANGEHOERIGKEIT_FROM_LISTE);
 		wbuStaatsangehoerigkeit.addActionListener(this);
 		wtfReligion.setActivatable(false);
 		wtfReligion.setText("");
 		wtfReligion.setColumnsMax(80);
-		wbuReligion.setText(LPMain.getInstance().getTextRespectUISPr(
+		wbuReligion.setText(LPMain.getTextRespectUISPr(
 				"lp.religion")
 				+ "...");
 		wbuReligion
@@ -324,16 +317,16 @@ public class PanelPersonaldaten extends PanelBasis {
 		wtfFirmenzugehoerigkeit.setText("");
 		wtfFirmenzugehoerigkeit.setColumnsMax(200);
 		wcbFamilienstand.setMandatoryField(false);
-		wbuFirmenzugehoerigkeit.setText(LPMain.getInstance()
-				.getTextRespectUISPr("pers.personaldaten.firmenzugehoerigkeit")
+		wbuFirmenzugehoerigkeit.setText(LPMain.getTextRespectUISPr(
+				"pers.personaldaten.firmenzugehoerigkeit")
 				+ "...");
 		wbuFirmenzugehoerigkeit
 				.setActionCommand(PanelPersonaldaten.ACTION_SPECIAL_FIRMENZUGEHOERIGKEIT_FROM_LISTE);
 		wbuFirmenzugehoerigkeit.addActionListener(this);
 
-		wlaUnterschriftsfunktion.setText(LPMain.getInstance()
-				.getTextRespectUISPr("benutzer.unterschriftsfunktion"));
-		wlaUnterschriftstext.setText(LPMain.getInstance().getTextRespectUISPr(
+		wlaUnterschriftsfunktion.setText(LPMain.getTextRespectUISPr(
+				"benutzer.unterschriftsfunktion"));
+		wlaUnterschriftstext.setText(LPMain.getTextRespectUISPr(
 				"benutzer.unterschriftstext"));
 
 		wtfImapBenutzer.setColumnsMax(80);
@@ -344,37 +337,41 @@ public class PanelPersonaldaten extends PanelBasis {
 				.setColumnsMax(BenutzerFac.MAX_BENUTZERMANDANTSYSTEMROLLE_C_UNTERSCHRIFTSTEXT);
 
 		wlaDurchwahl = new WrapperLabel();
-		wlaDurchwahl.setText(LPMain.getInstance().getTextRespectUISPr(
+		wlaDurchwahl.setText(LPMain.getTextRespectUISPr(
+				"label.absenderdaten") + ": "+ LPMain.getTextRespectUISPr(
 				"lp.durchwahl"));
 
 		wtfDurchwahl = new WrapperTextField(PartnerFac.MAX_KOMMART_INHALT);
 		wlaEmail = new WrapperLabel();
-		wlaEmail.setText(LPMain.getInstance().getTextRespectUISPr("lp.email"));
+		wlaEmail.setText(LPMain.getTextRespectUISPr("lp.email"));
 		wtfEmail = new WrapperEmailField();
 
 		wlaFaxdurchwahl = new WrapperLabel();
-		wlaFaxdurchwahl = new WrapperLabel(LPMain.getInstance()
+		wlaFaxdurchwahl = new WrapperLabel(LPMain
 				.getTextRespectUISPr("lp.faxdurchwahl"));
 		wtfFaxdurchwahl = new WrapperTextField(PartnerFac.MAX_KOMMART_INHALT);
 
 		wlaHandy = new WrapperLabel();
-		wlaHandy = new WrapperLabel(LPMain.getInstance().getTextRespectUISPr(
+		wlaHandy = new WrapperLabel(LPMain.getTextRespectUISPr(
 				"lp.handy"));
 		wtfHandy = new WrapperTelefonField(PartnerFac.MAX_KOMMART_INHALT);
 
 		wlaDirektfax = new WrapperLabel();
-		wlaDirektfax = new WrapperLabel(LPMain.getInstance()
+		wlaDirektfax = new WrapperLabel(LPMain
 				.getTextRespectUISPr("lp.direktfax"));
 		wtfDirektfax = new WrapperTextField(PartnerFac.MAX_KOMMART_INHALT);
 
-		wlaAbsenderdaten = new WrapperLabel(LPMain.getInstance()
-				.getTextRespectUISPr("label.absenderdaten") + ":");
+		wcbTelefonzeitStarten = new WrapperCheckBox(
+				LPMain.getTextRespectUISPr("pers.telefonzeitstarten") );
 
-		wlaImapBenutzer.setText(LPMain.getInstance().getTextRespectUISPr(
+		wlaImapBenutzer.setText(LPMain.getTextRespectUISPr(
 				"pers.imapuser"));
-		wlaImapKennwort.setText(LPMain.getInstance().getTextRespectUISPr(
+		wlaImapKennwort.setText(LPMain.getTextRespectUISPr(
 				"pers.imapkennwort"));
 
+		wlaImapInboxFolder.setText(LPMain.getTextRespectUISPr("pers.imapinboxfolder")) ;
+		wtfImapInboxFolder.setColumnsMax(80) ;
+		
 		this.add(jpaButtonAction, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(0,
 						0, 0, 0), 0, 0));
@@ -510,6 +507,17 @@ public class PanelPersonaldaten extends PanelBasis {
 				1, 0.0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
 
+		++iZeile ;
+		jpaWorkingOn.add(wcbTelefonzeitStarten, new GridBagConstraints(0, iZeile,
+				2, 1, 0.0, 0.0, GridBagConstraints.NORTH, GridBagConstraints.BOTH,
+				new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wlaImapInboxFolder, new GridBagConstraints(2, iZeile, 1,
+				1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wtfImapInboxFolder, new GridBagConstraints(3, iZeile, 2,
+				1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		
 		iZeile++;
 		jpaWorkingOn.add(wcbAnwesenheitslisteTermial, new GridBagConstraints(0,
 				iZeile, 2, 1, 0.0, 0.0, GridBagConstraints.CENTER,
@@ -521,10 +529,10 @@ public class PanelPersonaldaten extends PanelBasis {
 						0, 0));
 
 		// Zeile
-		iZeile++;
-		jpaWorkingOn.add(wlaAbsenderdaten, new GridBagConstraints(0, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.NORTH, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
+//		iZeile++;
+//		jpaWorkingOn.add(wcbTelefonzeitStarten, new GridBagConstraints(0, iZeile, 2,
+//				1, 0.0, 0.0, GridBagConstraints.NORTH, GridBagConstraints.BOTH,
+//				new Insets(2, 2, 2, 2), 0, 0));
 
 		iZeile++;
 		jpaWorkingOn.add(wlaDurchwahl, new GridBagConstraints(0, iZeile, 1, 1,
@@ -663,6 +671,9 @@ public class PanelPersonaldaten extends PanelBasis {
 			wcbKeineAnzeigeInAnwesenheitsliste.setShort(new Short((short) 0));
 		}
 
+		wcbTelefonzeitStarten.setShort(personalDto
+				.getBTelefonzeitstarten());
+		
 		wcbAnwesenheitslisteTermial.setShort(personalDto
 				.getBAnwesenheitTerminal());
 		wcbAnwesenheitslisteAlleTermial.setShort(personalDto
@@ -699,6 +710,12 @@ public class PanelPersonaldaten extends PanelBasis {
 				.getSignatur(personalDto.getIId(),
 						LPMain.getTheClient().getLocUiAsString()));
 
+		if(personalDto.getCImapInboxFolder() != null) {
+			wtfImapInboxFolder.setText(personalDto.getCImapInboxFolder()) ;
+		} else {
+			wtfImapInboxFolder.setText("") ;
+		}
+		
 		this.setStatusbarPersonalIIdAendern(personalDto.getPersonalIIdAendern());
 		this.setStatusbarPersonalIIdAnlegen(personalDto.getPersonalIIdAnlegen());
 		this.setStatusbarTAnlegen(personalDto.getTAnlegen());
@@ -745,8 +762,8 @@ public class PanelPersonaldaten extends PanelBasis {
 
 		panelQueryFLRBeruf = new PanelQueryFLR(null, null,
 				QueryParameters.UC_ID_BERUF, aWhichButtonIUse,
-				internalFramePersonal, LPMain.getInstance()
-						.getTextRespectUISPr("title.berufauswahlliste"));
+				internalFramePersonal, LPMain
+				.getTextRespectUISPr("title.berufauswahlliste"));
 		panelQueryFLRBeruf.befuellePanelFilterkriterienDirekt(
 				SystemFilterFactory.getInstance().createFKDBezeichnung(), null);
 		panelQueryFLRBeruf.setSelectedId(personalDto.getBerufIId());
@@ -759,8 +776,8 @@ public class PanelPersonaldaten extends PanelBasis {
 
 		panelQueryFLRLohngrupe = new PanelQueryFLR(null, null,
 				QueryParameters.UC_ID_LOHNGRUPPE, aWhichButtonIUse,
-				internalFramePersonal, LPMain.getInstance()
-						.getTextRespectUISPr("title.lohngruppeauswahlliste"));
+				internalFramePersonal, LPMain
+				.getTextRespectUISPr("title.lohngruppeauswahlliste"));
 		panelQueryFLRLohngrupe.befuellePanelFilterkriterienDirekt(
 				SystemFilterFactory.getInstance().createFKDBezeichnung(), null);
 
@@ -775,8 +792,8 @@ public class PanelPersonaldaten extends PanelBasis {
 
 		panelQueryFLRKollektiv = new PanelQueryFLR(null, null,
 				QueryParameters.UC_ID_KOLLEKTIV, aWhichButtonIUse,
-				internalFramePersonal, LPMain.getInstance()
-						.getTextRespectUISPr("title.kollektivauswahlliste"));
+				internalFramePersonal, LPMain.getTextRespectUISPr(
+						"title.kollektivauswahlliste"));
 		panelQueryFLRKollektiv.befuellePanelFilterkriterienDirekt(
 				SystemFilterFactory.getInstance().createFKDBezeichnung(), null);
 		panelQueryFLRKollektiv.setSelectedId(personalDto.getKollektivIId());
@@ -790,8 +807,7 @@ public class PanelPersonaldaten extends PanelBasis {
 
 		panelQueryFLRPendlerpauschale = new PanelQueryFLR(null, null,
 				QueryParameters.UC_ID_PENDLERPAUSCHALE, aWhichButtonIUse,
-				internalFramePersonal, LPMain.getInstance()
-						.getTextRespectUISPr(
+				internalFramePersonal, LPMain.getTextRespectUISPr(
 								"title.pendlerpauschaleauswahlliste"));
 		panelQueryFLRPendlerpauschale.befuellePanelFilterkriterienDirekt(
 				SystemFilterFactory.getInstance().createFKDBezeichnung(), null);
@@ -809,7 +825,7 @@ public class PanelPersonaldaten extends PanelBasis {
 
 		panelQueryFLRStaatsangehoerigkeit = new PanelQueryFLR(null, null,
 				QueryParameters.UC_ID_LAND, aWhichButtonIUse,
-				internalFramePersonal, LPMain.getInstance()
+				internalFramePersonal, LPMain
 						.getTextRespectUISPr("title.landauswahlliste"));
 
 		panelQueryFLRStaatsangehoerigkeit.setSelectedId(personalDto
@@ -847,6 +863,10 @@ public class PanelPersonaldaten extends PanelBasis {
 				.getShort());
 		personalDto.setTGeburtsdatum(wdfGeburtsdatum.getTimestamp());
 
+		
+		personalDto.setBTelefonzeitstarten(wcbTelefonzeitStarten
+				.getShort());
+		
 		// Kommunikationsdaten
 
 		personalDto.setCDirektfax(wtfDirektfax.getText());
@@ -858,7 +878,8 @@ public class PanelPersonaldaten extends PanelBasis {
 		personalDto.setCFax(wtfFaxdurchwahl.getText());
 
 		personalDto.setCHandy(wtfHandy.getText());
-
+		
+		personalDto.setCImapInboxFolder(wtfImapInboxFolder.getText());
 	}
 
 	protected void eventItemchanged(EventObject eI) throws Throwable {
@@ -882,10 +903,9 @@ public class PanelPersonaldaten extends PanelBasis {
 								.getIId())) {
 					DialogFactory
 							.showModalDialog(
-									LPMain.getInstance().getTextRespectUISPr(
+									LPMain.getTextRespectUISPr(
 											"lp.error"),
-									LPMain.getInstance()
-											.getTextRespectUISPr(
+									LPMain.getTextRespectUISPr(
 													"pers.error.kannnichtselbstzugeordnetwerden"));
 				} else {
 					wtfFirmenzugehoerigkeit.setText(partnerTempDto

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -95,6 +95,9 @@ public class ReportSeriennummern extends PanelBasis implements
 
 	private WrapperSNRField wtfSnrWildcard = new WrapperSNRField();
 
+	private WrapperLabel wlaVersionWildcard = new WrapperLabel();
+	private WrapperTextField wtfVersionWildcard = new WrapperTextField();
+
 	private PanelQueryFLR panelQueryFLRLager = null;
 	public static final String ACTION_SPECIAL_LAGER_FROM_LISTE = "action_lager_from_liste";
 	public static final String ACTION_SPECIAL_ARTIKEL_FROM_LISTE = "action_artikel_from_liste";
@@ -134,6 +137,8 @@ public class ReportSeriennummern extends PanelBasis implements
 		wcbSnrWildcard.setHorizontalAlignment(SwingConstants.RIGHT);
 		wtfLager.setEditable(false);
 		wtfSnrWildcard.setEditable(false);
+		wtfVersionWildcard.setEditable(false);
+		
 		wbuLager.setActionCommand(this.ACTION_SPECIAL_LAGER_FROM_LISTE);
 		wbuLager.addActionListener(this);
 
@@ -146,6 +151,11 @@ public class ReportSeriennummern extends PanelBasis implements
 
 		wlaSortierung.setText(LPMain.getInstance().getTextRespectUISPr(
 				"label.sortierung"));
+		
+		wlaVersionWildcard.setText(LPMain.getInstance().getTextRespectUISPr(
+				"artikel.seriennummern.version.filter"));
+		
+		
 		wcbMitGeraetesnrs.setText(LPMain.getInstance().getTextRespectUISPr(
 				"artikel.report.seriennummern.mitgsnr"));
 
@@ -161,14 +171,14 @@ public class ReportSeriennummern extends PanelBasis implements
 		this.add(jpaWorkingOn, new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
 				GridBagConstraints.WEST, GridBagConstraints.BOTH, new Insets(0,
 						0, 0, 0), 0, 0));
-		jpaWorkingOn.add(wtfLager, new GridBagConstraints(1, 0, 2, 1, 0.3, 0.0,
+		jpaWorkingOn.add(wtfLager, new GridBagConstraints(1, 0, 3, 1, 0.3, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wbuLager, new GridBagConstraints(0, 0, 1, 1, 0.3, 0.0,
+		jpaWorkingOn.add(wbuLager, new GridBagConstraints(0, 0, 1, 1, 0.8, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 2, 2, 2), 0, 0));
 
-		jpaWorkingOn.add(wtfArtikel, new GridBagConstraints(1, 1, 2, 1, 0.2,
+		jpaWorkingOn.add(wtfArtikel, new GridBagConstraints(1, 1, 3, 1, 0.2,
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 2, 2, 2), 0, 0));
 		jpaWorkingOn.add(wbuArtikel, new GridBagConstraints(0, 1, 1, 1, 0.1,
@@ -181,12 +191,21 @@ public class ReportSeriennummern extends PanelBasis implements
 		jpaWorkingOn.add(wlaSeriennr, new GridBagConstraints(0, 2, 1, 1, 0.1,
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wtfSnrWildcard, new GridBagConstraints(1, 3, 2, 1,
+		jpaWorkingOn.add(wtfSnrWildcard, new GridBagConstraints(1, 3, 1, 1,
 				0.2, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
 		jpaWorkingOn.add(wcbSnrWildcard, new GridBagConstraints(0, 3, 1, 1,
 				0.1, 0.0, GridBagConstraints.EAST,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		
+		
+		jpaWorkingOn.add(wlaVersionWildcard, new GridBagConstraints(2, 3, 1, 1,
+				0.3, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wtfVersionWildcard, new GridBagConstraints(3, 3, 1, 1,
+				0.6, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		
 
 		jpaWorkingOn.add(wlaSortierung, new GridBagConstraints(0, 4, 1, 1, 0,
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
@@ -196,7 +215,9 @@ public class ReportSeriennummern extends PanelBasis implements
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 2, 2, 2), 200, 0));
 
-		if (LPMain.getInstance().getDesktop()
+		if (LPMain
+				.getInstance()
+				.getDesktop()
 				.darfAnwenderAufZusatzfunktionZugreifen(
 						MandantFac.ZUSATZFUNKTION_GERAETESERIENNUMMERN)) {
 
@@ -243,8 +264,8 @@ public class ReportSeriennummern extends PanelBasis implements
 			} else if (e.getSource() == panelQueryFLRArtikel) {
 				Object key = ((ISourceEvent) e.getSource()).getIdSelected();
 				ArtikelDto artikelDto = DelegateFactory.getInstance()
-						.getArtikelDelegate().artikelFindByPrimaryKey(
-								(Integer) key);
+						.getArtikelDelegate()
+						.artikelFindByPrimaryKey((Integer) key);
 				artikelIId = artikelDto.getIId();
 				wtfArtikel.setText(artikelDto.formatArtikelbezeichnung());
 			}
@@ -281,7 +302,9 @@ public class ReportSeriennummern extends PanelBasis implements
 
 	public JasperPrintLP getReport(String sDrucktype) throws Throwable {
 		try {
-			return DelegateFactory.getInstance().getLagerDelegate()
+			return DelegateFactory
+					.getInstance()
+					.getLagerDelegate()
 					.printSeriennummern(
 							lagerIId,
 							artikelIId,
@@ -289,15 +312,17 @@ public class ReportSeriennummern extends PanelBasis implements
 									new BigDecimal(0), false),
 							wrbSortIdent.isSelected(),
 							wcbMitGeraetesnrs.isSelected(),
-							wtfSnrWildcard.getText());
+							wtfSnrWildcard.getText(),
+							wtfVersionWildcard.getText());
 		} catch (Throwable ex) {
 			/**
 			 * @todo MB->CK EJBExceptionLP sollte da eigentlich gar nicht
 			 *       herkommen.
 			 */
 			if (ex instanceof com.lp.util.EJBExceptionLP) {
-				throw new ExceptionLP(((com.lp.util.EJBExceptionLP) ex)
-						.getCode(), ex.getCause());
+				throw new ExceptionLP(
+						((com.lp.util.EJBExceptionLP) ex).getCode(),
+						ex.getCause());
 			} else {
 				handleException(ex, true);
 			}
@@ -322,12 +347,18 @@ public class ReportSeriennummern extends PanelBasis implements
 
 			wtfSeriennr.setEditable(false);
 			wtfSeriennr.setText("");
+			
+			wtfVersionWildcard.setText("");
+			wtfVersionWildcard.setEditable(true);
 		} else {
 			wtfSnrWildcard.setEditable(false);
 			wtfSnrWildcard.setText("");
 
 			wtfSeriennr.setEditable(true);
 			wtfSeriennr.setText("");
+			
+			wtfVersionWildcard.setText("");
+			wtfVersionWildcard.setEditable(false);
 
 		}
 	}

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -33,6 +33,7 @@
 package com.lp.client.frame.delegate;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -43,6 +44,7 @@ import com.lp.server.projekt.service.HistoryDto;
 import com.lp.server.projekt.service.ProjektDto;
 import com.lp.server.projekt.service.ProjektFac;
 import com.lp.server.projekt.service.ProjektReportFac;
+import com.lp.server.projekt.service.ProjektVerlaufHelperDto;
 import com.lp.server.system.service.ReportJournalKriterienDto;
 import com.lp.server.util.report.JasperPrintLP;
 
@@ -191,6 +193,31 @@ public class ProjektDelegate extends Delegate {
 
 		return historyDto;
 	}
+	public HistoryDto[] historyFindByProjektIid(Integer iId) throws ExceptionLP {
+		HistoryDto[] historyDto = null;
+
+		try {
+			historyDto = projektFac.historyFindByProjektIid(iId);
+		} catch (Throwable t) {
+			handleThrowable(t);
+		}
+
+		return historyDto;
+	}
+
+
+	public LinkedHashMap<String, ProjektVerlaufHelperDto> getProjektVerlauf(
+			Integer projektIId) throws ExceptionLP {
+
+		try {
+			return projektFac.getProjektVerlauf(projektIId,
+					LPMain.getTheClient());
+		} catch (Throwable t) {
+			handleThrowable(t);
+			return null;
+		}
+
+	}
 
 	/**
 	 * Offene. Projekte drucken.
@@ -318,6 +345,18 @@ public class ProjektDelegate extends Delegate {
 		try {
 			oPrintO = projektReportFac.printProjekt(iidProjekt, null, null,
 					LPMain.getTheClient());
+		} catch (Throwable t) {
+			handleThrowable(t);
+		}
+		return oPrintO;
+	}
+
+	public JasperPrintLP printProjektzeiten(Integer projektIId,
+			Integer iSortierung) throws ExceptionLP {
+		JasperPrintLP oPrintO = null;
+		try {
+			oPrintO = projektReportFac.printProjektzeiten(projektIId,
+					iSortierung, LPMain.getTheClient());
 		} catch (Throwable t) {
 			handleThrowable(t);
 		}

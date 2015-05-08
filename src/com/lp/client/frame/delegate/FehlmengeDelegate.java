@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -32,8 +32,8 @@
  ******************************************************************************/
 package com.lp.client.frame.delegate;
 
-
 import java.math.BigDecimal;
+import java.util.TreeMap;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -43,108 +43,125 @@ import com.lp.client.pc.LPMain;
 import com.lp.server.artikel.service.ArtikelfehlmengeDto;
 import com.lp.server.artikel.service.FehlmengeFac;
 
-
 /**
- * <p>BusinessDelegate fuer die Fehlmengenverwaltung</p>
- *
- * <p>Copyright Logistik Pur Software GmbH (c) 2004-2008</p>
- *
- * <p>Erstellung: Martin Bluehweis; 08.11.05</p>
- *
- * <p>@author $Author: christian $</p>
- *
+ * <p>
+ * BusinessDelegate fuer die Fehlmengenverwaltung
+ * </p>
+ * 
+ * <p>
+ * Copyright Logistik Pur Software GmbH (c) 2004-2008
+ * </p>
+ * 
+ * <p>
+ * Erstellung: Martin Bluehweis; 08.11.05
+ * </p>
+ * 
+ * <p>
+ * 
+ * @author $Author: christian $
+ *         </p>
+ * 
  * @version not attributable Date $Date: 2010/09/16 07:49:49 $
  */
-public class FehlmengeDelegate
-    extends Delegate
-{
-  private Context context;
-  private FehlmengeFac fehlmengeFac;
-  public FehlmengeDelegate()
-      throws ExceptionLP {
-    try {
-      context = new InitialContext();
-      fehlmengeFac = (FehlmengeFac) context.lookup("lpserver/FehlmengeFacBean/remote");
-    }
-    catch (Throwable t) {
-      handleThrowable(t);
-    }
-  }
+public class FehlmengeDelegate extends Delegate {
+	private Context context;
+	private FehlmengeFac fehlmengeFac;
 
+	public FehlmengeDelegate() throws ExceptionLP {
+		try {
+			context = new InitialContext();
+			fehlmengeFac = (FehlmengeFac) context
+					.lookup("lpserver/FehlmengeFacBean/remote");
+		} catch (Throwable t) {
+			handleThrowable(t);
+		}
+	}
 
-  public BigDecimal getAnzahlFehlmengeEinesArtikels(Integer artikelIId)
-      throws ExceptionLP {
-    try {
-      return fehlmengeFac.getAnzahlFehlmengeEinesArtikels(artikelIId,
-          LPMain.getTheClient());
-    }
-    catch (Throwable ex) {
-      handleThrowable(ex);
-      return null;
-    }
-  }
+	public BigDecimal getAnzahlFehlmengeEinesArtikels(Integer artikelIId)
+			throws ExceptionLP {
+		try {
+			return fehlmengeFac.getAnzahlFehlmengeEinesArtikels(artikelIId,
+					LPMain.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
 
-  public BigDecimal getAnzahlderPositivenFehlmengenEinesArtikels(Integer artikelIId)
-      throws ExceptionLP {
-    try {
-      return fehlmengeFac.getAnzahlderPositivenFehlmengenEinesArtikels(artikelIId,
-          LPMain.getTheClient());
-    }
-    catch (Throwable ex) {
-      handleThrowable(ex);
-      return null;
-    }
-  }
+	public TreeMap<?, ?> alleFehlmengenDesMandantenAufloesen()
+			throws ExceptionLP {
+		try {
+			return fehlmengeFac.alleFehlmengenDesMandantenAufloesen(LPMain
+					.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
 
+	public TreeMap<String, BigDecimal> fuelleFehlmengenDesAnderenMandantenNach(
+			String mandantCNr_Zielmandant, java.sql.Timestamp tStichtag)
+			throws ExceptionLP {
+		try {
+			return fehlmengeFac.fuelleFehlmengenDesAnderenMandantenNach(
+					mandantCNr_Zielmandant, tStichtag, LPMain.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
 
-  public ArtikelfehlmengeDto artikelfehlmengeFindByBelegartCNrBelegartPositionIId(String
-      belegartCNr, Integer belegpositionIId)
-      throws ExceptionLP {
-    try {
-      return fehlmengeFac.artikelfehlmengeFindByBelegartCNrBelegartPositionIId(
-          belegartCNr, belegpositionIId);
-    }
-    catch (Throwable ex) {
-      handleThrowable(ex);
-      return null;
-    }
-  }
+	public BigDecimal getAnzahlderPositivenFehlmengenEinesArtikels(
+			Integer artikelIId) throws ExceptionLP {
+		try {
+			return fehlmengeFac.getAnzahlderPositivenFehlmengenEinesArtikels(
+					artikelIId, LPMain.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
 
+	public ArtikelfehlmengeDto artikelfehlmengeFindByBelegartCNrBelegartPositionIId(
+			String belegartCNr, Integer belegpositionIId) throws ExceptionLP {
+		try {
+			return fehlmengeFac
+					.artikelfehlmengeFindByBelegartCNrBelegartPositionIId(
+							belegartCNr, belegpositionIId);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
 
-  public ArtikelfehlmengeDto artikelfehlmengeFindByBelegartCNrBelegartPositionIIdOhneExc(
-      String belegartCNr, Integer belegpositionIId)
-      throws ExceptionLP {
-    try {
-      return fehlmengeFac.artikelfehlmengeFindByBelegartCNrBelegartPositionIIdOhneExc(
-          belegartCNr, belegpositionIId);
-    }
-    catch (Throwable ex) {
-      handleThrowable(ex);
-      return null;
-    }
-  }
+	public ArtikelfehlmengeDto artikelfehlmengeFindByBelegartCNrBelegartPositionIIdOhneExc(
+			String belegartCNr, Integer belegpositionIId) throws ExceptionLP {
+		try {
+			return fehlmengeFac
+					.artikelfehlmengeFindByBelegartCNrBelegartPositionIIdOhneExc(
+							belegartCNr, belegpositionIId);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
 
+	public ArtikelfehlmengeDto artikelfehlmengeFindByPrimaryKey(Integer iId)
+			throws ExceptionLP {
+		try {
+			return fehlmengeFac.artikelfehlmengeFindByPrimaryKey(iId);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
 
-  public ArtikelfehlmengeDto artikelfehlmengeFindByPrimaryKey(Integer iId)
-      throws ExceptionLP {
-    try {
-      return fehlmengeFac.artikelfehlmengeFindByPrimaryKey(iId);
-    }
-    catch (Throwable ex) {
-      handleThrowable(ex);
-      return null;
-    }
-  }
-
-
-  public void pruefeFehlmengen()
-      throws ExceptionLP {
-    try {
-      fehlmengeFac.pruefeFehlmengen(LPMain.getTheClient());
-    }
-    catch (Throwable ex) {
-      handleThrowable(ex);
-    }
-  }
+	public void pruefeFehlmengen() throws ExceptionLP {
+		try {
+			fehlmengeFac.pruefeFehlmengen(LPMain.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+	}
 
 }

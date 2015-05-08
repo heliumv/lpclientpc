@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -32,7 +32,6 @@
  ******************************************************************************/
 package com.lp.client.frame.delegate;
 
-import java.rmi.RemoteException;
 import java.sql.Date;
 import java.util.ArrayList;
 import java.util.Map;
@@ -46,11 +45,8 @@ import com.lp.client.pc.LPMain;
 import com.lp.server.bestellung.service.BestellungDto;
 import com.lp.server.bestellung.service.BestellvorschlagDto;
 import com.lp.server.bestellung.service.BestellvorschlagFac;
-import com.lp.server.stueckliste.service.StrukturierterImportDto;
-import com.lp.server.system.service.TheClientDto;
 import com.lp.server.util.fastlanereader.service.query.FilterKriterium;
 import com.lp.server.util.fastlanereader.service.query.SortierKriterium;
-import com.lp.util.EJBExceptionLP;
 
 public class BestellvorschlagDelegate extends Delegate {
 	private Context context;
@@ -95,7 +91,8 @@ public class BestellvorschlagDelegate extends Delegate {
 	public void updateBestellvorschlag(BestellvorschlagDto bestellvorschlagDto)
 			throws ExceptionLP {
 		try {
-			bestellvorschlagFac.updateBestellvorschlag(bestellvorschlagDto);
+			bestellvorschlagFac.updateBestellvorschlag(bestellvorschlagDto,
+					LPMain.getTheClient());
 		} catch (Throwable t) {
 			handleThrowable(t);
 		}
@@ -105,7 +102,8 @@ public class BestellvorschlagDelegate extends Delegate {
 	public void updateBestellvorschlags(
 			BestellvorschlagDto[] bestellvorschlagDtos) throws ExceptionLP {
 		try {
-			bestellvorschlagFac.updateBestellvorschlags(bestellvorschlagDtos);
+			bestellvorschlagFac.updateBestellvorschlags(bestellvorschlagDtos,
+					LPMain.getTheClient());
 		} catch (Throwable t) {
 			handleThrowable(t);
 		}
@@ -272,25 +270,29 @@ public class BestellvorschlagDelegate extends Delegate {
 			Integer iToleranz, Date dateFuerEintraegeOhneLiefertermin,
 			ArrayList<Integer> arLosIId, ArrayList<Integer> arAuftragIId,
 			boolean bMitNichtlagerbewirtschafteten,
-			boolean bNurLospositionenBeruecksichtigen) throws ExceptionLP {
+			boolean bNurLospositionenBeruecksichtigen,
+			boolean vormerklisteLoeschen) throws ExceptionLP {
 
 		try {
 			bestellvorschlagFac.erstelleBestellvorschlag(iVorlaufzeit,
 					iToleranz, dateFuerEintraegeOhneLiefertermin, arLosIId,
 					arAuftragIId, bMitNichtlagerbewirtschafteten,
-					bNurLospositionenBeruecksichtigen, LPMain.getTheClient());
+					bNurLospositionenBeruecksichtigen, vormerklisteLoeschen,
+					LPMain.getTheClient());
 		} catch (Throwable t) {
 			handleThrowable(t);
 		}
 	}
 
 	public void erstelleBestellvorschlagAnhandStuecklistenmindestlagerstand(
-			java.sql.Date dLiefertermin) throws ExceptionLP {
+			java.sql.Date dLiefertermin, boolean vormerklisteLoeschen)
+			throws ExceptionLP {
 
 		try {
 			bestellvorschlagFac
 					.erstelleBestellvorschlagAnhandStuecklistenmindestlagerstand(
-							dLiefertermin, LPMain.getTheClient());
+							dLiefertermin, vormerklisteLoeschen,
+							LPMain.getTheClient());
 		} catch (Throwable t) {
 			handleThrowable(t);
 		}

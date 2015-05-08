@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -38,7 +38,6 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.math.BigDecimal;
 import java.sql.Date;
-import java.sql.Timestamp;
 import java.text.MessageFormat;
 import java.util.EventObject;
 
@@ -288,7 +287,7 @@ public class PanelBestellungWareneingang extends PanelBasis {
 				.getParameterDelegate()
 				.getMandantparameter(LPMain.getTheClient().getMandant(),
 						ParameterFac.KATEGORIE_ALLGEMEIN,
-						ParameterFac.PARAMETER_GEMEINKOSTENFAKTOR);
+						ParameterFac.PARAMETER_GEMEINKOSTENFAKTOR,wdfWareneingangsDatum.getTimestamp());
 		Double gkdouble = new Double(pm.getCWert());
 		wnfGemeinKostenFaktor.setDouble(gkdouble);
 
@@ -421,7 +420,7 @@ public class PanelBestellungWareneingang extends PanelBasis {
 				.getParameterDelegate()
 				.getMandantparameter(LPMain.getTheClient().getMandant(),
 						ParameterFac.KATEGORIE_ALLGEMEIN,
-						ParameterFac.PARAMETER_GEMEINKOSTENFAKTOR);
+						ParameterFac.PARAMETER_GEMEINKOSTENFAKTOR,wdfWareneingangsDatum.getTimestamp());
 
 		Double gkdouble = new Double(pm.getCWert());
 		/**
@@ -691,7 +690,7 @@ public class PanelBestellungWareneingang extends PanelBasis {
 				.getTextRespectUISPr("bes.transportkosten"));
 		wnfTransportkosten.setMinimumValue(0);
 		wnfTransportkosten.setFractionDigits(Defaults.getInstance()
-				.getIUINachkommastellenPreiseEK());
+				.getIUINachkommastellenPreiseWE());
 		wbuTransportkostenwaehrung
 				.setHorizontalAlignment(SwingConstants.LEADING);
 		wbuTransportkostenwaehrung.addActionListener(this);
@@ -701,20 +700,20 @@ public class PanelBestellungWareneingang extends PanelBasis {
 		wlaZollkosten.setText(LPMain.getTextRespectUISPr("bes.zollkosten"));
 		wnfZollkosten.setMinimumValue(0);
 		wnfZollkosten.setFractionDigits(Defaults.getInstance()
-				.getIUINachkommastellenPreiseEK());
+				.getIUINachkommastellenPreiseWE());
 		wlaZollkostenwaehrung.setHorizontalAlignment(SwingConstants.LEADING);
 
 		wlaSonstigespesen.setText(LPMain
 				.getTextRespectUISPr("bes.sonstigespesen"));
 		wnfSonstigespesen.setFractionDigits(Defaults.getInstance()
-				.getIUINachkommastellenPreiseEK());
+				.getIUINachkommastellenPreiseWE());
 		wlaSonstigespesenwaehrung
 				.setHorizontalAlignment(SwingConstants.LEADING);
 
 		wlaBankspesen.setText(LPMain.getTextRespectUISPr("bes.bankspesen"));
 		wnfBankspesen.setMinimumValue(0);
 		wnfBankspesen.setFractionDigits(Defaults.getInstance()
-				.getIUINachkommastellenPreiseEK());
+				.getIUINachkommastellenPreiseWE());
 		wlaBankspesenwaehrung.setHorizontalAlignment(SwingConstants.LEADING);
 
 		wlaGemeinKostenFaktor.setText(LPMain

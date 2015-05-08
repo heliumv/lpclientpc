@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -35,6 +35,7 @@ package com.lp.client.frame.component;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -46,6 +47,8 @@ import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.pc.LPMain;
 import com.lp.server.artikel.service.ArtikelDto;
 import com.lp.server.artikel.service.SeriennrChargennrMitMengeDto;
+import com.lp.server.system.service.PanelFac;
+import com.lp.server.system.service.PanelbeschreibungDto;
 import com.lp.util.Helper;
 
 /**
@@ -68,6 +71,10 @@ import com.lp.util.Helper;
 public class WrapperSnrChnrField extends JTextField implements IControl,
 		ActionListener {
 
+	public void setBZugang(boolean bZugang) {
+		this.bZugang = bZugang;
+	}
+
 	/**
 	 * 
 	 */
@@ -81,8 +88,8 @@ public class WrapperSnrChnrField extends JTextField implements IControl,
 	private Integer lagerIId = null;
 	private WrapperButton buttonSnrAuswahl = null;
 	private static final String ACTION_AUSWAHL = "ACTION_AUSWAHL";
+	private boolean bZugang = true;
 	InternalFrame internalFrame = null;
-	
 
 	private WrapperNumberField wnfBelegMenge = null;
 
@@ -94,9 +101,10 @@ public class WrapperSnrChnrField extends JTextField implements IControl,
 		this.wnfBelegMenge = wnfBelegMenge;
 	}
 
-	public WrapperSnrChnrField(InternalFrame internalFrame) {
+	public WrapperSnrChnrField(InternalFrame internalFrame, boolean bZugang) {
 		HelperClient.setDefaultsToComponent(this);
 		this.internalFrame = internalFrame;
+		this.bZugang = bZugang;
 		buttonSnrAuswahl = new WrapperButton();
 		buttonSnrAuswahl.addActionListener(this);
 		buttonSnrAuswahl.setActionCommand(ACTION_AUSWAHL);
@@ -112,26 +120,29 @@ public class WrapperSnrChnrField extends JTextField implements IControl,
 	public void actionPerformed(ActionEvent e) {
 		if (e.getActionCommand().equals(ACTION_AUSWAHL)) {
 			try {
+
 				DialogSerienChargenauswahl d = new DialogSerienChargenauswahl(
-						artikelIId, lagerIId, alSeriennummern, true,false,
-						internalFrame,wnfBelegMenge);
+						artikelIId, lagerIId, alSeriennummern, true, false,
+						internalFrame, wnfBelegMenge, bZugang);
+
 				LPMain.getInstance().getDesktop()
 						.platziereDialogInDerMitteDesFensters(d);
 
 				d.setVisible(true);
 				alSeriennummern = d.alSeriennummern;
 
-				setSeriennummern(alSeriennummern, artikelIId, lagerIId);
-
 				if (wnfBelegMenge != null) {
-					wnfBelegMenge.requestFocus();
-					if(d.wcbRueckgabe.isSelected()){
+					wnfBelegMenge.requestFocusInWindow();
+					if (d.wcbRueckgabe.isSelected()) {
 						wnfBelegMenge.setBigDecimal(getMenge().negate());
 					} else {
 						wnfBelegMenge.setBigDecimal(getMenge());
 					}
-					
+
+					buttonSnrAuswahl.requestFocusInWindow();
 				}
+
+				setSeriennummern(alSeriennummern, artikelIId, lagerIId);
 
 			} catch (Throwable e1) {
 				internalFrame.handleException(e1, false);
@@ -251,7 +262,7 @@ public class WrapperSnrChnrField extends JTextField implements IControl,
 		if (dependenceField) {
 			this.setBackground(HelperClient.getDependenceFieldBackgroundColor());
 		} else {
-			this.setBackground(new WrapperSnrChnrField(internalFrame)
+			this.setBackground(new WrapperSnrChnrField(internalFrame, true)
 					.getBackground());
 		}
 	}
@@ -357,7 +368,9 @@ public class WrapperSnrChnrField extends JTextField implements IControl,
 
 				if (Helper.short2Boolean(artikelDto.getBChargennrtragend())) {
 					s += " "
-							+ Helper.formatZahl(snrs.get(i).getNMenge(), 4,
+							+ Helper.formatZahl(snrs.get(i).getNMenge(),
+									Defaults.getInstance()
+											.getIUINachkommastellenMenge(),
 									LPMain.getTheClient().getLocUi());
 				}
 

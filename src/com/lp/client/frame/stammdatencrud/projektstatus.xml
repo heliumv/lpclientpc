@@ -48,6 +48,11 @@
     dtyp="java.lang.Short"
     labelbez="proj.status.aenderungprotokollieren">
   </control>
+  <control klasse="com.lp.client.frame.component.WrapperCheckBox"
+    colname="BErledigt"
+    dtyp="java.lang.Short"
+    labelbez="proj.status.erledigt">
+  </control>
   <control klasse="com.lp.client.frame.component.WrapperNumberField"
     colname="ISort"
     dtyp="java.lang.Integer"

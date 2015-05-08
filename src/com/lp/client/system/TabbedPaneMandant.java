@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -43,15 +43,14 @@ import com.lp.client.frame.component.PanelQuery;
 import com.lp.client.frame.component.PanelSplit;
 import com.lp.client.frame.component.TabbedPane;
 import com.lp.client.frame.component.WrapperMenuBar;
-import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.frame.stammdatencrud.PanelStammdatenCRUD;
 import com.lp.client.pc.LPMain;
 import com.lp.client.util.fastlanereader.gui.QueryType;
-import com.lp.server.benutzer.service.RechteFac;
 import com.lp.server.partner.service.PartnerDto;
 import com.lp.server.system.service.MandantFac;
 import com.lp.server.util.fastlanereader.service.query.FilterKriterium;
 import com.lp.server.util.fastlanereader.service.query.QueryParameters;
+import com.lp.util.Helper;
 
 @SuppressWarnings("static-access")
 /*
@@ -96,7 +95,7 @@ public class TabbedPaneMandant extends TabbedPane {
 	private PanelSpediteur panelSpediteurBottomD4 = null;
 
 	private PanelQuery panelZahlungszielQP5 = null;
-	private PanelStammdatenCRUD panelZahlungszielBottomD5 = null;
+	private PanelZahlungsziel panelZahlungszielBottomD5 = null;
 	private PanelSplit panelZahlungszielSP5 = null;
 
 	private PanelQuery panelMwstQP6 = null;
@@ -1079,8 +1078,7 @@ public class TabbedPaneMandant extends TabbedPane {
 		if (panelMandantQP1 == null) {
 
 			String[] aWhichStandardButtonIUse = null;
-			if (DelegateFactory.getInstance().getTheJudgeDelegate()
-					.hatRecht(RechteFac.RECHT_LP_MANDANT_ANLEGEN)) {
+			if (LPMain.getInstance().isLPAdmin() || Helper.isAbbot(LPMain.getTheClient())) {
 				aWhichStandardButtonIUse = new String[1];
 				aWhichStandardButtonIUse[0] = PanelBasis.ACTION_NEW;
 			}
@@ -1185,15 +1183,12 @@ public class TabbedPaneMandant extends TabbedPane {
 			// geklickt
 			// wurde
 
-			panelZahlungszielBottomD5 = new PanelSCRUDMandant(
+			panelZahlungszielBottomD5 = new PanelZahlungsziel(
 					getInternalFrame(), LPMain.getInstance()
-							.getTextRespectUISPr("label.zahlungsziel"), null,
-					HelperClient.SCRUD_ZAHLUNGSZIEL_FILE,
-					(InternalFrameSystem) getInternalFrame(),
-					HelperClient.LOCKME_ZAHLUNGSZIEL);
+							.getTextRespectUISPr("label.zahlungsziel"), null);
 
 			panelZahlungszielSP5 = new PanelSplit(getInternalFrame(),
-					panelZahlungszielBottomD5, panelZahlungszielQP5, 200);
+					panelZahlungszielBottomD5, panelZahlungszielQP5, 180);
 			panelZahlungszielQP5
 					.befuellePanelFilterkriterienDirektUndVersteckte(
 							SystemFilterFactory.getInstance()

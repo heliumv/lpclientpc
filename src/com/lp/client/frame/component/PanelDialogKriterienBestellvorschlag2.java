@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -87,6 +87,10 @@ public class PanelDialogKriterienBestellvorschlag2 extends PanelDialogKriterien 
 		return wcbMitNichtLagerwewirtschafteten.isSelected();
 	}
 
+	public boolean isbVormerklisteLoeschen() {
+		return wcbVormerklisteLoeschen.isSelected();
+	}
+
 	public boolean isbNurBetroffeneLospositionen() {
 		return wcbNurBetroffeneLospositionen.isSelected();
 	}
@@ -98,6 +102,7 @@ public class PanelDialogKriterienBestellvorschlag2 extends PanelDialogKriterien 
 	private WrapperCheckBox wcbVorhandeneBestellvorschlagEintrageLoeschen = null;
 	private WrapperCheckBox wcbMitNichtLagerwewirtschafteten = null;
 	private WrapperCheckBox wcbNurBetroffeneLospositionen = null;
+	private WrapperCheckBox wcbVormerklisteLoeschen = null;
 
 	private WrapperButton wbuLos = new WrapperButton();
 	private WrapperTextField wtfLos = new WrapperTextField();
@@ -176,6 +181,9 @@ public class PanelDialogKriterienBestellvorschlag2 extends PanelDialogKriterien 
 				.getInstance().getTextRespectUISPr(
 						"bes.bestellvorschlag.mitnichtlagerbewirtschafteten"));
 
+		wcbVormerklisteLoeschen = new WrapperCheckBox(LPMain.getInstance()
+				.getTextRespectUISPr("bes.vormerklisteLoeschen"));
+
 		wcbNurBetroffeneLospositionen = new WrapperCheckBox(LPMain
 				.getInstance().getTextRespectUISPr(
 						"bes.bestellvorschlag.nurbetroffenelospositionen"));
@@ -186,7 +194,7 @@ public class PanelDialogKriterienBestellvorschlag2 extends PanelDialogKriterien 
 
 		wbuLos.setActionCommand(ACTION_SPECIAL_LOS_FROM_LISTE);
 		wbuLos.addActionListener(this);
-		// wtfLos.setActivatable(false);
+		wtfLos.setActivatable(false);
 		wtfLos.setColumnsMax(com.lp.server.util.Facade.MAX_UNBESCHRAENKT);
 
 		wbuAuftrag.setText(LPMain.getInstance().getTextRespectUISPr(
@@ -276,6 +284,10 @@ public class PanelDialogKriterienBestellvorschlag2 extends PanelDialogKriterien 
 				new GridBagConstraints(1, iZeile, 2, 1, 0, 0.0,
 						GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 						new Insets(2, 2, 2, 2), 0, 0));
+		iZeile++;
+		jpaWorkingOn.add(wcbVormerklisteLoeschen, new GridBagConstraints(1,
+				iZeile, 2, 1, 0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
 
 	}
 
@@ -365,8 +377,6 @@ public class PanelDialogKriterienBestellvorschlag2 extends PanelDialogKriterien 
 			if (e.getSource() == panelQueryFLRLos) {
 				Object[] o = panelQueryFLRLos.getSelectedIds();
 
-				losIId = new ArrayList<Integer>();
-
 				String lose = "";
 
 				if (wtfLos.getText() != null) {
@@ -382,11 +392,14 @@ public class PanelDialogKriterienBestellvorschlag2 extends PanelDialogKriterien 
 
 				}
 				wtfLos.setText(lose);
+				if (panelQueryFLRLos.dialog != null) {
+					panelQueryFLRLos.dialog.setVisible(false);
+				}
 			} else if (e.getSource() == panelQueryFLRAuftrag) {
 				Object[] o = panelQueryFLRAuftrag.getSelectedIds();
 
 				String auftraege = "";
-				auftragIId = new ArrayList<Integer>();
+				
 				if (wtfAuftrag.getText() != null) {
 					auftraege = wtfAuftrag.getText();
 				}

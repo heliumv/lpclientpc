@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -51,6 +51,7 @@ import org.xml.sax.SAXException;
 import com.lp.client.frame.ExceptionLP;
 import com.lp.client.frame.HelperClient;
 import com.lp.client.frame.LockStateValue;
+import com.lp.client.frame.assistent.view.AssistentView;
 import com.lp.client.frame.component.ISourceEvent;
 import com.lp.client.frame.component.InternalFrame;
 import com.lp.client.frame.component.ItemChangedEvent;
@@ -62,6 +63,7 @@ import com.lp.client.frame.component.WrapperMenuBar;
 import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.frame.dialog.DialogFactory;
 import com.lp.client.pc.LPMain;
+import com.lp.client.stueckliste.importassistent.StklImportController;
 import com.lp.client.system.SystemFilterFactory;
 import com.lp.client.util.fastlanereader.gui.QueryType;
 import com.lp.server.angebotstkl.service.AgstklpositionDto;
@@ -69,10 +71,12 @@ import com.lp.server.angebotstkl.service.EinkaufsangebotpositionDto;
 import com.lp.server.artikel.service.ArtikelDto;
 import com.lp.server.artikel.service.LagerDto;
 import com.lp.server.system.service.LocaleFac;
+import com.lp.server.system.service.MandantFac;
 import com.lp.server.util.fastlanereader.service.query.FilterKriterium;
 import com.lp.server.util.fastlanereader.service.query.QueryParameters;
 import com.lp.service.BelegpositionDto;
 import com.lp.service.POSDocument2POSDto;
+import com.lp.service.StklImportSpezifikation;
 import com.lp.util.EJBExceptionLP;
 import com.lp.util.Helper;
 import com.lp.util.csv.LPCSVReader;
@@ -329,159 +333,176 @@ public class TabbedPaneEinkaufsangebot extends TabbedPane {
 					copyHV();
 				}
 			}
-
 			else if (sAspectInfo.equals(BUTTON_IMPORTCSV_EKAGSTKLPOSITIONEN)) {
-				// PJ 14984
-				File[] files = HelperClient.chooseFile(this,
-						HelperClient.FILE_FILTER_CSV, false);
-				File file = null;
-				if (files != null && files.length > 0) {
-					file = files[0];
-				}
-				if (file != null) {
-					// Tab-getrenntes File einlesen.
-					LPCSVReader reader = new LPCSVReader(new FileReader(file),
-							(char) KeyEvent.VK_SEMICOLON);
-
-					if (sAspectInfo.equals(BUTTON_IMPORTCSV_EKAGSTKLPOSITIONEN)) {
-						// CSV-Format fuer Arbeitsplan:
-						// Spalte1: ARTIKELNUMMER
-						// Spalte2: MENGE
-						// PJ 13479: Damit man Handartikel importieren kann
-
-						// Spalte3: BEZEICHNUNG-WENN HANDARTIKEL
-						// Spalte4: EINHEIT-WENN HANDARTIKEL
-						// Spalte5: C_POSITION
-						// Spalte6: C_KOMMENTAR
-						if (panelDetailEinkaufsangebotpositionen.defaultMontageartDto == null) {
-							// DefaultMontageart==null
-							return;
-						}
-
-						String[] sLine;
-						int iZeile = 0;
-						ArrayList<EinkaufsangebotpositionDto> list = new ArrayList<EinkaufsangebotpositionDto>();
-						do {
-							// zeilenweise einlesen.
-							sLine = reader.readNext();
-							iZeile++;
-							if (sLine != null) {
-								if (sLine.length < 6) {
-									DialogFactory
-											.showModalDialog(
-													LPMain.getInstance()
-															.getTextRespectUISPr(
-																	"lp.error"),
-													"CSV-Datei muss genau 6 Spalten beinhalten.");
-									return;
-								}
-
-								EinkaufsangebotpositionDto dto = new EinkaufsangebotpositionDto();
-								dto.setBelegIId((Integer) panelQueryEinkaufsangebot
-										.getSelectedId());
-								dto.setBMitdrucken(Helper.boolean2Short(false));
-								dto.setBArtikelbezeichnunguebersteuert(Helper
-										.boolean2Short(false));
-								ArtikelDto artikelDto = null;
-								try {
-									artikelDto = DelegateFactory.getInstance()
-											.getArtikelDelegate()
-											.artikelFindByCNr(sLine[0]);
-									dto.setArtikelIId(artikelDto.getIId());
-									dto.setEinheitCNr(artikelDto
-											.getEinheitCNr());
-									dto.setPositionsartCNr(LocaleFac.POSITIONSART_IDENT);
-									dto.setCPosition(sLine[4]);
-									dto.setCBemerkung(sLine[5]);
-									try {
-										dto.setNMenge(new BigDecimal(sLine[1]));
-										list.add(dto);
-									} catch (NumberFormatException ex) {
+				if(LPMain.getInstance().getDesktop()
+					.darfAnwenderAufZusatzfunktionZugreifen(
+							MandantFac.ZUSATZFUNKTION_INTELLIGENTER_STUECKLISTENIMPORT)) {
+					if(LPMain.getInstance().getDesktop()
+							.darfAnwenderAufZusatzfunktionZugreifen(MandantFac.ZUSATZFUNKTION_KUNDESONDERKONDITIONEN)) {
+						AssistentView av = new AssistentView(
+						getInternalFrameAngebotstkl(),
+						LPMain.getTextRespectUISPr("stkl.intelligenterstklimport"),
+						new StklImportController(
+								getInternalFrameAngebotstkl().getEinkaufsangebotDto().getIId(),
+								StklImportSpezifikation.SpezifikationsTyp.EINKAUFSANGEBOTSSTKL_SPEZ,
+								getInternalFrame()));
+						getInternalFrame().showPanelDialog(av);
+					} else {
+						DialogFactory.showModalDialog(LPMain.getTextRespectUISPr("lp.hint"), 
+								LPMain.getTextRespectUISPr("stkl.error.keinekundesokoberechtigung"));
+					}
+				} else {
+					// PJ 14984
+					File[] files = HelperClient.chooseFile(this,
+							HelperClient.FILE_FILTER_CSV, false);
+					File file = null;
+					if (files != null && files.length > 0) {
+						file = files[0];
+					}
+					if (file != null) {
+						// Tab-getrenntes File einlesen.
+						LPCSVReader reader = new LPCSVReader(new FileReader(file),
+								(char) KeyEvent.VK_SEMICOLON);
+	
+						if (sAspectInfo.equals(BUTTON_IMPORTCSV_EKAGSTKLPOSITIONEN)) {
+							// CSV-Format fuer Arbeitsplan:
+							// Spalte1: ARTIKELNUMMER
+							// Spalte2: MENGE
+							// PJ 13479: Damit man Handartikel importieren kann
+	
+							// Spalte3: BEZEICHNUNG-WENN HANDARTIKEL
+							// Spalte4: EINHEIT-WENN HANDARTIKEL
+							// Spalte5: C_POSITION
+							// Spalte6: C_KOMMENTAR
+							if (panelDetailEinkaufsangebotpositionen.defaultMontageartDto == null) {
+								// DefaultMontageart==null
+								return;
+							}
+	
+							String[] sLine;
+							int iZeile = 0;
+							ArrayList<EinkaufsangebotpositionDto> list = new ArrayList<EinkaufsangebotpositionDto>();
+							do {
+								// zeilenweise einlesen.
+								sLine = reader.readNext();
+								iZeile++;
+								if (sLine != null) {
+									if (sLine.length < 6) {
 										DialogFactory
 												.showModalDialog(
 														LPMain.getInstance()
 																.getTextRespectUISPr(
 																		"lp.error"),
-														"Keine g\u00FCltige Zahl in Zeile "
-																+ iZeile
-																+ ", Spalte 2. Zeile wird \u00FCbersprungen.");
+														"CSV-Datei muss genau 6 Spalten beinhalten.");
+										return;
 									}
-								} catch (ExceptionLP ex1) {
-									if (ex1.getICode() == EJBExceptionLP.FEHLER_BEI_FIND) {
-
-										if (sLine[2] != null
-												&& sLine[2].length() > 0) {
-											// Handartikel anlegen
-											dto.setPositionsartCNr(LocaleFac.POSITIONSART_HANDEINGABE);
-											dto.setCBez(sLine[2]);
-											try {
-												dto.setNMenge(new BigDecimal(
-														sLine[1]));
-												dto.setCPosition(sLine[4]);
-												dto.setCBemerkung(sLine[5]);
-
-												try {
-													DelegateFactory
-															.getInstance()
-															.getSystemDelegate()
-															.einheitFindByPrimaryKey(
-																	sLine[3]);
-													dto.setEinheitCNr(sLine[3]);
-													list.add(dto);
-												} catch (ExceptionLP e) {
-													if (ex1.getICode() == EJBExceptionLP.FEHLER_BEI_FIND) {
-														DialogFactory
-																.showModalDialog(
-																		LPMain.getInstance()
-																				.getTextRespectUISPr(
-																						"lp.error"),
-																		"Keine g\u00FCltige Einheit "
-																				+ sLine[3]
-																				+ " in Zeile "
-																				+ iZeile
-																				+ ", Spalte 4. Zeile wird \u00FCbersprungen.");
-													} else {
-														handleException(e, true);
-													}
-												}
-
-											} catch (NumberFormatException ex) {
-												DialogFactory
-														.showModalDialog(
-																LPMain.getInstance()
-																		.getTextRespectUISPr(
-																				"lp.error"),
-																"Keine g\u00FCltige Zahl in Zeile "
-																		+ iZeile
-																		+ ", Spalte 2. Zeile wird \u00FCbersprungen.");
-											}
+	
+									EinkaufsangebotpositionDto dto = new EinkaufsangebotpositionDto();
+									dto.setBelegIId((Integer) panelQueryEinkaufsangebot
+											.getSelectedId());
+									dto.setBMitdrucken(Helper.boolean2Short(false));
+									dto.setBArtikelbezeichnunguebersteuert(Helper
+											.boolean2Short(false));
+									ArtikelDto artikelDto = null;
+									try {
+										artikelDto = DelegateFactory.getInstance()
+												.getArtikelDelegate()
+												.artikelFindByCNr(sLine[0]);
+										dto.setArtikelIId(artikelDto.getIId());
+										dto.setEinheitCNr(artikelDto
+												.getEinheitCNr());
+										dto.setPositionsartCNr(LocaleFac.POSITIONSART_IDENT);
+										dto.setCPosition(sLine[4]);
+										dto.setCBemerkung(sLine[5]);
+										try {
+											dto.setNMenge(new BigDecimal(sLine[1]));
+											list.add(dto);
+										} catch (NumberFormatException ex) {
+											DialogFactory
+													.showModalDialog(
+															LPMain.getInstance()
+																	.getTextRespectUISPr(
+																			"lp.error"),
+															"Keine g\u00FCltige Zahl in Zeile "
+																	+ iZeile
+																	+ ", Spalte 2. Zeile wird \u00FCbersprungen.");
 										}
-
-									} else {
-										handleException(ex1, true);
+									} catch (ExceptionLP ex1) {
+										if (ex1.getICode() == EJBExceptionLP.FEHLER_BEI_FIND) {
+	
+											if (sLine[2] != null
+													&& sLine[2].length() > 0) {
+												// Handartikel anlegen
+												dto.setPositionsartCNr(LocaleFac.POSITIONSART_HANDEINGABE);
+												dto.setCBez(sLine[2]);
+												try {
+													dto.setNMenge(new BigDecimal(
+															sLine[1]));
+													dto.setCPosition(sLine[4]);
+													dto.setCBemerkung(sLine[5]);
+	
+													try {
+														DelegateFactory
+																.getInstance()
+																.getSystemDelegate()
+																.einheitFindByPrimaryKey(
+																		sLine[3]);
+														dto.setEinheitCNr(sLine[3]);
+														list.add(dto);
+													} catch (ExceptionLP e) {
+														if (ex1.getICode() == EJBExceptionLP.FEHLER_BEI_FIND) {
+															DialogFactory
+																	.showModalDialog(
+																			LPMain.getInstance()
+																					.getTextRespectUISPr(
+																							"lp.error"),
+																			"Keine g\u00FCltige Einheit "
+																					+ sLine[3]
+																					+ " in Zeile "
+																					+ iZeile
+																					+ ", Spalte 4. Zeile wird \u00FCbersprungen.");
+														} else {
+															handleException(e, true);
+														}
+													}
+	
+												} catch (NumberFormatException ex) {
+													DialogFactory
+															.showModalDialog(
+																	LPMain.getInstance()
+																			.getTextRespectUISPr(
+																					"lp.error"),
+																	"Keine g\u00FCltige Zahl in Zeile "
+																			+ iZeile
+																			+ ", Spalte 2. Zeile wird \u00FCbersprungen.");
+												}
+											}
+	
+										} else {
+											handleException(ex1, true);
+										}
 									}
 								}
+							} while (sLine != null);
+	
+							if (list.size() > 0) {
+								EinkaufsangebotpositionDto[] returnArray = new EinkaufsangebotpositionDto[list
+										.size()];
+								returnArray = (EinkaufsangebotpositionDto[]) list
+										.toArray(returnArray);
+								DelegateFactory
+										.getInstance()
+										.getAngebotstklDelegate()
+										.createEinkaufsangebotpositions(returnArray);
+								panelSplitEinkaufsangebotpositionen
+										.eventYouAreSelected(false);
 							}
-						} while (sLine != null);
-
-						if (list.size() > 0) {
-							EinkaufsangebotpositionDto[] returnArray = new EinkaufsangebotpositionDto[list
-									.size()];
-							returnArray = (EinkaufsangebotpositionDto[]) list
-									.toArray(returnArray);
-							DelegateFactory
-									.getInstance()
-									.getAngebotstklDelegate()
-									.createEinkaufsangebotpositions(returnArray);
-							panelSplitEinkaufsangebotpositionen
-									.eventYouAreSelected(false);
 						}
+					} else {
+						// keine auswahl
 					}
-				} else {
-					// keine auswahl
-				}
+				} 
 			}
-
 		}
 
 		else if (eI.getID() == ItemChangedEvent.ACTION_SAVE) {
@@ -664,6 +685,9 @@ public class TabbedPaneEinkaufsangebot extends TabbedPane {
 				// panel
 			}
 		} else if (eI.getID() == ItemChangedEvent.ACTION_YOU_ARE_SELECTED) {
+			if (eI.getSource() instanceof AssistentView) {
+				getAktuellesPanel().eventYouAreSelected(false);
+			}
 			refreshTitle();
 			super.lPEventItemChanged(eI);
 		} else if (eI.getID() == ItemChangedEvent.ACTION_DISCARD) {
@@ -829,11 +853,18 @@ public class TabbedPaneEinkaufsangebot extends TabbedPane {
 					getInternalFrame(), panelDetailEinkaufsangebotpositionen,
 					panelQueryEinkaufsangebotpositionen, 140);
 
-			panelQueryEinkaufsangebotpositionen.createAndSaveAndShowButton(
-					"/com/lp/client/res/chest_into.png", LPMain.getInstance()
-							.getTextRespectUISPr("stkl.positionen.cvsimport"),
-					BUTTON_IMPORTCSV_EKAGSTKLPOSITIONEN, null);
+			boolean intelligenterStklImport = LPMain
+					.getInstance()
+					.getDesktop()
+					.darfAnwenderAufZusatzfunktionZugreifen(
+							MandantFac.ZUSATZFUNKTION_INTELLIGENTER_STUECKLISTENIMPORT);
 
+			panelQueryEinkaufsangebotpositionen.createAndSaveAndShowButton(
+					"/com/lp/client/res/document_into.png", LPMain.getInstance()
+							.getTextRespectUISPr(intelligenterStklImport ? 
+									"stkl.intelligenterstklimport" : "stkl.positionen.cvsimport"),
+					BUTTON_IMPORTCSV_EKAGSTKLPOSITIONEN, null);
+			
 			panelQueryEinkaufsangebotpositionen
 					.setMultipleRowSelectionEnabled(true);
 

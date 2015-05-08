@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -34,7 +34,6 @@ package com.lp.client.frame;
 
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Dimension;
 
 import javax.swing.JTable;
 import javax.swing.UIManager;
@@ -124,7 +123,7 @@ public class LPDefaultTableCellRenderer extends DefaultTableCellRenderer {
 		try {
 			if (isSelected) {
 				if (forecolor != null) {
-					component.setForeground(getContrastYIQ(forecolor));
+					component.setForeground(HelperClient.getContrastYIQ(forecolor));
 					component.setBackground(forecolor);
 					
 				} else
@@ -149,9 +148,5 @@ public class LPDefaultTableCellRenderer extends DefaultTableCellRenderer {
 		}
 
 		return component;
-	}
-	
-	private Color getContrastYIQ(Color c) {
-		return (c.getRed()*299 + c.getGreen() * 587 + c.getBlue() * 114)/1000 >= 128 ? Color.black : Color.white;
 	}
 }

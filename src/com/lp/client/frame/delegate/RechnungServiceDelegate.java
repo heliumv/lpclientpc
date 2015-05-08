@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -32,7 +32,6 @@
  ******************************************************************************/
 package com.lp.client.frame.delegate;
 
-import java.rmi.RemoteException;
 import java.util.Locale;
 import java.util.Map;
 
@@ -41,12 +40,12 @@ import javax.naming.InitialContext;
 
 import com.lp.client.frame.ExceptionLP;
 import com.lp.client.pc.LPMain;
-import com.lp.server.rechnung.ejb.Gutschriftsgrund;
 import com.lp.server.rechnung.service.GutschriftpositionsartDto;
 import com.lp.server.rechnung.service.GutschriftsgrundDto;
 import com.lp.server.rechnung.service.GutschrifttextDto;
 import com.lp.server.rechnung.service.ProformarechnungpositionsartDto;
 import com.lp.server.rechnung.service.RechnungServiceFac;
+import com.lp.server.rechnung.service.RechnungSichtAuftragDto;
 import com.lp.server.rechnung.service.RechnungartDto;
 import com.lp.server.rechnung.service.RechnungpositionsartDto;
 import com.lp.server.rechnung.service.RechnungstatusDto;
@@ -534,4 +533,12 @@ public class RechnungServiceDelegate extends Delegate {
 		}
 	}
 
+	public RechnungSichtAuftragDto rechnungFindByPrimaryKey(Integer iId) throws ExceptionLP {
+		try {
+			return rechnungServiceFac.rechnungFindByPrimaryKey(iId) ;
+		} catch(Throwable t) {
+			handleThrowable(t);	
+			return null ;
+		}
+	}
 }

@@ -1,33 +1,33 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
- * 
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
+ *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published 
- * by the Free Software Foundation, either version 3 of theLicense, or 
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of theLicense, or
  * (at your option) any later version.
- * 
- * According to sec. 7 of the GNU Affero General Public License, version 3, 
+ *
+ * According to sec. 7 of the GNU Affero General Public License, version 3,
  * the terms of the AGPL are supplemented with the following terms:
- * 
- * "HELIUM V" and "HELIUM 5" are registered trademarks of 
- * HELIUM V IT-Solutions GmbH. The licensing of the program under the 
+ *
+ * "HELIUM V" and "HELIUM 5" are registered trademarks of
+ * HELIUM V IT-Solutions GmbH. The licensing of the program under the
  * AGPL does not imply a trademark license. Therefore any rights, title and
  * interest in our trademarks remain entirely with us. If you want to propagate
  * modified versions of the Program under the name "HELIUM V" or "HELIUM 5",
- * you may only do so if you have a written permission by HELIUM V IT-Solutions 
+ * you may only do so if you have a written permission by HELIUM V IT-Solutions
  * GmbH (to acquire a permission please contact HELIUM V IT-Solutions
  * at trademark@heliumv.com).
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Affero General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Contact: developers@heliumv.com
  ******************************************************************************/
 package com.lp.client.auftrag;
@@ -49,6 +49,7 @@ import com.lp.client.frame.Defaults;
 import com.lp.client.frame.ExceptionLP;
 import com.lp.client.frame.HelperClient;
 import com.lp.client.frame.LockStateValue;
+import com.lp.client.frame.component.HvActionEvent;
 import com.lp.client.frame.component.InternalFrame;
 import com.lp.client.frame.component.ItemChangedEvent;
 import com.lp.client.frame.component.PanelBasis;
@@ -64,6 +65,7 @@ import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.frame.dialog.DialogFactory;
 import com.lp.client.pc.LPButtonAction;
 import com.lp.client.pc.LPMain;
+import com.lp.server.angebot.service.AngebotServiceFac;
 import com.lp.server.artikel.service.ArtikelDto;
 import com.lp.server.auftrag.service.AuftragServiceFac;
 import com.lp.server.auftrag.service.AuftragpositionDto;
@@ -81,14 +83,14 @@ import com.lp.util.Helper;
 /*
  * <p>Basisfenster fuer LP5 Positionen.</p> <p>Copyright Logistik Pur Software
  * GmbH (c) 2004-2008</p> <p>Erstellungsdatum 2005-02-11</p> <p> </p>
- * 
+ *
  * @author Uli Walch
- * 
+ *
  * @version $Revision: 1.32 $
  */
 public class PanelAuftragPositionen2 extends PanelPositionen2 {
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = 1L;
 	/** Cache for convenience. */
@@ -117,7 +119,7 @@ public class PanelAuftragPositionen2 extends PanelPositionen2 {
 
 	/**
 	 * Konstruktor.
-	 * 
+	 *
 	 * @param internalFrame
 	 *            der InternalFrame auf dem das Panel sitzt
 	 * @param add2TitleI
@@ -154,6 +156,18 @@ public class PanelAuftragPositionen2 extends PanelPositionen2 {
 				.darfAnwenderAufZusatzfunktionZugreifen(
 						MandantFac.ZUSATZFUNKTION_AUFTRAG_MIT_EINKAUFPREIS)) {
 			bPositionmiteinkaufpreis = true;
+		} else {
+			ParametermandantDto parameterDto = DelegateFactory
+					.getInstance()
+					.getParameterDelegate()
+					.getMandantparameter(LPMain.getTheClient().getMandant(),
+							ParameterFac.KATEGORIE_ANGEBOT,
+							ParameterFac.PARAMETER_LIEFERANT_ANGEBEN);
+			boolean bLieferantAngeben = (Boolean) parameterDto
+					.getCWertAsObject();
+			if (bLieferantAngeben) {
+				bPositionmiteinkaufpreis = true;
+			}
 		}
 
 		resetToolsPanel();
@@ -164,7 +178,7 @@ public class PanelAuftragPositionen2 extends PanelPositionen2 {
 
 		enableToolsPanelButtons(aWhichButtonIUse);
 
-		this.createAndSaveAndShowButton("/com/lp/client/res/check2.png",
+		this.createAndSaveAndShowButton("/com/lp/client/res/box_preferences.png",
 				LPMain.getTextRespectUISPr("bes.tooltip.manuellerledigen"),
 				ACTION_SPECIAL_POSITIONMANUELLERLEDIGEN,
 				RechteFac.RECHT_AUFT_AUFTRAG_CUD);
@@ -318,7 +332,6 @@ public class PanelAuftragPositionen2 extends PanelPositionen2 {
 			if (bPositionmiteinkaufpreis) {
 				wlaWaehrungEinkaufpreis.setText(tpAuftrag.getAuftragDto()
 						.getCAuftragswaehrung());
-				wnfEinkaufpreis.setBigDecimal(new BigDecimal(0));
 			}
 			wdfLieferterminPosition.setTimestamp(Helper
 					.cutTimestamp(datLieferterminKopfdaten));
@@ -366,7 +379,7 @@ public class PanelAuftragPositionen2 extends PanelPositionen2 {
 
 	/**
 	 * Behandle Ereignis Neu.
-	 * 
+	 *
 	 * @param eventObject
 	 *            Ereignis
 	 * @param bLockMeI
@@ -402,7 +415,7 @@ public class PanelAuftragPositionen2 extends PanelPositionen2 {
 	/**
 	 * Verwerfen der aktuelle Usereingabe und zurueckgehen auf den bestehenden
 	 * Datensatz, wenn einer existiert.
-	 * 
+	 *
 	 * @param e
 	 *            Ereignis
 	 * @throws Throwable
@@ -438,16 +451,16 @@ public class PanelAuftragPositionen2 extends PanelPositionen2 {
 			// posvkpf: 5
 			panelArtikel.setArtikelEingabefelderEditable(true);
 
-			((PanelPositionenArtikelVerkauf) panelArtikel).wbuPreisauswahl.setEnabled(
-					getInternalFrame().bRechtDarfPreiseAendernVerkauf);
-			
-//			if (getInternalFrame().bRechtDarfPreiseAendernVerkauf == true) {
-//				((PanelPositionenArtikelVerkauf) panelArtikel).wbuPreisauswahl
-//						.setEnabled(true);
-//			} else {
-//				((PanelPositionenArtikelVerkauf) panelArtikel).wbuPreisauswahl
-//						.setEnabled(false);
-//			}
+			((PanelPositionenArtikelVerkauf) panelArtikel).wbuPreisauswahl
+					.setEnabled(getInternalFrame().bRechtDarfPreiseAendernVerkauf);
+
+			// if (getInternalFrame().bRechtDarfPreiseAendernVerkauf == true) {
+			// ((PanelPositionenArtikelVerkauf) panelArtikel).wbuPreisauswahl
+			// .setEnabled(true);
+			// } else {
+			// ((PanelPositionenArtikelVerkauf) panelArtikel).wbuPreisauswahl
+			// .setEnabled(false);
+			// }
 
 			setzePositionsartAenderbar(auftragpositionDto);
 			panelArtikel.setzeEinheitAenderbar();
@@ -743,6 +756,14 @@ public class PanelAuftragPositionen2 extends PanelPositionen2 {
 								auftragpositionDto.getArtikelIId());
 					}
 
+
+					//SP2140
+					DelegateFactory
+							.getInstance()
+							.getAuftragDelegate()
+							.korrekturbetragZuruecknehmen(
+									auftragpositionDto.getBelegIId());
+
 					// buttons schalten
 					super.eventActionSave(e, false);
 
@@ -801,7 +822,7 @@ public class PanelAuftragPositionen2 extends PanelPositionen2 {
 	 * 2. Status der Position "TEILGELIEFERT": Es kann erhoeht oder auf die
 	 * bereits gelieferte Menge reduziert werden. 3. Status der Position
 	 * "GELIEFERT": Die Position kann nicht mehr geaendert werden.
-	 * 
+	 *
 	 * @param bdNeueMengeI
 	 *            die eingegebene Menge
 	 * @return boolean true, wenn die Mengenaenderung erlaubt ist
@@ -983,7 +1004,6 @@ public class PanelAuftragPositionen2 extends PanelPositionen2 {
 				ReportAuftragpositionsetikett pos = new ReportAuftragpositionsetikett(
 						getInternalFrame(), auftragpositionDto.getIId(), "");
 				getInternalFrame().showReportKriterien(pos);
-				
 
 			}
 		}
@@ -1029,7 +1049,12 @@ public class PanelAuftragPositionen2 extends PanelPositionen2 {
 							.removeAuftragposition(auftragpositionDto);
 					this.setKeyWhenDetailPanel(null);
 				}
-
+				//SP2140
+				DelegateFactory
+						.getInstance()
+						.getAuftragDelegate()
+						.korrekturbetragZuruecknehmen(
+								auftragpositionDto.getBelegIId());
 				super.eventActionDelete(e, false, false); // keyWasForLockMe
 				// nicht
 				// ueberschreiben
@@ -1079,7 +1104,7 @@ public class PanelAuftragPositionen2 extends PanelPositionen2 {
 
 	/**
 	 * Alle Positionsdaten aus dem Panel sammeln.
-	 * 
+	 *
 	 * @throws Throwable
 	 */
 	private void components2Dto() throws Throwable {
@@ -1211,14 +1236,38 @@ public class PanelAuftragPositionen2 extends PanelPositionen2 {
 
 	/**
 	 * Drucke Auftragbestaetigung.
-	 * 
+	 *
 	 * @param e
 	 *            Ereignis
 	 * @throws Throwable
 	 */
-	protected void eventActionPrint(ActionEvent e) throws Throwable {
-		tpAuftrag.printAuftragbestaetigung();
+	protected void eventActionPrint(HvActionEvent e) throws Throwable {
+
+		if (e.isMouseEvent() && e.isRightButtonPressed()) {
+
+			boolean bStatusAngelegt = tpAuftrag.getAuftragDto().getStatusCNr().equals(AngebotServiceFac.ANGEBOTSTATUS_ANGELEGT);
+			boolean bKonditionen = tpAuftrag.pruefeKonditionen();
+
+			if (bStatusAngelegt && bKonditionen) {
+				DelegateFactory.getInstance().getAuftragDelegate().berechneAktiviereBelegControlled(
+						tpAuftrag.getAuftragDto().getIId());
+				eventActionRefresh(e, false);
+			}
+			else if (!bStatusAngelegt) {
+				DialogFactory.showModalDialog("Status",
+						LPMain.getMessageTextRespectUISPr("status.zustand",
+								LPMain.getTextRespectUISPr("auft.auftrag"),
+								tpAuftrag.getAuftragStatus().trim()));
+			}
+
+		} else {
+			tpAuftrag.printAuftragbestaetigung();
+		}
 		// eventYouAreSelected(false);
+	}
+
+	protected void aktiviereOhnePrint(ActionEvent e) throws Throwable {
+		tpAuftrag.getAuftragStatus();
 	}
 
 	public void aktualisiereStatusbar() throws Throwable {
@@ -1328,25 +1377,25 @@ public class PanelAuftragPositionen2 extends PanelPositionen2 {
 		if (tpAuftrag.getAuftragDto().getIId() != null) {
 			if (AuftragServiceFac.AUFTRAGART_RAHMEN.equals(tpAuftrag
 					.getAuftragDto().getAuftragartCNr())) {
-				if (tpAuftrag.getAuftragDto().getAuftragstatusCNr()
+				if (tpAuftrag.getAuftragDto().getStatusCNr()
 						.equals(AuftragServiceFac.AUFTRAGSTATUS_STORNIERT)
 						|| tpAuftrag
 								.getAuftragDto()
-								.getAuftragstatusCNr()
+								.getStatusCNr()
 								.equals(AuftragServiceFac.AUFTRAGSTATUS_ERLEDIGT)) {
 					lockStateValue = new LockStateValue(
 							PanelBasis.LOCK_ENABLE_REFRESHANDPRINT_ONLY);
 				}
 			} else {
-				if (tpAuftrag.getAuftragDto().getAuftragstatusCNr()
+				if (tpAuftrag.getAuftragDto().getStatusCNr()
 						.equals(AuftragServiceFac.AUFTRAGSTATUS_STORNIERT)
 						|| tpAuftrag
 								.getAuftragDto()
-								.getAuftragstatusCNr()
+								.getStatusCNr()
 								.equals(AuftragServiceFac.AUFTRAGSTATUS_TEILERLEDIGT)
 						|| tpAuftrag
 								.getAuftragDto()
-								.getAuftragstatusCNr()
+								.getStatusCNr()
 								.equals(AuftragServiceFac.AUFTRAGSTATUS_ERLEDIGT)) {
 					lockStateValue = new LockStateValue(
 							PanelBasis.LOCK_ENABLE_REFRESHANDPRINT_ONLY);

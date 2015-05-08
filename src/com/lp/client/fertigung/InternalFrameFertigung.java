@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -47,6 +47,7 @@ import com.lp.server.fertigung.service.LosbereichDto;
 import com.lp.server.fertigung.service.LosklasseDto;
 import com.lp.server.fertigung.service.LosstatusDto;
 import com.lp.server.fertigung.service.WiederholendeloseDto;
+import com.lp.server.system.service.LocaleFac;
 import com.lp.server.system.service.MandantFac;
 
 @SuppressWarnings("static-access")
@@ -73,8 +74,10 @@ public class InternalFrameFertigung extends InternalFrame {
 	private TabbedPaneKapazitaetsvorschau tabbedPaneKapazitaetsvorschau = null;
 	private TabbedPaneFertigungGrunddaten tabbedPaneGrunddaten = null;
 	private TabbedPaneWiederholendelose tabbedPaneWiederholendelose = null;
+	private TabbedPaneOffeneAG tabbedPaneOffeneAG = null;
 
 	public static int IDX_TABBED_PANE_LOS = 0;
+	private int IDX_TABBED_PANE_OFFENE_AGS = -1;
 	public int IDX_TABBED_PANE_INTERNEBESTELLUNG = -1;
 	private int IDX_TABBED_PANE_KAPAZITAETSVORSCHAU = -1;
 	private int IDX_TABBED_PANE_WIEDERHOLENDELOSE = -1;
@@ -115,6 +118,24 @@ public class InternalFrameFertigung extends InternalFrame {
 						"fert.tab.unten.los.tooltip"), IDX_TABBED_PANE_LOS);
 		if (DelegateFactory.getInstance().getTheJudgeDelegate()
 				.hatRecht(RechteFac.RECHT_FERT_LOS_CUD)) {
+
+			if (LPMain
+					.getInstance()
+					.getDesktop()
+					.darfAnwenderAufModulZugreifen(
+							LocaleFac.BELEGART_ZEITERFASSUNG)) {
+
+				tabIndex++;
+				IDX_TABBED_PANE_OFFENE_AGS = tabIndex;
+				// 2 tab unten: Interne Bestellung
+				tabbedPaneRoot.insertTab(
+						LPMain.getInstance().getTextRespectUISPr(
+								"fert.offeneags"),
+						null,
+						null,
+						LPMain.getInstance().getTextRespectUISPr(
+								"fert.offeneags"), IDX_TABBED_PANE_OFFENE_AGS);
+			}
 			tabIndex++;
 			IDX_TABBED_PANE_INTERNEBESTELLUNG = tabIndex;
 			// 2 tab unten: Interne Bestellung
@@ -199,6 +220,10 @@ public class InternalFrameFertigung extends InternalFrame {
 			// Info an Tabbedpane, bist selektiert worden.
 			getTabbedPaneInternebestellung().lPEventObjectChanged(null);
 			setLpTitle(InternalFrame.TITLE_IDX_AS_I_LIKE, "");
+		} else if (selectedCur == IDX_TABBED_PANE_OFFENE_AGS) {
+			// Info an Tabbedpane, bist selektiert worden.
+			getTabbedPaneOffeneAG().lPEventObjectChanged(null);
+			setLpTitle(InternalFrame.TITLE_IDX_AS_I_LIKE, "");
 		} else if (selectedCur == IDX_TABBED_PANE_KAPAZITAETSVORSCHAU) {
 			// Info an Tabbedpane, bist selektiert worden.
 			getTabbedPaneKapazitaetsvorschau().lPEventObjectChanged(null);
@@ -234,6 +259,16 @@ public class InternalFrameFertigung extends InternalFrame {
 					tabbedPaneInternebestellung);
 		}
 		return tabbedPaneInternebestellung;
+	}
+
+	private TabbedPaneOffeneAG getTabbedPaneOffeneAG() throws Throwable {
+		if (tabbedPaneOffeneAG == null) {
+			// lazy loading
+			tabbedPaneOffeneAG = new TabbedPaneOffeneAG(this);
+			tabbedPaneRoot.setComponentAt(IDX_TABBED_PANE_OFFENE_AGS,
+					tabbedPaneOffeneAG);
+		}
+		return tabbedPaneOffeneAG;
 	}
 
 	private TabbedPaneKapazitaetsvorschau getTabbedPaneKapazitaetsvorschau()

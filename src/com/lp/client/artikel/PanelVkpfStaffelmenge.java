@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -75,6 +75,7 @@ import com.lp.server.artikel.service.VkPreisfindungPreislisteDto;
 import com.lp.server.artikel.service.VkpfMengenstaffelDto;
 import com.lp.server.artikel.service.VkpfartikelpreislisteDto;
 import com.lp.server.benutzer.service.RechteFac;
+import com.lp.server.system.service.MandantFac;
 import com.lp.server.system.service.ParameterFac;
 import com.lp.server.system.service.ParametermandantDto;
 import com.lp.util.Helper;
@@ -248,6 +249,15 @@ public class PanelVkpfStaffelmenge extends PanelBasis implements
 		wlaGestehungspreis = new WrapperLabel(LPMain.getInstance()
 				.getTextRespectUISPr("lp.gestehungspreis"));
 		wnfGestehungspreis = new WrapperNumberField();
+		
+		
+		int iNachkommastellenGestpreis=Defaults.getInstance().getIUINachkommastellenPreiseVK();
+		if(Defaults.getInstance().getIUINachkommastellenPreiseEK()>Defaults.getInstance().getIUINachkommastellenPreiseVK()){
+			iNachkommastellenGestpreis=Defaults.getInstance().getIUINachkommastellenPreiseEK();
+		}
+		wnfGestehungspreis.setFractionDigits(iNachkommastellenGestpreis);
+		
+		
 		wnfGestehungspreis.setActivatable(false);
 		wlaWaehrungGestehungspreis = new WrapperLabel(mandantenwaehrungCNr);
 		wlaWaehrungGestehungspreis
@@ -275,7 +285,14 @@ public class PanelVkpfStaffelmenge extends PanelBasis implements
 							this));
 		}
 		wnfVkbasis = new WrapperNumberField();
-		wnfVkbasis.setFractionDigits(iPreiseUINachkommastellen);
+		
+		if(vkPreisBasisLief1Preis){
+			wnfVkbasis.setFractionDigits(Defaults.getInstance().getIUINachkommastellenPreiseEK());
+		} else {
+			wnfVkbasis.setFractionDigits(iPreiseUINachkommastellen);
+		}
+		
+		
 		wnfVkbasis.setActivatable(false);
 		wlaVkbasiswaehrung = new WrapperLabel(mandantenwaehrungCNr);
 		wlaVkbasiswaehrung.setHorizontalAlignment(SwingConstants.LEADING);
@@ -480,6 +497,26 @@ public class PanelVkpfStaffelmenge extends PanelBasis implements
 			}
 
 			components2Dto();
+			
+			boolean bZentralerArtikelstamm = LPMain
+					.getInstance()
+					.getDesktop()
+					.darfAnwenderAufZusatzfunktionZugreifen(
+							MandantFac.ZUSATZFUNKTION_ZENTRALER_ARTIKELSTAMM);
+			if(bZentralerArtikelstamm){
+				
+				if(vkpfStaffelmengeDto.getVkpfartikelpreislisteIId()==null){
+					DialogFactory.showModalDialog(LPMain.getInstance()
+							.getTextRespectUISPr("lp.error"), LPMain.getInstance()
+							.getTextRespectUISPr("artikel.vkmengenstaffel.zentralerartikelstamm.error"));
+					return;
+					
+				}
+				
+				
+			}
+			
+			
 
 			if (vkpfStaffelmengeDto.getIId() == null) {
 				Integer iId = DelegateFactory.getInstance()

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -65,6 +65,8 @@ import com.lp.server.artikel.service.ArtikelDto;
 import com.lp.server.artikel.service.ArtikelFac;
 import com.lp.server.artikel.service.ArtikellieferantDto;
 import com.lp.server.artikel.service.LagerDto;
+import com.lp.server.stueckliste.service.StuecklisteDto;
+import com.lp.server.stueckliste.service.StuecklisteFac;
 import com.lp.server.system.service.LocaleFac;
 import com.lp.server.system.service.MandantFac;
 import com.lp.server.system.service.ParameterFac;
@@ -189,13 +191,16 @@ public abstract class PanelPositionenPreiseingabe extends PanelBasis implements
 	public WrapperSelectField wsfKostentraeger = new WrapperSelectField(
 			WrapperSelectField.KOSTENTRAEGER, getInternalFrame(), false);
 
+	public WrapperSelectField wsfLieferant = new WrapperSelectField(
+			WrapperSelectField.LIEFERANT, getInternalFrame(), true);
+
 	public WrapperLabel wlaLVPosition = new WrapperLabel();
 	public WrapperTextField wtfLVPosition = new WrapperTextField();
 
 	public WrapperButton wbuLager = new WrapperButton(
 			LPMain.getTextRespectUISPr("button.lager"));
 	public WrapperTextField wtfLager = new WrapperTextField();
-	public PanelQueryFLR panelQueryFLRLager = null;
+	public PanelQueryFLR panelQueryFLRArtikellager = null;
 	static final public String ACTION_SPECIAL_LAGER_FROM_LISTE = "action_lager_from_liste";
 	public Integer selectedlagerIId = null;
 
@@ -206,7 +211,7 @@ public abstract class PanelPositionenPreiseingabe extends PanelBasis implements
 			LagerDto lagerDto = DelegateFactory.getInstance()
 					.getLagerDelegate().lagerFindByPrimaryKey(selectedlagerIId);
 			wtfLager.setText(lagerDto.getCNr());
-			selectedlagerIId = lagerDto.getIId();
+			this.selectedlagerIId = lagerDto.getIId();
 		} else {
 			wtfLager.setText(null);
 		}
@@ -320,28 +325,44 @@ public abstract class PanelPositionenPreiseingabe extends PanelBasis implements
 
 	void dialogQueryLagerFromListe(ActionEvent e) throws Throwable {
 
-		if (artikelDto != null && artikelDto.getIId() != null) {
-			panelQueryFLRLager = new PanelQueryFLR(null, ArtikelFilterFactory
-					.getInstance().createFKArtikellager(artikelDto.getIId()),
+		boolean bSetartikel = false;
+		StuecklisteDto stklDto = DelegateFactory
+				.getInstance()
+				.getStuecklisteDelegate()
+				.stuecklisteFindByMandantCNrArtikelIIdOhneExc(
+						artikelDto.getIId());
+		if (stklDto != null
+				&& stklDto.getStuecklisteartCNr().equals(
+						StuecklisteFac.STUECKLISTEART_SETARTIKEL)) {
+			bSetartikel = true;
+		}
+
+		if (artikelDto != null && artikelDto.getIId() != null
+				&& bSetartikel == false) {
+
+			panelQueryFLRArtikellager = new PanelQueryFLR(null,
+					ArtikelFilterFactory.getInstance().createFKArtikellager(
+							artikelDto.getIId()),
 					QueryParameters.UC_ID_ARTIKELLAGER, null,
 					getInternalFrame(),
 					LPMain.getTextRespectUISPr("label.lager"));
-			panelQueryFLRLager.befuellePanelFilterkriterienDirektUndVersteckte(
-					null, null, ArtikelFilterFactory.getInstance()
-							.createFKVLager());
+			panelQueryFLRArtikellager
+					.befuellePanelFilterkriterienDirektUndVersteckte(null,
+							null, ArtikelFilterFactory.getInstance()
+									.createFKVLager());
 			if (artikelDto.getIId() != null && selectedlagerIId != null) {
-				panelQueryFLRLager.setSelectedId(new WwArtikellagerPK(
+				panelQueryFLRArtikellager.setSelectedId(new WwArtikellagerPK(
 						artikelDto.getIId(), selectedlagerIId));
 			}
-			new DialogQuery(panelQueryFLRLager);
+			new DialogQuery(panelQueryFLRArtikellager);
 
 		} else {
 			// Wenn noch kein Artikel Ausgewaehlt ist, dann normale Lagerliste
 			// anzeigen
-			panelQueryFLRLager = ArtikelFilterFactory.getInstance()
+			panelQueryFLRArtikellager = ArtikelFilterFactory.getInstance()
 					.createPanelFLRLager(getInternalFrame(), selectedlagerIId);
 
-			new DialogQuery(panelQueryFLRLager);
+			new DialogQuery(panelQueryFLRArtikellager);
 		}
 	}
 
@@ -354,15 +375,34 @@ public abstract class PanelPositionenPreiseingabe extends PanelBasis implements
 		wtfArtikel = wifArtikelauswahl.getWtfIdent();
 		wlaBezeichnung = wifArtikelauswahl.getWlaBezeichnumg();
 		wtfBezeichnung = wifArtikelauswahl.getWtfBezeichnung();
+		wtfBezeichnung.setActivatable(true);
 		wtfZusatzbezeichnung = wifArtikelauswahl.getWtfZusatzBezeichnung();
+		wtfZusatzbezeichnung.setActivatable(true);
 
 		wbuLager.addActionListener(this);
 		wbuLager.setActionCommand(ACTION_SPECIAL_LAGER_FROM_LISTE);
 		wtfLager.setActivatable(false);
 		// Zeile 1 des Artikelsblocks
-		oPanelI.add(wbuArtikelauswahl, new GridBagConstraints(0, iZeileI, 1, 1,
-				0.0, 0.0, GridBagConstraints.NORTH,
-				GridBagConstraints.HORIZONTAL, new Insets(1, 2, 1, 2), 0, 0));
+
+		// Im VK-Panel
+		if (this instanceof PanelPositionenArtikelVerkauf) {
+
+			oPanelI.add(wifArtikelauswahl.getKundenidentnummerButton(),
+					new GridBagConstraints(0, iZeileI, 1, 1, 0, 0.0,
+							GridBagConstraints.WEST, GridBagConstraints.NONE,
+							new Insets(1, 2, 1, 2), 10, 0));
+			oPanelI.add(wbuArtikelauswahl, new GridBagConstraints(0, iZeileI,
+					1, 1, 0.0, 0.0, GridBagConstraints.NORTH,
+					GridBagConstraints.HORIZONTAL, new Insets(1, 22, 1, 2), 0,
+					0));
+		} else {
+			oPanelI.add(wbuArtikelauswahl,
+					new GridBagConstraints(0, iZeileI, 1, 1, 0.0, 0.0,
+							GridBagConstraints.NORTH,
+							GridBagConstraints.HORIZONTAL, new Insets(1, 2, 1,
+									2), 0, 0));
+		}
+
 		oPanelI.add(wtfArtikel, new GridBagConstraints(1, iZeileI, 1, 1, 0.0,
 				0.0, GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL,
 				new Insets(1, 2, 1, 2), 0, 0));
@@ -678,6 +718,12 @@ public abstract class PanelPositionenPreiseingabe extends PanelBasis implements
 
 		iZeileI++;
 
+		oPanelI.add(
+				new WrapperLabel(LPMain.getTextRespectUISPr("agstkl.label.nettovkpreis")),
+				new GridBagConstraints(5, iZeileI, 1, 1, 0.0, 0.0,
+						GridBagConstraints.CENTER, GridBagConstraints.BOTH,
+						new Insets(1, 2, 1, 2), 0, 0));
+
 		oPanelI.add(wnfGesamtpreisMitAufschlag, new GridBagConstraints(6,
 				iZeileI, 1, 1, 0.0, 0.0, GridBagConstraints.WEST,
 				GridBagConstraints.BOTH, new Insets(1, 2, 1, 2), 0, 0));
@@ -884,6 +930,37 @@ public abstract class PanelPositionenPreiseingabe extends PanelBasis implements
 					1, iYGridBagNext, 3, 1, 0.0, 0.0,
 					GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 					new Insets(1, 2, 1, 2), 0, 0));
+		} else {
+			// PJ18312
+			if (this instanceof PanelPositionenArtikelVerkauf
+					&& getInternalFrame().getBelegartCNr() != null
+					&& (getInternalFrame().getBelegartCNr().equals(
+							LocaleFac.BELEGART_ANGEBOT) || getInternalFrame()
+							.getBelegartCNr()
+							.equals(LocaleFac.BELEGART_AUFTRAG))) {
+
+				ParametermandantDto parameterDto = DelegateFactory
+						.getInstance()
+						.getParameterDelegate()
+						.getMandantparameter(
+								LPMain.getTheClient().getMandant(),
+								ParameterFac.KATEGORIE_ANGEBOT,
+								ParameterFac.PARAMETER_LIEFERANT_ANGEBEN);
+				boolean bLieferantAngeben = (Boolean) parameterDto
+						.getCWertAsObject();
+				if (bLieferantAngeben == true) {
+					add(wsfLieferant.getWrapperButton(),
+							new GridBagConstraints(0, iYGridBagNext, 1, 1, 0.0,
+									0.0, GridBagConstraints.CENTER,
+									GridBagConstraints.BOTH, new Insets(1, 2,
+											1, 2), 0, 0));
+					add(wsfLieferant.getWrapperTextField(),
+							new GridBagConstraints(1, iYGridBagNext, 3, 1, 0.0,
+									0.0, GridBagConstraints.CENTER,
+									GridBagConstraints.BOTH, new Insets(1, 2,
+											1, 2), 0, 0));
+				}
+			}
 		}
 
 		oPanelI.add(wlaGestpreis, new GridBagConstraints(1, iYGridBagNext, 2,
@@ -1730,7 +1807,7 @@ public abstract class PanelPositionenPreiseingabe extends PanelBasis implements
 					}
 
 				}
-			} else if (e.getSource() == panelQueryFLRLager) {
+			} else if (e.getSource() == panelQueryFLRArtikellager) {
 				Object key = ((ISourceEvent) e.getSource()).getIdSelected();
 
 				// PJ 17798
@@ -1745,7 +1822,7 @@ public abstract class PanelPositionenPreiseingabe extends PanelBasis implements
 				selectedlagerIId = lagerDto.getIId();
 			}
 		} else if (e.getID() == ItemChangedEvent.ACTION_LEEREN) {
-			if (e.getSource() == panelQueryFLRLager) {
+			if (e.getSource() == panelQueryFLRArtikellager) {
 				selectedlagerIId = null;
 				wtfLager.setText(null);
 

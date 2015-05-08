@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -40,11 +40,11 @@ import javax.swing.JTabbedPane;
 
 import com.lp.client.frame.component.InternalFrame;
 import com.lp.client.frame.delegate.DelegateFactory;
-import com.lp.client.partner.DialogWiedervorlage;
 import com.lp.client.pc.LPMain;
 import com.lp.server.benutzer.service.RechteFac;
 import com.lp.server.personal.service.DiaetenDto;
 import com.lp.server.personal.service.MaschineDto;
+import com.lp.server.personal.service.MaschinenzmDto;
 import com.lp.server.personal.service.PersonalDto;
 import com.lp.server.system.service.MandantFac;
 
@@ -76,15 +76,17 @@ public class InternalFrameZeiterfassung extends InternalFrame {
 	private TabbedPaneSondertaetigkeiten tabbedPaneSondertaetigkeiten = null;
 	private TabbedPaneMaschinen tabbedPaneMaschinen = null;
 	private TabbedPaneZeitstifte tabbedPaneZeitstifte = null;
+	private TabbedPaneMaschinenzeitmodell tabbedPaneMaschinenzeitmodell = null;
 	private TabbedPaneDiaeten tabbedPaneDiaeten = null;
 	private TabbedPaneZeiterfassunggrunddaten tabbedPaneZeiterfassunggrunddaten = null;
 
-	private int IDX_TABBED_PANE_ZEITERFASSUNG = -1;
-	private int IDX_TABBED_PANE_SONDERTAETIGKEITEN = -1;
-	private int IDX_TABBED_PANE_MASCHINEN = -1;
-	private int IDX_TABBED_PANE_ZEITSTIFTE = -1;
-	private int IDX_TABBED_PANE_DIAETEN = -1;
-	private int IDX_TABBED_PANE_GRUNDDATEN = -1;
+	public static int IDX_TABBED_PANE_ZEITERFASSUNG = -1;
+	public static int IDX_TABBED_PANE_SONDERTAETIGKEITEN = -1;
+	public int IDX_TABBED_PANE_MASCHINEN = -1;
+	public int IDX_TABBED_PANE_MASCHINENZEITMODELL = -1;
+	public int IDX_TABBED_PANE_ZEITSTIFTE = -1;
+	public int IDX_TABBED_PANE_DIAETEN = -1;
+	public int IDX_TABBED_PANE_GRUNDDATEN = -1;
 
 	public boolean bRechtNurBuchen = true;
 
@@ -93,6 +95,16 @@ public class InternalFrameZeiterfassung extends InternalFrame {
 	private MaschineDto maschineDto = null;
 
 	private DiaetenDto diaetenDto = null;
+	
+	public MaschinenzmDto getMaschinenzmDto() {
+		return maschinenzmDto;
+	}
+
+	public void setMaschinenzmDto(MaschinenzmDto maschinenzmDto) {
+		this.maschinenzmDto = maschinenzmDto;
+	}
+
+	private MaschinenzmDto maschinenzmDto=null;
 
 	public DialogLoseEinesTechnikers dialogLoseEinesTechnikers = null;
 
@@ -186,6 +198,17 @@ public class InternalFrameZeiterfassung extends InternalFrame {
 							null,
 							LPMain.getTextRespectUISPr("zeiterfassung.title.tab.maschinen"),
 							IDX_TABBED_PANE_MASCHINEN);
+			
+			tabIndex++;
+			IDX_TABBED_PANE_MASCHINENZEITMODELL = tabIndex;
+			tabbedPaneRoot
+					.insertTab(
+							LPMain.getTextRespectUISPr("pers.maschinenzeitmodell"),
+							null,
+							null,
+							LPMain.getTextRespectUISPr("pers.maschinenzeitmodell"),
+							IDX_TABBED_PANE_MASCHINENZEITMODELL);
+			
 
 		}
 		// zusatzberecht:3 So wir auf die neue Berechtigung abgefragt
@@ -296,6 +319,16 @@ public class InternalFrameZeiterfassung extends InternalFrame {
 			initComponents();
 		}
 	}
+	private void createTabbedPaneMaschinenzeitmodell(JTabbedPane tabbedPane)
+			throws Throwable {
+		if (tabbedPane == null) {
+			// lazy loading
+			tabbedPaneMaschinenzeitmodell = new TabbedPaneMaschinenzeitmodell(this);
+			tabbedPaneRoot.setComponentAt(IDX_TABBED_PANE_MASCHINENZEITMODELL,
+					tabbedPaneMaschinenzeitmodell);
+			initComponents();
+		}
+	}
 
 	private void createTabbedPaneZeitstifte(JTabbedPane tabbedPane)
 			throws Throwable {
@@ -337,6 +370,10 @@ public class InternalFrameZeiterfassung extends InternalFrame {
 			createTabbedPaneMaschinen(tabbedPane);
 			// Info an Tabbedpane, bist selektiert worden.
 			tabbedPaneMaschinen.lPEventObjectChanged(null);
+		} else if (selectedCur == IDX_TABBED_PANE_MASCHINENZEITMODELL) {
+			createTabbedPaneMaschinenzeitmodell(tabbedPane);
+			// Info an Tabbedpane, bist selektiert worden.
+			tabbedPaneMaschinenzeitmodell.lPEventObjectChanged(null);
 		} else if (selectedCur == IDX_TABBED_PANE_ZEITSTIFTE) {
 			createTabbedPaneZeitstifte(tabbedPane);
 			// Info an Tabbedpane, bist selektiert worden.

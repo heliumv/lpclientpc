@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -46,6 +46,7 @@ import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.border.Border;
 
+
 import com.lp.client.auftrag.AuftragFilterFactory;
 import com.lp.client.frame.Defaults;
 import com.lp.client.frame.HelperClient;
@@ -56,6 +57,7 @@ import com.lp.client.frame.component.ItemChangedEvent;
 import com.lp.client.frame.component.PanelBasis;
 import com.lp.client.frame.component.PanelQueryFLR;
 import com.lp.client.frame.component.WrapperButton;
+import com.lp.client.frame.component.WrapperCheckBox;
 import com.lp.client.frame.component.WrapperLabel;
 import com.lp.client.frame.component.WrapperNumberField;
 import com.lp.client.frame.component.WrapperTextField;
@@ -109,6 +111,7 @@ public class PanelEingangsrechnungAuftragszuordnung extends PanelBasis {
 	private WrapperLabel wlaWaehrung2 = new WrapperLabel();
 	private WrapperTextField wtfText = new WrapperTextField();
 	private WrapperButton wbuRest = new WrapperButton();
+	private WrapperCheckBox wcbKeineAuftragswertung = new WrapperCheckBox();
 	private Border border1;
 
 	public PanelEingangsrechnungAuftragszuordnung(InternalFrame internalFrame,
@@ -157,6 +160,10 @@ public class PanelEingangsrechnungAuftragszuordnung extends PanelBasis {
 		wlaBetragOffen.setText(LPMain.getInstance().getTextRespectUISPr(
 				"label.offen"));
 		wlaText.setText(LPMain.getInstance().getTextRespectUISPr("label.text"));
+		
+		wcbKeineAuftragswertung.setText(LPMain.getInstance().getTextRespectUISPr("er.auftragszuordnung.keineauftragswertung"));
+		
+		
 		jpaWorkingOn.setLayout(gridBagLayout3);
 		wlaAbstand1.setMinimumSize(new Dimension(100, Defaults.getInstance()
 				.getControlHeight()));
@@ -210,6 +217,11 @@ public class PanelEingangsrechnungAuftragszuordnung extends PanelBasis {
 		jpaWorkingOn.add(wlaWaehrung1, new GridBagConstraints(2, iZeile, 1, 1,
 				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(2, 2, 2, 2), 0, 0));
+		
+		jpaWorkingOn.add(wcbKeineAuftragswertung, new GridBagConstraints(2, iZeile, 1, 1,
+				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
+				new Insets(2, 40, 2, 2), 0, 0));
+		
 		jpaWorkingOn.add(wbuRest, new GridBagConstraints(3, iZeile, 1, 1, 1.0,
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(2, 2, 2, 2), 0, 0));
@@ -345,6 +357,8 @@ public class PanelEingangsrechnungAuftragszuordnung extends PanelBasis {
 		}
 		erAzDto.setNBetrag(wnfBetrag.getBigDecimal());
 		erAzDto.setCText(wtfText.getText());
+		erAzDto.setBKeineAuftragswertung(wcbKeineAuftragswertung.getShort());
+
 	}
 
 	private void dto2Components() throws Throwable {
@@ -356,7 +370,8 @@ public class PanelEingangsrechnungAuftragszuordnung extends PanelBasis {
 							(Integer) getKeyWhenDetailPanel());
 		}
 
-		if (getTabbedPane().getEingangsrechnungDto().getNBetragfw().doubleValue() < 0) {
+		if (getTabbedPane().getEingangsrechnungDto().getNBetragfw()
+				.doubleValue() < 0) {
 			wnfBetrag.setMaximumValue(0);
 			wnfBetrag.setMinimumValue(getTabbedPane().getEingangsrechnungDto()
 					.getNBetragfw());
@@ -379,6 +394,8 @@ public class PanelEingangsrechnungAuftragszuordnung extends PanelBasis {
 					.getEingangsrechnungDelegate()
 					.getWertNochNichtZuAuftraegenZugeordnet(
 							getTabbedPane().getEingangsrechnungDto().getIId()));
+			wcbKeineAuftragswertung
+					.setShort(erAzDto.getBKeineAuftragswertung());
 			this.setStatusbarPersonalIIdAnlegen(erAzDto.getPersonalIIdAnlegen());
 			this.setStatusbarTAnlegen(erAzDto.getTAnlegen());
 			this.setStatusbarPersonalIIdAendern(erAzDto.getPersonalIIdAendern());
@@ -431,18 +448,42 @@ public class PanelEingangsrechnungAuftragszuordnung extends PanelBasis {
 		if (e.getID() == ItemChangedEvent.GOTO_DETAIL_PANEL) {
 			if (e.getSource() == panelQueryFLRAuftrag) {
 				Object key = ((ISourceEvent) e.getSource()).getIdSelected();
-				
+
 				auftragDto = DelegateFactory.getInstance().getAuftragDelegate()
 						.auftragFindByPrimaryKey((Integer) key);
-				
-				if(auftragDto.getAuftragstatusCNr().equals(AuftragServiceFac.AUFTRAGSTATUS_ERLEDIGT)){
-					DialogFactory.showModalDialog(LPMain.getInstance().getTextRespectUISPr(
-							"lp.error"), LPMain.getInstance().getTextRespectUISPr(
-									"er.auftragszuordnung.error.auftragerledigt"));
+
+				if (auftragDto.getStatusCNr().equals(
+						AuftragServiceFac.AUFTRAGSTATUS_ERLEDIGT)) {
+					if (DelegateFactory
+							.getInstance()
+							.getTheJudgeDelegate()
+							.hatRecht(
+									com.lp.server.benutzer.service.RechteFac.RECHT_AUFT_DARF_AUFTRAG_ERLEDIGEN)) {
+
+						boolean b = DialogFactory
+								.showModalJaNeinDialog(
+										getInternalFrame(),
+										LPMain.getInstance()
+												.getTextRespectUISPr(
+														"er.auftragszuordnung.frage.erleidgte"));
+						if (b == true) {
+							holeAuftrag(key);
+						}
+
+					} else {
+						DialogFactory
+								.showModalDialog(
+										LPMain.getInstance()
+												.getTextRespectUISPr("lp.error"),
+										LPMain.getInstance()
+												.getTextRespectUISPr(
+														"er.auftragszuordnung.error.auftragerledigt"));
+					}
+
 				} else {
 					holeAuftrag(key);
 				}
-				
+
 			}
 		}
 	}
@@ -462,7 +503,8 @@ public class PanelEingangsrechnungAuftragszuordnung extends PanelBasis {
 		super.eventYouAreSelected(false);
 		Object key = getKeyWhenDetailPanel();
 
-		if (getTabbedPane().getEingangsrechnungDto().getNBetragfw().doubleValue() < 0) {
+		if (getTabbedPane().getEingangsrechnungDto().getNBetragfw()
+				.doubleValue() < 0) {
 			wnfBetrag.setMaximumValue(0);
 			wnfBetrag.setMinimumValue(getTabbedPane().getEingangsrechnungDto()
 					.getNBetragfw());
@@ -471,17 +513,17 @@ public class PanelEingangsrechnungAuftragszuordnung extends PanelBasis {
 					.getNBetragfw());
 			wnfBetrag.setMinimumValue(0);
 		}
-
+		wlaWaehrung1.setText(getTabbedPane().getEingangsrechnungDto()
+				.getWaehrungCNr());
+		wlaWaehrung2.setText(getTabbedPane().getEingangsrechnungDto()
+				.getWaehrungCNr());
 		if (key == null
 				|| (key != null && key.equals(LPMain.getLockMeForNew()))) {
 			// einen neuen Eintrag anlegen oder die letzte Position wurde
 			// geloescht.
 
 			leereAlleFelder(this);
-			wlaWaehrung1.setText(getTabbedPane().getEingangsrechnungDto()
-					.getWaehrungCNr());
-			wlaWaehrung2.setText(getTabbedPane().getEingangsrechnungDto()
-					.getWaehrungCNr());
+			
 
 			wnfBetragOffen.setBigDecimal(DelegateFactory
 					.getInstance()

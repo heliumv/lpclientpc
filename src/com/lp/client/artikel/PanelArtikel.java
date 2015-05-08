@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -47,8 +47,12 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.EventObject;
 import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -65,6 +69,8 @@ import com.lp.client.frame.component.InternalFrame;
 import com.lp.client.frame.component.ItemChangedEvent;
 import com.lp.client.frame.component.MultipleImageViewer;
 import com.lp.client.frame.component.PanelBasis;
+import com.lp.client.frame.component.PanelDokumentenablage;
+import com.lp.client.frame.component.PanelFilterKriteriumDirekt;
 import com.lp.client.frame.component.PanelQueryFLR;
 import com.lp.client.frame.component.WrapperButton;
 import com.lp.client.frame.component.WrapperCheckBox;
@@ -77,6 +83,9 @@ import com.lp.client.frame.component.WrapperSelectField;
 import com.lp.client.frame.component.WrapperTextField;
 import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.frame.dialog.DialogFactory;
+import com.lp.client.partner.InternalFramePartner;
+import com.lp.client.partner.PartnerFilterFactory;
+import com.lp.client.partner.TabbedPanePartner;
 import com.lp.client.pc.LPMain;
 import com.lp.server.artikel.service.ArtgruDto;
 import com.lp.server.artikel.service.ArtikelDto;
@@ -86,10 +95,14 @@ import com.lp.server.artikel.service.ArtikelsprDto;
 import com.lp.server.artikel.service.ArtklaDto;
 import com.lp.server.artikel.service.HerstellerDto;
 import com.lp.server.artikel.service.VorschlagstextDto;
+import com.lp.server.benutzer.service.RechteFac;
 import com.lp.server.partner.service.KundeDto;
 import com.lp.server.stueckliste.service.FertigungsgruppeDto;
 import com.lp.server.stueckliste.service.StuecklisteDto;
 import com.lp.server.stueckliste.service.StuecklisteFac;
+import com.lp.server.system.jcr.service.JCRRepoInfo;
+import com.lp.server.system.jcr.service.PrintInfoDto;
+import com.lp.server.system.jcr.service.docnode.DocPath;
 import com.lp.server.system.service.LocaleFac;
 import com.lp.server.system.service.MandantDto;
 import com.lp.server.system.service.MandantFac;
@@ -98,9 +111,13 @@ import com.lp.server.system.service.PaneldatenDto;
 import com.lp.server.system.service.ParameterFac;
 import com.lp.server.system.service.ParametermandantDto;
 import com.lp.server.system.service.SystemFac;
+import com.lp.server.util.Facade;
+import com.lp.server.util.fastlanereader.service.query.FilterKriterium;
+import com.lp.server.util.fastlanereader.service.query.FilterKriteriumDirekt;
 import com.lp.server.util.fastlanereader.service.query.QueryParameters;
 import com.lp.util.EJBExceptionLP;
 import com.lp.util.Helper;
+import com.lp.util.SiWertParser;
 import com.lp.util.siprefixparser.BigDecimalSI;
 
 public class PanelArtikel extends PanelBasis {
@@ -134,6 +151,9 @@ public class PanelArtikel extends PanelBasis {
 	private WrapperTextField wtfArtikelgruppe = new WrapperTextField();
 	private WrapperButton wbuGeneriereArtikelnummer = new WrapperButton();
 	private WrapperTextField wtfHerstellerKuerzel = new WrapperTextField();
+
+	private WrapperLabel wlaVorzugsteil = new WrapperLabel();
+	private WrapperComboBox wcoVorzugsteil = new WrapperComboBox();
 
 	private WrapperButton wbuHersteller = new WrapperButton();
 	private WrapperTextField wtfHersteller = new WrapperTextField();
@@ -225,10 +245,26 @@ public class PanelArtikel extends PanelBasis {
 	private PanelQueryFLR panelQueryFLRVorschlagstextZBEZ = null;
 	private PanelQueryFLR panelQueryFLRVorschlagstextZBEZ2 = null;
 
+	private SiWertParser siwertParser;
+	// PJ18691
+	private static final ImageIcon DOKUMENTE = HelperClient
+			.createImageIcon("document_attachment_green16x16.png");
+	private static final ImageIcon KEINE_DOKUMENTE = HelperClient
+			.createImageIcon("document_attachment16x16.png");
+	private JButton jbDokumente;
+	public final static String MY_OWN_NEW_DOKUMENTENABLAGE = PanelBasis.LEAVEALONE
+			+ "DOKUMENTENABLAGE";
+	public final static String MY_OWN_NEW_GOTO_SOKO = PanelBasis.LEAVEALONE
+			+ "GOTO_SOKO";
+
 	public PanelArtikel(InternalFrame internalFrame, String add2TitleI,
 			Object pk) throws Throwable {
 		super(internalFrame, add2TitleI, pk);
 		internalFrameArtikel = (InternalFrameArtikel) internalFrame;
+
+		siwertParser = new SiWertParser(getSiOhneEinheitenFromParam(),
+				getSiEinheitenFromParam());
+
 		jbInit();
 		setDefaults();
 		initComponents();
@@ -282,6 +318,61 @@ public class PanelArtikel extends PanelBasis {
 			wtfArtikelnummer.setText(DelegateFactory.getInstance()
 					.getArtikelDelegate()
 					.generiereNeueArtikelnummer(wtfArtikelnummer.getText()));
+		} else if (e.getActionCommand().equals(MY_OWN_NEW_GOTO_SOKO)) {
+
+			FilterKriterium[] fk = new FilterKriterium[] { new FilterKriterium(
+					"kundesoko.flrartikel.i_id", false, internalFrameArtikel
+							.getArtikelDto().getIId() + "",
+					FilterKriterium.OPERATOR_EQUAL, false) };
+
+			getInternalFrame()
+					.geheZu(InternalFrameArtikel.IDX_TABBED_PANE_KUNDENARTIKELNUMMERN,
+							TabbedPaneKundenartikelnummern.IDX_PANEL_KUNDENARTIKELNUMMERN,
+							null, null, fk);
+
+			if (internalFrameArtikel.getTabbedPaneKundenartikelnummern() != null) {
+				LinkedHashMap<Integer, PanelFilterKriteriumDirekt> hm = internalFrameArtikel
+						.getTabbedPaneKundenartikelnummern().preislistennameTop
+						.getHmDirektFilter();
+				Iterator<Integer> it = hm.keySet().iterator();
+				while (it.hasNext()) {
+					PanelFilterKriteriumDirekt fdk = hm.get(it.next());
+					if (fdk.fkd
+							.equals(internalFrameArtikel
+									.getTabbedPaneKundenartikelnummern().fkdArtikelnummer))
+						fdk.wtfFkdirektValue1.setText(internalFrameArtikel
+								.getArtikelDto().getCNr());
+				}
+				internalFrameArtikel.getTabbedPaneKundenartikelnummern().preislistennameTop
+						.eventYouAreSelected(false);
+			}
+
+		} else if (e.getActionCommand().equals(MY_OWN_NEW_DOKUMENTENABLAGE)) {
+			PrintInfoDto values = DelegateFactory
+					.getInstance()
+					.getJCRDocDelegate()
+					.getPathAndPartnerAndTable(
+							internalFrameArtikel.getArtikelDto().getIId(),
+							QueryParameters.UC_ID_ARTIKELLISTE);
+
+			DocPath docPath = values.getDocPath();
+			Integer iPartnerIId = values.getiId();
+			String sTable = values.getTable();
+			if (docPath != null) {
+				PanelDokumentenablage panelDokumentenverwaltung = new PanelDokumentenablage(
+						getInternalFrame(), internalFrameArtikel
+								.getArtikelDto().getIId().toString(), docPath,
+						sTable, internalFrameArtikel.getArtikelDto().getIId()
+								.toString(), true, iPartnerIId);
+				getInternalFrame().showPanelDialog(panelDokumentenverwaltung);
+				getInternalFrame().addItemChangedListener(
+						panelDokumentenverwaltung);
+			} else {
+				// Show Dialog
+				DialogFactory.showModalDialog(
+						LPMain.getTextRespectUISPr("lp.hint"),
+						LPMain.getTextRespectUISPr("jcr.hinweis.keinpfad"));
+			}
 		}
 
 		else if (e.getActionCommand().equals(ACTION_SPECIAL_VORSCHLAGSTEXT_BEZ)) {
@@ -596,10 +687,10 @@ public class PanelArtikel extends PanelBasis {
 			}
 
 		}
-
 	}
 
 	private void jbInit() throws Throwable {
+
 		// das Aussenpanel hat immer das Gridbaglayout.
 		gridBagLayoutAll = new GridBagLayout();
 		this.setLayout(gridBagLayoutAll);
@@ -719,17 +810,8 @@ public class PanelArtikel extends PanelBasis {
 		wtfZusatzbez.setColumnsMax(ArtikelFac.MAX_ARTIKEL_ZUSATZBEZEICHNUNG);
 		wtfZusatzbez2.setColumnsMax(ArtikelFac.MAX_ARTIKEL_ZUSATZBEZEICHNUNG2);
 		wtfReferenznummer.setColumnsMax(ArtikelFac.MAX_ARTIKEL_REFERENZNUMMER);
-		
-		KeyListener siListener = new KeyAdapter() {
-			@Override
-			public void keyReleased(KeyEvent e) {
-				siWertBerechnenAusTextfeldern();
-			}
-		};
 
-		wtfBezeichnung.addKeyListener(siListener);
-		wtfZusatzbez.addKeyListener(siListener);
-		wtfZusatzbez2.addKeyListener(siListener);
+		installSiKeyListeners();
 
 		wbuArtikelklasse.setText(LPMain.getTextRespectUISPr("lp.artikelklasse")
 				+ "...");
@@ -759,7 +841,7 @@ public class PanelArtikel extends PanelBasis {
 		wtfIndex.setColumnsMax(15);
 		wtfIndex.setToken("index");
 		wlaRevision.setText(LPMain.getTextRespectUISPr("artikel.revision"));
-		wtfRevision.setColumnsMax(15);
+		wtfRevision.setColumnsMax(ArtikelFac.MAX_ARTIKEL_REVISION);
 		wtfRevision.setToken("revision");
 
 		wlaMehrwertsteuersatz.setText(LPMain.getTextRespectUISPr("lp.mwst"));
@@ -789,7 +871,7 @@ public class PanelArtikel extends PanelBasis {
 
 		bPaternosterVerfuegbar = DelegateFactory.getInstance()
 				.getAutoPaternosterDelegate().isPaternosterVerfuegbar();
-		
+
 		wcoArtikelart.setMandatoryField(true);
 		wcoArtikelart.addActionListener(this);
 		wcoArtikelart.setToken("artikelart");
@@ -863,6 +945,8 @@ public class PanelArtikel extends PanelBasis {
 		wkvfBestellt.setKey(LPMain.getTextRespectUISPr("lp.bestellt") + ": ");
 		wkvfBestellt.setToken("bestellt");
 
+		wlaVorzugsteil.setText(LPMain.getTextRespectUISPr("artikel.vorzug"));
+
 		wkvfRahmenbedarf = new WrapperKeyValueField(iBreite);
 		wkvfRahmenbedarf.setKey(LPMain
 				.getTextRespectUISPr("artikel.rahmenbedarf") + ": ");
@@ -877,33 +961,38 @@ public class PanelArtikel extends PanelBasis {
 
 		wbuStkl.setActionCommand(ACTION_SPECIAL_STKL_NEU_ERZEUGEN);
 		wbuStkl.addActionListener(this);
-
 		wbuStkl.setActivatable(false);
 		wbuStkl.setText(LPMain.getTextRespectUISPr("artikel.detail.stkl"));
 
-		jpaPanelWorkingOn = new JPanel(new MigLayout("wrap 6", "[22.5%,fill][15%,fill][10%,fill][17.5%,fill][17.5%,fill][17.5%,fill]"));
-		this.add(jpaButtonAction, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(0, 0, 0, 0), 0, 0));
-		this.add(jpaPanelWorkingOn, new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0, GridBagConstraints.NORTHEAST, GridBagConstraints.BOTH, new Insets(0, 0, 9, 0), 0, 0));
-		this.add(getPanelStatusbar(), new GridBagConstraints(0, 2, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(0, 0, 0, 0), 0, 0));
+		jpaPanelWorkingOn = new JPanel(
+				new MigLayout("wrap 6",
+						"[22.5%,fill][15%,fill][10%,fill][17.5%,fill][17.5%,fill][17.5%,fill]"));
+		this.add(jpaButtonAction, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(0,
+						0, 0, 0), 0, 0));
+		this.add(jpaPanelWorkingOn, new GridBagConstraints(0, 1, 1, 1, 1.0,
+				1.0, GridBagConstraints.NORTHEAST, GridBagConstraints.BOTH,
+				new Insets(0, 0, 9, 0), 0, 0));
+		this.add(getPanelStatusbar(), new GridBagConstraints(0, 2, 1, 1, 1.0,
+				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
+				new Insets(0, 0, 0, 0), 0, 0));
 
 		iZeile = 0;
-		
 
 		jpaPanelWorkingOn.add(wlaArtikelnummer, "growx 75, split 2");
 		jpaPanelWorkingOn.add(wbuGeneriereArtikelnummer, "growx 25");
-		
-//		jpaPanelWorkingOn.add(wlaArtikelnummer,
-//				new GridBagConstraints(0, iZeile, 1, 1, 0.0, 0.0,
-//						GridBagConstraints.CENTER,
-//						GridBagConstraints.HORIZONTAL,
-//						new Insets(10, 2, 2, 52), 100, 0));
-//		jpaPanelWorkingOn.add(wbuGeneriereArtikelnummer,
-//				new GridBagConstraints(0, iZeile, 1, 1, 0.0, 0.0,
-//						GridBagConstraints.EAST, GridBagConstraints.NONE,
-//						new Insets(10, 0, 0, 0), 40, 0));
 
-		jpaPanelWorkingOn
-				.add(wtfArtikelnummer);
+		// jpaPanelWorkingOn.add(wlaArtikelnummer,
+		// new GridBagConstraints(0, iZeile, 1, 1, 0.0, 0.0,
+		// GridBagConstraints.CENTER,
+		// GridBagConstraints.HORIZONTAL,
+		// new Insets(10, 2, 2, 52), 100, 0));
+		// jpaPanelWorkingOn.add(wbuGeneriereArtikelnummer,
+		// new GridBagConstraints(0, iZeile, 1, 1, 0.0, 0.0,
+		// GridBagConstraints.EAST, GridBagConstraints.NONE,
+		// new Insets(10, 0, 0, 0), 40, 0));
+
+		jpaPanelWorkingOn.add(wtfArtikelnummer);
 		if (LPMain
 				.getInstance()
 				.getDesktop()
@@ -925,20 +1014,18 @@ public class PanelArtikel extends PanelBasis {
 		boolean bVorschlagstexteVorhanden = DelegateFactory.getInstance()
 				.getArtikelDelegate().sindVorschlagstexteVorhanden();
 
-		jpaPanelWorkingOn.add(bVorschlagstexteVorhanden ? wbuKurzbezeichnung : wlaKurzbezeichnung);
+		jpaPanelWorkingOn.add(bVorschlagstexteVorhanden ? wbuKurzbezeichnung
+				: wlaKurzbezeichnung);
 		jpaPanelWorkingOn.add(wtfKurzbezeichnung);
 		jpaPanelWorkingOn.add(wlaRevision);
 		jpaPanelWorkingOn.add(wtfRevision);
 		jpaPanelWorkingOn.add(wlaArtikelart);
 		jpaPanelWorkingOn.add(wcoArtikelart, "wrap");
 
-		jpaPanelWorkingOn.add(bVorschlagstexteVorhanden ? wbuBezeichnung : wlaBezeichnung);
+		jpaPanelWorkingOn.add(bVorschlagstexteVorhanden ? wbuBezeichnung
+				: wlaBezeichnung);
 		jpaPanelWorkingOn.add(wtfBezeichnung, "span 3");
-		if (LPMain
-				.getInstance()
-				.getDesktop()
-				.darfAnwenderAufZusatzfunktionZugreifen(
-						MandantFac.ZUSATZFUNKTION_SI_WERT)) {
+		if (hasZusatzFunktionSiWert()) {
 			wlaSiWert.setHorizontalAlignment(SwingConstants.LEFT);
 			jpaPanelWorkingOn.add(wlaSiWert);
 		} else {
@@ -955,12 +1042,14 @@ public class PanelArtikel extends PanelBasis {
 			jpaPanelWorkingOn.add(new WrapperLabel(), "wrap");
 		}
 
-		jpaPanelWorkingOn.add(bVorschlagstexteVorhanden ? wbuZusatzbez : wlaZusatzbez);
-		jpaPanelWorkingOn.add(wtfZusatzbez,  "span 3");
+		jpaPanelWorkingOn.add(bVorschlagstexteVorhanden ? wbuZusatzbez
+				: wlaZusatzbez);
+		jpaPanelWorkingOn.add(wtfZusatzbez, "span 3");
 		jpaPanelWorkingOn.add(wcbReineMannzeit);
 		jpaPanelWorkingOn.add(wlaSperren, "wrap");
 
-		jpaPanelWorkingOn.add(bVorschlagstexteVorhanden ? wbuZusatzbez2 : wlaZusatzbez2);
+		jpaPanelWorkingOn.add(bVorschlagstexteVorhanden ? wbuZusatzbez2
+				: wlaZusatzbez2);
 		jpaPanelWorkingOn.add(wtfZusatzbez2, "span 3");
 		jpaPanelWorkingOn.add(wcbNurZurInfo);
 		jpaPanelWorkingOn.add(wcbKalkulatorisch, "wrap");
@@ -990,6 +1079,9 @@ public class PanelArtikel extends PanelBasis {
 		jpaPanelWorkingOn.add(wsfShopgruppe.getWrapperButton());
 		jpaPanelWorkingOn.add(wsfShopgruppe.getWrapperTextField(), "wrap");
 
+		jpaPanelWorkingOn.add(new WrapperLabel(""), "span 4");
+		jpaPanelWorkingOn.add(wlaVorzugsteil);
+		jpaPanelWorkingOn.add(wcoVorzugsteil, "wrap");
 
 		if (!LPMain.getTheClient().getLocKonzern()
 				.equals(LPMain.getTheClient().getLocUi())) {
@@ -1005,14 +1097,16 @@ public class PanelArtikel extends PanelBasis {
 			jpaPanelWorkingOn.add(wtfArtikelZBez2Std, "span 3, wrap");
 		} else {
 			if (bPaternosterVerfuegbar) {
-				jpaPanelWorkingOn.add(wkvfPaternoster, "gapright 14px, span 3, split 2");
+				jpaPanelWorkingOn.add(wkvfPaternoster,
+						"gapright 14px, span 3, split 2");
 				jpaPanelWorkingOn.add(new JLabel());
 			}
 			// default-Bild:
 
-			jpaPanelWorkingOn.add(pi, (bPaternosterVerfuegbar ? "" : "skip 3,") + "w min:0, span 5 10, wrap");
+			jpaPanelWorkingOn.add(pi, (bPaternosterVerfuegbar ? "" : "skip 3,")
+					+ "w min:0, span 5 10, wrap");
 
-			jpaPanelWorkingOn.add(wkvfLagerstand,"span 3, split 2");
+			jpaPanelWorkingOn.add(wkvfLagerstand, "span 3, split 2");
 			jpaPanelWorkingOn.add(wkvfInfertigung, "wrap");
 			jpaPanelWorkingOn.add(wkvfReserviert, "span 3, split 2");
 			jpaPanelWorkingOn.add(wkvfBestellt, "wrap");
@@ -1035,6 +1129,55 @@ public class PanelArtikel extends PanelBasis {
 
 		enableToolsPanelButtons(aWhichButtonIUse);
 
+		// PJ18881
+		if (LPMain
+				.getInstance()
+				.getDesktop()
+				.darfAnwenderAufZusatzfunktionZugreifen(
+						MandantFac.ZUSATZFUNKTION_KUNDESONDERKONDITIONEN)
+				&& DelegateFactory.getInstance().getTheJudgeDelegate()
+						.hatRecht(RechteFac.RECHT_LP_DARF_PREISE_SEHEN_VERKAUF)) {
+
+			getToolBar().addButtonCenter("/com/lp/client/res/data_into.png",
+					LPMain.getTextRespectUISPr("artikel.goto.kundesosko"),
+					MY_OWN_NEW_GOTO_SOKO, null, null);
+			enableToolsPanelButtons(true, MY_OWN_NEW_GOTO_SOKO);
+		}
+		getToolBar().addButtonRight(
+				"/com/lp/client/res/document_attachment16x16.png",
+				LPMain.getTextRespectUISPr("lp.dokumentablage"),
+				MY_OWN_NEW_DOKUMENTENABLAGE, null, null);
+		jbDokumente = getHmOfButtons().get(MY_OWN_NEW_DOKUMENTENABLAGE)
+				.getButton();
+
+	}
+
+	private boolean hasZusatzFunktionSiWert() {
+		return LPMain
+				.getInstance()
+				.getDesktop()
+				.darfAnwenderAufZusatzfunktionZugreifen(
+						MandantFac.ZUSATZFUNKTION_SI_WERT);
+	}
+
+	private void installSiKeyListeners() {
+		if (!hasZusatzFunktionSiWert())
+			return;
+
+		KeyListener siListener = new KeyAdapter() {
+			@Override
+			public void keyReleased(KeyEvent e) {
+				try {
+					siWertBerechnenAusTextfeldern();
+				} catch (Throwable t) {
+					getInternalFrame().handleException(t, false);
+				}
+			}
+		};
+
+		wtfBezeichnung.addKeyListener(siListener);
+		wtfZusatzbez.addKeyListener(siListener);
+		wtfZusatzbez2.addKeyListener(siListener);
 	}
 
 	protected void setDefaults() throws Throwable {
@@ -1049,6 +1192,9 @@ public class PanelArtikel extends PanelBasis {
 				.getAllEinheiten());
 		wcoEinheitBestellung.setMap(DelegateFactory.getInstance()
 				.getSystemDelegate().getAllEinheiten());
+
+		wcoVorzugsteil.setMap(DelegateFactory.getInstance()
+				.getArtikelDelegate().getAllVorzug());
 
 		ParametermandantDto parameter = (ParametermandantDto) DelegateFactory
 				.getInstance()
@@ -1167,6 +1313,9 @@ public class PanelArtikel extends PanelBasis {
 
 		internalFrameArtikel.getArtikelDto().setMwstsatzbezIId(
 				(Integer) wcoMehrwertsteuer.getKeyOfSelectedItem());
+
+		internalFrameArtikel.getArtikelDto().setVorzugIId(
+				(Integer) wcoVorzugsteil.getKeyOfSelectedItem());
 
 		internalFrameArtikel.getArtikelDto().setCReferenznr(
 				wtfReferenznummer.getText());
@@ -1316,6 +1465,9 @@ public class PanelArtikel extends PanelBasis {
 				.getArtikelDto().getEinheitCNrBestellung());
 		wcoMehrwertsteuer.setKeyOfSelectedItem(internalFrameArtikel
 				.getArtikelDto().getMwstsatzbezIId());
+
+		wcoVorzugsteil.setKeyOfSelectedItem(internalFrameArtikel
+				.getArtikelDto().getVorzugIId());
 
 		wnfUmrechnungsfaktor.setBigDecimal(internalFrameArtikel.getArtikelDto()
 				.getNUmrechnungsfaktor());
@@ -1489,6 +1641,12 @@ public class PanelArtikel extends PanelBasis {
 				.getArtikelBilder(internalFrameArtikel.getArtikelDto().getIId());
 		pi.setImages(b);
 
+		pi.setTextPDFVorhandenVisible(DelegateFactory
+				.getInstance()
+				.getArtikelkommentarDelegate()
+				.sindTexteOderPDFsVorhanden(
+						internalFrameArtikel.getArtikelDto().getIId()));
+
 		// Goto Stkl
 
 		StuecklisteDto stklDto = DelegateFactory
@@ -1511,6 +1669,32 @@ public class PanelArtikel extends PanelBasis {
 			wbuStkl.getWrapperButtonGoTo().setVisible(false);
 			wbuStkl.setOKey(null);
 		}
+
+		PrintInfoDto values = DelegateFactory
+				.getInstance()
+				.getJCRDocDelegate()
+				.getPathAndPartnerAndTable(
+						internalFrameArtikel.getArtikelDto().getIId(),
+						QueryParameters.UC_ID_ARTIKELLISTE);
+
+		JCRRepoInfo repoInfo = new JCRRepoInfo();
+		// boolean hasFiles = false;
+		if (values != null && values.getDocPath() != null) {
+			repoInfo = DelegateFactory.getInstance().getJCRDocDelegate()
+					.checkIfNodeExists(values.getDocPath());
+			enableToolsPanelButtons(repoInfo.isOnline(),
+					MY_OWN_NEW_DOKUMENTENABLAGE);
+			// boolean online = DelegateFactory.getInstance()
+			// .getJCRDocDelegate().isOnline();
+			// enableToolsPanelButtons(online, MY_OWN_NEW_DOKUMENTENABLAGE);
+			// if (online) {
+			// hasFiles = DelegateFactory.getInstance()
+			// .getJCRDocDelegate()
+			// .checkIfNodeExists(values.getDocPath());
+			// }
+			// }
+		}
+		jbDokumente.setIcon(repoInfo.isExists() ? DOKUMENTE : KEINE_DOKUMENTE);
 
 		this.setStatusbarPersonalIIdAendern(internalFrameArtikel
 				.getArtikelDto().getPersonalIIdAendern());
@@ -1670,27 +1854,49 @@ public class PanelArtikel extends PanelBasis {
 		wbuStkl.setVisible(false);
 	}
 
-	public void siWertBerechnenAusTextfeldern() {
+	public void siWertBerechnenAusTextfeldern() throws Throwable {
 		siWertBerechnen(wtfBezeichnung.getText(), wtfZusatzbez.getText(),
 				wtfZusatzbez2.getText());
 	}
 
-	public void siWertBerechnen(String cBez, String cZbez, String cZbez2) {
-		wlaSiWert.setText(null);
-		if (LPMain
+	private Boolean getSiOhneEinheitenFromParam() throws Throwable {
+		ParametermandantDto parameter = (ParametermandantDto) DelegateFactory
 				.getInstance()
-				.getDesktop()
-				.darfAnwenderAufZusatzfunktionZugreifen(
-						MandantFac.ZUSATZFUNKTION_SI_WERT)) {
-			// PJ18155
-			BigDecimalSI bdSi = Helper.berechneSiWertAusBezeichnung(cBez,
-					cZbez, cZbez2);
+				.getParameterDelegate()
+				.getParametermandant(ParameterFac.PARAMETER_SI_OHNE_EINHEIT,
+						ParameterFac.KATEGORIE_ARTIKEL,
+						LPMain.getTheClient().getMandant());
+		return (Boolean) parameter.getCWertAsObject();
+	}
 
-			if (bdSi != null) {
-				wlaSiWert.setText(bdSi.toSIString());
-			} else {
-				wlaSiWert.setText(null);
-			}
+	private String getSiEinheitenFromParam() throws Throwable {
+		ParametermandantDto parameter = (ParametermandantDto) DelegateFactory
+				.getInstance()
+				.getParameterDelegate()
+				.getParametermandant(ParameterFac.PARAMETER_SI_EINHEITEN,
+						ParameterFac.KATEGORIE_ARTIKEL,
+						LPMain.getTheClient().getMandant());
+		return parameter.getCWert();
+	}
+
+	private void siWertBerechnen(String cBez, String cZbez, String cZbez2)
+			throws Throwable {
+		if (!hasZusatzFunktionSiWert())
+			return;
+
+		// PJ18155
+		try {
+			BigDecimalSI bdSi = siwertParser.berechneSiWertAusBezeichnung(cBez,
+					cZbez, cZbez2);
+			// BigDecimalSI bdSiO = Helper.berechneSiWertAusBezeichnung(
+			// getSiOhneEinheitenFromParam(), getSiEinheitenFromParam(), cBez,
+			// cZbez, cZbez2);
+			wlaSiWert.setText(bdSi != null ? bdSi.toSIString() : null);
+		} catch (IllegalArgumentException iae) {
+			wlaSiWert.setText(null);
+			myLogger.error(
+					"Mandantenparameter SI_OHNE_EINHEIT und SI_EINHEITEN stehen in Konflikt!",
+					iae);
 		}
 	}
 

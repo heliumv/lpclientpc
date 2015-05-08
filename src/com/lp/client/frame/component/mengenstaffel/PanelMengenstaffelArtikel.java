@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -46,6 +46,7 @@ import javax.swing.SwingConstants;
 import com.lp.client.frame.component.ISourceEvent;
 import com.lp.client.frame.component.InternalFrame;
 import com.lp.client.frame.component.ItemChangedEvent;
+import com.lp.client.frame.component.WrapperCheckBox;
 import com.lp.client.frame.component.WrapperDateField;
 import com.lp.client.frame.component.WrapperIdentField;
 import com.lp.client.frame.component.WrapperLabel;
@@ -93,6 +94,8 @@ public class PanelMengenstaffelArtikel extends PanelMengenstaffelBasis {
 	private WrapperLabel wlaMinverkaufspreis = null;
 	private WrapperNumberField wnfMinverkaufspreis = null;
 	private WrapperLabel wlaWaehrungMinverkaufspreis = null;
+
+	public WrapperCheckBox wcbWirktNichtInVerkaufspreisfindung = null;
 
 	private WrapperLabel wlaVkbasis = null;
 	private WrapperNumberField wnfVkbasis = null;
@@ -143,6 +146,10 @@ public class PanelMengenstaffelArtikel extends PanelMengenstaffelBasis {
 		wlaWaehrungMinverkaufspreis = new WrapperLabel(waehrungCNr);
 		wlaWaehrungMinverkaufspreis
 				.setHorizontalAlignment(SwingConstants.LEADING);
+
+		wcbWirktNichtInVerkaufspreisfindung = new WrapperCheckBox(LPMain
+				.getInstance().getTextRespectUISPr(
+						"part.kundesoko.artikel.wirktnichtinpreisfindung"));
 
 		// PJ 17390
 		ParametermandantDto parameter = (ParametermandantDto) DelegateFactory
@@ -277,13 +284,19 @@ public class PanelMengenstaffelArtikel extends PanelMengenstaffelBasis {
 		wdfPreisgueltigkeitsanzeigeab = new WrapperDateField();
 		wdfPreisgueltigkeitsanzeigeab.getDisplay().addPropertyChangeListener(
 				this);
+		// SP2243 -> Preisgueltigkeisanzeige immm ab heute
+		add(wcbWirktNichtInVerkaufspreisfindung, new GridBagConstraints(4,
+				iZeile, 2, 1, 0.0, 0.0, GridBagConstraints.NORTH,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
 
-		add(wlaPreisgueltigkeitsanzeigeab, new GridBagConstraints(0, iZeile, 6,
-				1, 0.0, 0.0, GridBagConstraints.NORTH,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		add(wdfPreisgueltigkeitsanzeigeab, new GridBagConstraints(6, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.NORTH,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		/*
+		 * add(wlaPreisgueltigkeitsanzeigeab, new GridBagConstraints(0, iZeile,
+		 * 6, 1, 0.0, 0.0, GridBagConstraints.NORTH,
+		 * GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		 * add(wdfPreisgueltigkeitsanzeigeab, new GridBagConstraints(6, iZeile,
+		 * 1, 1, 0.0, 0.0, GridBagConstraints.NORTH,
+		 * GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		 */
 		iZeile++;
 		add(wlaVkbasis, new GridBagConstraints(0, iZeile, 2, 1, 0.0, 0.0,
 				GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL,
@@ -367,6 +380,17 @@ public class PanelMengenstaffelArtikel extends PanelMengenstaffelBasis {
 		wifArtikel.setArtikelDto(new ArtikelDto());
 
 		wnfRabattsatz.setDouble(new Double(0)); // wird mit 0 initialisiert
+
+		ParametermandantDto parameter = (ParametermandantDto) DelegateFactory
+				.getInstance()
+				.getParameterDelegate()
+				.getParametermandant(
+						ParameterFac.PARAMETER_DEFAULT_KUNDESOKO_WIRKT_NICHT_IN_PREISFINDUNG,
+						ParameterFac.KATEGORIE_KUNDEN,
+						LPMain.getTheClient().getMandant());
+
+		wcbWirktNichtInVerkaufspreisfindung.setSelected((Boolean) parameter
+				.getCWertAsObject());
 
 	}
 
@@ -636,7 +660,8 @@ public class PanelMengenstaffelArtikel extends PanelMengenstaffelBasis {
 	 */
 	private void setColorBerechneterPreis() throws Throwable {
 		if (wnfMinverkaufspreis.getBigDecimal() != null
-				&& wnfBerechneterpreis != null && wnfBerechneterpreis.getDouble() !=null
+				&& wnfBerechneterpreis != null
+				&& wnfBerechneterpreis.getDouble() != null
 				&& wnfBerechneterpreis.getDouble().doubleValue() > 0) {
 			double dMinverkaufspreis = wnfMinverkaufspreis.getDouble()
 					.doubleValue();
@@ -807,6 +832,10 @@ public class PanelMengenstaffelArtikel extends PanelMengenstaffelBasis {
 			kundesokoDtoI.setCKundeartikelzbez(wtfKndArtZBez.getText());
 		}
 
+		kundesokoDtoI
+				.setBWirktNichtFuerPreisfindung(wcbWirktNichtInVerkaufspreisfindung
+						.getShort());
+
 		return kundesokoDtoI;
 	}
 
@@ -853,6 +882,15 @@ public class PanelMengenstaffelArtikel extends PanelMengenstaffelBasis {
 			wcbRabattsichtbar.setSelected(Helper.short2boolean(kundesokoDtoI
 					.getBRabattsichtbar()));
 		}
+
+		if (kundesokoDtoI.getBWirktNichtFuerPreisfindung() == null) {
+			wcbWirktNichtInVerkaufspreisfindung.setSelected(false);
+		} else {
+			wcbWirktNichtInVerkaufspreisfindung.setSelected(Helper
+					.short2boolean(kundesokoDtoI
+							.getBWirktNichtFuerPreisfindung()));
+		}
+
 	}
 
 	public WrapperIdentField getWifArtikel() {

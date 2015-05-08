@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -179,13 +179,16 @@ public class PanelDialogPreisvorschlagPreisliste extends
 
 			Integer preislisteIId = null;
 			if (preislisteDto == null) {
-				DialogFactory.showModalDialog(LPMain.getTextRespectUISPr("lp.error"), LPMain.getTextRespectUISPr("artikel.preisliste.keinepreisliste"));
-				return;
-			}
-			awnfRabattsatz[i].setBigDecimal(preislisteDto
-					.getNArtikelstandardrabattsatz());
-			preislisteIId = preislisteDto.getVkpfartikelpreislisteIId();
+				//wg. SP3032 auskommentiert
+				//DialogFactory.showModalDialog(LPMain.getTextRespectUISPr("lp.error"), LPMain.getTextRespectUISPr("artikel.preisliste.keinepreisliste"));
+				//return;
+			} else {
+				awnfRabattsatz[i].setBigDecimal(preislisteDto
+						.getNArtikelstandardrabattsatz());
+				preislisteIId = preislisteDto.getVkpfartikelpreislisteIId();
 
+			}
+			
 			awlaProzent[i] = new WrapperLabel(LPMain.getInstance()
 					.getTextRespectUISPr("label.prozent"));
 			awlaProzent[i].setHorizontalAlignment(SwingConstants.LEADING);
@@ -601,9 +604,10 @@ public class PanelDialogPreisvorschlagPreisliste extends
 				if (nVkbasisInBelegwaehrung.intValue() == 0)
 					nVkbasisInBelegwaehrung = wnfHandeingabeFixpreis
 							.getBigDecimal();
-				if (wnfHandeingabeFixpreis.getBigDecimal().intValue() == 0)
-					wnfHandeingabeFixpreis
-							.setBigDecimal(nVkbasisInBelegwaehrung);
+				//auskommentiert wg. SP3124
+				//if (wnfHandeingabeFixpreis.getBigDecimal().intValue() == 0)
+				//	wnfHandeingabeFixpreis
+				//			.setBigDecimal(nVkbasisInBelegwaehrung);
 				panelDialogPreisvorschlagDto
 						.setAktuellerVerkaufspreisDto(DelegateFactory
 								.getInstance()

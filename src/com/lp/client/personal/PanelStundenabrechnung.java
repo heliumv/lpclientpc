@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -89,6 +89,7 @@ public class PanelStundenabrechnung extends PanelBasis implements
 	private WrapperLabel wlaUestpflichtig100 = new WrapperLabel();
 	private WrapperLabel wlaUestdpausch = new WrapperLabel();
 	private WrapperLabel wlaQualifikationspraemie = new WrapperLabel();
+	private WrapperLabel wlaQualifikationsfaktor = new WrapperLabel();
 	private WrapperNumberField wnfMehrstunden = new WrapperNumberField();
 	private WrapperNumberField wnfUestfrei50 = new WrapperNumberField();
 	private WrapperNumberField wnfUestpflichtig50 = new WrapperNumberField();
@@ -97,6 +98,7 @@ public class PanelStundenabrechnung extends PanelBasis implements
 	private WrapperNumberField wnfUestpflichtig100 = new WrapperNumberField();
 	private WrapperNumberField wnfGutstunden = new WrapperNumberField();
 	private WrapperNumberField wnfQualifikationspraemie = new WrapperNumberField();
+	private WrapperNumberField wnfQualifikationsfaktor = new WrapperNumberField();
 	private WrapperLabel wlaEinheitMehrstd = new WrapperLabel();
 	private WrapperLabel wlaEinheitUestfrei50 = new WrapperLabel();
 	private WrapperLabel wrapperLabel3 = new WrapperLabel();
@@ -181,6 +183,7 @@ public class PanelStundenabrechnung extends PanelBasis implements
 		stundenabrechnungDto
 				.setNNormalstunden(wnfNormalstunden.getBigDecimal());
 		stundenabrechnungDto.setCKommentar(wtfKommentar.getText());
+		stundenabrechnungDto.setNQualifikationsfaktor(wnfQualifikationsfaktor.getBigDecimal());
 	}
 
 	protected void dto2Components() throws ExceptionLP, Throwable {
@@ -200,6 +203,8 @@ public class PanelStundenabrechnung extends PanelBasis implements
 		wnfQualifikationspraemie.setBigDecimal(stundenabrechnungDto
 				.getNQualifikationspraemie());
 		wtfKommentar.setText(stundenabrechnungDto.getCKommentar());
+		wnfQualifikationsfaktor.setBigDecimal(stundenabrechnungDto
+				.getNQualifikationsfaktor());
 
 		this.setStatusbarPersonalIIdAendern(stundenabrechnungDto
 				.getPersonalIIdAendern());
@@ -271,6 +276,9 @@ public class PanelStundenabrechnung extends PanelBasis implements
 		wlaQualifikationspraemie.setText(LPMain.getInstance()
 				.getTextRespectUISPr(
 						"pers.stundenabrechnung.qualifikationspraemie"));
+		wlaQualifikationsfaktor.setText(LPMain.getInstance()
+				.getTextRespectUISPr(
+						"pers.stundenabrechnung.qualifikationsfaktor"));
 		wlaNormalstunden.setText(LPMain.getInstance().getTextRespectUISPr(
 				"pers.kollektiv.normalstunden"));
 
@@ -380,6 +388,10 @@ public class PanelStundenabrechnung extends PanelBasis implements
 		jpaWorkingOn.add(wnfQualifikationspraemie, new GridBagConstraints(1, 9,
 				6, 1, 0.0, 0.0, GridBagConstraints.WEST,
 				GridBagConstraints.NONE, new Insets(2, 2, 2, 0), 0, 0));
+		
+		
+		
+		
 		jpaWorkingOn.add(wlaEinheitUestfrei50, new GridBagConstraints(2, 2, 7,
 				1, 0.0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
@@ -409,6 +421,17 @@ public class PanelStundenabrechnung extends PanelBasis implements
 						GridBagConstraints.CENTER,
 						GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2),
 						0, 0));
+		
+		
+		jpaWorkingOn.add(wlaQualifikationsfaktor,
+				new GridBagConstraints(7, 9, 2, 1, 0.0, 0.0,
+						GridBagConstraints.CENTER,
+						GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2),
+						0, 0));
+		jpaWorkingOn.add(wnfQualifikationsfaktor, new GridBagConstraints(9,
+				9, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.NONE, new Insets(0, 0, 0, 0), 0, 0));
+		
 		jpaWorkingOn.add(wnfNormalstunden, new GridBagConstraints(1, 1, 1, 1,
 				0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE,
 				new Insets(2, 2, 2, 0), 0, 0));

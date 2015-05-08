@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -40,9 +40,11 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 
 import javax.swing.ButtonGroup;
 import javax.swing.JDialog;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
 import com.lp.client.frame.component.WrapperButton;
@@ -52,6 +54,11 @@ import com.lp.client.frame.component.WrapperRadioButton;
 import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.frame.dialog.DialogFactory;
 import com.lp.client.pc.LPMain;
+import com.lp.server.fertigung.service.BucheSerienChnrAufLosDto;
+import com.lp.server.stueckliste.service.StuecklisteDto;
+import com.lp.server.system.service.ParameterFac;
+import com.lp.server.system.service.ParametermandantDto;
+import com.lp.util.Helper;
 
 @SuppressWarnings("static-access")
 public class DialogLosgroesseaendern extends JDialog implements ActionListener {
@@ -68,11 +75,6 @@ public class DialogLosgroesseaendern extends JDialog implements ActionListener {
 	private WrapperButton wbuAbbrechen = new WrapperButton();
 	private TabbedPaneLos tpLos = null;
 
-	private WrapperRadioButton wrbJa = new WrapperRadioButton();
-	private WrapperRadioButton wrbNein = new WrapperRadioButton();
-
-	private ButtonGroup buttonGroupMaterial = new ButtonGroup();
-
 	public DialogLosgroesseaendern(TabbedPaneLos tpLos, Integer neueLosgroesse) {
 		super(LPMain.getInstance().getDesktop(), "", true);
 		this.neueLosgroesse = neueLosgroesse;
@@ -82,7 +84,7 @@ public class DialogLosgroesseaendern extends JDialog implements ActionListener {
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
-		this.setSize(300, 200);
+		this.setSize(300, 140);
 
 		setTitle(LPMain.getInstance().getTextRespectUISPr(
 				"lp.menu.losgroesseaendern"));
@@ -104,32 +106,137 @@ public class DialogLosgroesseaendern extends JDialog implements ActionListener {
 
 					if (wnfLosgroesse.getInteger().doubleValue() > tpLos
 							.getLosDto().getNLosgroesse().doubleValue()) {
-						wrbNein.setSelected(true);
-					}
+						// PJ18876 Wenn Losgroesse erhoeht wird, dann Material
+						// anhand SSG nachbuchen
 
-					if (wrbJa.isSelected() || wrbNein.isSelected()) {
+						BigDecimal diff = new BigDecimal(wnfLosgroesse
+								.getInteger().doubleValue()
+								- tpLos.getLosDto().getNLosgroesse()
+										.doubleValue());
 
-						DelegateFactory.getInstance().getFertigungDelegate()
+						DelegateFactory
+								.getInstance()
+								.getFertigungDelegate()
 								.aendereLosgroesse(tpLos.getLosDto().getIId(),
-										wnfLosgroesse.getInteger(),
-										wrbJa.isSelected());
+										wnfLosgroesse.getInteger(), false);
+
 						tpLos.getLosDto().setNLosgroesse(
 								new BigDecimal(wnfLosgroesse.getInteger()
 										.doubleValue()));
+
+						ParametermandantDto parameter = (ParametermandantDto) DelegateFactory
+								.getInstance()
+								.getParameterDelegate()
+								.getParametermandant(
+										ParameterFac.PARAMETER_KEINE_AUTOMATISCHE_MATERIALBUCHUNG,
+										ParameterFac.KATEGORIE_FERTIGUNG,
+										LPMain.getInstance().getTheClient()
+												.getMandant());
+
+						boolean bKeineAutomatischeMaterialbuchung = ((Boolean) parameter
+								.getCWertAsObject());
+
+						StuecklisteDto stklDto = null;
+						if (tpLos.getLosDto().getStuecklisteIId() != null) {
+
+							stklDto = DelegateFactory
+									.getInstance()
+									.getStuecklisteDelegate()
+									.stuecklisteFindByPrimaryKey(
+											tpLos.getLosDto()
+													.getStuecklisteIId());
+						}
+
+						// PJ18630
+
+						boolean bMaterialbuchungBeiAblieferung = true;
+						if (stklDto != null) {
+							bKeineAutomatischeMaterialbuchung = Helper
+									.short2boolean(stklDto
+											.getBKeineAutomatischeMaterialbuchung());
+
+							bMaterialbuchungBeiAblieferung = Helper
+									.short2boolean(stklDto
+											.getBMaterialbuchungbeiablieferung());
+
+						}
+
+						if (bKeineAutomatischeMaterialbuchung == false) {
+
+							if (bMaterialbuchungBeiAblieferung == false) {
+
+								DelegateFactory
+										.getInstance()
+										.getFertigungDelegate()
+										.bucheMaterialAufLos(
+												tpLos.getLosDto(),
+												tpLos.getLosDto()
+														.getNLosgroesse()
+														.subtract(
+																DelegateFactory
+																		.getInstance()
+																		.getFertigungDelegate()
+																		.getErledigteMenge(
+																				tpLos.getLosDto()
+																						.getIId())),
+												false,
+												false,
+												true,
+												tpLos.getAbzubuchendeSeriennrChargen(
+														tpLos.getLosDto()
+																.getIId(),
+														tpLos.getLosDto()
+																.getNLosgroesse()
+																.subtract(
+																		DelegateFactory
+																				.getInstance()
+																				.getFertigungDelegate()
+																				.getErledigteMenge(
+																						tpLos.getLosDto()
+																								.getIId())),
+														true));
+							}
+						}
+
 						setVisible(false);
 
 					} else {
-						DialogFactory
-								.showModalDialog(
-										LPMain
-												.getInstance()
-												.getTextRespectUISPr("lp.error"),
-										LPMain
-												.getInstance()
+						int iAntwort = DialogFactory
+								.showModalJaNeinAbbrechenDialog(
+										tpLos.getInternalFrame(),
+										LPMain.getInstance()
 												.getTextRespectUISPr(
-														"fert.losgroesseaendern.optionwaehlen"));
-						return;
+														"fert.losgroesseaendern.waspassiertmitmaterial"),
+										LPMain.getInstance()
+												.getTextRespectUISPr("lp.frage"));
+
+						if (iAntwort == JOptionPane.YES_OPTION
+								|| iAntwort == JOptionPane.NO_OPTION) {
+							boolean bUberzaehligesMaterialZureuckbuchen;
+							if (iAntwort == JOptionPane.YES_OPTION) {
+								bUberzaehligesMaterialZureuckbuchen = true;
+							} else {
+								bUberzaehligesMaterialZureuckbuchen = false;
+							}
+							DelegateFactory
+									.getInstance()
+									.getFertigungDelegate()
+									.aendereLosgroesse(
+											tpLos.getLosDto().getIId(),
+											wnfLosgroesse.getInteger(),
+											bUberzaehligesMaterialZureuckbuchen);
+							tpLos.getLosDto().setNLosgroesse(
+									new BigDecimal(wnfLosgroesse.getInteger()
+											.doubleValue()));
+
+						} else {
+							// CANCEL
+
+						}
+
+						setVisible(false);
 					}
+
 				}
 			} catch (Throwable e1) {
 				tpLos.handleException(e1, true);
@@ -155,18 +262,9 @@ public class DialogLosgroesseaendern extends JDialog implements ActionListener {
 
 		WrapperLabel wlaNeueLosgroesse = new WrapperLabel(LPMain.getInstance()
 				.getTextRespectUISPr("fert.losgroesseaendern.neuelosgroesse"));
-		WrapperLabel wlaFrage = new WrapperLabel(LPMain.getInstance()
-				.getTextRespectUISPr(
-						"fert.losgroesseaendern.waspassiertmitmaterial"));
-
-		wrbJa.setText(LPMain.getInstance().getTextRespectUISPr("lp.ja"));
-		wrbNein.setText(LPMain.getInstance().getTextRespectUISPr("lp.nein"));
 
 		wbuSpeichern.addActionListener(this);
 		wbuAbbrechen.addActionListener(this);
-
-		buttonGroupMaterial.add(wrbJa);
-		buttonGroupMaterial.add(wrbNein);
 
 		add(panel1);
 		panel1.add(wlaNeueLosgroesse, new GridBagConstraints(0, 0, 2, 1, 1.0,
@@ -175,16 +273,6 @@ public class DialogLosgroesseaendern extends JDialog implements ActionListener {
 		panel1.add(wnfLosgroesse, new GridBagConstraints(0, 1, 2, 1, 1.0, 1.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(0, 0, 0, 0), 0, 0));
-
-		panel1.add(wlaFrage, new GridBagConstraints(0, 2, 2, 1, 1.0, 1.0,
-				GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(
-						0, 0, 0, 0), 0, 0));
-		panel1.add(wrbJa, new GridBagConstraints(0, 3, 1, 1, 1.0, 1.0,
-				GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(
-						0, 0, 0, 0), 0, 0));
-		panel1.add(wrbNein, new GridBagConstraints(0, 4, 1, 1, 1.0, 1.0,
-				GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(
-						0, 0, 0, 0), 0, 0));
 
 		panel1.add(wbuSpeichern, new GridBagConstraints(0, 5, 1, 1, 1.0, 1.0,
 				GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(

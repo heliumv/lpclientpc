@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -39,13 +39,11 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.EventObject;
 import java.util.Map;
@@ -63,6 +61,7 @@ import net.miginfocom.swing.MigLayout;
 
 import com.lp.client.artikel.ArtikelFilterFactory;
 import com.lp.client.frame.Defaults;
+import com.lp.client.frame.DirekthilfeCache;
 import com.lp.client.frame.HelperClient;
 import com.lp.client.frame.component.DialogQuery;
 import com.lp.client.frame.component.ISourceEvent;
@@ -70,11 +69,13 @@ import com.lp.client.frame.component.InternalFrame;
 import com.lp.client.frame.component.ItemChangedEvent;
 import com.lp.client.frame.component.PanelBasis;
 import com.lp.client.frame.component.PanelQueryFLR;
+import com.lp.client.frame.component.frameposition.LocalSettingsPathGenerator;
 import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.frame.dialog.DialogFactory;
 import com.lp.client.pc.LPMain;
 import com.lp.server.finanz.service.FibuFehlerDto;
 import com.lp.util.Helper;
+import com.lp.util.csv.LPCSVReader;
 
 public class PanelPflege extends PanelBasis {
 
@@ -82,10 +83,9 @@ public class PanelPflege extends PanelBasis {
 	// von hier ...
 	private GridBagLayout gridBagLayoutAll = null;
 	private JPanel jpaWorkingOn = new JPanel();
-	private JPanel jpaButtonAction = null;
-	private GridBagLayout gridBagLayoutWorkingPanel = null;
 
 	private PanelQueryFLR panelQueryFLRPreislisten = null;
+	private PanelQueryFLR panelQueryFLRLager = null;
 
 	static final public String ACTION_PRUEFE_RECHNUNGSWERT = "ACTION_PRUEFE_RECHNUNGSWERT";
 	static final public String ACTION_RABATTSATZ_NACHTRAGEN = "ACTION_RABATTSATZ_NACHTRAGEN";
@@ -118,11 +118,14 @@ public class PanelPflege extends PanelBasis {
 	private final String MENUE_PFLEGE_KONSTRUIERE_LAGERBEW_BEST = "MENUE_PFLEGE_KONSTRUIERE_LAGERBEW_BEST";
 	private final String MENUE_PFLEGE_KONSTRUIERE_LAGERBEW_HAND = "MENUE_PFLEGE_KONSTRUIERE_LAGERBEW_HAND";
 	private final String MENUE_PFLEGE_SI_WERTE_NACHTRAGEN = "MENUE_PFLEGE_SI_WERTE_NACHTRAGEN";
-	private final String MENUE_PFLEGE_DIGIRASTER = "MENUE_PFLEGE_DIGIRASTER";
 	private final String MENUE_PFLEGE_LOSE_IM_ZEITRAUM_NACHKALKULIEREN = "LOSE_IM_ZEITRAUM_NACHKALKULIEREN";
-	
+	private final String MENUE_PFLEGE_MATERIALZUSCHLAG_KURS_DATUM = "MATERIALZUSCHLAG_KURS_DATUM";
+
 	private final String MENUE_PFLEGE_EKPREISE_IM_ZEITRAUM_RUECKPFLEGEN = "EKPREISE_IM_ZEITRAUM_RUECKPFLEGEN";
-	
+
+	private final String MENUE_PFLEGE_ZEITDATEN_VON_BIS = "ZEITDATEN_VON_BIS";
+	private final String MENUE_PFLEGE_SNRVERSION = "PFLEGE_SNRVERSION";
+	private final String MENUE_PFLEGE_GESTEHUNGSPREISE_IMPORTIEREN = "GESTEHUNGSPREISE_IMPORTIEREN";
 
 	public PanelPflege(InternalFrame internalFrame, String add2TitleI)
 			throws Throwable {
@@ -178,6 +181,66 @@ public class PanelPflege extends PanelBasis {
 							"Rabatts\u00E4tze nachgetragen.");
 				}
 
+			} else if (e.getSource() == panelQueryFLRLager) {
+
+				Integer lagerIId = (Integer) ((ISourceEvent) e.getSource())
+						.getIdSelected();
+
+				File[] files = HelperClient.chooseFile(this,
+						HelperClient.FILE_FILTER_CSV, false);
+				File f = null;
+				if (files != null && files.length > 0) {
+					f = files[0];
+				}
+				if (f != null) {
+					LPCSVReader reader = new LPCSVReader(new FileReader(f), ';');
+
+					String[] sLine;
+					// Erste Zeile Auslassen (Ueberschrift)
+					sLine = reader.readNext();
+					// zeilenweise einlesen.
+					sLine = reader.readNext();
+					ArrayList<Object[]> alDaten = new ArrayList<Object[]>();
+
+					int i = 2;
+
+					do {
+
+						if (sLine.length < 2) {
+
+							DialogFactory.showModalDialog("Fehler",
+									"Jede Zeile muss genau 2 Spalten haben (Zeile "
+											+ i + ")");
+							return;
+						}
+
+						Object[] oZeile = new Object[2];
+
+						// Artikelnummer
+						oZeile[0] = sLine[0];
+
+						try {
+							BigDecimal bdMenge = new BigDecimal(sLine[1]);
+							oZeile[1] = bdMenge;
+						} catch (NumberFormatException ex) {
+
+							DialogFactory.showModalDialog("Fehler",
+									"In Spalte 2 muss immer eine gueltige Zahl vorhanden sein.(Zeile "
+											+ i + " " + sLine[1] + ")");
+							return;
+						}
+
+						alDaten.add(oZeile);
+
+						i++;
+						sLine = reader.readNext();
+					} while (sLine != null);
+
+					DelegateFactory.getInstance().getLagerDelegate()
+							.gestehungspreiseImportieren(alDaten, lagerIId);
+
+				}
+
 			}
 		}
 	}
@@ -195,7 +258,6 @@ public class PanelPflege extends PanelBasis {
 		this.setLayout(gridBagLayoutAll);
 
 		// Actionpanel von Oberklasse holen und anhaengen.
-		jpaButtonAction = getToolsPanel();
 		this.setActionMap(null);
 
 		getInternalFrame().addItemChangedListener(this);
@@ -415,7 +477,7 @@ public class PanelPflege extends PanelBasis {
 		btnLagerbewKonstruierenausHAND.addActionListener(this);
 		artikel.add(btnLagerbewKonstruierenausHAND);
 		deaktiviereWennNichtLPAdmin(btnLagerbewKonstruierenausHAND);
-		
+
 		JButton btnLagerbewKonstruierenausLSRE = new AutoWrapButton(
 				"Lagerbewegungen aus LS/RE nachtragen");
 		btnLagerbewKonstruierenausLSRE
@@ -440,29 +502,47 @@ public class PanelPflege extends PanelBasis {
 		artikel.add(btnLagerbewKonstruierenausBEST);
 		deaktiviereWennNichtLPAdmin(btnLagerbewKonstruierenausBEST);
 
-		
-
 		JButton btnSiWerteNachtragen = new AutoWrapButton("SI-Werte nachtragen");
 		btnSiWerteNachtragen.setActionCommand(MENUE_PFLEGE_SI_WERTE_NACHTRAGEN);
 		btnSiWerteNachtragen.addActionListener(this);
 		artikel.add(btnSiWerteNachtragen);
-		
-		
-		JButton btngelifertPreiseNachtragen = new AutoWrapButton("Geliefert-Preis aus WEP als EK-Preis zurückpflegen");
-		btngelifertPreiseNachtragen.setActionCommand(MENUE_PFLEGE_EKPREISE_IM_ZEITRAUM_RUECKPFLEGEN);
+
+		JButton btnMaterialzuschlagKursDatumNachtragen = new AutoWrapButton(
+				"Materialzuschlag Kurs/Datum nachtragen");
+		btnMaterialzuschlagKursDatumNachtragen
+				.setActionCommand(MENUE_PFLEGE_MATERIALZUSCHLAG_KURS_DATUM);
+		btnMaterialzuschlagKursDatumNachtragen.addActionListener(this);
+		artikel.add(btnMaterialzuschlagKursDatumNachtragen);
+
+		JButton btnSnrVersion = new AutoWrapButton(
+				"Versionen aus Zugang mit Abgang abgleichen");
+		btnSnrVersion.setActionCommand(MENUE_PFLEGE_SNRVERSION);
+		btnSnrVersion.addActionListener(this);
+		artikel.add(btnSnrVersion);
+
+		JButton btngelifertPreiseNachtragen = new AutoWrapButton(
+				"Geliefert-Preis aus WEP als EK-Preis zur\u00FCckpflegen");
+		btngelifertPreiseNachtragen
+				.setActionCommand(MENUE_PFLEGE_EKPREISE_IM_ZEITRAUM_RUECKPFLEGEN);
 		btngelifertPreiseNachtragen.addActionListener(this);
 		best.add(btngelifertPreiseNachtragen);
 
-		/*
-		 * JButton btnDigiraster = new AutoWrapButton( "DIGIRASTER");
-		 * btnDigiraster .setActionCommand(MENUE_PFLEGE_DIGIRASTER);
-		 * btnDigiraster.addActionListener(this); artikel.add(btnDigiraster);
-		 */
+		JButton btnGestpreiseImportieren = new AutoWrapButton(
+				"Gestehungspreise importieren (CSV)");
+		btnGestpreiseImportieren
+				.setActionCommand(MENUE_PFLEGE_GESTEHUNGSPREISE_IMPORTIEREN);
+		btnGestpreiseImportieren.addActionListener(this);
+		artikel.add(btnGestpreiseImportieren);
 
 		JButton btnReloadLPTEXT = new AutoWrapButton("LP_TEXT neu laden");
 		btnReloadLPTEXT.setActionCommand(MENUE_PFLEGE_RELOAD_LP_TEXT);
 		btnReloadLPTEXT.addActionListener(this);
 		allgemein.add(btnReloadLPTEXT);
+
+		JButton btnZeitdatenVONBIS = new AutoWrapButton("Zeitdaten VON_BIS");
+		btnZeitdatenVONBIS.setActionCommand(MENUE_PFLEGE_ZEITDATEN_VON_BIS);
+		btnZeitdatenVONBIS.addActionListener(this);
+		allgemein.add(btnZeitdatenVONBIS);
 
 		// Hinweis
 
@@ -500,7 +580,8 @@ public class PanelPflege extends PanelBasis {
 	}
 
 	private File getLogFile(String baseFilename) {
-		return new File("log", baseFilename);
+		return new File(new LocalSettingsPathGenerator().getLogPath(),
+				baseFilename);
 	}
 
 	protected void eventActionSpecial(ActionEvent e) throws Throwable {
@@ -523,6 +604,10 @@ public class PanelPflege extends PanelBasis {
 			DelegateFactory.getInstance().getBenutzerServicesDelegate()
 					.reloadUebersteuertenText();
 			Defaults.getInstance().reloadSpezifischeTexte();
+			DirekthilfeCache.reload();
+		} else if (e.getActionCommand().equals(MENUE_PFLEGE_ZEITDATEN_VON_BIS)) {
+			DelegateFactory.getInstance().getZeiterfassungDelegate()
+					.pflegeUmstellungAufVonBisErfassung();
 		} else if (e.getActionCommand().equals(
 				MENU_PFLEGE_BESTELLPOSITION_PRUEFEN)) {
 			boolean doIt = DialogFactory
@@ -654,43 +739,7 @@ public class PanelPflege extends PanelBasis {
 			DelegateFactory.getInstance().getArtikelDelegate()
 					.alleSIwerteNachtragen();
 
-		} else if (e.getActionCommand().equals(MENUE_PFLEGE_DIGIRASTER)) {
-
-			File[] files = HelperClient.chooseFile(this,
-					HelperClient.FILE_FILTER_XLS, false);
-			if (files == null || files.length < 1 || files[0] == null) {
-				return;
-			}
-			File f = files[0];
-
-			ByteArrayOutputStream ous = null;
-			InputStream ios = null;
-			try {
-				byte[] buffer = new byte[4096];
-				ous = new ByteArrayOutputStream();
-				ios = new FileInputStream(f);
-				int read = 0;
-				while ((read = ios.read(buffer)) != -1) {
-					ous.write(buffer, 0, read);
-				}
-			} finally {
-				try {
-					if (ous != null)
-						ous.close();
-				} catch (IOException ex) {
-				}
-
-				try {
-					if (ios != null)
-						ios.close();
-				} catch (IOException ex) {
-				}
-			}
-
-			DelegateFactory.getInstance().getArtikelDelegate()
-					.importiereDigiraster(ous.toByteArray());
-
-		} else if (e.getActionCommand()
+		}  else if (e.getActionCommand()
 				.equals(MENU_PFLEGE_BESTELLSTATI_PRUEFEN)) {
 			String sForFile = DelegateFactory.getInstance()
 					.getBestellungDelegate().checkBestellStati();
@@ -738,6 +787,20 @@ public class PanelPflege extends PanelBasis {
 			DelegateFactory.getInstance().getFehlmengeDelegate()
 					.pruefeFehlmengen();
 		} else if (e.getActionCommand().equals(
+				MENUE_PFLEGE_MATERIALZUSCHLAG_KURS_DATUM)) {
+			DelegateFactory.getInstance().getMaterialDelegate()
+					.pflegeMaterialzuschlagsKursUndDatumNachtragen();
+		} else if (e.getActionCommand().equals(
+				MENUE_PFLEGE_GESTEHUNGSPREISE_IMPORTIEREN)) {
+			panelQueryFLRLager = ArtikelFilterFactory.getInstance()
+					.createPanelFLRLager(getInternalFrame(), null);
+			panelQueryFLRLager
+					.setAdd2Title("F\u00FCr welches Lager sollen die Gest-Preise importiert werden?");
+			new DialogQuery(panelQueryFLRLager);
+		} else if (e.getActionCommand().equals(MENUE_PFLEGE_SNRVERSION)) {
+			DelegateFactory.getInstance().getLagerDelegate()
+					.pruefeSeriennummernMitVersion();
+		} else if (e.getActionCommand().equals(
 				MENUE_PFLEGE_LOSE_IM_ZEITRAUM_NACHKALKULIEREN)) {
 			java.sql.Date[] datum = DialogFactory
 					.showDatumseingabeVonBis(LPMain
@@ -752,7 +815,7 @@ public class PanelPflege extends PanelBasis {
 								datum[1]);
 			}
 
-		}  else if (e.getActionCommand().equals(
+		} else if (e.getActionCommand().equals(
 				MENUE_PFLEGE_EKPREISE_IM_ZEITRAUM_RUECKPFLEGEN)) {
 			java.sql.Date[] datum = DialogFactory
 					.showDatumseingabeVonBis(LPMain
@@ -763,8 +826,7 @@ public class PanelPflege extends PanelBasis {
 				DelegateFactory
 						.getInstance()
 						.getWareneingangDelegate()
-						.geliefertPreiseAllerWEPRueckpflegen(datum[0],
-								datum[1]);
+						.geliefertPreiseAllerWEPRueckpflegen(datum[0], datum[1]);
 			}
 
 		} else if (e.getActionCommand().equals(

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -420,7 +420,8 @@ public class PanelPositionenArtikelVerkauf extends PanelPositionenPreiseingabe {
 	private void dialogPreisvorschlag() throws Throwable {
 		if (getArtikelDto().getIId() != null) {
 			// PJ 15270
-			// Wenn Fixpreis gewaehlt wurde dann nFixPreis initilisieren, da dies
+			// Wenn Fixpreis gewaehlt wurde dann nFixPreis initilisieren, da
+			// dies
 			// sonst nur bei Preisfindung erfolgt
 
 			// PJ 15343 immer den Nettopreis vorschlagen
@@ -769,6 +770,22 @@ public class PanelPositionenArtikelVerkauf extends PanelPositionenPreiseingabe {
 
 			// die Preise koennen auch per Hand eingegeben werden
 			verkaufspreisDtoInZielwaehrung = new VerkaufspreisDto();
+
+			// SP2952 Materialzuschlag gibt es jedoch trotzdem
+			if (getArtikelDto().getMaterialIId() != null) {
+				BigDecimal materialzuschlag = DelegateFactory
+						.getInstance()
+						.getMaterialDelegate()
+						.getMaterialzuschlagVKInZielwaehrung(
+								getArtikelDto().getIId(),
+								datGueltigkeitsdatumArtikeleinzelverkaufspreis,
+								getWaehrungCNr());
+				if (materialzuschlag != null) {
+					verkaufspreisDtoInZielwaehrung.bdMaterialzuschlag = materialzuschlag;
+					verkaufspreisDtoInZielwaehrung.nettopreis = materialzuschlag;
+				}
+			}
+
 			wnfEinzelpreis.requestFocus();
 		}
 
@@ -835,6 +852,12 @@ public class PanelPositionenArtikelVerkauf extends PanelPositionenPreiseingabe {
 
 	public void setKundeDto(KundeDto kundeDto) {
 		this.kundeDto = kundeDto;
+		if (kundeDto != null) {
+			wifArtikelauswahl.setKundeIId(kundeDto.getIId());
+		} else {
+			wifArtikelauswahl.setKundeIId(null);
+		}
+
 	}
 
 	public Double getWechselkurs() {

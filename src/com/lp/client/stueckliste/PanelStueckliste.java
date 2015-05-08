@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -43,6 +43,7 @@ import java.util.Map;
 
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
@@ -50,6 +51,7 @@ import com.lp.client.artikel.ArtikelFilterFactory;
 import com.lp.client.auftrag.AuftragFilterFactory;
 import com.lp.client.frame.ExceptionLP;
 import com.lp.client.frame.HelperClient;
+import com.lp.client.frame.LockStateValue;
 import com.lp.client.frame.component.DialogQuery;
 import com.lp.client.frame.component.ISourceEvent;
 import com.lp.client.frame.component.InternalFrame;
@@ -69,12 +71,14 @@ import com.lp.client.frame.dialog.DialogFactory;
 import com.lp.client.partner.InternalFrameKunde;
 import com.lp.client.partner.PartnerFilterFactory;
 import com.lp.client.partner.TabbedPaneKunde;
+import com.lp.client.pc.LPButtonAction;
 import com.lp.client.pc.LPMain;
 import com.lp.client.util.fastlanereader.gui.QueryType;
 import com.lp.server.artikel.service.ArtikelDto;
 import com.lp.server.auftrag.service.AuftragDto;
 import com.lp.server.auftrag.service.AuftragFac;
 import com.lp.server.auftrag.service.AuftragServiceFac;
+import com.lp.server.benutzer.service.RechteFac;
 import com.lp.server.partner.service.KundeDto;
 import com.lp.server.partner.service.PartnerDto;
 import com.lp.server.personal.service.PersonalDto;
@@ -83,6 +87,7 @@ import com.lp.server.stueckliste.service.StuecklisteDto;
 import com.lp.server.stueckliste.service.StuecklisteFac;
 import com.lp.server.system.service.LocaleFac;
 import com.lp.server.system.service.MandantDto;
+import com.lp.server.system.service.MandantFac;
 import com.lp.server.system.service.ParameterFac;
 import com.lp.server.system.service.ParametermandantDto;
 import com.lp.server.util.Facade;
@@ -117,6 +122,9 @@ public class PanelStueckliste extends PanelBasis {
 	public final static String MY_OWN_NEW_GOTO_UEBERGEORDNET = PanelBasis.ACTION_MY_OWN_NEW
 			+ "MY_OWN_NEW_GOTO_UEBERGEORDNET";
 
+	public final static String MY_OWN_NEW_TOGGLE_FREIGABE = PanelBasis.ACTION_MY_OWN_NEW
+			+ "MY_OWN_NEW_FREIGABE";
+
 	private WrapperGotoButton wbuArtikel = new WrapperGotoButton(
 			WrapperGotoButton.GOTO_ARTIKEL_AUSWAHL);
 	private WrapperTextField wtfArtikel = new WrapperTextField();
@@ -134,6 +142,8 @@ public class PanelStueckliste extends PanelBasis {
 
 	private WrapperNumberField wnfDefaultdurchlaufzeitInTagen = new WrapperNumberField();
 
+	private JLabel wlaFreigabe = new JLabel();
+
 	private WrapperLabel wlaErfassungsfaktor = new WrapperLabel();
 	private WrapperNumberField wnfErfassungsfaktor = new WrapperNumberField();
 	private WrapperLabel wlaErfassungsfaktorEinheit = new WrapperLabel();
@@ -148,6 +158,7 @@ public class PanelStueckliste extends PanelBasis {
 	private WrapperCheckBox wcbUnterstuecklistenAusgeben = new WrapperCheckBox();
 	private WrapperCheckBox wcbUeberlieferbar = new WrapperCheckBox();
 	private WrapperCheckBox wcbDruckeInLagerstandsdetailauswertung = new WrapperCheckBox();
+	private WrapperCheckBox wcbKeineAutomatischeMaterialbuchung = new WrapperCheckBox();
 
 	private WrapperButton wbuKunde = new WrapperButton();
 	private WrapperTextField wtfKunde = new WrapperTextField();
@@ -156,6 +167,20 @@ public class PanelStueckliste extends PanelBasis {
 	private PanelQueryFLR panelQueryFLRKunde = null;
 	private PanelQueryFLR panelQueryFLRFertigungsgruppe = null;
 	private PanelQueryFLR panelQueryFLRAuftrag = null;
+
+	public LockStateValue getLockedstateDetailMainKey() throws Throwable {
+		LockStateValue lockStateValue = super.getLockedstateDetailMainKey();
+
+		if (internalFrameStueckliste.getTabbedPaneStueckliste().bStuecklistenfreigabe == true) {
+			// Wenn Fregegeben, dann nicht mehr aenderbar
+			if (stuecklisteDto != null && stuecklisteDto.getTFreigabe() != null) {
+				lockStateValue = new LockStateValue(
+						PanelBasis.LOCK_ENABLE_REFRESHANDPRINT_ONLY);
+			}
+		}
+
+		return lockStateValue;
+	}
 
 	public InternalFrameStueckliste getInternalFramePersonal() {
 		return internalFrameStueckliste;
@@ -204,6 +229,13 @@ public class PanelStueckliste extends PanelBasis {
 							+ "; LGR: " + sLosgroesse);
 			buttonGoto.setEnabled(true);
 
+			LPButtonAction toggleFreigabe = getHmOfButtons().get(
+					MY_OWN_NEW_TOGGLE_FREIGABE);
+			// Wenn vorhanden
+			if (toggleFreigabe != null) {
+				toggleFreigabe.getButton().setEnabled(true);
+			}
+
 		} else {
 			leereAlleFelder(this);
 			ParametermandantDto parameter = (ParametermandantDto) DelegateFactory
@@ -227,6 +259,16 @@ public class PanelStueckliste extends PanelBasis {
 							ParameterFac.KATEGORIE_STUECKLISTE,
 							LPMain.getInstance().getTheClient().getMandant());
 			wcbUnterstuecklistenAusgeben.setShort(Helper
+					.boolean2Short((Boolean) parameter.getCWertAsObject()));
+
+			parameter = (ParametermandantDto) DelegateFactory
+					.getInstance()
+					.getParameterDelegate()
+					.getParametermandant(
+							ParameterFac.PARAMETER_KEINE_AUTOMATISCHE_MATERIALBUCHUNG,
+							ParameterFac.KATEGORIE_FERTIGUNG,
+							LPMain.getInstance().getTheClient().getMandant());
+			wcbKeineAutomatischeMaterialbuchung.setShort(Helper
 					.boolean2Short((Boolean) parameter.getCWertAsObject()));
 
 			wsfLager.setKey(DelegateFactory.getInstance().getLagerDelegate()
@@ -323,7 +365,7 @@ public class PanelStueckliste extends PanelBasis {
 		wbuArtikel.setOKey(stuecklisteDto.getArtikelDto().getIId());
 
 		wlaErfassungsfaktorEinheit.setText(stuecklisteDto.getArtikelDto()
-				.getEinheitCNr());
+				.getEinheitCNr().trim());
 
 		if (stuecklisteDto.getAuftragIIdLeitauftrag() != null) {
 			wtfLeitauftrag.setText(stuecklisteDto.getAuftragDto().getCNr());
@@ -334,6 +376,8 @@ public class PanelStueckliste extends PanelBasis {
 		wcbMaterialbuchungBeiAblieferung.setShort(stuecklisteDto
 				.getBMaterialbuchungbeiablieferung());
 		wcbUeberlieferbar.setShort(stuecklisteDto.getBUeberlieferbar());
+		wcbKeineAutomatischeMaterialbuchung.setShort(stuecklisteDto
+				.getBKeineAutomatischeMaterialbuchung());
 		wcbDruckeInLagerstandsdetailauswertung.setShort(stuecklisteDto
 				.getBDruckeinlagerstandsdetail());
 		wcbUnterstuecklistenAusgeben.setShort(stuecklisteDto
@@ -406,6 +450,26 @@ public class PanelStueckliste extends PanelBasis {
 				+ " "
 				+ personalPosition);
 
+		String text = "";
+
+		if (stuecklisteDto.getTFreigabe() != null) {
+			text = LPMain.getTextRespectUISPr("stkl.freigegebenam")
+					+ " "
+					+ Helper.formatDatumZeit(stuecklisteDto.getTFreigabe(),
+							LPMain.getTheClient().getLocUi());
+		}
+		if (stuecklisteDto.getPersonalIIdFreigabe() != null) {
+			text += "("
+					+ DelegateFactory
+							.getInstance()
+							.getPersonalDelegate()
+							.personalFindByPrimaryKey(
+									stuecklisteDto.getPersonalIIdFreigabe())
+							.getCKurzzeichen() + ")";
+		}
+
+		wlaFreigabe.setText(text);
+
 		this.setStatusbarPersonalIIdAendern(stuecklisteDto
 				.getPersonalIIdAendern());
 		this.setStatusbarTAendern(stuecklisteDto.getTAendern());
@@ -472,6 +536,10 @@ public class PanelStueckliste extends PanelBasis {
 						"stk.stueckliste.druckeindetailsuwertung"));
 		wcbUnterstuecklistenAusgeben.setText(LPMain.getInstance()
 				.getTextRespectUISPr("stk.enthaltenestuecklistenausgeben"));
+
+		wcbKeineAutomatischeMaterialbuchung.setText(LPMain.getInstance()
+				.getTextRespectUISPr("stkl.keineautomatischematerialbuchung"));
+
 		wlaErfassungsfaktor.setText(LPMain.getInstance().getTextRespectUISPr(
 				"stkl.erfassungsfaktor"));
 
@@ -519,118 +587,153 @@ public class PanelStueckliste extends PanelBasis {
 		this.add(getPanelStatusbar(), new GridBagConstraints(0, 2, 1, 1, 1.0,
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(0, 0, 0, 0), 0, 0));
-		jpaWorkingOn.add(wtfArtikel, new GridBagConstraints(1, 0, 3, 1, 0.25,
-				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
-				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wbuArtikel, new GridBagConstraints(0, 0, 1, 1, 0.20,
-				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
-				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wbuLeitauftrag, new GridBagConstraints(0, 3, 1, 1,
-				0.0, 0.0, GridBagConstraints.CENTER,
+
+		iZeile++;
+
+		jpaWorkingOn.add(wbuArtikel, new GridBagConstraints(0, iZeile, 1, 1,
+				0.20, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 100, 0));
+		jpaWorkingOn.add(wtfArtikel, new GridBagConstraints(1, iZeile, 5, 1,
+				0.25, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wbuFertigungsgruppe, new GridBagConstraints(0, 1, 1,
+		iZeile++;
+
+		jpaWorkingOn.add(wbuFertigungsgruppe, new GridBagConstraints(0, iZeile,
+				1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wtfFertigungsgruppe, new GridBagConstraints(1, iZeile,
+				5, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		iZeile++;
+		jpaWorkingOn.add(wbuLeitauftrag, new GridBagConstraints(0, iZeile, 1,
 				1, 0.0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wtfFertigungsgruppe, new GridBagConstraints(1, 1, 3,
+
+		jpaWorkingOn.add(wtfLeitauftrag, new GridBagConstraints(1, iZeile, 5,
 				1, 0.0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wtfLeitauftrag, new GridBagConstraints(1, 3, 3, 1,
-				0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wbuKunde, new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0,
-				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+		iZeile++;
+
+		jpaWorkingOn.add(wbuKunde, new GridBagConstraints(0, iZeile, 1, 1, 0.0,
+				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 2, 2, 22), 0, 0));
 
-		jpaWorkingOn.add(buttonGoto, new GridBagConstraints(0, 4, 1, 1, 0.0,
-				0.0, GridBagConstraints.EAST, GridBagConstraints.NONE,
+		jpaWorkingOn.add(buttonGoto, new GridBagConstraints(0, iZeile, 1, 1,
+				0.0, 0.0, GridBagConstraints.EAST, GridBagConstraints.NONE,
 				new Insets(2, 2, 2, 2), 10, 0));
 
-		jpaWorkingOn.add(wtfKunde, new GridBagConstraints(1, 4, 3, 1, 0.0, 0.0,
-				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+		jpaWorkingOn.add(wtfKunde, new GridBagConstraints(1, iZeile, 5, 1, 0.0,
+				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 2, 2, 2), 0, 0));
 
+		iZeile++;
+
 		jpaWorkingOn.add(wlaDefaultdurchlaufzeitInTagen,
-				new GridBagConstraints(0, 5, 1, 1, 0.0, 0.0,
+				new GridBagConstraints(0, iZeile, 1, 1, 0.0, 0.0,
 						GridBagConstraints.CENTER,
 						GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2),
 						0, 0));
 
 		jpaWorkingOn.add(wnfDefaultdurchlaufzeitInTagen,
-				new GridBagConstraints(1, 5, 2, 1, 0.0, 0.0,
+				new GridBagConstraints(1, iZeile, 1, 1, 0.0, 0.0,
 						GridBagConstraints.WEST, GridBagConstraints.NONE,
-						new Insets(2, 2, 2, 2), 0, 0));
+						new Insets(2, 2, 2, 2), 50, 0));
+		wlaTage.setHorizontalAlignment(SwingConstants.LEFT);
+		jpaWorkingOn.add(wlaTage, new GridBagConstraints(2, iZeile, 1, 1, 0.0,
+				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+				new Insets(2, 2, 2, 2), 80, 0));
 
-		jpaWorkingOn.add(wlaTage, new GridBagConstraints(1, 5, 1, 1, 0.0, 0.0,
-				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
-				new Insets(2, 135, 2, 2), 50, 0));
-
-		jpaWorkingOn.add(wlaErfassungsfaktor, new GridBagConstraints(2, 5, 1,
-				1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 100, 0));
-		jpaWorkingOn.add(wnfErfassungsfaktor, new GridBagConstraints(3, 5, 1,
-				1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE,
-				new Insets(2, 2, 2, 2), 50, 0));
+		jpaWorkingOn.add(wlaErfassungsfaktor, new GridBagConstraints(3, iZeile,
+				1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 120, 0));
+		jpaWorkingOn.add(wnfErfassungsfaktor, new GridBagConstraints(4, iZeile,
+				1, 1, 0.0, 0.0, GridBagConstraints.WEST,
+				GridBagConstraints.NONE, new Insets(2, 2, 2, 2), 50, 0));
 		wlaErfassungsfaktorEinheit.setHorizontalAlignment(SwingConstants.LEFT);
-		jpaWorkingOn.add(wlaErfassungsfaktorEinheit, new GridBagConstraints(3,
-				5, 1, 1, 0.0, 0.0, GridBagConstraints.WEST,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 170, 2, 2), 0, 0));
+		jpaWorkingOn.add(wlaErfassungsfaktorEinheit, new GridBagConstraints(5,
+				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.WEST,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 20, 0));
+		iZeile++;
 
-		jpaWorkingOn.add(wcoStuecklisteart, new GridBagConstraints(1, 6, 2, 1,
-				0.0, 0.0, GridBagConstraints.WEST,
+		jpaWorkingOn.add(wcoStuecklisteart, new GridBagConstraints(1, iZeile,
+				3, 1, 0.0, 0.0, GridBagConstraints.WEST,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wcbFremdfertigung, new GridBagConstraints(1, 7, 2, 1,
-				0.0, 0.0, GridBagConstraints.CENTER,
+
+		iZeile++;
+
+		jpaWorkingOn.add(wcbFremdfertigung, new GridBagConstraints(1, iZeile,
+				3, 1, 0.0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+
+		iZeile++;
 
 		jpaWorkingOn.add(wcbMaterialbuchungBeiAblieferung,
-				new GridBagConstraints(1, 8, 2, 1, 0.0, 0.0,
+				new GridBagConstraints(1, iZeile, 3, 1, 0.0, 0.0,
 						GridBagConstraints.CENTER,
 						GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2),
 						0, 0));
+
+		iZeile++;
 		jpaWorkingOn.add(wcbUnterstuecklistenAusgeben, new GridBagConstraints(
-				1, 9, 2, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wcbUeberlieferbar, new GridBagConstraints(1, 10, 2, 1,
-				0.0, 0.0, GridBagConstraints.CENTER,
+				1, iZeile, 3, 1, 0.0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
 
+		iZeile++;
+		jpaWorkingOn.add(wcbUeberlieferbar, new GridBagConstraints(1, iZeile,
+				3, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		iZeile++;
 		jpaWorkingOn.add(wcbDruckeInLagerstandsdetailauswertung,
-				new GridBagConstraints(1, 11, 2, 1, 0.0, 0.0,
+				new GridBagConstraints(1, iZeile, 5, 1, 0.0, 0.0,
 						GridBagConstraints.CENTER,
 						GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2),
 						0, 0));
+		iZeile++;
+		jpaWorkingOn.add(wcbKeineAutomatischeMaterialbuchung,
+				new GridBagConstraints(1, iZeile, 5, 1, 0.0, 0.0,
+						GridBagConstraints.CENTER,
+						GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2),
+						0, 0));
+		iZeile++;
 
 		jpaWorkingOn.add(wsfLager.getWrapperButton(), new GridBagConstraints(0,
-				12, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
 
 		jpaWorkingOn.add(wsfLager.getWrapperTextField(),
-				new GridBagConstraints(1, 12, 2, 1, 0.0, 0.0,
+				new GridBagConstraints(1, iZeile, 3, 1, 0.0, 0.0,
 						GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 						new Insets(2, 2, 2, 2), 0, 0));
 
 		if (getInternalFramePersonal().getTabbedPaneStueckliste().iStrukturierterStklImport == 2) {
+			iZeile++;
+
 			wsfStueckliste.getWrapperButton().setText(
 					LPMain.getInstance()
 							.getTextRespectUISPr("stkl.ekvorschlag"));
 			jpaWorkingOn.add(wsfStueckliste.getWrapperButton(),
-					new GridBagConstraints(0, 13, 1, 1, 0.0, 0.0,
+					new GridBagConstraints(0, iZeile, 1, 1, 0.0, 0.0,
 							GridBagConstraints.CENTER,
 							GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2,
 									2), 0, 0));
 
 			jpaWorkingOn.add(wsfStueckliste.getWrapperTextField(),
-					new GridBagConstraints(1, 13, 2, 1, 0.0, 0.0,
+					new GridBagConstraints(1, iZeile, 3, 1, 0.0, 0.0,
 							GridBagConstraints.WEST,
 							GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2,
 									2), 0, 0));
 		}
 
+		iZeile++;
+
 		jpaWorkingOn.add(wlaLetzteAenderungArbeitsplan, new GridBagConstraints(
-				0, 14, 3, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+				0, iZeile, 4, 1, 0.0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(20, 2, 2, 2), 0, 0));
+
+		iZeile++;
+
 		jpaWorkingOn.add(wlaLetzteAenderungPosition, new GridBagConstraints(0,
-				15, 3, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+				iZeile, 4, 1, 0.0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
 
 		String[] aWhichButtonIUse = { ACTION_UPDATE, ACTION_SAVE,
@@ -641,6 +744,22 @@ public class PanelStueckliste extends PanelBasis {
 		getToolBar().addButtonLeft("/com/lp/client/res/data_out.png",
 				LPMain.getTextRespectUISPr("stkl.kopfdaten.gotouebergeordnet"),
 				MY_OWN_NEW_GOTO_UEBERGEORDNET, null, null);
+
+		if (internalFrameStueckliste.getTabbedPaneStueckliste().bStuecklistenfreigabe == true) {
+
+			boolean hatRecht = DelegateFactory.getInstance()
+					.getTheJudgeDelegate()
+					.hatRecht(RechteFac.RECHT_STK_FREIGABE_CUD);
+
+			if (hatRecht) {
+
+				getToolBar().addButtonCenter("/com/lp/client/res/check2.png",
+						LPMain.getTextRespectUISPr("stkl.freigeben"),
+						MY_OWN_NEW_TOGGLE_FREIGABE, null,
+						RechteFac.RECHT_STK_FREIGABE_CUD);
+			}
+			getToolBar().getToolsPanelCenter().add(wlaFreigabe);
+		}
 
 	}
 
@@ -759,6 +878,17 @@ public class PanelStueckliste extends PanelBasis {
 
 			}
 
+		} else if (e.getActionCommand().equals(MY_OWN_NEW_TOGGLE_FREIGABE)) {
+			// PJ 17558
+			if (stuecklisteDto.getIId() != null) {
+				DelegateFactory.getInstance().getStuecklisteDelegate()
+						.toggleFreigabe(stuecklisteDto.getIId());
+				stuecklisteDto = DelegateFactory.getInstance()
+						.getStuecklisteDelegate()
+						.stuecklisteFindByPrimaryKey(stuecklisteDto.getIId());
+				internalFrameStueckliste.setStuecklisteDto(stuecklisteDto);
+				eventYouAreSelected(false);
+			}
 		}
 
 	}
@@ -838,6 +968,9 @@ public class PanelStueckliste extends PanelBasis {
 						.getShort());
 		stuecklisteDto.setBAusgabeunterstueckliste(wcbUnterstuecklistenAusgeben
 				.getShort());
+		stuecklisteDto
+				.setBKeineAutomatischeMaterialbuchung(wcbKeineAutomatischeMaterialbuchung
+						.getShort());
 		stuecklisteDto.setNDefaultdurchlaufzeit(wnfDefaultdurchlaufzeitInTagen
 				.getBigDecimal());
 		stuecklisteDto.setIErfassungsfaktor(wnfErfassungsfaktor.getInteger());
@@ -867,7 +1000,6 @@ public class PanelStueckliste extends PanelBasis {
 				stuecklisteDto = DelegateFactory.getInstance()
 						.getStuecklisteDelegate()
 						.stuecklisteFindByPrimaryKey(stuecklisteDto.getIId());
-				
 
 			} else {
 				DelegateFactory.getInstance().getStuecklisteDelegate()

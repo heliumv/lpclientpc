@@ -1,33 +1,33 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
- * 
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
+ *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published 
- * by the Free Software Foundation, either version 3 of theLicense, or 
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of theLicense, or
  * (at your option) any later version.
- * 
- * According to sec. 7 of the GNU Affero General Public License, version 3, 
+ *
+ * According to sec. 7 of the GNU Affero General Public License, version 3,
  * the terms of the AGPL are supplemented with the following terms:
- * 
- * "HELIUM V" and "HELIUM 5" are registered trademarks of 
- * HELIUM V IT-Solutions GmbH. The licensing of the program under the 
+ *
+ * "HELIUM V" and "HELIUM 5" are registered trademarks of
+ * HELIUM V IT-Solutions GmbH. The licensing of the program under the
  * AGPL does not imply a trademark license. Therefore any rights, title and
  * interest in our trademarks remain entirely with us. If you want to propagate
  * modified versions of the Program under the name "HELIUM V" or "HELIUM 5",
- * you may only do so if you have a written permission by HELIUM V IT-Solutions 
+ * you may only do so if you have a written permission by HELIUM V IT-Solutions
  * GmbH (to acquire a permission please contact HELIUM V IT-Solutions
  * at trademark@heliumv.com).
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Affero General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Contact: developers@heliumv.com
  ******************************************************************************/
 package com.lp.client.lieferschein;
@@ -38,17 +38,19 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.FocusEvent;
+import java.awt.event.InputEvent;
 import java.math.BigDecimal;
 import java.util.EventObject;
 import java.util.List;
 
 import javax.swing.JComponent;
 import javax.swing.JPanel;
+import javax.swing.KeyStroke;
 
 import com.lp.client.frame.Defaults;
 import com.lp.client.frame.ExceptionLP;
 import com.lp.client.frame.HelperClient;
-import com.lp.client.frame.LockStateValue;
+import com.lp.client.frame.component.HvActionEvent;
 import com.lp.client.frame.component.InternalFrame;
 import com.lp.client.frame.component.ItemChangedEvent;
 import com.lp.client.frame.component.PanelBasis;
@@ -62,6 +64,7 @@ import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.frame.dialog.DialogFactory;
 import com.lp.client.pc.LPButtonAction;
 import com.lp.client.pc.LPMain;
+import com.lp.server.angebot.service.AngebotServiceFac;
 import com.lp.server.artikel.service.ArtgruDto;
 import com.lp.server.artikel.service.ArtikelDto;
 import com.lp.server.artikel.service.SeriennrChargennrMitMengeDto;
@@ -78,14 +81,13 @@ import com.lp.server.system.service.ParameterFac;
 import com.lp.server.system.service.ParametermandantDto;
 import com.lp.util.Helper;
 
-@SuppressWarnings("static-access")
 /*
  * <p>In diesem Detailfenster der Lieferscheinposition werden Daten erfasst bzw.
  * geaendert.</p> <p>Copyright Logistik Pur Software GmbH (c) 2004-2008</p>
  * <p>Erstellungsdatum 2004-10-22</p> <p> </p>
- * 
+ *
  * @author Uli Walch
- * 
+ *
  * @version $Revision: 1.32 $
  */
 public class PanelLieferscheinPositionen extends PanelPositionen2 {
@@ -163,8 +165,9 @@ public class PanelLieferscheinPositionen extends PanelPositionen2 {
 						0, 0, 0, 0), 0, 0));
 
 		this.createAndSaveAndShowButton("/com/lp/client/res/printer216x16.png",
-				LPMain.getTextRespectUISPr("artikel.report.etikett"),
-				ACTION_SPECIAL_ETIKETTDRUCKEN,
+				LPMain.getTextRespectUISPr("artikel.report.etikett.shortcut"),
+				ACTION_SPECIAL_ETIKETTDRUCKEN,KeyStroke.getKeyStroke('P', InputEvent.CTRL_DOWN_MASK
+						| InputEvent.SHIFT_DOWN_MASK),
 				RechteFac.RECHT_LS_LIEFERSCHEIN_CUD);
 
 		// Statusbar an den unteren Rand des Panels haengen
@@ -217,9 +220,9 @@ public class PanelLieferscheinPositionen extends PanelPositionen2 {
 		// der Vorschlagswert fuer eine frei erfasste Position ist 1
 		panelArtikel.wnfMenge.setDouble(new Double(1));
 
-		
+
 		panelArtikel.setUebersteuertesLagerIId(null);
-		
+
 		// dem panelArtikel muss das Lager und der Kunde gesetzt werden
 		// PJ 14751
 
@@ -350,8 +353,7 @@ public class PanelLieferscheinPositionen extends PanelPositionen2 {
 		aktualisiereStatusbar();
 		tpLieferschein.enablePanels(tpLieferschein.getLieferscheinDto(), true);
 
-		tpLieferschein.setTitleLieferschein(LPMain.getInstance()
-				.getTextRespectUISPr("ls.title.panel.positionen"));
+		tpLieferschein.setTitleLieferschein(LPMain.getTextRespectUISPr("ls.title.panel.positionen"));
 		LPButtonAction item = null;
 		if (positionDto.getLieferscheinpositionartCNr() != null) {
 			boolean bEnableVerschieben = !positionDto
@@ -378,7 +380,7 @@ public class PanelLieferscheinPositionen extends PanelPositionen2 {
 
 	/**
 	 * Alle Positionsdaten aus einem dto ins Panel setzen.
-	 * 
+	 *
 	 * @throws Throwable
 	 */
 	private void dto2Components() throws Throwable {
@@ -469,26 +471,28 @@ public class PanelLieferscheinPositionen extends PanelPositionen2 {
 			throws Throwable {
 		if (tpLieferschein.istAktualisierenLieferscheinErlaubt()) {
 
-			if (tpLieferschein.getLieferscheinDto().getStatusCNr()
-					.equals(LieferscheinFac.LSSTATUS_OFFEN)) {
-				boolean b = DialogFactory.showModalJaNeinDialog(
-						getInternalFrame(),
-						LPMain.getTextRespectUISPr("ls.bereitsoffen"),
-						LPMain.getTextRespectUISPr("lp.hint"));
-				if (b == false) {
-					return;
-				}
+//			if (tpLieferschein.getLieferscheinDto().getStatusCNr()
+//					.equals(LieferscheinFac.LSSTATUS_OFFEN)) {
+//				boolean b = DialogFactory.showModalJaNeinDialog(
+//						getInternalFrame(),
+//						LPMain.getTextRespectUISPr("ls.bereitsoffen"),
+//						LPMain.getTextRespectUISPr("lp.hint"));
+//				if (b == false) {
+//					return;
+//				}
+//
+//			} else if (tpLieferschein.getLieferscheinDto().getStatusCNr()
+//					.equals(LieferscheinFac.LSSTATUS_GELIEFERT)) {
+//				boolean b = DialogFactory.showModalJaNeinDialog(
+//						getInternalFrame(),
+//						LPMain.getTextRespectUISPr("ls.bereitsgeliefert"),
+//						LPMain.getTextRespectUISPr("lp.hint"));
+//				if (b == false) {
+//					return;
+//				}
+//			}
 
-			} else if (tpLieferschein.getLieferscheinDto().getStatusCNr()
-					.equals(LieferscheinFac.LSSTATUS_GELIEFERT)) {
-				boolean b = DialogFactory.showModalJaNeinDialog(
-						getInternalFrame(),
-						LPMain.getTextRespectUISPr("ls.bereitsgeliefert"),
-						LPMain.getTextRespectUISPr("lp.hint"));
-				if (b == false) {
-					return;
-				}
-			}
+			super.eventActionUpdate(aE, false);
 
 			((PanelPositionenArtikelVerkaufSNR) panelArtikel)
 					.zeigeSerienchargennummer(true, false);
@@ -512,7 +516,6 @@ public class PanelLieferscheinPositionen extends PanelPositionen2 {
 				}
 			}
 
-			super.eventActionUpdate(aE, false);
 
 			panelArtikel.setArtikelEingabefelderEditable(true);
 
@@ -1048,14 +1051,14 @@ public class PanelLieferscheinPositionen extends PanelPositionen2 {
 				.getText();
 		/*
 		 * String serienchargennummer = null;
-		 * 
+		 *
 		 * if (((PanelPositionenArtikelVerkaufSNR)
 		 * panelArtikel).wtfSerienchargennummer .getText() != null &&
 		 * ((PanelPositionenArtikelVerkaufSNR)
 		 * panelArtikel).wtfSerienchargennummer .getText().length() > 0) {
 		 * serienchargennummer = ((PanelPositionenArtikelVerkaufSNR)
 		 * panelArtikel).wtfSerienchargennummer .getText(); }
-		 * 
+		 *
 		 * if (panelArtikel.getArtikelDto().getIId() != null &&
 		 * panelArtikel.getArtikelDto().getBLagerbewirtschaftet()
 		 * .equals(Helper.boolean2Short(true))) { // das Lager des Lieferscheins
@@ -1067,15 +1070,37 @@ public class PanelLieferscheinPositionen extends PanelPositionen2 {
 		 * .getLagerDelegate().getMengeAufLager(
 		 * panelArtikel.getArtikelDto().getIId(), iaktuelleLager,
 		 * serienchargennummer);
-		 * 
+		 *
 		 * lagerinfo += ": "; lagerinfo += ddMenge; }
 		 * setStatusbarSpalte5(lagerinfo); } else { setStatusbarSpalte5(""); }
 		 */
 	}
 
-	protected void eventActionPrint(ActionEvent e) throws Throwable {
-		tpLieferschein.printLieferschein();
+	protected void eventActionPrint(HvActionEvent e) throws Throwable {
+
+		if (e.isMouseEvent() && e.isRightButtonPressed()) {
+
+			boolean bStatusAngelegt = tpLieferschein.getLieferscheinDto().getStatusCNr().equals(AngebotServiceFac.ANGEBOTSTATUS_ANGELEGT);
+			boolean bKonditionen = tpLieferschein.pruefeKonditionen();
+
+			if (bStatusAngelegt && bKonditionen) {
+				DelegateFactory.getInstance().getLsDelegate().berechneAktiviereBelegControlled(
+						tpLieferschein.getLieferscheinDto().getIId());
+				eventActionRefresh(e, false);
+			}
+			else if (!bStatusAngelegt) {
+				DialogFactory.showModalDialog("Status",
+						LPMain.getMessageTextRespectUISPr("status.zustand",
+								LPMain.getTextRespectUISPr("ls.lieferschein"),
+								tpLieferschein.getLieferscheinStatus().trim()));
+			}
+
+		} else {
+			tpLieferschein.printLieferschein();
+		}
+
 		eventYouAreSelected(false);
+
 	}
 
 	protected String getLockMeWer() throws Exception {
@@ -1084,7 +1109,7 @@ public class PanelLieferscheinPositionen extends PanelPositionen2 {
 
 	/**
 	 * Eigene ExceptionLP's verarbeiten. myexception: 2 methode ueberschreiben
-	 * 
+	 *
 	 * @return boolean
 	 * @param exfc
 	 *            ExceptionLP

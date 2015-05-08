@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -238,7 +238,10 @@ public class TabbedPaneBuchungsjournal extends TabbedPane {
 
 	protected void lPActionEvent(java.awt.event.ActionEvent e) throws Throwable {
 		if(e.getActionCommand().equals(MENU_ACTION_EXPORT)) {
-			new DialogBuchungsjournalExport(LPMain.getInstance().getDesktop()).setVisible(true);
+			DialogBuchungsjournalExport dialog = new DialogBuchungsjournalExport(null) ;
+			LPMain.getInstance().getDesktop().platziereDialogInDerMitteDesFensters(dialog);
+			dialog.setVisible(true);
+//			new DialogBuchungsjournalExport(LPMain.getInstance().getDesktop()).setVisible(true);
 		} else {
 			String selectedGJ = geschaeftsJahrViewController
 					.getSelectedGeschaeftsjahr(e.getActionCommand());
@@ -375,6 +378,16 @@ public class TabbedPaneBuchungsjournal extends TabbedPane {
 		return panelTop2QueryBuchungdetails;
 	}
 
+	
+/*
+		return new FilterKriteriumDirekt(FinanzFac.FLR_BUCHUNGDETAIL_FLRBUCHUNG
+				+ "." + FinanzFac.FLR_BUCHUNG_C_TEXT, "",
+				FilterKriterium.OPERATOR_LIKE,
+				LPMain.getTextRespectUISPr("label.text"),
+				FilterKriteriumDirekt.PROZENT_BOTH, // Auswertung als 'XX%'
+				true, // wrapWithSingleQuotes
+				true, Facade.MAX_UNBESCHRAENKT);
+ */
 	private PanelQuery getPanelTop3QueryBuchungenDetailliert() throws Throwable {
 
 		if (panelTop3QueryBuchungdetailliert == null) {
@@ -404,9 +417,19 @@ public class TabbedPaneBuchungsjournal extends TabbedPane {
 			panelTop3QueryBuchungdetailliert
 					.addDirektFilter(FinanzFilterFactory.getInstance()
 							.createFKDBetragssuche());
-
+			panelTop3QueryBuchungdetailliert
+				.addDirektFilter(FinanzFilterFactory.getInstance()
+						.createFKBuchungsjournalDetailiertKontonummer()) ;
+			panelTop3QueryBuchungdetailliert
+				.addDirektFilter(FinanzFilterFactory.getInstance()
+						.createFKDBuchungsart());
+			panelTop3QueryBuchungdetailliert
+				.addDirektFilter(FinanzFilterFactory.getInstance()
+					.createFKDBelegart());
+			
 			setComponentAt(IDX_BUCHUNGENDETAILLIERT,
 					panelTop3QueryBuchungdetailliert);
+			panelTop3QueryBuchungdetailliert.enableToolsPanelButtons(true, aWhichButtonIUseBuchung);
 
 		}
 		return panelTop3QueryBuchungdetailliert;

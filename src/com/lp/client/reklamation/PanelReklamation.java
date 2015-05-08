@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -671,7 +671,7 @@ public class PanelReklamation extends PanelBasis {
 		String sTitle = LPMain.getTextRespectUISPr("ls.title.tooltip.auswahl");
 		panelQueryFLRLieferschein = LieferscheinFilterFactory.getInstance()
 				.createPanelQueryFLRLieferschein(getInternalFrame(), filters,
-						sTitle);
+						sTitle, null);
 		new DialogQuery(panelQueryFLRLieferschein);
 	}
 
@@ -2033,8 +2033,12 @@ public class PanelReklamation extends PanelBasis {
 				internalFrameReklamation.setReklamationDto(reklamationDto);
 				if (ReklamationFac.REKLAMATIONART_LIEFERANT
 						.equals(reklamationDto.getReklamationartCNr())) {
-					DelegateFactory.getInstance().getLieferantDelegate()
-							.pruefeLieferant(reklamationDto.getLieferantIId());
+					DelegateFactory
+							.getInstance()
+							.getLieferantDelegate()
+							.pruefeLieferant(reklamationDto.getLieferantIId(),
+									LocaleFac.BELEGART_REKLAMATION,
+									getInternalFrame());
 				}
 
 			} else {
@@ -2173,7 +2177,9 @@ public class PanelReklamation extends PanelBasis {
 									.getKundeDelegate()
 									.pruefeKunde(
 											lieferscheinDto
-													.getKundeIIdLieferadresse());
+													.getKundeIIdLieferadresse(),
+											LocaleFac.BELEGART_REKLAMATION,
+											getInternalFrame());
 
 							wtfKunde.setText(kundeDto.getPartnerDto()
 									.formatTitelAnrede());
@@ -2232,8 +2238,12 @@ public class PanelReklamation extends PanelBasis {
 									.kundeFindByPrimaryKey(
 											rechnungDto.getKundeIId());
 
-							DelegateFactory.getInstance().getKundeDelegate()
-									.pruefeKunde(rechnungDto.getKundeIId());
+							DelegateFactory
+									.getInstance()
+									.getKundeDelegate()
+									.pruefeKunde(rechnungDto.getKundeIId(),
+											LocaleFac.BELEGART_REKLAMATION,
+											getInternalFrame());
 
 							wtfKunde.setText(kundeDto.getPartnerDto()
 									.formatTitelAnrede());
@@ -2476,8 +2486,11 @@ public class PanelReklamation extends PanelBasis {
 				KundeDto kundeDto = DelegateFactory.getInstance()
 						.getKundeDelegate().kundeFindByPrimaryKey(iIdKunde);
 
-				DelegateFactory.getInstance().getKundeDelegate()
-						.pruefeKunde(iIdKunde);
+				DelegateFactory
+						.getInstance()
+						.getKundeDelegate()
+						.pruefeKunde(iIdKunde, LocaleFac.BELEGART_REKLAMATION,
+								getInternalFrame());
 
 				wtfKunde.setText(kundeDto.getPartnerDto().formatTitelAnrede());
 				reklamationDto.setKundeIId(iIdKunde);
@@ -2526,7 +2539,9 @@ public class PanelReklamation extends PanelBasis {
 							.getInstance()
 							.getKundeDelegate()
 							.pruefeKunde(
-									lieferscheinDto.getKundeIIdLieferadresse());
+									lieferscheinDto.getKundeIIdLieferadresse(),
+									LocaleFac.BELEGART_REKLAMATION,
+									getInternalFrame());
 
 					wtfKunde.setText(kundeDto.getPartnerDto()
 							.formatTitelAnrede());

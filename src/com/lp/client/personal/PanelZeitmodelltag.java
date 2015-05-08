@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -60,6 +60,8 @@ import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.frame.dialog.DialogFactory;
 import com.lp.client.pc.LPMain;
 import com.lp.server.personal.service.ZeitmodelltagDto;
+import com.lp.server.system.service.ParameterFac;
+import com.lp.server.system.service.ParametermandantDto;
 
 @SuppressWarnings("static-access")
 public class PanelZeitmodelltag extends PanelBasis {
@@ -277,6 +279,16 @@ public class PanelZeitmodelltag extends PanelBasis {
 		jpaButtonAction = getToolsPanel();
 		this.setActionMap(null);
 
+		ParametermandantDto parameter = (ParametermandantDto) DelegateFactory
+				.getInstance()
+				.getParameterDelegate()
+				.getParametermandant(
+						ParameterFac.PARAMETER_AUTOMATISCHE_PAUSEN_NUR_WARNUNG,
+						ParameterFac.KATEGORIE_PERSONAL,
+						LPMain.getTheClient().getMandant());
+
+		boolean bPausenNurWarnung = (Boolean) parameter.getCWertAsObject();
+
 		getInternalFrame().addItemChangedListener(this);
 		wlaTagesart.setText(LPMain.getInstance().getTextRespectUISPr(
 				"lp.tagesart"));
@@ -292,8 +304,15 @@ public class PanelZeitmodelltag extends PanelBasis {
 				"pers.zeitmodelltag.geht"));
 		wlaMindestpausenzeit.setText(LPMain.getInstance().getTextRespectUISPr(
 				"pers.zeitmodelltag.mindestpausenzeit"));
-		wlaAutopauseab.setText(LPMain.getInstance().getTextRespectUISPr(
-				"pers.zeitmodelltag.autopauseab"));
+
+		if (bPausenNurWarnung) {
+			wlaAutopauseab.setText(LPMain.getInstance().getTextRespectUISPr(
+					"pers.zeitmodelltag.autopauseabjeweils"));
+		} else {
+			wlaAutopauseab.setText(LPMain.getInstance().getTextRespectUISPr(
+					"pers.zeitmodelltag.autopauseab"));
+		}
+
 		wlaMindestpausenzeit2.setText(LPMain.getInstance().getTextRespectUISPr(
 				"pers.zeitmodelltag.mindestpausenzeit2"));
 		wlaAutopauseab2.setText(LPMain.getInstance().getTextRespectUISPr(
@@ -426,7 +445,7 @@ public class PanelZeitmodelltag extends PanelBasis {
 				.add(wlaAutopauseab, new GridBagConstraints(3, iZeile, 1, 1,
 						0.0, 0.0, GridBagConstraints.CENTER,
 						GridBagConstraints.HORIZONTAL, new Insets(10, 2, 2, 2),
-						-50, 0));
+						50, 0));
 		jpaWorkingOn.add(wtfAutopauseab, new GridBagConstraints(4, iZeile, 1,
 				1, 0.0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.NONE, new Insets(10, 2, 2, 2), 70, 0));
@@ -457,65 +476,74 @@ public class PanelZeitmodelltag extends PanelBasis {
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 30, 0));
 
 		iZeile++;
-		jpaWorkingOn
-				.add(wlaAutopauseab2, new GridBagConstraints(2, iZeile, 2, 1,
-						0.0, 0.0, GridBagConstraints.CENTER,
-						GridBagConstraints.HORIZONTAL, new Insets(10, 2, 2, 2),
-						-50, 0));
-		jpaWorkingOn.add(wtfAutopauseab2, new GridBagConstraints(4, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.NONE, new Insets(10, 2, 2, 2), 70, 0));
-		WrapperLabel wlaUeberschrift6 = new WrapperLabel("hh:mm");
-		wlaUeberschrift6.setHorizontalAlignment(SwingConstants.LEFT);
-		jpaWorkingOn.add(wlaUeberschrift6, new GridBagConstraints(5, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(10, 2, 2, 2), 30, 0));
+
 		jpaWorkingOn.add(wcbRundesondertatigkeiten, new GridBagConstraints(0,
 				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		iZeile++;
-		jpaWorkingOn.add(wlaMindestpausenzeit2, new GridBagConstraints(3,
-				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), -50, 0));
-		jpaWorkingOn.add(wtfMindestpausenzeit2, new GridBagConstraints(4,
-				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.NONE, new Insets(2, 2, 2, 2), 70, 0));
-		WrapperLabel wlaUeberschrift8 = new WrapperLabel("hh:mm");
-		wlaUeberschrift8.setHorizontalAlignment(SwingConstants.LEFT);
+		if (bPausenNurWarnung == false) {
+			jpaWorkingOn.add(wlaAutopauseab2, new GridBagConstraints(2, iZeile,
+					2, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+					GridBagConstraints.HORIZONTAL, new Insets(10, 2, 2, 2),
+					-50, 0));
+			jpaWorkingOn.add(wtfAutopauseab2, new GridBagConstraints(4, iZeile,
+					1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+					GridBagConstraints.NONE, new Insets(10, 2, 2, 2), 70, 0));
 
-		jpaWorkingOn.add(wlaUeberschrift8, new GridBagConstraints(5, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 30, 0));
-		iZeile++;
-		jpaWorkingOn
-				.add(wlaAutopauseab3, new GridBagConstraints(2, iZeile, 2, 1,
-						0.0, 0.0, GridBagConstraints.CENTER,
-						GridBagConstraints.HORIZONTAL, new Insets(10, 2, 2, 2),
-						-50, 0));
-		jpaWorkingOn.add(wtfAutopauseab3, new GridBagConstraints(4, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.NONE, new Insets(10, 2, 2, 2), 70, 0));
-		WrapperLabel wlaUeberschrift7 = new WrapperLabel("hh:mm");
-		wlaUeberschrift7.setHorizontalAlignment(SwingConstants.LEFT);
-		jpaWorkingOn.add(wlaUeberschrift7, new GridBagConstraints(5, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(10, 2, 2, 2), 30, 0));
+			WrapperLabel wlaUeberschrift6 = new WrapperLabel("hh:mm");
+			wlaUeberschrift6.setHorizontalAlignment(SwingConstants.LEFT);
+			jpaWorkingOn.add(wlaUeberschrift6, new GridBagConstraints(5,
+					iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+					GridBagConstraints.HORIZONTAL, new Insets(10, 2, 2, 2), 30,
+					0));
 
-		iZeile++;
-		jpaWorkingOn.add(wlaMindestpausenzeit3, new GridBagConstraints(3,
-				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), -50, 0));
-		jpaWorkingOn.add(wtfMindestpausenzeit3, new GridBagConstraints(4,
-				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.NONE, new Insets(2, 2, 2, 2), 70, 0));
+			iZeile++;
 
-		WrapperLabel wlaUeberschrift9 = new WrapperLabel("hh:mm");
-		wlaUeberschrift9.setHorizontalAlignment(SwingConstants.LEFT);
+			jpaWorkingOn.add(wlaMindestpausenzeit2, new GridBagConstraints(3,
+					iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+					GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), -50,
+					0));
+			jpaWorkingOn.add(wtfMindestpausenzeit2, new GridBagConstraints(4,
+					iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+					GridBagConstraints.NONE, new Insets(2, 2, 2, 2), 70, 0));
+			WrapperLabel wlaUeberschrift8 = new WrapperLabel("hh:mm");
+			wlaUeberschrift8.setHorizontalAlignment(SwingConstants.LEFT);
 
-		jpaWorkingOn.add(wlaUeberschrift9, new GridBagConstraints(5, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 30, 0));
+			jpaWorkingOn.add(wlaUeberschrift8, new GridBagConstraints(5,
+					iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+					GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 30,
+					0));
+			iZeile++;
+			jpaWorkingOn.add(wlaAutopauseab3, new GridBagConstraints(2, iZeile,
+					2, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+					GridBagConstraints.HORIZONTAL, new Insets(10, 2, 2, 2),
+					-50, 0));
+			jpaWorkingOn.add(wtfAutopauseab3, new GridBagConstraints(4, iZeile,
+					1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+					GridBagConstraints.NONE, new Insets(10, 2, 2, 2), 70, 0));
+			WrapperLabel wlaUeberschrift7 = new WrapperLabel("hh:mm");
+			wlaUeberschrift7.setHorizontalAlignment(SwingConstants.LEFT);
+			jpaWorkingOn.add(wlaUeberschrift7, new GridBagConstraints(5,
+					iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+					GridBagConstraints.HORIZONTAL, new Insets(10, 2, 2, 2), 30,
+					0));
 
+			iZeile++;
+			jpaWorkingOn.add(wlaMindestpausenzeit3, new GridBagConstraints(3,
+					iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+					GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), -50,
+					0));
+			jpaWorkingOn.add(wtfMindestpausenzeit3, new GridBagConstraints(4,
+					iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+					GridBagConstraints.NONE, new Insets(2, 2, 2, 2), 70, 0));
+
+			WrapperLabel wlaUeberschrift9 = new WrapperLabel("hh:mm");
+			wlaUeberschrift9.setHorizontalAlignment(SwingConstants.LEFT);
+
+			jpaWorkingOn.add(wlaUeberschrift9, new GridBagConstraints(5,
+					iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+					GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 30,
+					0));
+		}
 		String[] aWhichButtonIUse = { ACTION_UPDATE, ACTION_SAVE,
 				ACTION_DELETE, ACTION_DISCARD, };
 

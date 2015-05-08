@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -51,6 +51,7 @@ import com.lp.client.frame.component.WrapperMenu;
 import com.lp.client.frame.component.WrapperMenuBar;
 import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.pc.LPMain;
+import com.lp.client.personal.PanelMaschinemaschinenzm;
 import com.lp.client.personal.PersonalFilterFactory;
 import com.lp.client.personal.ReportMaschinenliste;
 import com.lp.client.system.SystemFilterFactory;
@@ -88,11 +89,16 @@ public class TabbedPaneMaschinen extends TabbedPane {
 	private PanelBasis panelSplitZeitdaten = null;
 	private PanelBasis panelBottomZeitdaten = null;
 
+	private PanelQuery panelQueryZeitmodell = null;
+	private PanelBasis panelSplitZeitmodell = null;
+	private PanelBasis panelBottomZeitmodell = null;
+
 	private WrapperMenuBar wrapperMenuBar = null;
 
 	private final static int IDX_PANEL_AUSWAHL = 0;
 	private final static int IDX_PANEL_ZEITDATEN = 1;
 	private final static int IDX_PANEL_KOSTEN = 2;
+	private final static int IDX_PANEL_ZEITMODELL = 3;
 
 	private final String MENUE_ACTION_MASCHINENLISTE = "MENUE_ACTION_MASCHINENLISTE";
 	private final String MENUE_ACTION_PRODUKTIVITAET = "MENUE_ACTION_PRODUKTIVITAET";
@@ -130,22 +136,30 @@ public class TabbedPaneMaschinen extends TabbedPane {
 		panelQueryMaschinen.eventYouAreSelected(false);
 
 		panelQueryMaschinen.befuellePanelFilterkriterienDirektUndVersteckte(
-				SystemFilterFactory.getInstance().createFKDBezeichnung(), null,ZeiterfassungFilterFactory.getInstance().createFKVMaschine());
+				SystemFilterFactory.getInstance().createFKDBezeichnung(), null,
+				ZeiterfassungFilterFactory.getInstance().createFKVMaschine());
 
-		panelBottomMaschinen = new PanelMaschinen(getInternalFrame(), LPMain
-				.getTextRespectUISPr("zeiterfassung.title.tab.maschinen"), null);
+		panelBottomMaschinen = new PanelMaschinen(
+				getInternalFrame(),
+				LPMain.getTextRespectUISPr("zeiterfassung.title.tab.maschinen"),
+				null);
 		panelSplitMaschinen = new PanelSplit(getInternalFrame(),
 				panelBottomMaschinen, panelQueryMaschinen, 270);
 		addTab(LPMain.getTextRespectUISPr("zeiterfassung.title.tab.maschinen"),
 				panelSplitMaschinen);
 
-		insertTab(LPMain.getTextRespectUISPr("zeiterfassung.title.tab.zeitdaten"),
-				null, null, LPMain
-						.getTextRespectUISPr("zeiterfassung.title.tab.zeitdaten"),
+		insertTab(
+				LPMain.getTextRespectUISPr("zeiterfassung.title.tab.zeitdaten"),
+				null,
+				null,
+				LPMain.getTextRespectUISPr("zeiterfassung.title.tab.zeitdaten"),
 				IDX_PANEL_ZEITDATEN);
 
-		insertTab(LPMain.getTextRespectUISPr("lp.kosten"), null, null, LPMain
-				.getTextRespectUISPr("lp.kosten"), IDX_PANEL_KOSTEN);
+		insertTab(LPMain.getTextRespectUISPr("lp.kosten"), null, null,
+				LPMain.getTextRespectUISPr("lp.kosten"), IDX_PANEL_KOSTEN);
+		insertTab(LPMain.getTextRespectUISPr("lp.zeitmodell"), null, null,
+				LPMain.getTextRespectUISPr("lp.zeitmodell"),
+				IDX_PANEL_ZEITMODELL);
 
 		// Itemevents an MEIN Detailpanel senden kann.
 		getInternalFrame().addItemChangedListener(this);
@@ -182,6 +196,34 @@ public class TabbedPaneMaschinen extends TabbedPane {
 		}
 	}
 
+	private void createZeitmodell(Integer maschineIId) throws Throwable {
+
+		if (panelQueryZeitmodell == null) {
+			String[] aWhichButtonIUse = { PanelBasis.ACTION_NEW };
+
+			FilterKriterium[] filters = ZeiterfassungFilterFactory
+					.getInstance().createFKMaschinemaschinezm(maschineIId);
+
+			panelQueryZeitmodell = new PanelQuery(null, filters,
+					QueryParameters.UC_ID_MASCHINEMASCHINENZM,
+					aWhichButtonIUse, getInternalFrame(),
+					LPMain.getTextRespectUISPr("lp.zeitmodell"), true);
+
+			panelBottomZeitmodell = new PanelMaschinemaschinenzm(
+					getInternalFrame(),
+					LPMain.getTextRespectUISPr("lp.zeitmodell"), null);
+
+			panelSplitZeitmodell = new PanelSplit(getInternalFrame(),
+					panelBottomZeitmodell, panelQueryZeitmodell, 350);
+
+			setComponentAt(IDX_PANEL_ZEITMODELL, panelSplitZeitmodell);
+		} else {
+			// filter refreshen.
+			panelQueryZeitmodell.setDefaultFilter(ZeiterfassungFilterFactory
+					.getInstance().createFKMaschinemaschinezm(maschineIId));
+		}
+	}
+
 	private void createZeitdaten(Integer maschineIId) throws Throwable {
 
 		if (panelQueryZeitdaten == null) {
@@ -200,10 +242,11 @@ public class TabbedPaneMaschinen extends TabbedPane {
 					true);
 
 			panelQueryZeitdaten.befuellePanelFilterkriterienDirekt(
-					ZeiterfassungFilterFactory.
-			          getInstance().createFKDMaschinenzeitdatenPersonalname(), ZeiterfassungFilterFactory.
-			          getInstance().createMaschinenzeitdatenFKDLosnummer());
-			
+					ZeiterfassungFilterFactory.getInstance()
+							.createFKDMaschinenzeitdatenPersonalname(),
+					ZeiterfassungFilterFactory.getInstance()
+							.createMaschinenzeitdatenFKDLosnummer());
+
 			panelBottomZeitdaten = new PanelMaschinenzeitdaten(
 					getInternalFrame(),
 					LPMain.getTextRespectUISPr("fert.tab.oben.zeitdaten.title"),
@@ -229,6 +272,11 @@ public class TabbedPaneMaschinen extends TabbedPane {
 				panelBottomMaschinenkosten.setKeyWhenDetailPanel(iId);
 				panelBottomMaschinenkosten.eventYouAreSelected(false);
 				panelQueryMaschinenkosten.updateButtons();
+			} else if (e.getSource() == panelQueryZeitmodell) {
+				Integer iId = (Integer) panelQueryZeitmodell.getSelectedId();
+				panelBottomZeitmodell.setKeyWhenDetailPanel(iId);
+				panelBottomZeitmodell.eventYouAreSelected(false);
+				panelQueryZeitmodell.updateButtons();
 			} else if (e.getSource() == panelQueryZeitdaten) {
 				Integer iId = (Integer) panelQueryZeitdaten.getSelectedId();
 				panelBottomZeitdaten.setKeyWhenDetailPanel(iId);
@@ -281,6 +329,9 @@ public class TabbedPaneMaschinen extends TabbedPane {
 			} else if (e.getSource() == panelQueryMaschinenkosten) {
 				panelBottomMaschinenkosten.eventActionNew(e, true, false);
 				panelBottomMaschinenkosten.eventYouAreSelected(false);
+			} else if (e.getSource() == panelQueryZeitmodell) {
+				panelBottomZeitmodell.eventActionNew(e, true, false);
+				panelBottomZeitmodell.eventYouAreSelected(false);
 			} else if (e.getSource() == panelQueryZeitdaten) {
 				panelBottomZeitdaten.eventActionNew(e, true, false);
 				panelBottomZeitdaten.eventYouAreSelected(false);
@@ -292,6 +343,8 @@ public class TabbedPaneMaschinen extends TabbedPane {
 				panelSplitMaschinen.eventYouAreSelected(false);
 			} else if (e.getSource() == panelBottomMaschinenkosten) {
 				panelSplitMaschinenkosten.eventYouAreSelected(false);
+			} else if (e.getSource() == panelBottomZeitmodell) {
+				panelSplitZeitmodell.eventYouAreSelected(false);
 			} else if (e.getSource() == panelBottomZeitdaten) {
 				panelSplitZeitdaten.eventYouAreSelected(false);
 			}
@@ -303,6 +356,9 @@ public class TabbedPaneMaschinen extends TabbedPane {
 						PanelBasis.LOCK_FOR_NEW));
 			} else if (e.getSource() == panelBottomMaschinenkosten) {
 				panelQueryMaschinenkosten.updateButtons(new LockStateValue(
+						PanelBasis.LOCK_FOR_NEW));
+			} else if (e.getSource() == panelBottomZeitmodell) {
+				panelQueryZeitmodell.updateButtons(new LockStateValue(
 						PanelBasis.LOCK_FOR_NEW));
 			} else if (e.getSource() == panelBottomZeitdaten) {
 				panelQueryZeitdaten.updateButtons(new LockStateValue(
@@ -324,6 +380,12 @@ public class TabbedPaneMaschinen extends TabbedPane {
 				panelQueryMaschinenkosten.eventYouAreSelected(false);
 				panelQueryMaschinenkosten.setSelectedId(oKey);
 				panelSplitMaschinenkosten.eventYouAreSelected(false);
+
+			} else if (e.getSource() == panelBottomZeitmodell) {
+				Object oKey = panelBottomZeitmodell.getKeyWhenDetailPanel();
+				panelQueryZeitmodell.eventYouAreSelected(false);
+				panelQueryZeitmodell.setSelectedId(oKey);
+				panelSplitZeitmodell.eventYouAreSelected(false);
 
 			} else if (e.getSource() == panelBottomZeitdaten) {
 				Object oKey = panelBottomZeitdaten.getKeyWhenDetailPanel();
@@ -347,6 +409,14 @@ public class TabbedPaneMaschinen extends TabbedPane {
 					panelQueryMaschinenkosten.setSelectedId(oNaechster);
 				}
 				panelSplitMaschinenkosten.eventYouAreSelected(false);
+			} else if (e.getSource() == panelBottomZeitmodell) {
+				setKeyWasForLockMe();
+				if (panelBottomZeitmodell.getKeyWhenDetailPanel() == null) {
+					Object oNaechster = panelQueryZeitmodell
+							.getId2SelectAfterDelete();
+					panelQueryZeitmodell.setSelectedId(oNaechster);
+				}
+				panelSplitZeitmodell.eventYouAreSelected(false);
 			} else if (e.getSource() == panelBottomZeitdaten) {
 				setKeyWasForLockMe();
 				if (panelBottomZeitdaten.getKeyWhenDetailPanel() == null) {
@@ -376,8 +446,7 @@ public class TabbedPaneMaschinen extends TabbedPane {
 		getInternalFrame()
 				.setLpTitle(
 						InternalFrame.TITLE_IDX_OHRWASCHLUNTEN,
-						LPMain
-								.getTextRespectUISPr("zeiterfassung.title.tab.maschinen"));
+						LPMain.getTextRespectUISPr("zeiterfassung.title.tab.maschinen"));
 		getInternalFrame().setLpTitle(InternalFrame.TITLE_IDX_OHRWASCHLOBEN,
 				((PanelBasis) this.getSelectedComponent()).getAdd2Title());
 		if (getInternalFramePersonal().getMaschineDto() != null) {
@@ -413,6 +482,11 @@ public class TabbedPaneMaschinen extends TabbedPane {
 					.getIId());
 			panelSplitZeitdaten.eventYouAreSelected(false);
 			panelQueryZeitdaten.updateButtons();
+		} else if (selectedIndex == IDX_PANEL_ZEITMODELL) {
+			createZeitmodell(getInternalFramePersonal().getMaschineDto()
+					.getIId());
+			panelSplitZeitmodell.eventYouAreSelected(false);
+			panelQueryZeitmodell.updateButtons();
 		}
 
 		refreshTitle();
@@ -446,7 +520,8 @@ public class TabbedPaneMaschinen extends TabbedPane {
 			getInternalFrame().showReportKriterien(
 					new ReportMaschinenbelegung(
 							(InternalFrameZeiterfassung) getInternalFrame(),
-							add2Title,(Integer)panelQueryMaschinen.getSelectedId()));
+							add2Title, (Integer) panelQueryMaschinen
+									.getSelectedId()));
 
 		}
 	}
@@ -457,28 +532,16 @@ public class TabbedPaneMaschinen extends TabbedPane {
 			// Produktivitaetisstatistik
 			JMenu menuInfo = new WrapperMenu("lp.info", this);
 			JMenuItem menuItemProd = new JMenuItem(
-					LPMain
-							.getTextRespectUISPr("zeiterfassung.report.produktivitaetsstatistik"));
+					LPMain.getTextRespectUISPr("zeiterfassung.report.produktivitaetsstatistik"));
 
 			menuItemProd.addActionListener(this);
 
 			menuItemProd.setActionCommand(MENUE_ACTION_PRODUKTIVITAET);
 			menuInfo.add(menuItemProd);
 
-			// Maschinenliste
-			JMenuItem menuItemMaschinenliste = new JMenuItem(LPMain
-					.getTextRespectUISPr("zeiterfassung.report.maschinenliste"));
-
-			menuItemMaschinenliste.addActionListener(this);
-
-			menuItemMaschinenliste
-					.setActionCommand(MENUE_ACTION_MASCHINENLISTE);
-			menuInfo.add(menuItemMaschinenliste);
-
 			// Maschinenzeitdaten
 			JMenuItem menuItemMaschinenzeitdaten = new JMenuItem(
-					LPMain
-							.getTextRespectUISPr("zeiterfassung.report.maschinenzeitdaten"));
+					LPMain.getTextRespectUISPr("zeiterfassung.report.maschinenzeitdaten"));
 
 			menuItemMaschinenzeitdaten.addActionListener(this);
 
@@ -492,14 +555,22 @@ public class TabbedPaneMaschinen extends TabbedPane {
 					.getComponent(WrapperMenuBar.MENU_JOURNAL);
 			// Maschinenzeitdaten
 			JMenuItem menuItemMaschinenbelegung = new JMenuItem(
-					LPMain
-							.getTextRespectUISPr("pers.zeiterfassung.report.maschinenbelegung"));
+					LPMain.getTextRespectUISPr("pers.zeiterfassung.report.maschinenbelegung"));
 
 			menuItemMaschinenbelegung.addActionListener(this);
 
 			menuItemMaschinenbelegung
 					.setActionCommand(MENUE_ACTION_MASCHINENBELEGUNG);
 			modulJournal.add(menuItemMaschinenbelegung);
+			// Maschinenliste
+			JMenuItem menuItemMaschinenliste = new JMenuItem(
+					LPMain.getTextRespectUISPr("zeiterfassung.report.maschinenliste"));
+
+			menuItemMaschinenliste.addActionListener(this);
+
+			menuItemMaschinenliste
+					.setActionCommand(MENUE_ACTION_MASCHINENLISTE);
+			modulJournal.add(menuItemMaschinenliste);
 
 		}
 		return wrapperMenuBar;

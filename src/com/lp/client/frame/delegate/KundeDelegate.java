@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -36,6 +36,7 @@ import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 
 import javax.naming.Context;
@@ -52,6 +53,7 @@ import com.lp.server.partner.service.KundeFac;
 import com.lp.server.partner.service.KundeReportFac;
 import com.lp.server.partner.service.KurzbriefDto;
 import com.lp.server.partner.service.PartnerReportFac;
+import com.lp.server.partner.service.PartnerServicesFac;
 import com.lp.server.partner.service.StatistikParamDto;
 import com.lp.server.system.service.ParameterFac;
 import com.lp.server.system.service.ParametermandantDto;
@@ -342,7 +344,7 @@ public class KundeDelegate extends Delegate {
 		return b;
 	}
 
-	public void pruefeKunde(Integer kundeIId) throws ExceptionLP {
+	public void pruefeKunde(Integer kundeIId, String belegartCNr, InternalFrame internalFrame) throws ExceptionLP {
 		try {
 			KundeDto kundeDto = kundeFac.kundeFindByPrimaryKey(kundeIId, LPMain
 					.getInstance().getTheClient());
@@ -367,6 +369,32 @@ public class KundeDelegate extends Delegate {
 						+ " " + kundeDto.getSHinweisextern());
 			}
 
+			
+			if (belegartCNr != null) {
+				// Partnerhinweise anzeigen
+				String[] hinweise = DelegateFactory
+						.getInstance()
+						.getPartnerServicesDelegate()
+						.getPartnerhinweise(kundeDto.getPartnerIId(),
+								true, belegartCNr);
+				for (int i = 0; i < hinweise.length; i++) {
+					DialogFactory.showModalDialog(
+							LPMain.getTextRespectUISPr("lp.hinweis"),
+							Helper.strippHTML(hinweise[i]));
+				}
+
+				ArrayList<byte[]> bilder = DelegateFactory
+						.getInstance()
+						.getPartnerServicesDelegate()
+						.getPartnerkommentarBilderUndPDFAlsBilderUmgewandelt(
+								kundeDto.getPartnerIId(), true,
+								belegartCNr, PartnerServicesFac.PARTNERKOMMENTARART_HINWEIS);
+
+				if (bilder != null && bilder.size() > 0) {
+					DialogFactory.showArtikelHinweisBild(bilder, internalFrame);
+				}
+			}
+			
 			if (kundeDto.getTBonitaet() != null) {
 				ParametermandantDto parameter = (ParametermandantDto) DelegateFactory
 						.getInstance()

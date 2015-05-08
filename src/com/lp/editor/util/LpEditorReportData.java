@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -129,7 +129,11 @@ public class LpEditorReportData
         iBegin = i + HTML_TD_BEGIN_LEN;
       }
       if (tabelle.substring(i, i + HTML_TD_END_LEN).equals(HTML_TD_END)) {
-        elements[spalte] = tabelle.substring(iBegin, i);
+    	  if(iBegin == i) {
+    		  elements[spalte] = "" ;
+    	  } else {
+    		  elements[spalte] = tabelle.substring(iBegin, i);
+    	  }
         spalte++;
       }
 

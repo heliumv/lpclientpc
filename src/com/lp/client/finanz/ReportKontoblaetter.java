@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -40,12 +40,11 @@ import java.awt.event.ActionEvent;
 import java.sql.Timestamp;
 import java.util.EventObject;
 
-import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
-import javax.swing.JRadioButton;
-import javax.swing.border.Border;
+
+import net.miginfocom.swing.MigLayout;
 
 import com.lp.client.frame.Defaults;
 import com.lp.client.frame.ExceptionLP;
@@ -104,8 +103,6 @@ public class ReportKontoblaetter extends PanelBasis implements
 	 */
 	private static final long serialVersionUID = 1L;
 
-	private Border border1;
-
 	private WrapperRadioButton wrbSachkonten = null;
 	private WrapperRadioButton wrbDebitoren = null;
 	private WrapperRadioButton wrbKreditoren = null;
@@ -144,6 +141,7 @@ public class ReportKontoblaetter extends PanelBasis implements
 	private WrapperDateRangeController wdrBereich = null;
 
 //	private WrapperComboBox wcbSortOrder = new WrapperComboBox() ;
+	private WrapperCheckBox wcbSortiereNachAZK = new WrapperCheckBox() ;
 	private WrapperCheckBox wchkEnableSaldoVorperiode = new WrapperCheckBox() ;
 	
 	private WrapperCheckBox wcbPrintInMandantenWaehrung = new WrapperCheckBox();
@@ -152,7 +150,7 @@ public class ReportKontoblaetter extends PanelBasis implements
 
 	private final static int BREITE_SPALTE2 = 150;
 
-	protected JPanel jpaWorkingOn = new JPanel();
+	protected JPanel jpaWorkingOn;
 
 	public ReportKontoblaetter(InternalFrameFinanz internalFrame,
 			KontoDto kontoDto, String sAdd2Title) throws Throwable {
@@ -188,13 +186,12 @@ public class ReportKontoblaetter extends PanelBasis implements
 	}
 	
 	protected void jbInit() throws Throwable {
-		border1 = BorderFactory.createEmptyBorder(10, 10, 10, 10);
+		
+		jpaWorkingOn = new JPanel(new MigLayout("wrap 4", "[25%,fill|25%,fill|25%,fill|25%,fill]"));
 		this.setLayout(new GridBagLayout());
 		this.add(jpaWorkingOn, new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
 				GridBagConstraints.WEST, GridBagConstraints.BOTH, new Insets(0,
 						0, 0, 0), 0, 0));
-		jpaWorkingOn.setLayout(new GridBagLayout());
-		jpaWorkingOn.setBorder(border1);
 
 		if (kontoDto != null) {
 			wrbSelektiertesKonto = new WrapperRadioButton("nur Konto "
@@ -218,6 +215,7 @@ public class ReportKontoblaetter extends PanelBasis implements
 		wrbKreditoren = new WrapperRadioButton("Kreditoren");
 
 		wchkEnableSaldoVorperiode.setText(LPMain.getTextRespectUISPr("lp.mitVorperiodenSaldo")) ;
+		wcbSortiereNachAZK.setText(LPMain.getTextRespectUISPr("fb.report.sortierenach.azk"));
 		
 		wcbPrintInMandantenWaehrung.setText(LPMain.getTextRespectUISPr("finanz.label.druckinmandantenwaehrung"));
 		
@@ -274,79 +272,32 @@ public class ReportKontoblaetter extends PanelBasis implements
 
 		getInternalFrame().addItemChangedListener(this);
 
-		iZeile++;
-		jpaWorkingOn.add(wrbSelektiertesKonto, new GridBagConstraints(0,
-				iZeile, 1, 1, 0.1, 0.0, GridBagConstraints.WEST,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wrbSachkonten, new GridBagConstraints(1, iZeile, 1, 1,
-				0.1, 0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wrbDebitoren, new GridBagConstraints(2, iZeile, 1, 1,
-				0.1, 0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wrbKreditoren, new GridBagConstraints(3, iZeile, 1, 1,
-				0.1, 0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-		iZeile++;
-		jpaWorkingOn.add(wlaKtonrVon, new GridBagConstraints(0, iZeile, 1, 1,
-				0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wtfKtonrVon, new GridBagConstraints(1, iZeile, 1, 1,
-				0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wlaKtonrBis, new GridBagConstraints(2, iZeile, 1, 1,
-				0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wtfKtonrBis, new GridBagConstraints(3, iZeile, 1, 1,
-				0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-		iZeile++;
-		jpaWorkingOn.add(wlaGeschaeftsjahr, new GridBagConstraints(0, iZeile, 1, 1, 0.1,
-				0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wrbSelektiertesKonto);
+		jpaWorkingOn.add(wrbSachkonten);
+		jpaWorkingOn.add(wrbDebitoren);
+		jpaWorkingOn.add(wrbKreditoren);
+		
+		jpaWorkingOn.add(wlaKtonrVon);
+		jpaWorkingOn.add(wtfKtonrVon);
+		jpaWorkingOn.add(wlaKtonrBis);
+		jpaWorkingOn.add(wtfKtonrBis);
 
-		jpaWorkingOn.add(wlaVon, new GridBagConstraints(1, iZeile, 1, 1, 0.1,
-				0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wdfVon, new GridBagConstraints(2, iZeile, 1, 1, 0.0,
-				0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wlaBis, new GridBagConstraints(3, iZeile, 1, 1, 0.0,
-				0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wdfBis, new GridBagConstraints(4, iZeile, 1, 1, 0.0,
-				0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wdrBereich, new GridBagConstraints(5, iZeile, 1, 1,
-				0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-		iZeile++;
-		jpaWorkingOn.add(wlaSortierung, new GridBagConstraints(0, iZeile, 1, 1,
-				0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wrbSortDatum, new GridBagConstraints(1, iZeile, 1, 1,
-				0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-				
-		jpaWorkingOn.add(wchkEnableSaldoVorperiode, new GridBagConstraints(2, iZeile, 1, 1,
-				0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-//		jpaWorkingOn.add(wcbSortOrder, new GridBagConstraints(3, iZeile, 1, 1,
-//				0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-//				new Insets(2, 2, 2, 2), 0, 0));		
-		iZeile++;
-		jpaWorkingOn.add(wrbSortAuszugsnummer, new GridBagConstraints(1,
-				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.WEST,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wcbPrintInMandantenWaehrung, new GridBagConstraints(2, iZeile, 1, 1,
-				0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-
-		iZeile++;
-
-		jpaWorkingOn.add(wrbSortBeleg, new GridBagConstraints(1, iZeile, 1, 1,
-				0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wlaGeschaeftsjahr);
+		jpaWorkingOn.add(wlaVon);
+		jpaWorkingOn.add(wdfVon, "split 2, w pref:pref:max, grow 0");
+		jpaWorkingOn.add(wlaBis);
+		jpaWorkingOn.add(wdfBis, "split, w pref::, grow 0");
+		jpaWorkingOn.add(wdrBereich, "growy, wrap");
+		
+		jpaWorkingOn.add(wlaSortierung);
+		jpaWorkingOn.add(wrbSortDatum);
+		jpaWorkingOn.add(wcbSortiereNachAZK, "span");
+		
+		jpaWorkingOn.add(wrbSortAuszugsnummer, "skip");
+		jpaWorkingOn.add(wchkEnableSaldoVorperiode, "span");
+		
+		jpaWorkingOn.add(wrbSortBeleg, "skip");
+		jpaWorkingOn.add(wcbPrintInMandantenWaehrung, "span");
 	}
 
 
@@ -421,7 +372,7 @@ public class ReportKontoblaetter extends PanelBasis implements
 		String title = null;
 		FilterKriterium[] filters = null;
 		if (wrbSachkonten.isSelected()) {
-			filters = FinanzFilterFactory.getInstance().createFKSachkonten();
+			filters = FinanzFilterFactory.getInstance().createFKSachkontenInklMitlaufende();
 			title = LPMain.getTextRespectUISPr("finanz.liste.sachkonten");
 		}
 
@@ -465,7 +416,7 @@ public class ReportKontoblaetter extends PanelBasis implements
 		String title = null;
 		FilterKriterium[] filters = null;
 		if (wrbSachkonten.isSelected()) {
-			filters = FinanzFilterFactory.getInstance().createFKSachkonten();
+			filters = FinanzFilterFactory.getInstance().createFKSachkontenInklMitlaufende();
 			title = LPMain.getTextRespectUISPr("finanz.liste.sachkonten");
 		}
 
@@ -594,6 +545,7 @@ public class ReportKontoblaetter extends PanelBasis implements
 		model.setKontotypCNr(kontoartCNr) ;
 		model.setEnableSaldo(wchkEnableSaldoVorperiode.isSelected()) ;
 		model.setDruckInMandantenWaehrung(wcbPrintInMandantenWaehrung.isSelected());
+		model.setSortiereNachAZK(wcbSortiereNachAZK.isSelected());
 		return DelegateFactory.getInstance().getFinanzReportDelegate().printKontoblaetter(model) ;
 	}
 

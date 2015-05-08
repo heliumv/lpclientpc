@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -34,6 +34,7 @@ package com.lp.client.frame.delegate;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -46,6 +47,7 @@ import com.lp.client.pc.LPMain;
 import com.lp.server.lieferschein.service.LieferscheinDto;
 import com.lp.server.lieferschein.service.LieferscheinFac;
 import com.lp.server.lieferschein.service.LieferscheinpositionDto;
+import com.lp.server.system.service.BelegPruefungDto;
 import com.lp.server.system.service.LocaleFac;
 import com.lp.service.Artikelset;
 
@@ -542,13 +544,14 @@ public class LieferscheinDelegate extends Delegate {
 
 	public void aktiviereBelegControlled(Integer iid, Timestamp t) throws ExceptionLP {
 		try {
-			lsFac.aktiviereBelegControlled(iid, t, LPMain.getTheClient());
+			BelegPruefungDto pruefungDto = lsFac.aktiviereBelegControlled(iid, t, LPMain.getTheClient());
+			dialogBelegpruefung(pruefungDto) ;
 			// SP1881
-			DelegateFactory
-					.getInstance()
-					.getSystemDelegate()
-					.enthaeltEinVKBelegUmsatzsteuerObwohlKundeSteuerfrei(
-							LocaleFac.BELEGART_LIEFERSCHEIN, iid);
+//			DelegateFactory
+//					.getInstance()
+//					.getSystemDelegate()
+//					.enthaeltEinVKBelegUmsatzsteuerObwohlKundeSteuerfrei(
+//							LocaleFac.BELEGART_LIEFERSCHEIN, iid);
 		} catch (Throwable t1) {
 			handleThrowable(t1);
 		}
@@ -556,20 +559,27 @@ public class LieferscheinDelegate extends Delegate {
 	
 	public Timestamp berechneBelegControlled(Integer iid) throws ExceptionLP {
 		try {
-			Timestamp t = lsFac.berechneBelegControlled(iid, LPMain.getTheClient());
-			// SP1881
-			DelegateFactory
-					.getInstance()
-					.getSystemDelegate()
-					.enthaeltEinVKBelegUmsatzsteuerObwohlKundeSteuerfrei(
-							LocaleFac.BELEGART_LIEFERSCHEIN, iid);
-			return t;
+			BelegPruefungDto pruefungDto = lsFac.berechneBelegControlled(iid,
+					LPMain.getTheClient());
+			dialogBelegpruefung(pruefungDto) ;
+			return pruefungDto.getBerechnungsZeitpunkt() ;
 		} catch (Throwable t1) {
 			handleThrowable(t1);
 		}
 		return null;
 	}
 
+	public Timestamp berechneAktiviereBelegControlled(Integer iid) throws ExceptionLP {
+		try {
+			BelegPruefungDto pruefungDto = lsFac.berechneAktiviereBelegControlled(iid, LPMain.getTheClient());
+			dialogBelegpruefung(pruefungDto) ;
+			return pruefungDto.getBerechnungsZeitpunkt() ;
+		} catch (Throwable t1) {
+			handleThrowable(t1);
+		}
+		return null;
+	}
+	
 	/**
 	 * Bei einem auftragbezogenen Lieferschein ist es moeglich, all jene offenen
 	 * oder teilerledigten Auftragpositionen innerhalb einer Transaktion zu
@@ -592,15 +602,15 @@ public class LieferscheinDelegate extends Delegate {
 	 * @throws ExceptionLP
 	 *             Ausnahme
 	 */
-	public void uebernimmAlleOffenenAuftragpositionenOhneBenutzerinteraktion(
-			Integer iIdLieferscheinI, Integer iIdAuftragI) throws ExceptionLP {
-		try {
-			lsFac.uebernimmAlleOffenenAuftragpositionenOhneBenutzerinteraktion(
-					iIdLieferscheinI, iIdAuftragI, LPMain.getTheClient());
-		} catch (Throwable t) {
-			handleThrowable(t);
-		}
-	}
+//	public void uebernimmAlleOffenenAuftragpositionenOhneBenutzerinteraktion(
+//			Integer iIdLieferscheinI, Integer iIdAuftragI) throws ExceptionLP {
+//		try {
+//			lsFac.uebernimmAlleOffenenAuftragpositionenOhneBenutzerinteraktion(
+//					iIdLieferscheinI, iIdAuftragI, LPMain.getTheClient());
+//		} catch (Throwable t) {
+//			handleThrowable(t);
+//		}
+//	}
 
 	public void uebernimmAlleOffenenAuftragpositionenOhneBenutzerinteraktionNew(
 			Integer iIdLieferscheinI, Integer iIdAuftrag,
@@ -653,4 +663,22 @@ public class LieferscheinDelegate extends Delegate {
 			handleThrowable(t);
 		}
 	}
+	
+	public void repairLieferscheinZws2276(Integer lieferscheinId) throws ExceptionLP {
+		try {
+			lsFac.repairLieferscheinZws2276(lieferscheinId, LPMain.getTheClient());
+		} catch(Throwable t) {
+			handleThrowable(t);
+		}
+	}	
+
+	public List<Integer> repairLieferscheinZws2276GetList() throws ExceptionLP {
+		try {
+			return lsFac.repairLieferscheinZws2276GetList(LPMain.getTheClient()) ;
+		} catch(Throwable t) {
+			handleThrowable(t);
+		}
+		
+		return new ArrayList<Integer>() ;
+	}	
 }

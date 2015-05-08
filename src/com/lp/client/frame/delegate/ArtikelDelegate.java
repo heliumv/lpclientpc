@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -42,40 +42,50 @@ import javax.naming.InitialContext;
 
 import com.lp.client.frame.ExceptionLP;
 import com.lp.client.pc.LPMain;
+import com.lp.server.artikel.service.AlergenDto;
 import com.lp.server.artikel.service.ArtgruDto;
 import com.lp.server.artikel.service.ArtikelDto;
 import com.lp.server.artikel.service.ArtikelFac;
 import com.lp.server.artikel.service.ArtikelImportDto;
+import com.lp.server.artikel.service.ArtikelalergenDto;
+import com.lp.server.artikel.service.ArtikelimportFac;
 import com.lp.server.artikel.service.ArtikellieferantDto;
 import com.lp.server.artikel.service.ArtikellieferantstaffelDto;
 import com.lp.server.artikel.service.ArtikelshopgruppeDto;
 import com.lp.server.artikel.service.ArtikelsperrenDto;
 import com.lp.server.artikel.service.ArtikelsprDto;
 import com.lp.server.artikel.service.ArtklaDto;
+import com.lp.server.artikel.service.AutomotiveDto;
 import com.lp.server.artikel.service.EinkaufseanDto;
 import com.lp.server.artikel.service.FarbcodeDto;
 import com.lp.server.artikel.service.HerstellerDto;
 import com.lp.server.artikel.service.KatalogDto;
+import com.lp.server.artikel.service.MedicalDto;
+import com.lp.server.artikel.service.ReachDto;
+import com.lp.server.artikel.service.RohsDto;
 import com.lp.server.artikel.service.ShopgruppeDto;
 import com.lp.server.artikel.service.ShopgruppewebshopDto;
 import com.lp.server.artikel.service.SperrenDto;
 import com.lp.server.artikel.service.VerleihDto;
 import com.lp.server.artikel.service.VorschlagstextDto;
+import com.lp.server.artikel.service.VorzugDto;
 import com.lp.server.artikel.service.WebshopDto;
 import com.lp.server.artikel.service.ZugehoerigeDto;
-import com.lp.server.system.service.TheClientDto;
 import com.lp.util.EJBExceptionLP;
 
 @SuppressWarnings("static-access")
 public class ArtikelDelegate extends Delegate {
 	private Context context;
 	private ArtikelFac artikelFac;
+	private ArtikelimportFac artikelimportFac;
 
 	public ArtikelDelegate() throws ExceptionLP {
 		try {
 			context = new InitialContext();
 			artikelFac = (ArtikelFac) context
 					.lookup("lpserver/ArtikelFacBean/remote");
+			artikelimportFac = (ArtikelimportFac) context
+					.lookup("lpserver/ArtikelimportFacBean/remote");
 		} catch (Throwable t) {
 			throw new ExceptionLP(EJBExceptionLP.FEHLER, t);
 		}
@@ -132,10 +142,12 @@ public class ArtikelDelegate extends Delegate {
 	}
 
 	public Object[] kopiereArtikel(Integer artikelIId,
-			String neueArtikelnummer, HashMap zuKopieren, Integer herstellerIIdNeu) throws ExceptionLP {
+			String neueArtikelnummer, HashMap zuKopieren,
+			Integer herstellerIIdNeu) throws ExceptionLP {
 		try {
 			return artikelFac.kopiereArtikel(artikelIId, neueArtikelnummer,
-					zuKopieren, herstellerIIdNeu, LPMain.getInstance().getTheClient());
+					zuKopieren, herstellerIIdNeu, LPMain.getInstance()
+							.getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 			return null;
@@ -154,7 +166,7 @@ public class ArtikelDelegate extends Delegate {
 	public void importiereArtikel(ArtikelImportDto[] daten,
 			boolean bBestehendeArtikelUeberschreiben) throws ExceptionLP {
 		try {
-			artikelFac.importiereArtikel(daten,
+			artikelimportFac.importiereArtikel(daten,
 					bBestehendeArtikelUeberschreiben, LPMain.getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
@@ -175,6 +187,28 @@ public class ArtikelDelegate extends Delegate {
 		try {
 			return artikelFac.createArtikelshopgruppe(dto,
 					LPMain.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
+
+	public Integer createArtikelallergen(ArtikelalergenDto dto)
+			throws ExceptionLP {
+		try {
+			return artikelFac.createArtikelallergen(dto, LPMain.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
+
+	public ArrayList<Map<Integer, String>> getListeDerArtikellieferanten(
+			Integer bestellvorschlagIId, BigDecimal nMenge) throws ExceptionLP {
+		try {
+			return artikelFac.getListeDerArtikellieferanten(
+					bestellvorschlagIId, nMenge, LPMain.getInstance()
+							.getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 			return null;
@@ -251,6 +285,30 @@ public class ArtikelDelegate extends Delegate {
 		}
 	}
 
+	public String pruefeUndImportiereArtikelXLS(byte[] xlsDatei,
+			java.sql.Timestamp tDefaultEK, java.sql.Timestamp tDefaultVK,
+			boolean bImportierenWennKeinFehler) throws ExceptionLP {
+		try {
+			return artikelimportFac.pruefeUndImportiereArtikelXLS(xlsDatei,
+					tDefaultEK, tDefaultVK, bImportierenWennKeinFehler, LPMain
+							.getInstance().getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
+
+	public String importiereAlergeneXLS(byte[] xlsDatei, Integer lieferantIId)
+			throws ExceptionLP {
+		try {
+			return artikelimportFac.importiereAllergeneXLS(xlsDatei,
+					lieferantIId, LPMain.getInstance().getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
+
 	public Integer createArtikelsperren(ArtikelsperrenDto artikelsperrenDto)
 			throws ExceptionLP {
 		try {
@@ -313,6 +371,60 @@ public class ArtikelDelegate extends Delegate {
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 
+		}
+	}
+
+	public Integer createReach(ReachDto dto) throws ExceptionLP {
+		try {
+			return artikelFac.createReach(dto);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
+
+	public Integer createAllergen(AlergenDto dto) throws ExceptionLP {
+		try {
+			return artikelFac.createAllergen(dto);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
+
+	public Integer createVorzug(VorzugDto dto) throws ExceptionLP {
+		try {
+			return artikelFac.createVorzug(dto);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
+
+	public Integer createRohs(RohsDto dto) throws ExceptionLP {
+		try {
+			return artikelFac.createRohs(dto);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
+
+	public Integer createAutomotive(AutomotiveDto dto) throws ExceptionLP {
+		try {
+			return artikelFac.createAutomotive(dto);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
+
+	public Integer createMedicale(MedicalDto dto) throws ExceptionLP {
+		try {
+			return artikelFac.createMedicale(dto);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
 		}
 	}
 
@@ -441,6 +553,14 @@ public class ArtikelDelegate extends Delegate {
 		}
 	}
 
+	public void removeAllergen(AlergenDto alergenDto) throws ExceptionLP {
+		try {
+			artikelFac.removeAllergen(alergenDto);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+	}
+
 	public void vertauscheArtikellieferanten(Integer iIdLieferant1,
 			Integer iIdLieferant2) throws ExceptionLP {
 		try {
@@ -455,6 +575,15 @@ public class ArtikelDelegate extends Delegate {
 			Integer iIdLieferant2) throws ExceptionLP {
 		try {
 			artikelFac.vertauscheArtikelsperren(iIdLieferant1, iIdLieferant2);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+	}
+
+	public void vertauscheAlergen(Integer iId1, Integer iId2)
+			throws ExceptionLP {
+		try {
+			artikelFac.vertauscheAlergen(iId1, iId2);
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 		}
@@ -502,9 +631,57 @@ public class ArtikelDelegate extends Delegate {
 		}
 	}
 
+	public void removeArtikelallergen(ArtikelalergenDto dto) throws ExceptionLP {
+		try {
+			artikelFac.removeArtikelallergen(dto);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+	}
+
 	public void removeShopgruppe(Integer shopgruppeIId) throws ExceptionLP {
 		try {
 			artikelFac.removeShopgruppe(shopgruppeIId);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+	}
+
+	public void removeReach(ReachDto dto) throws ExceptionLP {
+		try {
+			artikelFac.removeReach(dto);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+	}
+
+	public void removeVorzug(VorzugDto dto) throws ExceptionLP {
+		try {
+			artikelFac.removeVorzug(dto);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+	}
+
+	public void removeRohs(RohsDto dto) throws ExceptionLP {
+		try {
+			artikelFac.removeRohs(dto);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+	}
+
+	public void removeAutomotive(AutomotiveDto dto) throws ExceptionLP {
+		try {
+			artikelFac.removeAutomotive(dto);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+	}
+
+	public void removeMedical(MedicalDto dto) throws ExceptionLP {
+		try {
+			artikelFac.removeMedical(dto);
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 		}
@@ -537,7 +714,7 @@ public class ArtikelDelegate extends Delegate {
 
 	public void removeArtikelsperren(ArtikelsperrenDto dto) throws ExceptionLP {
 		try {
-			artikelFac.removeArtikelsperren(dto);
+			artikelFac.removeArtikelsperren(dto, LPMain.getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 		}
@@ -657,10 +834,66 @@ public class ArtikelDelegate extends Delegate {
 		}
 	}
 
+	public void updateArtikelallergen(ArtikelalergenDto dto) throws ExceptionLP {
+		try {
+			artikelFac.updateArtikelallergen(dto, LPMain.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+	}
+
 	public void updateShopgruppe(ShopgruppeDto shopgruppeDto)
 			throws ExceptionLP {
 		try {
 			artikelFac.updateShopgruppe(shopgruppeDto, LPMain.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+	}
+
+	public void updateReach(ReachDto dto) throws ExceptionLP {
+		try {
+			artikelFac.updateReach(dto);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+	}
+
+	public void updateVorzug(VorzugDto dto) throws ExceptionLP {
+		try {
+			artikelFac.updateVorzug(dto);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+	}
+
+	public void updateAllergen(AlergenDto dto) throws ExceptionLP {
+		try {
+			artikelFac.updateAllergen(dto);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+	}
+
+	public void updateAutomotive(AutomotiveDto dto) throws ExceptionLP {
+		try {
+			artikelFac.updateAutomotive(dto);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+	}
+
+	public void updateMedical(MedicalDto dto) throws ExceptionLP {
+		try {
+			artikelFac.updateMedical(dto);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+	}
+
+	public void updateRohs(RohsDto dto) throws ExceptionLP {
+		try {
+			artikelFac.updateRohs(dto);
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 		}
@@ -836,6 +1069,16 @@ public class ArtikelDelegate extends Delegate {
 		}
 	}
 
+	public ArtikelalergenDto artikelallergenFindByPrimaryKey(Integer iId)
+			throws ExceptionLP {
+		try {
+			return artikelFac.artikelallergenFindByPrimaryKey(iId);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
+
 	public WebshopDto webshopFindByPrimaryKey(Integer iId) throws ExceptionLP {
 		try {
 			return artikelFac.webshopFindByPrimaryKey(iId);
@@ -850,6 +1093,61 @@ public class ArtikelDelegate extends Delegate {
 		try {
 			return artikelFac.shopgruppeFindByPrimaryKey(iId, LPMain
 					.getInstance().getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
+
+	public ReachDto reachFindByPrimaryKey(Integer iId) throws ExceptionLP {
+		try {
+			return artikelFac.reachFindByPrimaryKey(iId);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
+
+	public VorzugDto vorzugFindByPrimaryKey(Integer iId) throws ExceptionLP {
+		try {
+			return artikelFac.vorzugFindByPrimaryKey(iId);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
+
+	public AlergenDto allergenFindByPrimaryKey(Integer iId) throws ExceptionLP {
+		try {
+			return artikelFac.allergenFindByPrimaryKey(iId);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
+
+	public RohsDto rohsFindByPrimaryKey(Integer iId) throws ExceptionLP {
+		try {
+			return artikelFac.rohsFindByPrimaryKey(iId);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
+
+	public AutomotiveDto automotiveFindByPrimaryKey(Integer iId)
+			throws ExceptionLP {
+		try {
+			return artikelFac.automotiveFindByPrimaryKey(iId);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
+
+	public MedicalDto medicalFindByPrimaryKey(Integer iId) throws ExceptionLP {
+		try {
+			return artikelFac.medicalFindByPrimaryKey(iId);
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 			return null;
@@ -905,6 +1203,16 @@ public class ArtikelDelegate extends Delegate {
 		}
 	}
 
+	public void wandleHandeingabeInArtikelUm(Integer positionIId, int iArt,
+			String neueArtikelnummer) throws ExceptionLP {
+		try {
+			artikelFac.wandleHandeingabeInArtikelUm(positionIId, iArt,
+					neueArtikelnummer, LPMain.getInstance().getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+	}
+
 	public HerstellerDto herstellerFindBdPrimaryKey(Integer iId)
 			throws ExceptionLP {
 		try {
@@ -950,17 +1258,6 @@ public class ArtikelDelegate extends Delegate {
 		}
 	}
 
-	public ArtikellieferantDto artikellieferantFindByArtikellIIdLieferantIId(
-			Integer artikelIId, Integer lieferantIId) throws ExceptionLP {
-		try {
-			return artikelFac.artikellieferantFindByArtikellIIdLieferantIId(
-					artikelIId, lieferantIId, LPMain.getInstance()
-							.getTheClient());
-		} catch (Throwable ex) {
-			handleThrowable(ex);
-			return null;
-		}
-	}
 
 	public ArtikellieferantDto[] artikellieferantFindByLieferantIId(
 			Integer lieferantIId) throws ExceptionLP {
@@ -1011,16 +1308,14 @@ public class ArtikelDelegate extends Delegate {
 		}
 	}
 
-	public ArtikellieferantDto artikellieferantFindByArtikellIIdLieferantIIdOhneExc(
-			Integer artikelIId, Integer lieferantIId) throws ExceptionLP {
+	public void artikellieferantAlsErstesReihen(Integer artikelIId,
+			Integer artikellieferantIId) throws ExceptionLP {
 		try {
-			return artikelFac
-					.artikellieferantFindByArtikellIIdLieferantIIdOhneExc(
-							artikelIId, lieferantIId, LPMain.getInstance()
-									.getTheClient());
+			artikelFac.artikellieferantAlsErstesReihen(artikelIId,
+					artikellieferantIId);
 		} catch (Throwable ex) {
 			handleThrowable(ex);
-			return null;
+
 		}
 	}
 
@@ -1099,6 +1394,7 @@ public class ArtikelDelegate extends Delegate {
 		}
 	}
 
+
 	public Map<?, ?> getAllSprArtgru() throws ExceptionLP {
 		try {
 			return artikelFac.getAllSprArtgru(LPMain.getInstance()
@@ -1126,6 +1422,15 @@ public class ArtikelDelegate extends Delegate {
 	public Map<?, ?> getAllVerleih() throws ExceptionLP {
 		try {
 			return artikelFac.getAllVerleih();
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
+
+	public Map<?, ?> getAllVorzug() throws ExceptionLP {
+		try {
+			return artikelFac.getAllVorzug(LPMain.getInstance().getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 			return null;
@@ -1198,14 +1503,15 @@ public class ArtikelDelegate extends Delegate {
 			handleThrowable(ex);
 		}
 	}
-	
-	public void importiereDigiraster(byte[] xlsFile) throws ExceptionLP {
+
+	public ArrayList<String> getVorgaengerArtikel(Integer artikelIId)
+			throws ExceptionLP {
 		try {
-			artikelFac.importiereDigiraster(xlsFile, LPMain.getInstance().getTheClient());
+			return artikelFac.getVorgaengerArtikel(artikelIId);
 		} catch (Throwable ex) {
 			handleThrowable(ex);
+			return null;
 		}
 	}
-	
-	
+
 }

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -81,6 +81,7 @@ public class PanelDialogKriterienBestellvorschlagAnhandStuecklistenmindestlagers
 
 	private WrapperLabel wlaLiefertermin = null;
 	private WrapperDateField wdfLiefertermin = null;
+	private WrapperCheckBox wcbVormerklisteLoeschen = null;
 
 	private static final String ACTION_SPECIAL_LEEREN = "action_special_leeren";
 
@@ -106,6 +107,10 @@ public class PanelDialogKriterienBestellvorschlagAnhandStuecklistenmindestlagers
 						"label.liefertermin"));
 		wdfLiefertermin = new WrapperDateField();
 
+		wcbVormerklisteLoeschen = new WrapperCheckBox(LPMain
+				.getInstance().getTextRespectUISPr(
+						"bes.vormerklisteLoeschen"));
+		
 		iZeile++;
 		jpaWorkingOn.add(wlaLiefertermin,
 				new GridBagConstraints(1, iZeile, 1, 1, 0.0, 0.0,
@@ -116,6 +121,13 @@ public class PanelDialogKriterienBestellvorschlagAnhandStuecklistenmindestlagers
 				new GridBagConstraints(2, iZeile, 1, 1, 0.0, 0.0,
 						GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 						new Insets(2, 2, 2, 2), 0, 0));
+		
+		iZeile++;
+		jpaWorkingOn.add(wcbVormerklisteLoeschen,
+				new GridBagConstraints(2, iZeile,2, 1, 0.0, 0.0,
+						GridBagConstraints.CENTER, GridBagConstraints.BOTH,
+						new Insets(2, 2, 2, 2), 150, 0));
+		
 
 	}
 
@@ -130,6 +142,10 @@ public class PanelDialogKriterienBestellvorschlagAnhandStuecklistenmindestlagers
 		return wdfLiefertermin.getDate();
 	}
 
+	public boolean isbVormerklisteLoeschen() {
+		return wcbVormerklisteLoeschen.isSelected();
+	}
+	
 	protected void eventActionSpecial(ActionEvent e) throws Throwable {
 
 		if (e.getActionCommand().equals(ACTION_SPECIAL_LEEREN)) {

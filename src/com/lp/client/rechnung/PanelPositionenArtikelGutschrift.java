@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -100,20 +100,20 @@ public class PanelPositionenArtikelGutschrift extends
 
 	private void jbInitPanel() throws Exception {
 
-		wtfSerienchargennummer = new WrapperSnrChnrField(getInternalFrame());
+		wtfSerienchargennummer = new WrapperSnrChnrField(getInternalFrame(), true);
 		wtfSerienchargennummer.setWnfBelegMenge(wnfMenge);
 		wtfSerienchargennummer.setActivatable(false);
 	}
 
 	private void addWtfSerienchargennummer() {
-		this.add(wtfSerienchargennummer, new GridBagConstraints(1, 7, 3, 1,
+		this.add(wtfSerienchargennummer, new GridBagConstraints(1, 8, 3, 1,
 				0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
 				new Insets(2, 2, 2, 2), 0, 0));
 	}
 
 	private void addWbuSerienchargennummer() {
 		add(wtfSerienchargennummer.getButtonSnrAuswahl(),
-				new GridBagConstraints(0, 7, 1, 1, 0.0, 0.0,
+				new GridBagConstraints(0, 8, 1, 1, 0.0, 0.0,
 						GridBagConstraints.WEST, GridBagConstraints.BOTH,
 						new Insets(2, 2, 2, 2), 0, 0));
 	}

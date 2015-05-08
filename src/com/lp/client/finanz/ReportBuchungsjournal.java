@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -35,6 +35,8 @@ package com.lp.client.finanz;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.EventObject;
@@ -48,21 +50,21 @@ import javax.swing.border.Border;
 
 import com.lp.client.frame.ExceptionLP;
 import com.lp.client.frame.component.InternalFrame;
-import com.lp.client.frame.component.ItemChangedEvent;
 import com.lp.client.frame.component.PanelBasis;
 import com.lp.client.frame.component.PanelFilterKriteriumDirekt;
+import com.lp.client.frame.component.PanelFilterKriteriumDirektTyped;
 import com.lp.client.frame.component.PanelQuery;
 import com.lp.client.frame.component.WrapperCheckBox;
 import com.lp.client.frame.component.WrapperDateField;
 import com.lp.client.frame.component.WrapperDateRangeController;
 import com.lp.client.frame.component.WrapperLabel;
-import com.lp.client.frame.component.WrapperNumberField;
 import com.lp.client.frame.component.WrapperRadioButton;
-import com.lp.client.frame.component.WrapperTextField;
 import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.frame.report.PanelReportIfJRDS;
 import com.lp.client.frame.report.PanelReportKriterien;
 import com.lp.client.pc.LPMain;
+import com.lp.server.finanz.service.BuchungsjournalReportParameter;
+import com.lp.server.finanz.service.FinanzFac;
 import com.lp.server.finanz.service.FinanzReportFac;
 import com.lp.server.system.service.MailtextDto;
 import com.lp.server.util.report.JasperPrintLP;
@@ -94,21 +96,13 @@ public class ReportBuchungsjournal extends PanelBasis implements
 	 */
 
 	private Border border1;
+	private Insets defaultInset ;
 	protected JPanel jpaWorkingOn = new JPanel();
 
 	private WrapperLabel wlaVon = new WrapperLabel();
 	private WrapperDateField wdfVon = new WrapperDateField();
 	private WrapperLabel wlaBis = new WrapperLabel();
 	private WrapperDateField wdfBis = new WrapperDateField();
-
-	private WrapperLabel wlaText = new WrapperLabel();
-	private WrapperTextField wtfText = new WrapperTextField();
-
-	private WrapperLabel wlaBeleg = new WrapperLabel();
-	private WrapperTextField wtfBeleg = new WrapperTextField();
-
-	private WrapperLabel wlaBetrag = new WrapperLabel();
-	private WrapperNumberField wnfBetrag = new WrapperNumberField();
 
 	private WrapperRadioButton wrbBuchungsdatum = new WrapperRadioButton();
 	private WrapperRadioButton wrbGebuchtam = new WrapperRadioButton();
@@ -117,14 +111,22 @@ public class ReportBuchungsjournal extends PanelBasis implements
 	private WrapperDateRangeController wdrBereich = null;
 
 	PanelQuery panelQuery = null;
-	// private String geschaeftsjahr = null;
 
 	private WrapperLabel wlaStorniert = null;
 	private WrapperCheckBox wcbStorniert = null;
 
 	private static final long serialVersionUID = 1L;
-	Integer buchungsjournalIId = null;
+	private Integer buchungsjournalIId = null;
 
+	private PanelFilterKriteriumDirektTyped panelFKBelegnummer ;
+	private PanelFilterKriteriumDirektTyped panelFKTextsuche ;
+	private PanelFilterKriteriumDirektTyped panelFKBetrag ;
+	private PanelFilterKriteriumDirektTyped panelFKKonto ;
+	private PanelFilterKriteriumDirektTyped panelFKBuchungsart ;
+	private PanelFilterKriteriumDirektTyped panelFKBelegart ;
+	
+	private DirektFilterHandler filterHandler ;
+	
 	public ReportBuchungsjournal(InternalFrame internalFrame,
 			Integer buchungsjournalIId, PanelQuery panelQuery, String sAdd2Title)
 			throws Throwable {
@@ -132,15 +134,17 @@ public class ReportBuchungsjournal extends PanelBasis implements
 		this.panelQuery = panelQuery;
 		this.buchungsjournalIId = buchungsjournalIId;
 
+		filterHandler = new DirektFilterHandler() ;
+
 		jbInit();
 		setDefaults();
-		initPanel();
 		initComponents();
-
 	}
 
 	protected void jbInit() throws Throwable {
 		border1 = BorderFactory.createEmptyBorder(10, 10, 10, 10);
+		defaultInset = new Insets(2, 2, 2, 2);
+
 		this.setLayout(new GridBagLayout());
 		this.add(jpaWorkingOn, new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
 				GridBagConstraints.WEST, GridBagConstraints.BOTH, new Insets(0,
@@ -163,46 +167,50 @@ public class ReportBuchungsjournal extends PanelBasis implements
 				.setText(LPMain
 						.getTextRespectUISPr("fb.buchungsjournal.datumsfilter.gebuchtam"));
 
-		wlaBeleg.setText(LPMain.getTextRespectUISPr("lp.beleg"));
-
-		wlaText.setText(LPMain.getTextRespectUISPr("lp.text"));
-
-		wlaBetrag.setText(LPMain.getTextRespectUISPr("label.betrag"));
-
+		panelFKBelegnummer = new PanelFilterKriteriumDirektTyped( 
+				FinanzFilterFactory.getInstance().createFKDBelegnummer()) ;
+		panelFKTextsuche = new PanelFilterKriteriumDirektTyped( 
+				FinanzFilterFactory.getInstance().createFKDBuchungsjournalDetailliertText()) ; 
+		panelFKBetrag = new PanelFilterKriteriumDirektTyped( 
+				FinanzFilterFactory.getInstance().createFKDBetragssuche()) ;	
+		panelFKKonto = new PanelFilterKriteriumDirektTyped( 
+				FinanzFilterFactory.getInstance().createFKDKontonummer()) ;
+		panelFKBuchungsart = new PanelFilterKriteriumDirektTyped( 
+				FinanzFilterFactory.getInstance().createFKDBuchungsart()) ;
+		panelFKBelegart = new PanelFilterKriteriumDirektTyped(FinanzFilterFactory.getInstance().createFKDBelegart()) ;
+		
 		// Mit Filtern vorbesetzen
 		if (panelQuery != null) {
 			Iterator<Integer> it = panelQuery.getHmDirektFilter().keySet()
 					.iterator();
 			while (it.hasNext()) {
-
 				PanelFilterKriteriumDirekt panelFkd = (PanelFilterKriteriumDirekt) panelQuery
 						.getHmDirektFilter().get(it.next());
-
 				if (panelFkd.fkd.kritName.equals("c_belegnummer")) {
-					String belegnummer = panelFkd.fkd.value;
-					if (belegnummer.startsWith("%")) {
-						belegnummer = belegnummer.substring(1);
-					}
-					wtfBeleg.setText(belegnummer);
+					panelFKBelegnummer = new PanelFilterKriteriumDirektTyped(panelFkd) ; 
+					continue ;
 				}
-
-				if (panelFkd.fkd.kritName.equals("flrbuchung.c_text")) {
-					String text = panelFkd.fkd.value;
-					
-					
-					if (text.startsWith("'%")) {
-						text=text.substring(2);
-					}
-					if (text.endsWith("%'")) {
-						text=text.substring(0,text.length()-2);
-					}
-					wtfText.setText(text);
+				if(panelFkd.fkd.kritName.equals("flrbuchung.c_text")) {
+					panelFKTextsuche = new PanelFilterKriteriumDirektTyped(panelFkd) ;
+					continue ;
 				}
-				if (panelFkd.fkd.kritName.equals("n_betrag")) {
-					wnfBetrag.setBigDecimal(panelFkd.wnfFkdirektValue1.getBigDecimal());
+				if(panelFkd.fkd.kritName.equals("n_betrag")) {
+					panelFKBetrag = new PanelFilterKriteriumDirektTyped(panelFkd) ;
+					continue ;
+				}
+				if(panelFkd.fkd.kritName.equals("flrkonto.c_nr")) {
+					panelFKKonto = new PanelFilterKriteriumDirektTyped(panelFkd) ;
+					continue ;
+				}
+				if(panelFkd.fkd.kritName.equals(FinanzFac.FLR_BUCHUNGDETAIL_BUCHUNGART)) {
+					panelFKBuchungsart = new PanelFilterKriteriumDirektTyped(panelFkd) ;
+					continue ;
+				}
+				if(panelFkd.fkd.kritName.equals(FinanzFac.FLR_BUCHUNGDETAIL_BELEGART)) {
+					panelFKBelegart = new PanelFilterKriteriumDirektTyped(panelFkd) ;
+					continue ;
 				}
 			}
-
 		}
 
 		wdfVon.setMandatoryField(true);
@@ -223,23 +231,23 @@ public class ReportBuchungsjournal extends PanelBasis implements
 		wdrBereich = new WrapperDateRangeController(wdfVon, wdfBis);
 
 		getInternalFrame().addItemChangedListener(this);
-
+		
 		iZeile++;
 		jpaWorkingOn.add(wlaVon, new GridBagConstraints(0, iZeile, 1, 1, 0.1,
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
+				defaultInset, 0, 0));
 		jpaWorkingOn.add(wdfVon, new GridBagConstraints(1, iZeile, 1, 1, 0.1,
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
+				defaultInset, 0, 0));
 		jpaWorkingOn.add(wlaBis, new GridBagConstraints(2, iZeile, 1, 1, 0.1,
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
+				defaultInset, 0, 0));
 		jpaWorkingOn.add(wdfBis, new GridBagConstraints(3, iZeile, 1, 1, 0.1,
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
+				defaultInset, 0, 0));
 		jpaWorkingOn.add(wdrBereich, new GridBagConstraints(4, iZeile, 1, 1,
 				0.1, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
+				defaultInset, 0, 0));
 		iZeile++;
 
 		jpaWorkingOn
@@ -248,52 +256,48 @@ public class ReportBuchungsjournal extends PanelBasis implements
 						new GridBagConstraints(0, iZeile, 1, 1, 0.1, 0.0,
 								GridBagConstraints.CENTER,
 								GridBagConstraints.BOTH,
-								new Insets(2, 2, 2, 2), 0, 0));
+								defaultInset, 0, 0));
 		jpaWorkingOn.add(wrbGebuchtam, new GridBagConstraints(1, iZeile, 1, 1,
 				0.1, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
+				defaultInset, 0, 0));
 		jpaWorkingOn.add(wrbBuchungsdatum, new GridBagConstraints(2, iZeile, 1,
 				1, 0.1, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+				GridBagConstraints.BOTH, defaultInset, 0, 0));
 
 		jpaWorkingOn.add(wlaStorniert, new GridBagConstraints(3, iZeile, 1, 1,
 				0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 60, 0));
+				defaultInset, 60, 0));
 		jpaWorkingOn.add(wcbStorniert, new GridBagConstraints(4, iZeile, 1, 1,
 				0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 50, 0));
+				defaultInset, 50, 0));
 
-		iZeile++;
-		jpaWorkingOn.add(wlaBeleg, new GridBagConstraints(0, iZeile, 1, 1, 0.1,
-				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wtfBeleg, new GridBagConstraints(1, iZeile, 1, 1, 0.1,
-				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wlaText, new GridBagConstraints(2, iZeile, 1, 1, 0.1,
-				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wtfText, new GridBagConstraints(3, iZeile, 1, 1, 0.1,
-				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-		iZeile++;
-		jpaWorkingOn.add(wlaBetrag, new GridBagConstraints(0, iZeile, 1, 1,
-				0.1, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wnfBetrag, new GridBagConstraints(1, iZeile, 1, 1,
-				0.1, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
+		++iZeile ;		
+		addPanelFilterKriteriumDirekt(jpaWorkingOn, iZeile, 0, panelFKBelegnummer);
+		addPanelFilterKriteriumDirekt(jpaWorkingOn, iZeile, 2, panelFKTextsuche);
+
+		++iZeile ;
+		addPanelFilterKriteriumDirekt(jpaWorkingOn, iZeile, 0, panelFKBetrag);
+		addPanelFilterKriteriumDirekt(jpaWorkingOn, iZeile, 2, panelFKKonto);
+		
+		++iZeile ;
+		addPanelFilterKriteriumDirekt(jpaWorkingOn, iZeile, 0, panelFKBuchungsart);
+		addPanelFilterKriteriumDirekt(jpaWorkingOn, iZeile, 2, panelFKBelegart);		
 	}
 
-	private void initPanel() throws Throwable {
-
+	private void addPanelFilterKriteriumDirekt(JPanel p, int row, int startCol, PanelFilterKriteriumDirektTyped panelFkd) {
+		p.add(panelFkd.getLabel(), 
+				new GridBagConstraints(startCol++, row, 1, 1,
+						0.1, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, defaultInset, 0, 0)) ;
+		p.add(panelFkd.getWrapperField(), 
+				new GridBagConstraints(startCol++, row, 1, 1, 
+						0.1, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, defaultInset, 0, 0)) ;
+		
+		filterHandler.register(panelFkd);
 	}
+	
 
 	private void setDefaults() throws ExceptionLP, Throwable {
 		try {
-			// Integer geschaeftsjahr = new Integer(((InternalFrameFinanz)
-			// getInternalFrame()).aktuellesGeschaeftsjahr);
-
 			Integer geschaeftsjahr = ((InternalFrameFinanz) getInternalFrame())
 					.getIAktuellesGeschaeftsjahr();
 			Timestamp[] d = DelegateFactory.getInstance().getBuchenDelegate()
@@ -318,13 +322,34 @@ public class ReportBuchungsjournal extends PanelBasis implements
 	}
 
 	public JasperPrintLP getReport(String sDrucktype) throws Throwable {
-		return DelegateFactory
-				.getInstance()
-				.getFinanzReportDelegate()
-				.printBuchungsjournal(buchungsjournalIId, wdfVon.getDate(),
-						wdfBis.getDate(), wcbStorniert.isSelected(),
-						wrbBuchungsdatum.isSelected(), wtfText.getText(),
-						wtfBeleg.getText(), wnfBetrag.getBigDecimal());
+//		return DelegateFactory
+//				.getInstance()
+//				.getFinanzReportDelegate()
+//				.printBuchungsjournal(buchungsjournalIId, wdfVon.getDate(),
+//						wdfBis.getDate(), wcbStorniert.isSelected(),
+//						wrbBuchungsdatum.isSelected(), wtfText.getText(),
+//						wtfBeleg.getText(), wnfBetrag.getBigDecimal(), wtfKontonummer.getText());
+		
+		BuchungsjournalReportParameter params = new BuchungsjournalReportParameter(buchungsjournalIId) ;
+		params.setdVon(wdfVon.getDate());
+		params.setdBis(wdfBis.getDate());
+		params.setStorniert(wcbStorniert.isSelected());
+		params.setbDatumsfilterIstBuchungsdatum(wrbBuchungsdatum.isSelected());
+		params.setBuchungsText(panelFKTextsuche.asTextField().getText());
+		params.setBelegnummer(panelFKBelegnummer.asTextField().getText());
+		params.setBetrag(panelFKBetrag.asNumberField().getBigDecimal());
+		params.setKontonummer(panelFKKonto.asTextField().getText());
+		params.setBuchungsart(panelFKBuchungsart.asTextField().getText());
+		params.setBelegart(panelFKBelegart.asTextField().getText()) ;
+		return DelegateFactory.getInstance()
+				.getFinanzReportDelegate().printBuchungsjournal(params) ;
+//				.printBuchungsjournal(buchungsjournalIId, wdfVon.getDate(),
+//						wdfBis.getDate(), wcbStorniert.isSelected(),
+//						wrbBuchungsdatum.isSelected(), 
+//						panelFKTextsuche.asTextField().getText(), 
+//						panelFKBelegnummer.asTextField().getText(), 
+//						panelFKBetrag.asNumberField().getBigDecimal(), 
+//						panelFKKonto.asTextField().getText());
 	}
 
 	public MailtextDto getMailtextDto() throws Throwable {

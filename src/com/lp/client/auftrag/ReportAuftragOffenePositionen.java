@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -80,7 +80,10 @@ public class ReportAuftragOffenePositionen extends PanelReportJournalVerkauf
 	private static final long serialVersionUID = 1L;
 	protected WrapperLabel wlaStichtag = new WrapperLabel();
 	protected WrapperDateField wdfStichtag = new WrapperDateField();
+	protected WrapperLabel wlaVon = new WrapperLabel();
+	protected WrapperDateField wdfVon = new WrapperDateField();
 
+	
 	private WrapperCheckBox wcbSortiereNachLiefertermin = null;
 	private WrapperCheckBox wcbOhnePositionen = null;
 	private WrapperTextField wtfFertigungsgruppe = null;
@@ -135,7 +138,14 @@ public class ReportAuftragOffenePositionen extends PanelReportJournalVerkauf
 		wlaStichtag = new WrapperLabel();
 		wdfStichtag = new WrapperDateField();
 		wlaStichtag.setText(LPMain.getInstance().getTextRespectUISPr(
-				"auft.liefertermin.bis"));
+				"auft.liefertermin.stichtagbis"));
+		
+		
+		wlaVon = new WrapperLabel();
+		wdfVon = new WrapperDateField();
+		wlaVon.setText(LPMain.getInstance().getTextRespectUISPr(
+				"auft.liefertermin.stichtagvon"));
+		
 		wdfStichtag.setMandatoryField(true);
 		ParametermandantDto parametermandantDto = DelegateFactory
 				.getInstance()
@@ -150,8 +160,8 @@ public class ReportAuftragOffenePositionen extends PanelReportJournalVerkauf
 		LinkedHashMap<Integer, String> hm = new LinkedHashMap<Integer, String>();
 		hm.put(0, LPMain.getTextRespectUISPr("auft.menu.ansicht.alle")); // Alle
 		// Auftraege
-		hm.put(1, LPMain
-				.getTextRespectUISPr("auft.journal.ohnerahmenauftraege")); // ohne
+		hm.put(1,
+				LPMain.getTextRespectUISPr("auft.journal.ohnerahmenauftraege")); // ohne
 		// Rahmenauftraege
 		// ,
 		// d
@@ -162,9 +172,7 @@ public class ReportAuftragOffenePositionen extends PanelReportJournalVerkauf
 		// und
 		// freie
 		// Auftraege
-		hm
-				.put(2, LPMain
-						.getTextRespectUISPr("auft.journal.nurrahmenauftraege")); // nur
+		hm.put(2, LPMain.getTextRespectUISPr("auft.journal.nurrahmenauftraege")); // nur
 		// Rahmenauftraege
 		wcoArt = new WrapperComboBox();
 		wcoArt.setMandatoryField(true);
@@ -186,11 +194,17 @@ public class ReportAuftragOffenePositionen extends PanelReportJournalVerkauf
 				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
 
 		iZeile++;
-		jpaWorkingOn.add(wlaStichtag, new GridBagConstraints(0, iZeile, 1, 1,
+		jpaWorkingOn.add(wlaVon, new GridBagConstraints(0, iZeile, 1, 1,
 				0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
 				new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wdfVon, new GridBagConstraints(1, iZeile, 1, 1,
+				0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
+				new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wlaStichtag, new GridBagConstraints(2, iZeile, 1, 1,
+				0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
+				new Insets(2, 2, 2, 2), 100, 0));
 
-		jpaWorkingOn.add(wdfStichtag, new GridBagConstraints(1, iZeile, 1, 1,
+		jpaWorkingOn.add(wdfStichtag, new GridBagConstraints(3, iZeile, 1, 1,
 				0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
 				new Insets(2, 2, 2, 2), 0, 0));
 		iZeile++;
@@ -198,8 +212,8 @@ public class ReportAuftragOffenePositionen extends PanelReportJournalVerkauf
 				iZeile, 2, 1, 0.0, 0.0, GridBagConstraints.WEST,
 				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
 		iZeile++;
-		jpaWorkingOn.add(wcbSortiereNachAbliefertermin, new GridBagConstraints(0,
-				iZeile, 2, 1, 0.0, 0.0, GridBagConstraints.WEST,
+		jpaWorkingOn.add(wcbSortiereNachAbliefertermin, new GridBagConstraints(
+				0, iZeile, 2, 1, 0.0, 0.0, GridBagConstraints.WEST,
 				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
 		iZeile++;
 		jpaWorkingOn.add(wcbOhnePositionen, new GridBagConstraints(0, iZeile,
@@ -231,30 +245,31 @@ public class ReportAuftragOffenePositionen extends PanelReportJournalVerkauf
 			if (e.getSource() == panelQueryFLRFertigungsgruppe) {
 				Object[] o = panelQueryFLRFertigungsgruppe.getSelectedIds();
 
-				fertigungsgruppenIIds=new ArrayList<Integer>();
+				fertigungsgruppenIIds = new ArrayList<Integer>();
 
 				if (o != null) {
 					String s = "";
 					for (int i = 0; i < o.length; i++) {
 						FertigungsgruppeDto fertigungsgruppeDto = DelegateFactory
-								.getInstance().getStuecklisteDelegate()
+								.getInstance()
+								.getStuecklisteDelegate()
 								.fertigungsgruppeFindByPrimaryKey(
 										(Integer) o[i]);
 						s += fertigungsgruppeDto.getCBez() + ", ";
-						
+
 						fertigungsgruppenIIds.add((Integer) o[i]);
-						
+
 					}
 					wtfFertigungsgruppe.setText(s);
 				} else {
 					wtfFertigungsgruppe.setText(null);
-					fertigungsgruppenIIds=new ArrayList<Integer>();
+					fertigungsgruppenIIds = new ArrayList<Integer>();
 				}
 
 			}
 		} else if (e.getID() == ItemChangedEvent.ACTION_LEEREN) {
 			if (e.getSource() == panelQueryFLRFertigungsgruppe) {
-				fertigungsgruppenIIds=new ArrayList<Integer>();
+				fertigungsgruppenIIds = new ArrayList<Integer>();
 				wtfFertigungsgruppe.setText(null);
 			}
 		}
@@ -305,12 +320,16 @@ public class ReportAuftragOffenePositionen extends PanelReportJournalVerkauf
 		return DelegateFactory
 				.getInstance()
 				.getAuftragReportDelegate()
-				.printAuftragOffenePositionen(getKriterien(),
+				.printAuftragOffenePositionen(
+						getKriterien(),
+						wdfVon.getDate(),
 						wdfStichtag.getDate(),
 						new Boolean(wcbSortiereNachLiefertermin.isSelected()),
-						new Boolean(wcbOhnePositionen.isSelected()), 
+						new Boolean(wcbOhnePositionen.isSelected()),
 						new Boolean(wcbSortiereNachAbliefertermin.isSelected()),
-						(Integer[]) fertigungsgruppenIIds.toArray(new Integer[fertigungsgruppenIIds.size()]),
+						(Integer[]) fertigungsgruppenIIds
+								.toArray(new Integer[fertigungsgruppenIIds
+										.size()]),
 						(Integer) wcoArt.getKeyOfSelectedItem(),
 						wrbSortierungLiefertermin.isSelected(), getReportname());
 	}

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -124,16 +124,16 @@ abstract public class TabbedPane extends JTabbedPane implements
 	public InternalFrame getInternalFrame() {
 		return internalFrame;
 	}
-	
-//	private void setBusy() {
-//
-//		getInternalFrame().getFrameProgress().start(
-//				LPMain.getTextRespectUISPr("lp.working"));
-//		getInternalFrame().setCursor(
-//				java.awt.Cursor
-//						.getPredefinedCursor(java.awt.Cursor.WAIT_CURSOR));
-//		setEnabled(false);
-//	}
+
+	// private void setBusy() {
+	//
+	// getInternalFrame().getFrameProgress().start(
+	// LPMain.getTextRespectUISPr("lp.working"));
+	// getInternalFrame().setCursor(
+	// java.awt.Cursor
+	// .getPredefinedCursor(java.awt.Cursor.WAIT_CURSOR));
+	// setEnabled(false);
+	// }
 
 	final public void changed(EventObject e) {
 		long tStart = System.currentTimeMillis();
@@ -145,7 +145,10 @@ abstract public class TabbedPane extends JTabbedPane implements
 					+ " in " + this.getClass().getName());
 			getInternalFrame().getFrameProgress().start(
 					LPMain.getTextRespectUISPr("lp.working"));
-			getInternalFrame().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+			if (Defaults.getInstance().isUseWaitCursor()) {
+				getInternalFrame().setCursor(
+						Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+			}
 			setEnabled(false);
 
 			if (e instanceof ItemChangedEvent) {
@@ -162,8 +165,10 @@ abstract public class TabbedPane extends JTabbedPane implements
 		} finally {
 			// housekeeping
 			getInternalFrame().getFrameProgress().pause();
-			getInternalFrame().setCursor(
-					Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+			if (Defaults.getInstance().isUseWaitCursor()) {
+				getInternalFrame().setCursor(
+						Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+			}
 			setEnabled(true);
 			long tEnd = System.currentTimeMillis();
 			myLogger.info("action end: " + (tEnd - tStart) + " [ms]");
@@ -210,7 +215,7 @@ abstract public class TabbedPane extends JTabbedPane implements
 	 * Liefert den aktuell ausgew?hlten Reiter, wenn dieser ein PanelBasis ist,
 	 * sonst null
 	 * 
-	 * @return
+	 * @return das Aktuelle Panel
 	 */
 	protected PanelBasis getAktuellesPanel() {
 		if (getSelectedComponent() instanceof PanelBasis)
@@ -225,8 +230,9 @@ abstract public class TabbedPane extends JTabbedPane implements
 			tab.eventYouAreSelected(false);
 		}
 	}
-	
-	protected void initDtos() throws Throwable {}
+
+	protected void initDtos() throws Throwable {
+	}
 
 	/**
 	 * Behandle ActionEvent; zB Menue-Klick oben.
@@ -249,34 +255,29 @@ abstract public class TabbedPane extends JTabbedPane implements
 		// TP-bezogene Menubar einsetzen
 		JMenuBar jMenuBar = getJMenuBar();
 
-		
-		/* Alle Menuepunkte im System.out anzeigen
-		if (jMenuBar instanceof WrapperMenuBar) {
-			WrapperMenuBar mb = (WrapperMenuBar) jMenuBar;
-			for (int i = 0; i < mb.getComponents().length; i++) {
-				if (mb.getComponents()[i] instanceof JMenu) {
-					JMenu menu = (JMenu) mb.getComponents()[i];
-					// System.out.println(menu.getText());
-
-					for (int j = 0; j < menu.getPopupMenu().getComponents().length; j++) {
-
-						if (menu.getPopupMenu().getComponents()[j] instanceof JMenuItem) {
-							JMenuItem item = (JMenuItem) menu.getPopupMenu()
-									.getComponents()[j];
-
-							System.out.println("Modul: "
-									+ getInternalFrame().getBelegartCNr()
-									+ " TabbedPane: " + getSAddTitle()
-									+ " Men\u00FC: " + menu.getText() + " Item: "
-									+ item.getText());
-
-						}
-					}
-
-				}
-			}
-
-		}*/
+		/*
+		 * Alle Menuepunkte im System.out anzeigen if (jMenuBar instanceof
+		 * WrapperMenuBar) { WrapperMenuBar mb = (WrapperMenuBar) jMenuBar; for
+		 * (int i = 0; i < mb.getComponents().length; i++) { if
+		 * (mb.getComponents()[i] instanceof JMenu) { JMenu menu = (JMenu)
+		 * mb.getComponents()[i]; // System.out.println(menu.getText());
+		 * 
+		 * for (int j = 0; j < menu.getPopupMenu().getComponents().length; j++)
+		 * {
+		 * 
+		 * if (menu.getPopupMenu().getComponents()[j] instanceof JMenuItem) {
+		 * JMenuItem item = (JMenuItem) menu.getPopupMenu() .getComponents()[j];
+		 * 
+		 * System.out.println("Modul: " + getInternalFrame().getBelegartCNr() +
+		 * " TabbedPane: " + getSAddTitle() + " Men\u00FC: " + menu.getText() +
+		 * " Item: " + item.getText());
+		 * 
+		 * } }
+		 * 
+		 * } }
+		 * 
+		 * }
+		 */
 
 		Component[] jMenus = jMenuBar.getComponents();
 		for (int i = 0; i < jMenus.length; i++) {
@@ -441,11 +442,16 @@ abstract public class TabbedPane extends JTabbedPane implements
 	 */
 	public PropertyVetoException vetoableChangeLP() throws Throwable {
 
-		PanelBasis pb = (PanelBasis) this.getSelectedComponent();
-		if (null == pb)
-			return null; // scheint so, als ob es Situationen gibt bei denen
-							// noch nichts selektiert ist? (ghp)
-		return pb.vetoableChangeLP();
+		if (this.getSelectedComponent() instanceof PanelBasis) {
+			PanelBasis pb = (PanelBasis) this.getSelectedComponent();
+			if (null == pb)
+				return null; // scheint so, als ob es Situationen gibt bei denen
+								// noch nichts selektiert ist? (ghp)
+			return pb.vetoableChangeLP();
+		} else {
+			return null;
+		}
+
 	}
 
 	/**
@@ -472,10 +478,9 @@ abstract public class TabbedPane extends JTabbedPane implements
 	/**
 	 * Gebe das DTO des TabbedPane zur&uuml;ck
 	 * 
-	 * @throws Exception
-	 * @return JComponent
+	 * @return das Dto
 	 */
-	public Object getInseratDto() {
+	public Object getDto() {
 		return null;
 	}
 

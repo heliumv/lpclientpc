@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -33,20 +33,22 @@
 package com.lp.client.projekt;
 
 import java.awt.event.ActionEvent;
+import java.awt.event.InputEvent;
 
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
+import javax.swing.KeyStroke;
 import javax.swing.MenuElement;
 import javax.swing.event.ChangeEvent;
 
-import com.lp.client.auftrag.PanelTabelleSichtLSRE;
 import com.lp.client.frame.HelperClient;
 import com.lp.client.frame.LockStateValue;
 import com.lp.client.frame.component.ISourceEvent;
 import com.lp.client.frame.component.InternalFrame;
 import com.lp.client.frame.component.ItemChangedEvent;
+import com.lp.client.frame.component.ItemChangedEventDrop;
 import com.lp.client.frame.component.PanelBasis;
 import com.lp.client.frame.component.PanelQuery;
 import com.lp.client.frame.component.PanelSplit;
@@ -55,12 +57,15 @@ import com.lp.client.frame.component.WrapperMenu;
 import com.lp.client.frame.component.WrapperMenuBar;
 import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.frame.dynamisch.PanelDynamisch;
+import com.lp.client.media.DropPanelSplit;
 import com.lp.client.pc.LPMain;
 import com.lp.client.util.fastlanereader.gui.QueryType;
 import com.lp.server.benutzer.service.RechteFac;
+import com.lp.server.media.service.MediaEmailMetaDto;
 import com.lp.server.partner.service.AnsprechpartnerDto;
 import com.lp.server.partner.service.PartnerDto;
 import com.lp.server.personal.service.PersonalDto;
+import com.lp.server.projekt.service.HistoryDto;
 import com.lp.server.projekt.service.ProjektDto;
 import com.lp.server.projekt.service.ProjektFac;
 import com.lp.server.system.service.MandantFac;
@@ -87,6 +92,7 @@ public class TabbedPaneProjekt extends TabbedPane {
 	private static final long serialVersionUID = 1L;
 	public static int IDX_PANEL_PROJEKTAUSWAHL = -1;
 	public static int IDX_PANEL_PROJEKTKOPFDATEN = -1;
+	public static int IDX_PANEL_COCKPIT = -1;
 	public static int IDX_PANEL_PROJEKTHISTORY = -1;
 	public static int IDX_PANEL_PROJEKTQUEUE = -1;
 	public static int IDX_PANEL_ZEITDATEN = -1;
@@ -105,6 +111,7 @@ public class TabbedPaneProjekt extends TabbedPane {
 
 	private PanelQuery projektAuswahl = null;
 	private PanelBasis projektKopfdaten = null;
+	private PanelCockpit projektCockpit = null;
 
 	private ProjektDto projektDto = null;
 	private PartnerDto partnerDto = null;
@@ -112,7 +119,7 @@ public class TabbedPaneProjekt extends TabbedPane {
 	private PersonalDto personalZugewiesenerDto = null;
 	private PersonalDto personalErzeugerDto = null;
 
-	private final static String MENU_ANSICHT_PROJEKT_ALLE = "MENU_ANSICHT_PROJEKT_ALLE";
+	public final static String MENU_ANSICHT_PROJEKT_ALLE = "MENU_ANSICHT_PROJEKT_ALLE";
 	private final static String MENU_ANSICHT_PROJEKT_ALLE_OFFENE = "MENU_ANSICHT_PROJEKT_ALLE_OFFENE";
 	private final static String MENU_ANSICHT_PROJEKT_MEINE = "MENU_ANSICHT_PROJEKT_MEINE";
 	private final static String MENU_ANSICHT_PROJEKT_MEINE_OFFENE = "MENU_ANSICHT_PROJEKT_MEINE_OFFENE";
@@ -133,6 +140,8 @@ public class TabbedPaneProjekt extends TabbedPane {
 	public final static String AUS_QUEUE_ENTFERNEN = "aus_queue_entfernen";
 	public final static String MY_OWN_NEW_AUS_QUEUE_ENTFERNEN = PanelBasis.ACTION_MY_OWN_NEW
 			+ AUS_QUEUE_ENTFERNEN;
+	private static final String ACTION_SPECIAL_NEW_EMAIL = "action_special_"
+			+ PanelBasis.ALWAYSENABLED + "new_email_entry";
 
 	private PanelDialogKriterienProjektzeiten panelDialogKriterienProjektzeiten = null;
 	private boolean pdKriterienLoszeitenUeberMenueAufgerufen = false;
@@ -148,7 +157,7 @@ public class TabbedPaneProjekt extends TabbedPane {
 	private JMenu menuAnsicht = null;
 
 	private PanelBasis panelDetailProjekteigenschaft = null;
-	
+
 	public TabbedPaneProjekt(InternalFrame internalFrameI) throws Throwable {
 		super(internalFrameI, LPMain.getTextRespectUISPr("proj.projekt"));
 		jbInit();
@@ -175,6 +184,18 @@ public class TabbedPaneProjekt extends TabbedPane {
 				projektKopfdaten, LPMain.getTextRespectUISPr("lp.kopfdaten"),
 				IDX_PANEL_PROJEKTKOPFDATEN);
 
+		if (LPMain
+				.getInstance()
+				.getDesktop()
+				.darfAnwenderAufZusatzfunktionZugreifen(
+						MandantFac.ZUSATZFUNKTION_PROJEKTKLAMMER)) {
+			tabIndex++;
+			IDX_PANEL_COCKPIT = tabIndex;
+			insertTab(LPMain.getTextRespectUISPr("proj.cockpit"), null, null,
+					LPMain.getTextRespectUISPr("proj.cockpit"),
+					IDX_PANEL_COCKPIT);
+		}
+
 		tabIndex++;
 		IDX_PANEL_PROJEKTHISTORY = tabIndex;
 		insertTab(LPMain.getTextRespectUISPr("proj.projekt.details"), null,
@@ -191,18 +212,19 @@ public class TabbedPaneProjekt extends TabbedPane {
 				.getInstance()
 				.getDesktop()
 				.darfAnwenderAufZusatzfunktionZugreifen(
-						MandantFac.ZUSATZFUNKTION_PROJEKTKLAMMER) && LPMain
+						MandantFac.ZUSATZFUNKTION_PROJEKTKLAMMER)
+				&& LPMain
 						.getInstance()
 						.getDesktop()
 						.darfAnwenderAufZusatzfunktionZugreifen(
 								MandantFac.ZUSATZFUNKTION_TELEFONZEITERFASSUNG)) {
 			tabIndex++;
 			IDX_PANEL_TELEFONZEITEN = tabIndex;
-			insertTab(LPMain.getTextRespectUISPr("pers.telefonzeiten"), null, null,
-					LPMain.getTextRespectUISPr("pers.telefonzeiten"),
+			insertTab(LPMain.getTextRespectUISPr("pers.telefonzeiten"), null,
+					null, LPMain.getTextRespectUISPr("pers.telefonzeiten"),
 					IDX_PANEL_TELEFONZEITEN);
 		}
-		
+
 		if (LPMain
 				.getInstance()
 				.getDesktop()
@@ -315,9 +337,9 @@ public class TabbedPaneProjekt extends TabbedPane {
 			FilterKriteriumDirekt fkDirekt2 = ProjektFilterFactory
 					.getInstance().createFKDTitelVolltextsuche();
 
-			projektAuswahl.befuellePanelFilterkriterienDirekt(ProjektFilterFactory.getInstance()
-					.createFKDProjektnummer(),
-					fkDirekt1);
+			projektAuswahl
+					.befuellePanelFilterkriterienDirekt(ProjektFilterFactory
+							.getInstance().createFKDProjektnummer(), fkDirekt1);
 			projektAuswahl.addDirektFilter(fkDirekt2);
 			projektAuswahl.addDirektFilter(ProjektFilterFactory.getInstance()
 					.createFKDTextSuchen());
@@ -345,14 +367,15 @@ public class TabbedPaneProjekt extends TabbedPane {
 		return projektKopfdaten;
 	}
 
-	
+
 	private void refreshEigenschaften(Integer key) throws Throwable {
 		if (panelDetailProjekteigenschaft == null) {
 
 			String[] aWhichButtonIUse = { PanelBasis.ACTION_UPDATE,
 					PanelBasis.ACTION_SAVE, PanelBasis.ACTION_DISCARD, };
 
-			panelDetailProjekteigenschaft = new PanelDynamisch(getInternalFrame(),
+			panelDetailProjekteigenschaft = new PanelDynamisch(
+					getInternalFrame(),
 					LPMain.getTextRespectUISPr("lp.eigenschaften"),
 					projektAuswahl, PanelFac.PANEL_PROJEKTEIGENSCHAFTEN,
 					HelperClient.LOCKME_ARTIKEL, aWhichButtonIUse);
@@ -361,14 +384,18 @@ public class TabbedPaneProjekt extends TabbedPane {
 		}
 	}
 
-	
-	
 	private PanelSplit refreshProjektHistory() throws Throwable {
 
 		FilterKriterium[] filters = ProjektFilterFactory.getInstance()
 				.createFKProjekt(getProjektDto().getIId());
 
 		if (panelSplitHistory == null) {
+			boolean hasEmailFeature = LPMain
+					.getInstance()
+					.getDesktop()
+					.darfAnwenderAufZusatzfunktionZugreifen(
+							MandantFac.ZUSATZFUNKTION_EMAIL_CLIENT);
+
 			panelHistory = new PanelProjektHistory(getInternalFrame(),
 					LPMain.getTextRespectUISPr("proj.projekt.history"), null); // eventuell
 																				// gibt
@@ -378,14 +405,27 @@ public class TabbedPaneProjekt extends TabbedPane {
 																				// position
 
 			String[] aWhichButtonIUseHistory = { PanelBasis.ACTION_NEW };
+			if (hasEmailFeature) {
+				aWhichButtonIUseHistory = new String[] { PanelBasis.ACTION_NEW,
+						ACTION_SPECIAL_NEW_EMAIL };
+			}
 
 			panelQueryHistory = new PanelQuery(null, filters,
 					QueryParameters.UC_ID_HISTORY, aWhichButtonIUseHistory,
 					getInternalFrame(), "", true);
+			if (hasEmailFeature) {
+				panelQueryHistory.createAndSaveAndShowButton(
+						"/com/lp/client/res/documentHtml.png", LPMain
+								.getInstance()
+								.getTextRespectUISPr("lp.newHtml"),
+						ACTION_SPECIAL_NEW_EMAIL, KeyStroke.getKeyStroke('N',
+								InputEvent.CTRL_MASK + InputEvent.SHIFT_MASK),
+						null);
+			}
 
-			panelSplitHistory = new PanelSplit(getInternalFrame(),
+			panelSplitHistory = new DropPanelSplit(getInternalFrame(),
 					panelHistory, panelQueryHistory, 200);
-
+			panelSplitHistory.beOneTouchExpandable();
 			setComponentAt(IDX_PANEL_PROJEKTHISTORY, panelSplitHistory);
 		}
 		panelQueryHistory.setDefaultFilter(filters);
@@ -423,19 +463,17 @@ public class TabbedPaneProjekt extends TabbedPane {
 
 		return panelQueryQueue;
 	}
+
 	private PanelQuery refreshProjektTelefonzeiten() throws Throwable {
 
 		FilterKriterium[] filters = ProjektFilterFactory.getInstance()
 				.createFKProjektTelefonzeiten(projektDto.getIId());
 
 		if (panelQueryTelefonzeiten == null) {
-			
 
 			panelQueryTelefonzeiten = new PanelQuery(null, filters,
-					QueryParameters.UC_ID_PROJEKTTELEFONZEITEN,
-					null, getInternalFrame(), "", true);
-
-		
+					QueryParameters.UC_ID_PROJEKTTELEFONZEITEN, null,
+					getInternalFrame(), "", true);
 
 			setComponentAt(IDX_PANEL_TELEFONZEITEN, panelQueryTelefonzeiten);
 		}
@@ -548,7 +586,7 @@ public class TabbedPaneProjekt extends TabbedPane {
 		}
 	}
 
-	protected void lPActionEvent(ActionEvent e) throws Throwable {
+	public void lPActionEvent(ActionEvent e) throws Throwable {
 
 		if (e.getActionCommand().equals(MENU_ACTION_DATEI_PROJEKT)) {
 			printProjekt();
@@ -658,6 +696,10 @@ public class TabbedPaneProjekt extends TabbedPane {
 			projektKopfdaten.eventYouAreSelected(false); // sonst werden die
 															// buttons nicht
 															// richtig gesetzt!
+		} else if (selectedCur == IDX_PANEL_COCKPIT) {
+			projektCockpit = new PanelCockpit(this);
+			setComponentAt(IDX_PANEL_COCKPIT, projektCockpit);
+			
 		} else if (selectedCur == IDX_PANEL_PROJEKTHISTORY) {
 			refreshProjektHistory();
 			panelQueryHistory.eventYouAreSelected(false);
@@ -689,7 +731,7 @@ public class TabbedPaneProjekt extends TabbedPane {
 		} else if (selectedCur == IDX_PANEL_PROJEKTEIGENSCHAFTEN) {
 			refreshEigenschaften(iIdProjekt);
 			panelDetailProjekteigenschaft.eventYouAreSelected(false);
-			
+
 		}
 	}
 
@@ -752,6 +794,7 @@ public class TabbedPaneProjekt extends TabbedPane {
 			} else if (e.getSource() == panelHistory) {
 				panelQueryHistory.updateButtons();
 				panelHistory.eventYouAreSelected(false);
+				panelQueryHistory.eventYouAreSelected(false);
 			}
 		} // der OK Button in einem PanelDialog wurde gedrueckt
 		else if (e.getID() == ItemChangedEvent.ACTION_KRITERIEN_HAVE_BEEN_SELECTED) {
@@ -848,7 +891,54 @@ public class TabbedPaneProjekt extends TabbedPane {
 				}
 			}
 
+		} else if (e.getID() == ItemChangedEvent.ACTION_DROP) {
+			myLogger.info("Drop Changed on " + e.getSource());
+			if (e.getSource() == panelHistory) {
+				if (e instanceof ItemChangedEventDrop) {
+					ItemChangedEventDrop dropEvent = (ItemChangedEventDrop) e;
+
+					DelegateFactory
+							.getInstance()
+							.getEmailMediaDelegate()
+							.createHistoryFromEmail(getProjektDto().getIId(),
+									(MediaEmailMetaDto) dropEvent.getDropData());
+
+					// createNewHistoryFromEmail((MediaEmailMetaDto)
+					// dropEvent.getDropData());
+					panelSplitHistory.eventYouAreSelected(true);
+				}
+			}
+		} else if (e.getID() == ItemChangedEvent.ACTION_SPECIAL_BUTTON) {
+			if (e.getSource() instanceof PanelQuery) {
+				PanelQuery pq = (PanelQuery) e.getSource();
+				if (pq.getAspect().equals(ACTION_SPECIAL_NEW_EMAIL)) {
+					panelHistory.eventActionNew(e, true, false);
+					panelHistory.eventYouAreSelected(false);
+					setSelectedComponent(panelSplitHistory);
+					panelHistory.beHtml();
+					panelHistory.beEditMode(true);
+				}
+			}
+		} else if (e.getID() == ItemChangedEvent.ACTION_UPDATE) {
+			if (e.getSource() == panelHistory) {
+				panelQueryHistory.updateButtons(new LockStateValue(
+						PanelBasis.LOCK_FOR_NEW));
+				panelHistory.beEditMode(true);
+			}
 		}
+	}
+
+	private void createNewHistoryFromEmail(MediaEmailMetaDto emailDto)
+			throws Throwable {
+
+		HistoryDto historyDto = new HistoryDto();
+		historyDto.setProjektIId(getProjektDto().getIId());
+		historyDto.setXText(emailDto.getXContent());
+		historyDto.setTBelegDatum(emailDto.getTEmailDate());
+		historyDto.setCTitel(emailDto.getCSubject());
+		historyDto.setBHtml(emailDto.getBHtml());
+		DelegateFactory.getInstance().getProjektDelegate()
+				.createHistory(historyDto);
 	}
 
 	private PanelTabelleProjektzeiten getPanelTabelleProjektzeiten()
@@ -951,6 +1041,7 @@ public class TabbedPaneProjekt extends TabbedPane {
 			setSelectedComponent(projektKopfdaten);
 		}
 		if (e.getSource() == panelQueryHistory) {
+			panelHistory.bePlain();
 			panelHistory.eventActionNew(e, true, false);
 			panelHistory.eventYouAreSelected(false);
 			setSelectedComponent(panelSplitHistory);
@@ -1061,7 +1152,7 @@ public class TabbedPaneProjekt extends TabbedPane {
 	 * 
 	 * @param panelTitle
 	 *            der Title des aktuellen panel
-	 * @throws Exception
+	 * @throws Throwable
 	 */
 	public void setTitleProjekt(String panelTitle) throws Throwable {
 

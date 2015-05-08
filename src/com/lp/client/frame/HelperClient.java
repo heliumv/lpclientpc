@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -34,6 +34,7 @@ package com.lp.client.frame;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
@@ -54,6 +55,8 @@ import java.net.URL;
 import java.nio.channels.FileChannel;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -77,6 +80,8 @@ import javax.swing.JTable;
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.filechooser.FileFilter;
+
+import net.miginfocom.layout.ConstraintListener;
 
 import com.lp.client.frame.component.CompoundIcon;
 import com.lp.client.frame.component.IDirektHilfe;
@@ -102,6 +107,7 @@ import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.frame.dialog.DialogFactory;
 import com.lp.client.frame.report.ReportViewer;
 import com.lp.client.pc.LPMain;
+import com.lp.client.util.ClientConfiguration;
 import com.lp.client.util.dtable.DistributedTableModel;
 import com.lp.client.util.logger.LpLogger;
 import com.lp.editor.LpEditor;
@@ -114,6 +120,7 @@ import com.lp.server.partner.service.PartnerkommunikationDto;
 import com.lp.server.rechnung.service.RechnungFac;
 import com.lp.server.system.service.LocaleFac;
 import com.lp.server.system.service.SystemFac;
+import com.lp.util.DoppelIcon;
 import com.lp.util.EJBExceptionLP;
 import com.lp.util.Helper;
 
@@ -166,6 +173,7 @@ public class HelperClient {
 	public static final String SCRUD_MEDIAART_FILE = "mediaart.xml";
 	public static final String SCRUD_AUFTRAGTEXT_FILE = "auftragtext.xml";
 	public static final String SCRUD_AUFTRAGART_FILE = "auftragart.xml";
+	public static final String SCRUD_MEILENSTEIN_FILE = "meilenstein.xml";
 	public static final String SCRUD_AUFTRAGSERIENNUMMER_FILE = "auftragseriennummer.xml";
 	public static final String SCRUD_RECHNUNGTEXT_FILE = "rechnungtext.xml";
 	public static final String SCRUD_GUTSCHRIFTTEXT_FILE = "gutschrifttext.xml";
@@ -213,6 +221,7 @@ public class HelperClient {
 	public static final String LOCKME_AUFTRAGPOSITION = "lockme_auftragposition";
 	public static final String LOCKME_AUFTRAGTEILNEHMER = "lockme_auftragteilnehmer";
 	public static final String LOCKME_AUFTRAGART = "lockme_auftragart";
+	public static final String LOCKME_MEILENSTEIN = "lockme_meilenstein";
 	public static final String LOCKME_AUFTRAGSERIENNUMMERN = "lockme_auftragseriennummern";
 	public static final String LOCKME_LIEFERSCHEIN = "lockme_lieferschein";
 	public static final String LOCKME_LIEFERSCHEINPOSITION = "lockme_lieferscheinposition";
@@ -368,6 +377,7 @@ public class HelperClient {
 	public static final String LOCKME_PERSONALZUTRITTSKLASSE = "lockme_personalzutrittsklasse";
 	public static final String LOCKME_ZUTRITTSKLASSE = "lockme_zutrittsklasse";
 	public static final String LOCKME_FARBCODE = "lockme_farbcode";
+	public static final String LOCKME_REPORTVARIANTE = "lockme_reportvariante";
 	public static final String LOCKME_VORSCHLAGSTEXT = "lockme_vorschlagstext";
 	public static final String LOCKME_HISTORYART = "lockme_historyart";
 	public static final String LOCKME_BEGRUENUNG = "lockme_begruendung";
@@ -415,6 +425,17 @@ public class HelperClient {
 	public static final String LOCKME_VERLEIH = "lockme_verleih";
 	public static final String LOCKME_PROJEKTERLEDIGUNGSGRUND = "lockme_projekterledigungsgrund";
 	public static final String LOCKME_FEIERTAG = "lockme_feiertag";
+	public static final String LOCKME_REACH = "lockme_reach";
+	public static final String LOCKME_ROHS = "lockme_rohs";
+	public static final String LOCKME_AUTOMOTIVE = "lockme_automotive";
+	public static final String LOCKME_MEDICAL = "lockme_medical";
+	public static final String LOCKME_MEDIAINBOX = "lockme_mediainbox" ;
+	public static final String LOCKME_MEDIASTOREBELEG = "lockme_mediastorebeleg" ;
+	public static final String LOCKME_MASCHINENZEITMODELL = "lockme_maschinenzeitmodell";
+	public static final String LOCKME_VORZUG = "lockme_vorzug";
+	public static final String LOCKME_ALLERGEN = "lockme_alergen";
+	public static final String LOCKME_ANFRAGEERLEDIGUNGSGRUND = "lockme_anfrageerledigungsgrund";
+	public static final String LOCKME_PARTNERKOMMENTARART = "lockme_partnerkommentarart";
 	
 	
 	// Strings fuer File-Association
@@ -447,13 +468,20 @@ public class HelperClient {
 			+ "Ansicht";
 	public static final String COMP_NAME_MENU_HILFE = COMP_PRAEFIX_MENU
 			+ "Hilfe";
-
+	public static final String COMP_NAME_MENU_EMAIL = COMP_PRAEFIX_MENU
+			+ "Email";
+	
 	protected static LpLogger myLogger = (LpLogger) LpLogger
 			.getLogger("HelperClient");
+	private static ConstraintListener constraintListener;
+	private static Color colorOnFocus;
 
-	private static final String DOUBLE_RIGHT_ARROWS = "\u00BB" ;
-	private static final String DOUBLE_RIGHT_ARROWS_SPACED = " \u00BB " ;
-	
+	private static final String DOUBLE_RIGHT_ARROWS = "\u00BB";
+	private static final String DOUBLE_RIGHT_ARROWS_SPACED = " \u00BB ";
+
+	public static final String COLOR_NORMAL = "normal";
+	public static final String COLOR_RED_GREEN_BLINDNESS = "redgreenblindness";
+
 	private HelperClient() {
 		// only static helperfunctions
 	}
@@ -501,6 +529,7 @@ public class HelperClient {
 	 *            JComponent
 	 */
 	public static void setDefaultsToComponent(JComponent c) {
+		
 		// Defaults fuer alle Komponenten
 		Dimension minimumDimension = new Dimension(10, Defaults.getInstance()
 				.getControlHeight());
@@ -510,6 +539,33 @@ public class HelperClient {
 		c.setMaximumSize(maximumDimension);
 		c.setPreferredSize(minimumDimension);
 	}
+	
+	/**
+	 * Erm&ouml;glicht das &Auml;ndern der MigLayout Constraints zur Laufzeit.
+	 * Ist der Benutzer als LPAdmin angemeldet, erh&auml;lt man mit einem Rechtsklick
+	 * auf die <code>JComponent c</code> einen Eingabedialog.
+	 * @param c 
+	 */
+	public static void addConstraintListener(Container c) {
+		if(!LPMain.getInstance().isLPAdmin()) return;
+		if(!Defaults.getInstance().isbDebugGUI()) return;
+		// damit wir ihn nicht mehrfach adden
+		c.removeMouseListener(getConstraintListener());
+		c.addMouseListener(getConstraintListener());
+		
+		for(Component child : c.getComponents()) {
+			if(child instanceof Container)
+			addConstraintListener((Container)child);
+		}
+	}
+	
+	private static ConstraintListener getConstraintListener() {
+		if(constraintListener == null) {
+			constraintListener = new ConstraintListener();
+		}
+		return constraintListener;
+	}
+
 	/**
 	 * Einer Component die Default Hoehe und eine fixe Breite geben.
 	 * 
@@ -520,18 +576,19 @@ public class HelperClient {
 	 */
 	public static void setDefaultsToComponent(JComponent c, int iBreite) {
 		// Defaults fuer alle Komponenten
-		Dimension dimension = new Dimension(Defaults.getInstance().bySizeFactor(iBreite), Defaults.getInstance()
+		Dimension dimension = new Dimension(Defaults.getInstance()
+				.bySizeFactor(iBreite), Defaults.getInstance()
 				.getControlHeight());
 
 		c.setMinimumSize(dimension);
 		c.setMaximumSize(dimension);
 		c.setPreferredSize(dimension);
 	}
-	
+
 	public static void updateComponentHeight(JComponent c) {
-		for(Component child : c.getComponents()) {
-			if(child instanceof JComponent) {
-				updateComponentHeight((JComponent)child);
+		for (Component child : c.getComponents()) {
+			if (child instanceof JComponent) {
+				updateComponentHeight((JComponent) child);
 				child.setMinimumSize(child.getMinimumSize());
 				child.setPreferredSize(child.getPreferredSize());
 				child.setMaximumSize(child.getMaximumSize());
@@ -540,20 +597,18 @@ public class HelperClient {
 	}
 
 	/**
-	 * Liefert die Farbe des Rahmens fuer Pflichtfelder
+	 * Liefert die Farbe des Rahmens fuer Pflichtfelder.<br>
+	 * Der Parameter <code>colorVision</code> legt fest, ob eine Farbe f&uuml;r
+	 * Menschen mit eingeschr&auml;nkter Farbwahrnehmung gew&auml;hlt werden
+	 * soll.
 	 * 
+	 * @param colorVision
+	 *            zB.: HelperClient.COLOR_RED_GREEN_BLINDNESS,
+	 *            HelperClient.COLOR_NORMAL
 	 * @return Color
 	 */
-	public static Color getMandatoryFieldBorderColor() {
-		try {
-			String sMandatoryFieldColor = LPMain.getInstance().getLPParameter(
-					"color.mandatoryfield.border");
-			int iInactiveForegroundColor = Integer
-					.parseInt(sMandatoryFieldColor);
-			return new Color(iInactiveForegroundColor);
-		} catch (Throwable ex) {
-			return new java.awt.Color(207, 0, 104);
-		}
+	public static Color getMandatoryFieldBorderColor(String colorVision) {
+		return ClientConfiguration.getMandatoryFieldBorderColor(colorVision) ;
 	}
 
 	/**
@@ -587,16 +642,7 @@ public class HelperClient {
 	 * @return Color
 	 */
 	public static Color getNotEditableColor() {
-		Color color = null;
-		try {
-			String sColor = LPMain.getInstance().getLPParameter(
-					"ui.controls.color.noteditable");
-			int iColor = Integer.parseInt(sColor);
-			color = new Color(iColor);
-		} catch (Throwable e) {
-			color = new Color(240, 240, 240); // default: ein helles grau
-		}
-		return color;
+		return ClientConfiguration.getNotEditableColor() ;
 	}
 
 	/**
@@ -617,36 +663,27 @@ public class HelperClient {
 	 * @return Color
 	 */
 	public static Color getEditableColor() {
-		Color color = null;
-		try {
-			String sColor = LPMain.getInstance().getLPParameter(
-					"ui.controls.color.editable");
-			int iColor = Integer.parseInt(sColor);
-			color = new Color(iColor);
-		} catch (Throwable e) {
-			color = new Color(255, 255, 255); // default: weiss
+		return ClientConfiguration.getEditableColor() ;
+	}
+	
+	public static Color stringToColor(String s) {
+		int iColor = Integer.parseInt(s);
+		return new Color(iColor);
+	}
+	
+	public static Color getColorOnFocus() {
+		if(colorOnFocus == null) {
+			colorOnFocus = ClientConfiguration.getColorOnFocus() ;
 		}
-		return color;
+		return colorOnFocus;
 	}
 
 	public static Dimension getInternalFrameSize() {
-		int iSizeX;
-		int iSizeY;
-		try {
-			String sSizeX = LPMain.getInstance().getLPParameter(
-					"internalframe.size.x");
-			iSizeX = Integer.parseInt(sSizeX);
-		} catch (Throwable ex) {
-			iSizeX = 700; // Defaultwert
-		}
-		try {
-			String sSizeY = LPMain.getInstance().getLPParameter(
-					"internalframe.size.y");
-			iSizeY = Integer.parseInt(sSizeY);
-		} catch (Throwable ex) {
-			iSizeY = 600; // Defaultwert
-		}
-		return new java.awt.Dimension(Defaults.getInstance().bySizeFactor(iSizeX), Defaults.getInstance().bySizeFactor(iSizeY));
+		int iSizeX = ClientConfiguration.getInternalFrameSizeWidth() ;
+		int iSizeY = ClientConfiguration.getInternalFrameSizeHeight();
+
+		return new java.awt.Dimension(Defaults.getInstance().bySizeFactor(
+				iSizeX), Defaults.getInstance().bySizeFactor(iSizeY));
 	}
 
 	public static void memberVariablenEinerKlasseBenennen(Component component)
@@ -800,6 +837,7 @@ public class HelperClient {
 
 	/**
 	 * Renderer-Klasse fuer Boolean.
+	 * @return new Instance of {@link BooleanRenderer}
 	 */
 	public static BooleanRenderer getBooleanRenderer() {
 		return new BooleanRenderer();
@@ -1303,21 +1341,21 @@ public class HelperClient {
 		}
 	}
 
-//	private static ImageIcon iconStatusGestoppt = null;
-//	private static ImageIcon iconStatusAngelegt = null;
-//	private static ImageIcon iconStatusOffen = null;
-//	private static ImageIcon iconStatusTeilerledigt = null;
-//	private static ImageIcon iconStatusErledigt = null;
-//	private static ImageIcon iconStatusStorniert = null;
-//	private static ImageIcon iconStatus = null;
-//
-//	private static JLabel jlaIconStatusGestoppt = null;
-//	private static JLabel jlaIconStatusAngelegt = null;
-//	private static JLabel jlaIconStatusOffen = null;
-//	private static JLabel jlaIconStatusTeilerledigt = null;
-//	private static JLabel jlaIconStatusErledigt = null;
-//	private static JLabel jlaIconStatusStorniert = null;
-//	private static JLabel jlaIconStatus = null;
+	// private static ImageIcon iconStatusGestoppt = null;
+	// private static ImageIcon iconStatusAngelegt = null;
+	// private static ImageIcon iconStatusOffen = null;
+	// private static ImageIcon iconStatusTeilerledigt = null;
+	// private static ImageIcon iconStatusErledigt = null;
+	// private static ImageIcon iconStatusStorniert = null;
+	// private static ImageIcon iconStatus = null;
+	//
+	// private static JLabel jlaIconStatusGestoppt = null;
+	// private static JLabel jlaIconStatusAngelegt = null;
+	// private static JLabel jlaIconStatusOffen = null;
+	// private static JLabel jlaIconStatusTeilerledigt = null;
+	// private static JLabel jlaIconStatusErledigt = null;
+	// private static JLabel jlaIconStatusStorniert = null;
+	// private static JLabel jlaIconStatus = null;
 
 	private static HashMap<?, ?> hmStatiIcons = null;
 	private static HashMap<?, ?> hmSperrenIcons = null;
@@ -1471,11 +1509,12 @@ public class HelperClient {
 	static Icon createImageIconImpl(String iconName) {
 		// Der Original-Classloader muss wegen Webstart erhalten bleiben.
 		// LPMain befindet sich im Webstart jar
-		URL imageUrl = LPMain.class.getResource("/com/lp/client/res/" + iconName) ;
-		Icon icon = new ImageIcon(imageUrl) ;
-		return icon ;
+		URL imageUrl = LPMain.class.getResource("/com/lp/client/res/"
+				+ iconName);
+		Icon icon = new ImageIcon(imageUrl);
+		return icon;
 	}
-	
+
 	static class StatusIconRenderer extends LPDefaultTableCellRenderer {
 		/**
 		 * 
@@ -1498,6 +1537,50 @@ public class HelperClient {
 					// SK: 14081,09
 					// Neben der Statusbezeichnung auch den Tooltip uebersetzt
 					// anzeigen
+				} else if (value instanceof DoppelIcon) {
+					DoppelIcon doppelIcon = (DoppelIcon) value;
+
+					JLabel jlaIcon1 = new JLabel();
+					JLabel jlaIcon2 = new JLabel();
+
+					jlaIcon1 = getImageIconStatus(doppelIcon.getIcon1());
+
+					String tooltip="";
+					if(doppelIcon.getTooltip1()!=null){
+						tooltip=doppelIcon.getTooltip1();
+					}
+					
+					if (doppelIcon.getIcon2() != null) {
+
+						try {
+							jlaIcon2 = getImageIconStatus(doppelIcon.getIcon2());
+							CompoundIcon ci = new CompoundIcon(jlaIcon1.getIcon(),
+									jlaIcon2.getIcon());
+							jlaIcon = new JLabel(ci);
+							
+							if(doppelIcon.getTooltip2()!=null){
+								tooltip+=" ("+doppelIcon.getTooltip2()+")";
+							}
+							jlaIcon.setToolTipText(tooltip);
+						} catch (NullPointerException e) {
+							Icon icon = createImageIconImpl("leer.png");
+							CompoundIcon ci = new CompoundIcon(jlaIcon1.getIcon(),
+									icon);
+							jlaIcon = new JLabel(ci);
+							jlaIcon.setToolTipText(tooltip);
+						}
+
+						
+						
+					} else {
+
+						Icon icon = createImageIconImpl("leer.png");
+						CompoundIcon ci = new CompoundIcon(jlaIcon1.getIcon(),
+								icon);
+						jlaIcon = new JLabel(ci);
+						jlaIcon.setToolTipText(tooltip);
+					}
+
 				} else if (value instanceof Object[]) {
 					Object[] avalue = (Object[]) value;
 					if (avalue[0] != null) {
@@ -1515,10 +1598,10 @@ public class HelperClient {
 						}
 
 					} else {
-//						Icon icon = new ImageIcon(
-//								Object.class
-//										.getResource("/com/lp/client/res/leer.png"));
-						Icon icon = createImageIconImpl("leer.png") ;
+						// Icon icon = new ImageIcon(
+						// Object.class
+						// .getResource("/com/lp/client/res/leer.png"));
+						Icon icon = createImageIconImpl("leer.png");
 						CompoundIcon ci = new CompoundIcon(icon, icon);
 						jlaIcon = new JLabel(ci);
 						jlaIcon.setToolTipText("");
@@ -1529,7 +1612,7 @@ public class HelperClient {
 						if (avalue[2] != null) {
 							String sTyp = (String) avalue[3];
 							if (sTyp == null)
-								sTyp = DOUBLE_RIGHT_ARROWS_SPACED ;
+								sTyp = DOUBLE_RIGHT_ARROWS_SPACED;
 							else
 								sTyp = sTyp.substring(0, 1);
 							jlaIcon.setOpaque(true);
@@ -1572,14 +1655,14 @@ public class HelperClient {
 										+ " (offene Reklamationen)");
 								break;
 							}
-							
+
 							if (sIcon.length() != 0) {
-								icon = createImageIconImpl(sIcon) ;
-								
-//								icon = new ImageIcon(
-//										Object.class
-//												.getResource("/com/lp/client/res/"
-//														+ sIcon));
+								icon = createImageIconImpl(sIcon);
+
+								// icon = new ImageIcon(
+								// Object.class
+								// .getResource("/com/lp/client/res/"
+								// + sIcon));
 								CompoundIcon ci = new CompoundIcon(
 										jlaIcon.getIcon(), icon);
 								jlaIcon.setIcon(ci);
@@ -1660,7 +1743,7 @@ public class HelperClient {
 						jlaIcon = getImageIconStatus(LocaleFac.STATUS_GESPERRT);
 					}
 					jlaIcon.setToolTipText(value.toString().trim());
-	
+
 					// SK: 14081,09
 					// Neben der Statusbezeichnung auch den Tooltip uebersetzt
 					// anzeigen
@@ -1685,10 +1768,10 @@ public class HelperClient {
 						}
 
 					} else {
-//						Icon icon = new ImageIcon(
-//								Object.class
-//										.getResource("/com/lp/client/res/leer.png"));
-						Icon icon = createImageIconImpl("leer.png") ;
+						// Icon icon = new ImageIcon(
+						// Object.class
+						// .getResource("/com/lp/client/res/leer.png"));
+						Icon icon = createImageIconImpl("leer.png");
 						CompoundIcon ci = new CompoundIcon(icon, icon);
 						jlaIcon = new JLabel(ci);
 						jlaIcon.setToolTipText("");
@@ -1699,7 +1782,7 @@ public class HelperClient {
 						if (avalue[2] != null) {
 							String sTyp = (String) avalue[3];
 							if (sTyp == null)
-								sTyp = DOUBLE_RIGHT_ARROWS_SPACED ;
+								sTyp = DOUBLE_RIGHT_ARROWS_SPACED;
 							else
 								sTyp = sTyp.substring(0, 1);
 							jlaIcon.setOpaque(true);
@@ -1743,11 +1826,11 @@ public class HelperClient {
 								break;
 							}
 							if (sIcon.length() != 0) {
-//								icon = new ImageIcon(
-//										Object.class
-//												.getResource("/com/lp/client/res/"
-//														+ sIcon));
-								icon = createImageIconImpl(sIcon) ;
+								// icon = new ImageIcon(
+								// Object.class
+								// .getResource("/com/lp/client/res/"
+								// + sIcon));
+								icon = createImageIconImpl(sIcon);
 								CompoundIcon ci = new CompoundIcon(
 										jlaIcon.getIcon(), icon);
 								jlaIcon.setIcon(ci);
@@ -1880,8 +1963,7 @@ public class HelperClient {
 	public static int getReportZoom() {
 		int iZoom;
 		try {
-			String sZoom = LPMain.getInstance().getLPParameter("report.zoom");
-			iZoom = Integer.parseInt(sZoom);
+			iZoom = ClientConfiguration.getReportZoom() ; 
 		} catch (Throwable ex) {
 			iZoom = ReportViewer.DEFAULT_ZOOM;
 		}
@@ -1895,12 +1977,9 @@ public class HelperClient {
 	public static Font getDefaultFont() {
 		Font font = null;
 		try {
-			String sFontName = LPMain.getInstance().getLPParameter(
-					"ui.font.name");
-			String sFontStyle = LPMain.getInstance().getLPParameter(
-					"ui.font.style");
-			String sFontSize = LPMain.getInstance().getLPParameter(
-					"ui.font.size");
+			String sFontName = ClientConfiguration.getUiFontName() ;
+			String sFontStyle = ClientConfiguration.getUiFontStyle() ;
+			String sFontSize = ClientConfiguration.getUiFontSize() ;
 
 			int style = Font.PLAIN; // default
 			if (sFontStyle.equalsIgnoreCase("bold")) {
@@ -2266,7 +2345,6 @@ public class HelperClient {
 	 * Name den Variablennamen. Notwendig fuer Testumgebungen wie qftest, abbot,
 	 * etc.
 	 * 
-	 * @throws Throwable
 	 * @param object
 	 *            das object, fuer dessen Membervariablen setName aufgerufen
 	 *            werden soll
@@ -2301,7 +2379,7 @@ public class HelperClient {
 	 * gesetzt, da scheinbar nicht alle panels die internalFrames referenzieren
 	 * und daher der Name sonst ggf. nicht gesetzt wuerde.
 	 * 
-	 * @throws Throwable
+	 * @see InternalFrame#setName(String)
 	 * @param object
 	 *            das object, fuer dessen Membervariablen setName aufgerufen
 	 *            werden soll.
@@ -2309,13 +2387,13 @@ public class HelperClient {
 	 *            String
 	 * @param bGenerateUniqueNames
 	 *            wenn true, dann eindeutige Namen erzeugen.
-	 * @see InternalFrame.setName()
+	 * @throws Throwable
 	 */
 	private static final void setComponentNames(Object object, String sPraefix,
 			boolean bGenerateUniqueNames) throws Throwable {
 		// nur dann, wenn die Testumgebung laeuft
 		if (Defaults.getInstance().isComponentNamingEnabled()) {
-			long tStart = System.currentTimeMillis();
+//			long tStart = System.currentTimeMillis();
 			// Field[] fields = object.getClass().getDeclaredFields();
 			Field[] fields = getAllGuiFields(object);
 			for (int i = 0; i < fields.length; i++) {
@@ -2361,11 +2439,13 @@ public class HelperClient {
 
 							if (component.getName() == null) {
 								component.setName(sName);
-								if(component instanceof IDirektHilfe) {
-									IDirektHilfe dh = (IDirektHilfe)component;
-									if(dh.getToken() == null)
+								if (component instanceof IDirektHilfe) {
+									IDirektHilfe dh = (IDirektHilfe) component;
+									if (dh.getToken() == null)
 										dh.setToken(sName);
 								}
+								if(component instanceof Container)
+									addConstraintListener((Container)component);
 
 								// falls ein JPanel, dann rekursiv aufrufen.
 								if (oComponent instanceof JPanel
@@ -2384,10 +2464,10 @@ public class HelperClient {
 				}
 			}
 			// Dauer loggen
-			long tEnd = System.currentTimeMillis();
-			myLogger.debug("setComponentNames for "
-					+ object.getClass().getName() + " dauerte "
-					+ (tEnd - tStart) + " ms.");
+//			long tEnd = System.currentTimeMillis();
+//			myLogger.debug("setComponentNames for "
+//					+ object.getClass().getName() + " dauerte "
+//					+ (tEnd - tStart) + " ms.");
 		}
 	}
 
@@ -2547,58 +2627,112 @@ public class HelperClient {
 		}
 		return f;
 	}
-	
+
 	/**
-	 * Zeig einen Datei-Speichern Dialog an und gibt die neu angelegte Datei zurueck
-	 * @param file die zu Speichernde Datei
-	 * @param presetDirectory der vorgeschlagene Pfad
+	 * Zeigt einen Datei-&Ouml;ffnen Dialog an und gibt die Datei zur&uuml;ck
+	 * @param presetFile 
 	 * @param parent
-	 * @param mime der dateityp
-	 * @return null wenn das Speichern abgebrochen wurde/nicht moeglich war, sonst die neue Datei
-	 * @throws IOException 
+	 * @param multiselect 
+	 * @param postfixes 
+	 * @return null wenn das &Ouml;ffnen abgebrochen wurde/nicht m&ouml;glich
+	 *         war, sonst die gew&auml;hlte(n) Datei(en)
 	 */
-	public static File showSaveFileDialog(File file, File presetFile, Component parent, final String prefix, final String postfix) {
+	public static List<File> showOpenFileDialog(File presetFile,
+			Component parent, boolean multiselect, String... postfixes) {
+		if (presetFile == null) {
+			try {
+				presetFile = new File(LPMain.getInstance()
+						.getLastImportDirectory());
+			} catch (Exception e) {
+			}
+			;
+		}
+
+		JFileChooser fc = createFileChooser(presetFile, postfixes);
+		fc.setMultiSelectionEnabled(multiselect);
+		if (fc.showOpenDialog(parent) == JFileChooser.APPROVE_OPTION) {
+			try {
+				LPMain.getInstance().setLastImportDirectory(
+						fc.getCurrentDirectory().getPath());
+			} catch (Exception e) {
+			}
+			;
+			List<File> list = new ArrayList<File>();
+			if (multiselect)
+				list.addAll(Arrays.asList(fc.getSelectedFiles()));
+			else {
+				list.add(fc.getSelectedFile());
+			}
+			return list;
+		}
+		return null;
+	}
+
+	private static JFileChooser createFileChooser(File presetFile,
+			final String... postfixes) {
 		JFileChooser fc = new JFileChooser();
-		if(presetFile != null)
+		if (presetFile != null)
 			fc.setSelectedFile(presetFile);
-		fc.setAcceptAllFileFilterUsed(postfix == null);
-		if(postfix != null || prefix != null) {
-			fc.setFileFilter(new FileFilter() {
-				
+		fc.setAcceptAllFileFilterUsed(postfixes == null
+				|| postfixes.length == 0);
+
+		if (postfixes == null)
+			return fc;
+
+		for (final String postfix : postfixes) {
+			if (postfix == null)
+				fc.setAcceptAllFileFilterUsed(true);
+			fc.addChoosableFileFilter(new FileFilter() {
+
 				@Override
 				public String getDescription() {
-					return (prefix == null ? "" : prefix) + "*" + (postfix == null ? "" : postfix);
+					return (postfix == null ? "" : postfix);
 				}
-				
+
 				@Override
 				public boolean accept(File f) {
-					if(f.isDirectory())
+					if (f.isDirectory())
 						return true;
-					if(prefix != null && !f.getName().startsWith(prefix)) {
-						return false;
-					}
-					if(postfix != null && !f.getName().endsWith(postfix)) {
+					if (postfix != null && !f.getName().endsWith(postfix)) {
 						return false;
 					}
 					return true;
 				}
 			});
 		}
-		if(fc.showSaveDialog(parent) == JFileChooser.APPROVE_OPTION) {
+		return fc;
+	}
+
+	/**
+	 * Zeigt einen Datei-Speichern Dialog an und gibt die neu angelegte Datei
+	 * zurueck
+	 * 
+	 * @param file
+	 *            die zu Speichernde Datei
+	 * @param presetFile der/die vorbesetzte Pfad/Datei
+	 * @param parent
+	 * @param postfix
+	 *            wie die Datei enden muss, wenn null keine Filterung.
+	 * @return null wenn das Speichern abgebrochen wurde/nicht moeglich war,
+	 *         sonst die neue Datei
+	 */
+	public static File showSaveFileDialog(File file, File presetFile,
+			Component parent, final String postfix) {
+		JFileChooser fc = createFileChooser(presetFile, postfix);
+		if (fc.showSaveDialog(parent) == JFileChooser.APPROVE_OPTION) {
 			File dir = fc.getSelectedFile();
-			if(prefix != null && !dir.getName().startsWith(prefix)) {
-				dir = new File(dir.getParent() + File.pathSeparator + prefix + dir.getName());
-			}
-			if(postfix != null && !dir.getName().endsWith(postfix)) {
+			if (postfix != null && !dir.getName().endsWith(postfix)) {
 				dir = new File(dir.getPath() + postfix);
 			}
-			if(dir.exists()) {
-				int answer = JOptionPane.showConfirmDialog(parent,
-						LPMain.getTextRespectUISPr("lp.frage.dateiueberschreiben"),
-						LPMain.getTextRespectUISPr("lp.warning"), JOptionPane.YES_NO_OPTION);
-				if(answer == JOptionPane.YES_OPTION)
+			if (dir.exists()) {
+				int answer = JOptionPane.showConfirmDialog(parent, LPMain
+						.getTextRespectUISPr("lp.frage.dateiueberschreiben"),
+						LPMain.getTextRespectUISPr("lp.warning"),
+						JOptionPane.YES_NO_OPTION);
+				if (answer == JOptionPane.YES_OPTION)
 					dir.delete();
-				else return null;
+				else
+					return null;
 			}
 			FileInputStream src = null;
 			FileOutputStream dest = null;
@@ -2612,10 +2746,12 @@ public class HelperClient {
 				srcChannel.transferTo(0, size, destChannel);
 				return dir;
 			} catch (IOException e) {
-				JOptionPane.showMessageDialog(parent,
-						LPMain.getTextRespectUISPr("lp.dokumente.fehlerbeimspeichern"),
-						LPMain.getTextRespectUISPr("lp.error"),
-						JOptionPane.ERROR_MESSAGE);
+				JOptionPane
+						.showMessageDialog(
+								parent,
+								LPMain.getTextRespectUISPr("lp.dokumente.fehlerbeimspeichern"),
+								LPMain.getTextRespectUISPr("lp.error"),
+								JOptionPane.ERROR_MESSAGE);
 			} finally {
 				if (src != null)
 					try {
@@ -2642,28 +2778,32 @@ public class HelperClient {
 			java.awt.Desktop.getDesktop().open(file);
 		}
 	}
-	
+
 	/**
-	 * Trys to open a file with the system default application. If no
-	 * default application is set for the filetype, a save-file-dialog will be shown.
-	 * @param file file to open
-	 * @param parent parent component (for dialog ownership, may be null)
+	 * Trys to open a file with the system default application. If no default
+	 * application is set for the filetype, a save-file-dialog will be shown.
+	 * 
+	 * @param file
+	 *            file to open
+	 * @param parent
+	 *            parent component (for dialog ownership, may be null)
 	 * @return null if opened, else the saved file
 	 * @throws IOException
 	 */
-	public static File desktopTryToOpenElseSave(File file, Component parent) throws IOException {
+	public static File desktopTryToOpenElseSave(File file, Component parent)
+			throws IOException {
 		try {
 			HelperClient.desktopOpenEx(file);
 		} catch (IOException dex) {
 			// catch Exception Windows throws if no application is associated
 			if (dex.getMessage().startsWith("Failed to open file")) {
-				return showSaveFileDialog(file, null, parent, null, null);
+				return showSaveFileDialog(file, null, parent, null);
 			} else {
 				// catch exception thrown by mac if no application is associated
 				if (dex.getMessage()
 						.startsWith(
 								"Failed to launch the associated application with the specified file")) {
-					return showSaveFileDialog(file, null, parent, null, null);
+					return showSaveFileDialog(file, null, parent, null);
 				} else {
 					throw dex;
 				}
@@ -2710,4 +2850,50 @@ public class HelperClient {
 				HelperClient.class.getResource("/com/lp/client/res/"
 						+ shortResourceName));
 	}
+
+	/**
+	 * Berechnet ob schwarz oder wei&szlig als Hintergrundfarbe f&uuml;r das
+	 * menschliche Auge besser lesbar ist, wenn ein dar&uuml;ber liegender Text
+	 * die Farbe <code>c</code> hat, und liefert diese zur&uuml;ck.
+	 * 
+	 * @param c
+	 *            die Farbe des Textes
+	 * @return <code>Color.black</code> oder <code>Color.white</code>, je
+	 *         nachdem was als Hintergrund besser geeignet ist.
+	 */
+	public static Color getContrastYIQ(Color c) {
+		return (c.getRed() * 299 + c.getGreen() * 587 + c.getBlue() * 114) / 1000 >= 128 ? Color.black
+				: Color.white;
+	}
+	
+	public static String getServerName() {
+		  String server = System.getProperty("java.naming.provider.url");
+
+		  try {
+		     int iB = server.indexOf("//") + 2;
+		     int iM = server.lastIndexOf(":");
+		     
+		     server = server.substring(iB, iM);
+		  }catch (Exception ex) {
+		       server = "?";
+		  }
+		  
+		  return server;		
+	}
+	
+	
+	/**
+	 * Zwei Objekte auf equals vergleichen und dabei null behandeln.
+	 * <p>sind beide Objekte == null wird true geliefert</p>
+	 * <p>ansonsten wird das !null Objekt als equals Empfaenger benutzt.
+	 * 
+	 * @param o1
+	 * @param o2
+	 * @return true wenn beide null oder o1.equals(o2) ;
+	 */
+	public static boolean nullableEquals(Object o1, Object o2) {
+		if(o1 == null && o2 == null) return true ;
+		if(o1 == null) return o2.equals(o1) ;
+		return o1.equals(o2) ;
+	}	
 }

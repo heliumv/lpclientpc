@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -35,6 +35,7 @@ package com.lp.client.frame.delegate;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -57,6 +58,7 @@ import com.lp.server.system.service.EinheitsprDto;
 import com.lp.server.system.service.ExtralisteDto;
 import com.lp.server.system.service.ExtralisteRueckgabeTabelleDto;
 import com.lp.server.system.service.GeschaeftsjahrMandantDto;
+import com.lp.server.system.service.JavaInfoDto;
 import com.lp.server.system.service.KeyvalueDto;
 import com.lp.server.system.service.KostenstelleDto;
 import com.lp.server.system.service.LandDto;
@@ -70,6 +72,7 @@ import com.lp.server.system.service.SystemFac;
 import com.lp.server.system.service.SystemMultilanguageFac;
 import com.lp.server.system.service.SystemServicesFac;
 import com.lp.server.system.service.TextDto;
+import com.lp.server.system.service.LpHvDirekthilfeDto;
 import com.lp.service.BelegVerkaufDto;
 import com.lp.service.BelegpositionVerkaufDto;
 import com.lp.util.EJBExceptionLP;
@@ -282,7 +285,6 @@ public class SystemDelegate extends Delegate {
 	 * 
 	 * @return KeyValueDto[]
 	 * @throws ExceptionLP
-	 * @throws Throwable
 	 */
 	public Map<?, ?> getAllGeschaeftsjahr() throws ExceptionLP {
 		Map<?, ?> arten = null;
@@ -849,6 +851,7 @@ public class SystemDelegate extends Delegate {
 	 * Ermittelt die Locale & Timezone die am Server verwendet wird.
 	 * 
 	 * @return die Locale&Timeinfo vom Server
+	 * @throws ExceptionLP 
 	 */
 	public ServerLocaleInfo getLocaleInfo() throws ExceptionLP {
 		try {
@@ -964,7 +967,96 @@ public class SystemDelegate extends Delegate {
 			handleThrowable(t);
 
 		}
-
 	}
 
+	public String getScriptContentFromLPDir(String modulI, String filenameI) throws ExceptionLP {
+		try {
+			return systemFac.getScriptContentFromLPDir(modulI, filenameI,
+				LPMain.getTheClient().getMandant(), LPMain.getTheClient().getLocMandant(), null) ;
+		} catch(Throwable t) {
+			handleThrowable(t) ;
+		}
+		
+		return null ;
+	}
+
+	/**
+	 * @see SystemMultilanguageFac#getAllDirekthilfeTexte(com.lp.server.system.service.TheClientDto, boolean)
+	 * @return eine Map mit dem Token als Key und dem Text als Value
+	 * @throws ExceptionLP 
+	 */
+	public Map<String, String> getAnwenderDirekthilfeTexte() throws ExceptionLP {
+		try {
+			return systemMultilanguageFac.getAllDirekthilfeTexte(LPMain.getTheClient(), true);
+		} catch(Throwable t) {
+			handleThrowable(t);
+		}
+		return null;
+	}
+	
+	/**
+	 * @see SystemMultilanguageFac#getAllDirekthilfeTexte(com.lp.server.system.service.TheClientDto, boolean)
+	 * @return eine Map mit dem Token als Key und dem Text als Value
+	 * @throws ExceptionLP 
+	 */
+	public Map<String, String> getHvDirekthilfeTexte() throws ExceptionLP {
+		try {
+			return systemMultilanguageFac.getAllDirekthilfeTexte(LPMain.getTheClient(), false);
+		} catch(Throwable t) {
+			handleThrowable(t);
+		}
+		return null;
+	}
+	
+
+	public void putAnwenderDirekthilfeText(String token, String text) throws ExceptionLP {
+		try {
+			systemMultilanguageFac.putDirekthilfeText(token, text, true, LPMain.getTheClient());
+		} catch(Throwable t) {
+			handleThrowable(t);
+		}
+	}
+	
+	public void putHvDirekthilfeText(String token, String text) throws ExceptionLP {
+		try {
+			systemMultilanguageFac.putDirekthilfeText(token, text, false, LPMain.getTheClient());
+		} catch(Throwable t) {
+			handleThrowable(t);
+		}
+	}
+	
+	public void putHvDirekthilfeText(LpHvDirekthilfeDto hvdh) throws ExceptionLP {
+		try {
+			systemMultilanguageFac.putHvDirekthilfeText(hvdh.getcToken(), hvdh.getcLocale(), hvdh.getcText(), hvdh.gettAendern(), LPMain.getTheClient());
+		} catch(Throwable t) {
+			handleThrowable(t);
+		}
+	}
+	
+	public List<LpHvDirekthilfeDto> getAllHvDirekthilfeDtos() throws ExceptionLP {
+		try {
+			return systemMultilanguageFac.getAllHvDirekthilfeDtos();
+		} catch(Throwable t) {
+			handleThrowable(t);
+		}
+		return null;
+	}
+	
+	public String getServerWebPort() throws ExceptionLP {
+		try {
+			return systemFac.getServerWebPort() ;
+		} catch(Throwable t) {
+			handleThrowable(t);
+		}
+		return null ;
+	}
+	
+	public JavaInfoDto getServerJavaInfo() throws ExceptionLP  {
+		try {
+			return systemFac.getServerJavaInfo();
+		} catch(Throwable t) {
+			handleThrowable(t);
+		}
+		return null ;
+	}
 }

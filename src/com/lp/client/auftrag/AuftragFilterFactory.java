@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -208,7 +208,7 @@ public class AuftragFilterFactory {
 		return new FilterKriteriumDirekt("c_bez", "",
 				FilterKriterium.OPERATOR_LIKE, LPMain.getInstance()
 						.getTextRespectUISPr("label.projektbestellnr"),
-				FilterKriteriumDirekt.PROZENT_TRAILING, // Auswertung als '%XX'
+				FilterKriteriumDirekt.PROZENT_BOTH, // Auswertung als '%XX'
 				true, // wrapWithSingleQuotes
 				true, // ignore case
 				Facade.MAX_UNBESCHRAENKT);
@@ -300,6 +300,19 @@ public class AuftragFilterFactory {
 					iIdAuftragI.toString(), FilterKriterium.OPERATOR_EQUAL,
 					false);
 		}
+
+		return aFilterKrit;
+	}
+	public FilterKriterium[] createFKZahlungsplanmeilenstein(Integer zahlungsplanIId) {
+		FilterKriterium[] aFilterKrit = null;
+
+		
+			aFilterKrit = new FilterKriterium[1];
+
+			aFilterKrit[0] = new FilterKriterium("zahlungsplan_i_id", true,
+					zahlungsplanIId.toString(), FilterKriterium.OPERATOR_EQUAL,
+					false);
+		
 
 		return aFilterKrit;
 	}

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -41,143 +41,170 @@ import com.lp.client.frame.LockStateValue;
 import com.lp.client.pc.LPMain;
 import com.lp.server.util.fastlanereader.service.query.FilterKriterium;
 
-
 /**
- * <p><I>Dieses vorgeschaltene Dialogfenster baut die Kriterien fuer ein Paneltabelle zusammen.</I> </p>
- * <p>Copyright Logistik Pur Software GmbH (c) 2004-2008</p>
- * <p>Erstellungsdatum <I>21.01.05</I></p>
- * <p> </p>
+ * <p>
+ * <I>Dieses vorgeschaltene Dialogfenster baut die Kriterien fuer ein
+ * Paneltabelle zusammen.</I>
+ * </p>
+ * <p>
+ * Copyright Logistik Pur Software GmbH (c) 2004-2008
+ * </p>
+ * <p>
+ * Erstellungsdatum <I>21.01.05</I>
+ * </p>
+ * <p>
+ * </p>
+ * 
  * @author Uli Walch
  * @version $Revision: 1.4 $
  */
-public abstract class PanelDialogKriterien
-    extends PanelDialog {
-  /**
+public abstract class PanelDialogKriterien extends PanelDialog {
+	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
 
-/** Das sind die Kriterien, die in diesem Fenster sitzen. */
-  protected FilterKriterium[] aAlleKriterien = null;
+	/** Das sind die Kriterien, die in diesem Fenster sitzen. */
+	protected FilterKriterium[] aAlleKriterien = null;
 
-  /** Knopf zum Uebernehmen der Kriterien. */
-  static final public String ACTION_SPECIAL_OK =
-      "action_" + ALWAYSENABLED + "ok";
+	/** Knopf zum Uebernehmen der Kriterien. */
+	static final public String ACTION_SPECIAL_OK = "action_" + ALWAYSENABLED
+			+ "ok";
 
+	private String iconFuerOKButton = "/com/lp/client/res/check2.png";
 
-  public PanelDialogKriterien(InternalFrame oInternalFrameI, String add2Title)
-      throws Throwable {
-    super(oInternalFrameI, add2Title);
-    jbInit();
-    initComponents();
+	public PanelDialogKriterien(InternalFrame oInternalFrameI, String add2Title)
+			throws Throwable {
+		super(oInternalFrameI, add2Title);
+		jbInit();
+		initComponents();
 
-    LockStateValue lockstateValue = getLockedstateDetailMainKey();
-    lockstateValue.setIState(LOCK_NO_LOCKING);
-    updateButtons(lockstateValue);
-  }
+		LockStateValue lockstateValue = getLockedstateDetailMainKey();
+		lockstateValue.setIState(LOCK_NO_LOCKING);
+		updateButtons(lockstateValue);
+	}
 
+	public PanelDialogKriterien(InternalFrame oInternalFrameI,
+			String add2Title, String iconFuerOKButton) throws Throwable {
+		super(oInternalFrameI, add2Title);
+		this.iconFuerOKButton = iconFuerOKButton;
+		jbInit();
+		initComponents();
 
-  private void jbInit() throws Throwable {
+		LockStateValue lockstateValue = getLockedstateDetailMainKey();
+		lockstateValue.setIState(LOCK_NO_LOCKING);
+		updateButtons(lockstateValue);
+	}
 
+	private void jbInit() throws Throwable {
 
-    //accel: ALT1
-    getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(
-      KeyStroke.getKeyStroke('1', java.awt.event.InputEvent.ALT_MASK), ALT1);
-    getActionMap().put(ALT1, new ButtonAbstractAction(this, ALT1));
-    //accel: ALT2
-    getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(
-      KeyStroke.getKeyStroke('2', java.awt.event.InputEvent.ALT_MASK), ALT2);
-    getActionMap().put(ALT2, new ButtonAbstractAction(this, ALT2));
-    //accel: ALT3
-    getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(
-      KeyStroke.getKeyStroke('3', java.awt.event.InputEvent.ALT_MASK), ALT3);
-    getActionMap().put(ALT3, new ButtonAbstractAction(this, ALT3));
-    //accel: ALT4
-    getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(
-      KeyStroke.getKeyStroke('4', java.awt.event.InputEvent.ALT_MASK), ALT4);
-    getActionMap().put(ALT4, new ButtonAbstractAction(this, ALT4));
-    //accel: ALT5
-    getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(
-      KeyStroke.getKeyStroke('5', java.awt.event.InputEvent.ALT_MASK), ALT5);
-    getActionMap().put(ALT5, new ButtonAbstractAction(this, ALT5));
-    //accel: ALT6
-    getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(
-      KeyStroke.getKeyStroke('6', java.awt.event.InputEvent.ALT_MASK), ALT6);
-    getActionMap().put(ALT6, new ButtonAbstractAction(this, ALT6));
-    //accel: ALT7
-    getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(
-      KeyStroke.getKeyStroke('7', java.awt.event.InputEvent.ALT_MASK), ALT7);
-    getActionMap().put(ALT7, new ButtonAbstractAction(this, ALT7));
-    //accel: ALT8
-    getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(
-      KeyStroke.getKeyStroke('8', java.awt.event.InputEvent.ALT_MASK), ALT8);
-    getActionMap().put(ALT8, new ButtonAbstractAction(this, ALT8));
-    //accel: ALT9
-    getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(
-      KeyStroke.getKeyStroke('9', java.awt.event.InputEvent.ALT_MASK), ALT9);
-    getActionMap().put(ALT9, new ButtonAbstractAction(this, ALT9));
-    //accel: ALTF
-    getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(
-      KeyStroke.getKeyStroke('F', java.awt.event.InputEvent.ALT_MASK), ALTF);
-    getActionMap().put(ALTF, new ButtonAbstractAction(this, ALTF));
-    //accel: ALTR
-    getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(
-      KeyStroke.getKeyStroke('R', java.awt.event.InputEvent.ALT_MASK), ALTR);
-    getActionMap().put(ALTR, new ButtonAbstractAction(this, ALTR));
-    //accel: ALTB
-    getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(
-      KeyStroke.getKeyStroke('B', java.awt.event.InputEvent.ALT_MASK), ALTB);
-    getActionMap().put(ALTB, new ButtonAbstractAction(this, ALTB));
+		// accel: ALT1
+		getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+				.put(KeyStroke.getKeyStroke('1',
+						java.awt.event.InputEvent.ALT_MASK), ALT1);
+		getActionMap().put(ALT1, new ButtonAbstractAction(this, ALT1));
+		// accel: ALT2
+		getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+				.put(KeyStroke.getKeyStroke('2',
+						java.awt.event.InputEvent.ALT_MASK), ALT2);
+		getActionMap().put(ALT2, new ButtonAbstractAction(this, ALT2));
+		// accel: ALT3
+		getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+				.put(KeyStroke.getKeyStroke('3',
+						java.awt.event.InputEvent.ALT_MASK), ALT3);
+		getActionMap().put(ALT3, new ButtonAbstractAction(this, ALT3));
+		// accel: ALT4
+		getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+				.put(KeyStroke.getKeyStroke('4',
+						java.awt.event.InputEvent.ALT_MASK), ALT4);
+		getActionMap().put(ALT4, new ButtonAbstractAction(this, ALT4));
+		// accel: ALT5
+		getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+				.put(KeyStroke.getKeyStroke('5',
+						java.awt.event.InputEvent.ALT_MASK), ALT5);
+		getActionMap().put(ALT5, new ButtonAbstractAction(this, ALT5));
+		// accel: ALT6
+		getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+				.put(KeyStroke.getKeyStroke('6',
+						java.awt.event.InputEvent.ALT_MASK), ALT6);
+		getActionMap().put(ALT6, new ButtonAbstractAction(this, ALT6));
+		// accel: ALT7
+		getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+				.put(KeyStroke.getKeyStroke('7',
+						java.awt.event.InputEvent.ALT_MASK), ALT7);
+		getActionMap().put(ALT7, new ButtonAbstractAction(this, ALT7));
+		// accel: ALT8
+		getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+				.put(KeyStroke.getKeyStroke('8',
+						java.awt.event.InputEvent.ALT_MASK), ALT8);
+		getActionMap().put(ALT8, new ButtonAbstractAction(this, ALT8));
+		// accel: ALT9
+		getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+				.put(KeyStroke.getKeyStroke('9',
+						java.awt.event.InputEvent.ALT_MASK), ALT9);
+		getActionMap().put(ALT9, new ButtonAbstractAction(this, ALT9));
+		// accel: ALTF
+		getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+				.put(KeyStroke.getKeyStroke('F',
+						java.awt.event.InputEvent.ALT_MASK), ALTF);
+		getActionMap().put(ALTF, new ButtonAbstractAction(this, ALTF));
+		// accel: ALTR
+		getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+				.put(KeyStroke.getKeyStroke('R',
+						java.awt.event.InputEvent.ALT_MASK), ALTR);
+		getActionMap().put(ALTR, new ButtonAbstractAction(this, ALTR));
+		// accel: ALTB
+		getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+				.put(KeyStroke.getKeyStroke('B',
+						java.awt.event.InputEvent.ALT_MASK), ALTB);
+		getActionMap().put(ALTB, new ButtonAbstractAction(this, ALTB));
 
+		createAndSaveAndShowButton(iconFuerOKButton,
+				LPMain.getTextRespectUISPr("lp.tooltip.kriterienuebernehmen"),
+				ACTION_SPECIAL_OK, KeyStroke.getKeyStroke('S',
+						java.awt.event.InputEvent.CTRL_MASK), null);
 
-    createAndSaveAndShowButton(
-        "/com/lp/client/res/check2.png",
-        LPMain.getTextRespectUISPr("lp.tooltip.kriterienuebernehmen"),
-        ACTION_SPECIAL_OK,
-        KeyStroke.getKeyStroke('S', java.awt.event.InputEvent.CTRL_MASK),
-        null);
+		String[] aWhichButtonIUse = { ACTION_SPECIAL_OK };
 
-    String[] aWhichButtonIUse = {
-        ACTION_SPECIAL_OK
-    };
+		enableButtonAction(aWhichButtonIUse);
+	}
 
-    enableButtonAction(aWhichButtonIUse);
-  }
+	protected void eventActionSpecial(ActionEvent e) throws Throwable {
+		if (e.getActionCommand().equals(PanelBasis.ESC)
+				|| e.getActionCommand()
+						.equals(ACTION_SPECIAL_CLOSE_PANELDIALOG)) {
+			getInternalFrame().closePanelDialog();
+			getInternalFrame().fireItemChanged(this,
+					ItemChangedEvent.ACTION_DISCARD);
 
-  protected void eventActionSpecial(ActionEvent e) throws Throwable {
-    if (e.getActionCommand().equals(PanelBasis.ESC) ||
-        e.getActionCommand().equals(ACTION_SPECIAL_CLOSE_PANELDIALOG)) {
-      getInternalFrame().closePanelDialog();
-      getInternalFrame().fireItemChanged(this,
-                                         ItemChangedEvent.ACTION_DISCARD);
+		} else if (e.getActionCommand().equals(ACTION_SPECIAL_OK)) {
+			// von der Auswahl informieren, damit es auf die Auswahl reagieren
+			// kann
+			getInternalFrame().closePanelDialog();
+			getInternalFrame().fireItemChanged(this,
+					ItemChangedEvent.ACTION_KRITERIEN_HAVE_BEEN_SELECTED);
+		}
+	}
 
-    }
-    else
-    if (e.getActionCommand().equals(ACTION_SPECIAL_OK)) {
-      // von der Auswahl informieren, damit es auf die Auswahl reagieren kann
-      getInternalFrame().closePanelDialog();
-      getInternalFrame().fireItemChanged(this,
-                                         ItemChangedEvent.ACTION_KRITERIEN_HAVE_BEEN_SELECTED);
-    }
-  }
+	/**
+	 * Ueber diese Methode kann von aussden auf die Kriterien, die in diesem
+	 * Dialog sitzen, zugegriffen werden.
+	 * 
+	 * @throws Throwable
+	 * @return FilterKriterium[]
+	 */
+	public FilterKriterium[] getAlleFilterKriterien() throws Throwable {
+		return buildFilterKriterien();
+	}
 
-  /**
-   * Ueber diese Methode kann von aussden auf die Kriterien, die in diesem
-   * Dialog sitzen, zugegriffen werden.
-   * @throws Throwable
-   * @return FilterKriterium[]
-   */
-  public FilterKriterium[] getAlleFilterKriterien() throws Throwable {
-    return buildFilterKriterien();
-  }
-
-  /**
-   * In dieser Methode werden die Kriterien, die in diesem Dialog sitzen
-   * zusammengebaut.
-   * @throws Throwable
-   * @return FilterKriterium[]
-   */
-  public /*abstract*/ FilterKriterium[] buildFilterKriterien() throws Throwable {
-    return null;
-  }
+	/**
+	 * In dieser Methode werden die Kriterien, die in diesem Dialog sitzen
+	 * zusammengebaut.
+	 * 
+	 * @throws Throwable
+	 * @return FilterKriterium[]
+	 */
+	public/* abstract */FilterKriterium[] buildFilterKriterien() throws Throwable {
+		return null;
+	}
 }

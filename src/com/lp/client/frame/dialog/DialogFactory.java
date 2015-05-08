@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -44,6 +44,7 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
+import javax.swing.JFrame;
 import javax.swing.JLayeredPane;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -177,7 +178,7 @@ public class DialogFactory {
 		LPMain.getInstance().getDesktop()
 				.showModalDialog(title, msg, JOptionPane.WARNING_MESSAGE);
 	}
-
+	
 	public static void showMessageMitScrollbar(String title, String message,
 			boolean bEnableScrollPane) throws Throwable {
 		DialogMitScollbar d = new DialogMitScollbar(title, message,
@@ -346,6 +347,15 @@ public class DialogFactory {
 				JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE,
 				null, // Icon
 				options, initialValue);
+	}
+	
+	public static int showModalDialogDesktopMitte(
+			Object message, String title, Object[] options, Object initialValue) {
+			return JOptionPane.showOptionDialog(LPMain.getInstance().getDesktop(),message, title,
+				JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE,
+				null, // Icon
+				options, initialValue);
+		
 	}
 
 	/**

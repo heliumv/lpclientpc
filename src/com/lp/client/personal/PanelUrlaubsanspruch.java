@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -381,7 +381,7 @@ public class PanelUrlaubsanspruch extends PanelBasis implements ChangeListener {
 
 		jpaWorkingOn.add(wnfAnspruchInWochen, new GridBagConstraints(1, iZeile,
 				1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.NONE, new Insets(2, 2, 2, 2), -25, 0));
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), -25, 0));
 
 		jpaWorkingOn.add(wlaInTagen, new GridBagConstraints(2, iZeile, 1, 1,
 				0.00, 0.0, GridBagConstraints.CENTER,
@@ -400,7 +400,7 @@ public class PanelUrlaubsanspruch extends PanelBasis implements ChangeListener {
 				new Insets(2, 2, 2, 2), 0, 0));
 
 		jpaWorkingOn.add(wnfTage, new GridBagConstraints(1, iZeile, 1, 1, 0.0,
-				0.0, GridBagConstraints.CENTER, GridBagConstraints.NONE,
+				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 2, 2, 2), -25, 0));
 
 		jpaWorkingOn.add(wlaDummy, new GridBagConstraints(2, iZeile, 1, 1, 0.0,
@@ -418,7 +418,7 @@ public class PanelUrlaubsanspruch extends PanelBasis implements ChangeListener {
 
 		jpaWorkingOn.add(wnfTageZusaetzlich, new GridBagConstraints(1, iZeile,
 				1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.NONE, new Insets(2, 2, 2, 2), -25, 0));
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), -25, 0));
 		jpaWorkingOn.add(wbuAliquot, new GridBagConstraints(3, iZeile, 1, 1,
 				0.0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 70, 0));
@@ -433,7 +433,7 @@ public class PanelUrlaubsanspruch extends PanelBasis implements ChangeListener {
 				0.0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
 		jpaWorkingOn.add(wnfStunden, new GridBagConstraints(1, iZeile, 1, 1,
-				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.NONE,
+				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 2, 2, 2), -25, 0));
 		jpaWorkingOn.add(wlaResturlaubTage, new GridBagConstraints(2, iZeile,
 				2, 1, 0.0, 0.0, GridBagConstraints.CENTER,
@@ -450,7 +450,7 @@ public class PanelUrlaubsanspruch extends PanelBasis implements ChangeListener {
 
 		jpaWorkingOn.add(wnfStundenZusaetzlich, new GridBagConstraints(1,
 				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.NONE, new Insets(2, 2, 2, 2), -25, 0));
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), -25, 0));
 		jpaWorkingOn.add(wlaResturlaubStunden, new GridBagConstraints(2,
 				iZeile, 2, 1, 0.0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 70, 0));

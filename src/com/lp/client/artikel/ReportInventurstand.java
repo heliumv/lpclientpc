@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -83,10 +83,11 @@ public class ReportInventurstand extends PanelBasis implements
 	private WrapperRadioButton wrbSortArtikelnr = new WrapperRadioButton();
 	private WrapperRadioButton wrbSortArtikelklasse = new WrapperRadioButton();
 	private WrapperRadioButton wrbSortArtikelgruppe = new WrapperRadioButton();
+	private WrapperRadioButton wrbSortLagerplatz = new WrapperRadioButton();
 	private ButtonGroup buttonGroupSortierung = new ButtonGroup();
 
-	  private WrapperLabel wlaSortierung = new WrapperLabel();
-	
+	private WrapperLabel wlaSortierung = new WrapperLabel();
+
 	public ReportInventurstand(InternalFrameArtikel internalFrame,
 			String add2Title, Integer inventurIId) throws Throwable {
 		super(internalFrame, add2Title);
@@ -121,8 +122,9 @@ public class ReportInventurstand extends PanelBasis implements
 		wtfInventur.setEditable(false);
 		wtfInventur.setMandatoryField(true);
 
-		wlaSortierung.setText(LPMain.getInstance().getTextRespectUISPr("label.sortierung"));
-		
+		wlaSortierung.setText(LPMain.getInstance().getTextRespectUISPr(
+				"label.sortierung"));
+
 		wrbSortArtikelnr.setSelected(true);
 		wrbSortArtikelnr.setText(LPMain.getInstance().getTextRespectUISPr(
 				"artikel.artikelnummer"));
@@ -130,9 +132,12 @@ public class ReportInventurstand extends PanelBasis implements
 				"lp.artikelgruppe"));
 		wrbSortArtikelklasse.setText(LPMain.getInstance().getTextRespectUISPr(
 				"lp.artikelklasse"));
+		wrbSortLagerplatz.setText(LPMain.getInstance().getTextRespectUISPr(
+				"artikel.inventurstand.sortierung.lagerplatz"));
 		buttonGroupSortierung.add(wrbSortArtikelnr);
 		buttonGroupSortierung.add(wrbSortArtikelgruppe);
 		buttonGroupSortierung.add(wrbSortArtikelklasse);
+		buttonGroupSortierung.add(wrbSortLagerplatz);
 
 		this.add(jpaWorkingOn, new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
 				GridBagConstraints.WEST, GridBagConstraints.BOTH, new Insets(0,
@@ -144,27 +149,30 @@ public class ReportInventurstand extends PanelBasis implements
 		jpaWorkingOn.add(wtfInventur, new GridBagConstraints(1, 0, 1, 1, 0.0,
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 2, 2, 2), 0, 0));
-		
+
 		jpaWorkingOn.add(wbuLager, new GridBagConstraints(0, 1, 1, 1, 0.1, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 2, 2, 2), 0, 0));
 		jpaWorkingOn.add(wtfLager, new GridBagConstraints(1, 1, 1, 1, 0.2, 0.0,
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 2, 2, 2), 0, 0));
-		
-		jpaWorkingOn.add(wlaSortierung, new GridBagConstraints(0, 2, 1, 1, 0.1, 0.0,
-				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
-				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wrbSortArtikelnr, new GridBagConstraints(1, 2, 1, 1, 0.2, 0.0,
-				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
-				new Insets(2, 2, 2, 2), 0, 0));
 
-		jpaWorkingOn.add(wrbSortArtikelklasse, new GridBagConstraints(1, 3, 1, 1, 0.2, 0.0,
-				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+		jpaWorkingOn.add(wlaSortierung, new GridBagConstraints(0, 2, 1, 1, 0.1,
+				0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wrbSortArtikelgruppe, new GridBagConstraints(1, 4, 1, 1, 0.2, 0.0,
-				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
-				new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wrbSortArtikelnr, new GridBagConstraints(1, 2, 1, 1,
+				0.2, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+
+		jpaWorkingOn.add(wrbSortArtikelklasse, new GridBagConstraints(1, 3, 1,
+				1, 0.2, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wrbSortArtikelgruppe, new GridBagConstraints(1, 4, 1,
+				1, 0.2, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wrbSortLagerplatz, new GridBagConstraints(1, 5, 1, 1,
+				0.2, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
 	}
 
 	public String getModul() {
@@ -220,6 +228,8 @@ public class ReportInventurstand extends PanelBasis implements
 			iOptionSortierung = InventurFac.REPORT_INVENTURSTAND_SORTIERUNG_ARTIKELGRUPPE;
 		} else if (wrbSortArtikelklasse.isSelected()) {
 			iOptionSortierung = InventurFac.REPORT_INVENTURSTAND_SORTIERUNG_ARTIKELKLASSE;
+		} else if (wrbSortLagerplatz.isSelected()) {
+			iOptionSortierung = InventurFac.REPORT_INVENTURSTAND_SORTIERUNG_LAGERPLATZ;
 		}
 
 		return DelegateFactory.getInstance().getInventurDelegate()

@@ -43,6 +43,7 @@ import javax.naming.InitialContext;
 import javax.swing.table.TableModel;
 
 import com.lp.client.frame.ExceptionLP;
+import com.lp.client.frame.component.InternalFrame;
 import com.lp.client.pc.LPMain;
 import com.lp.server.bestellung.service.BSMahnlaufDto;
 import com.lp.server.bestellung.service.BestellpositionDto;
@@ -52,6 +53,8 @@ import com.lp.server.bestellung.service.BestellungFac;
 import com.lp.server.bestellung.service.BestellungReportFac;
 import com.lp.server.bestellung.service.ImportMonatsbestellungDto;
 import com.lp.server.eingangsrechnung.service.EingangsrechnungDto;
+import com.lp.server.system.service.BelegPruefungDto;
+import com.lp.server.system.service.LocaleFac;
 import com.lp.server.system.service.ReportJournalKriterienDto;
 import com.lp.server.system.service.TheClientDto;
 import com.lp.server.util.report.JasperPrintLP;
@@ -99,21 +102,47 @@ public class BestellungDelegate extends Delegate {
 
 	}
 
-	public void aktiviereBelegControlled(Integer iid, Timestamp t) throws ExceptionLP {
+	public void aktiviereBelegControlled(Integer iid, Timestamp t)
+			throws ExceptionLP {
 		try {
-			bestellungFac.aktiviereBelegControlled(iid, t, LPMain.getTheClient());
+			bestellungFac.aktiviereBelegControlled(iid, t,
+					LPMain.getTheClient());
 		} catch (Throwable t1) {
 			handleThrowable(t1);
 		}
 	}
-	
+
 	public Timestamp berechneBelegControlled(Integer iid) throws ExceptionLP {
 		try {
-			return bestellungFac.berechneBelegControlled(iid, LPMain.getTheClient());
+			BelegPruefungDto pruefungDto = bestellungFac.berechneBelegControlled(iid,
+					LPMain.getTheClient());
+			dialogBelegpruefung(pruefungDto) ;
+			return pruefungDto.getBerechnungsZeitpunkt() ;
 		} catch (Throwable t1) {
 			handleThrowable(t1);
 		}
 		return null;
+	}
+
+	public Timestamp berechneAktiviereBelegControlled(Integer iid) throws ExceptionLP {
+		try {
+			BelegPruefungDto pruefungDto = bestellungFac.berechneAktiviereBelegControlled(iid,
+					LPMain.getTheClient());
+			dialogBelegpruefung(pruefungDto) ;
+			return pruefungDto.getBerechnungsZeitpunkt() ;
+		} catch (Throwable t1) {
+			handleThrowable(t1);
+		}
+		return null;
+	}	
+	public void updateBestellung(BestellungDto bestellungDto,
+			boolean pruefeKorrekterStatus) throws ExceptionLP {
+		try {
+			bestellungFac.updateBestellung(bestellungDto,
+					LPMain.getTheClient(), pruefeKorrekterStatus);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
 	}
 
 	public void updateBestellung(BestellungDto bestellungDto)
@@ -209,6 +238,17 @@ public class BestellungDelegate extends Delegate {
 		return dto;
 	}
 
+	public BestellpositionDto bestellpositionFindByPrimaryKeyOhneExc(Integer pKey)
+			throws ExceptionLP {
+		BestellpositionDto dto = null;
+		try {
+			dto = bestellpositionFac.bestellpositionFindByPrimaryKeyOhneExc(pKey);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+		return dto;
+	}
+
 	/**
 	 * 
 	 * @param bestellpositionDto
@@ -225,6 +265,17 @@ public class BestellungDelegate extends Delegate {
 			bestellpositionFac.updateBestellposition(bestellpositionDto,
 					LPMain.getTheClient(), sPreispflegeI,
 					artikellieferantstaffelIId_ZuAendern);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+	}
+
+	public void updateBestellungRechnungsadresse(Integer bestellungIId,
+			Integer lieferantIIdRechnungsadresseNeu) throws ExceptionLP {
+
+		try {
+			bestellungFac.updateBestellungRechnungsadresse(bestellungIId,
+					lieferantIIdRechnungsadresseNeu, LPMain.getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 		}
@@ -286,12 +337,12 @@ public class BestellungDelegate extends Delegate {
 		}
 	}
 
-	public void setForAllPositionenABTermin(Integer bestellungIId,
-			java.sql.Date abDatum, String abNummer, boolean selectAllOrEmpty)
+	public void setForAllPositionenABTermin(Integer bestellungIId, Integer[] markierteBestellpositionenIIds,
+			java.sql.Date abDatum, String abNummer, int iOption)
 			throws ExceptionLP {
 		try {
-			bestellpositionFac.setForAllPositionenABTermin(bestellungIId,
-					abDatum, abNummer, selectAllOrEmpty, LPMain.getTheClient());
+			bestellpositionFac.setForAllPositionenABTermin(bestellungIId, markierteBestellpositionenIIds,
+					abDatum, abNummer, iOption, LPMain.getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 		}
@@ -450,6 +501,18 @@ public class BestellungDelegate extends Delegate {
 		return oPrintO;
 	}
 
+	public JasperPrintLP printRahmenuebersicht(Integer bestellungIId)
+			throws ExceptionLP {
+		JasperPrintLP oPrintO = null;
+		try {
+			oPrintO = bestellungReportFac.printRahmenuebersicht(bestellungIId,
+					LPMain.getTheClient());
+		} catch (Throwable t) {
+			handleThrowable(t);
+		}
+		return oPrintO;
+	}
+
 	public JasperPrintLP printBestellungWareneingangsJournal(
 			ReportJournalKriterienDto krit, Integer artikelklasseIId,
 			Integer artikelgruppeIId, String artikelCNrVon,
@@ -520,8 +583,8 @@ public class BestellungDelegate extends Delegate {
 				iidList.add((Integer) tableModel.getValueAt(rowIndex, 0));
 			}
 
-			bestellpositionFac
-					.vertauscheBestellpositionenPlus(baseIId, iidList, LPMain.getTheClient());
+			bestellpositionFac.vertauscheBestellpositionenPlus(baseIId,
+					iidList, LPMain.getTheClient());
 		} catch (Throwable t) {
 			handleThrowable(t);
 		}
@@ -868,12 +931,24 @@ public class BestellungDelegate extends Delegate {
 	}
 
 	public Integer erzeugeBestellungAusAnfrage(Integer iIdAnfrageI,
-			TheClientDto theClientDto) throws ExceptionLP {
+			TheClientDto theClientDto, InternalFrame internalFrame)
+			throws ExceptionLP {
 		Integer iId = null;
 
 		try {
 			iId = bestellungFac.erzeugeBestellungAusAnfrage(iIdAnfrageI,
 					theClientDto);
+
+			if (iId != null) {
+				BestellungDto besDto = bestellungFindByPrimaryKey(iId);
+				DelegateFactory
+						.getInstance()
+						.getLieferantDelegate()
+						.pruefeLieferant(
+								besDto.getLieferantIIdBestelladresse(),
+								LocaleFac.BELEGART_BESTELLUNG, internalFrame);
+			}
+
 		} catch (Throwable t) {
 			handleThrowable(t);
 		}
@@ -1084,12 +1159,12 @@ public class BestellungDelegate extends Delegate {
 	}
 
 	public void preispflege(BestellpositionDto besPosDto, String sPreispflegeI,
-			Integer artikellieferantstaffelIId_ZuAendern) throws ExceptionLP {
+			Integer artikellieferantstaffelIId_ZuAendern,
+			boolean bNullPreiseZurueckpflegen) throws ExceptionLP {
 		try {
-			bestellpositionFac
-					.preispflege(besPosDto, sPreispflegeI,
-							artikellieferantstaffelIId_ZuAendern,
-							LPMain.getTheClient());
+			bestellpositionFac.preispflege(besPosDto, sPreispflegeI,
+					artikellieferantstaffelIId_ZuAendern,
+					bNullPreiseZurueckpflegen, LPMain.getTheClient());
 		} catch (Throwable t) {
 			handleThrowable(t);
 		}
@@ -1419,7 +1494,8 @@ public class BestellungDelegate extends Delegate {
 	public void setAuftragIIdInBestellung(BestellungDto bestellungDto)
 			throws ExceptionLP {
 		try {
-			bestellungFac.setAuftragIIdInBestellung(bestellungDto, LPMain.getTheClient());
+			bestellungFac.setAuftragIIdInBestellung(bestellungDto,
+					LPMain.getTheClient());
 		} catch (Throwable t) {
 			handleThrowable(t);
 		}

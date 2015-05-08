@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -134,6 +134,7 @@ public class ReportMonatsabrechnung extends ReportZeiterfassung implements
 	}
 
 	protected void eventActionSpecial(ActionEvent e) throws Throwable {
+		super.eventActionSpecial(e);
 		if (wcbBisHeute.isSelected() && e.getSource().equals(wcbBisHeute)) {
 			wcbBisGestern.setSelected(false);
 			wcoMonat.setEnabled(false);
@@ -212,7 +213,7 @@ public class ReportMonatsabrechnung extends ReportZeiterfassung implements
 									new Integer(c.get(Calendar.YEAR)),
 									new Integer(c.get(Calendar.MONTH)),
 									getPersonAuswahl(), iSortierung,
-									mitVersteckten(), false, new java.sql.Date(
+									mitVersteckten(), nurAnwesende(), false, new java.sql.Date(
 											ts.getTime()));
 
 				} else {
@@ -222,7 +223,7 @@ public class ReportMonatsabrechnung extends ReportZeiterfassung implements
 									(Integer) wspJahr.getValue(),
 									(Integer) wcoMonat.getKeyOfSelectedItem(),
 									getPersonAuswahl(), iSortierung,
-									mitVersteckten(), false, new java.sql.Date(
+									mitVersteckten(), nurAnwesende(), false, new java.sql.Date(
 											System.currentTimeMillis()));
 				}
 			} else {
@@ -232,7 +233,7 @@ public class ReportMonatsabrechnung extends ReportZeiterfassung implements
 								(Integer) wspJahr.getValue(),
 								(Integer) wcoMonat.getKeyOfSelectedItem(),
 								getPersonAuswahl(), iSortierung,
-								mitVersteckten(), true, null);
+								mitVersteckten(), nurAnwesende(), true, null);
 
 			}
 

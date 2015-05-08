@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -63,6 +63,7 @@ public class LpEditorIconManager {
   public final static String ICON_EDIT_PASTE = "EditPaste";
   public final static String ICON_EDIT_INSERT_DATE = "InsertDate";
   public final static String ICON_EDIT_INSERT_SIGNATUR = "InsertSignatur";
+  public final static String ICON_EDIT_INSERT_TEXTBAUSTEIN = "InsertTextbaustein";
 
   public final static String ICON_EDIT_UNDO = "EditUndo";
   public final static String ICON_EDIT_REDO = "EditRedo";
@@ -163,6 +164,8 @@ public class LpEditorIconManager {
                           RESOURCE_PREFIX_LOGP + "stock_delete-row.png");
     iconResourceNames.put(ICON_EDIT_INSERT_SIGNATUR,
             RESOURCE_PREFIX_LOGP + "contract.png");
+    iconResourceNames.put(ICON_EDIT_INSERT_TEXTBAUSTEIN,
+            RESOURCE_PREFIX_LOGP + "document_add.png");
 
   }
 

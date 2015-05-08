@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -91,6 +91,7 @@ public class ReportAusgabeliste extends PanelBasis implements PanelReportIfJRDS 
 	private WrapperRadioButton wrbLagerLagerort = null;
 	private WrapperRadioButton wrbLagerortLager = null;
 	private WrapperRadioButton wrbIdent = null;
+	private WrapperRadioButton wrbArtikelbezeichnung = null;
 	private JPanel jpaWorkingOn = null;
 	private ButtonGroup bgSortierung = null;
 	private WrapperCheckBox wcoVerdichtetNachIdent = null;
@@ -109,6 +110,7 @@ public class ReportAusgabeliste extends PanelBasis implements PanelReportIfJRDS 
 	private String ACTION_SORTIERUNG_LAGERORT_LAGER = "ACTION_SORTIERUNG_LAGERORT_LAGER";
 	private String ACTION_SORTIERUNG_MONTAGEART = "ACTION_SORTIERUNG_MONTAGEART";
 	private String ACTION_SORTIERUNG_IDENT = "ACTION_SORTIERUNG_MONTAGEART";
+	private String ACTION_SORTIERUNG_ARTIKELBEZEICHNUNG = "ACTION_SORTIERUNG_ARTIKELBEZEICHNUNG";
 	static final public String ACTION_SPECIAL_LOS_FROM_LISTE = "action_auftrag_los_liste";
 	private PanelQueryFLR panelQueryFLRLos = null;
 
@@ -220,6 +222,7 @@ public class ReportAusgabeliste extends PanelBasis implements PanelReportIfJRDS 
 		wrbLagerLagerort = new WrapperRadioButton();
 		wrbLagerortLager = new WrapperRadioButton();
 		wrbIdent = new WrapperRadioButton();
+		wrbArtikelbezeichnung = new WrapperRadioButton();
 
 		JButton jbuSetNull = new JButton();
 		jbuSetNull.setActionCommand(ACTION_SPECIAL_LEEREN);
@@ -236,12 +239,15 @@ public class ReportAusgabeliste extends PanelBasis implements PanelReportIfJRDS 
 
 		wrbArtikelklasse.setActionCommand(ACTION_SORTIERUNG_ARTIKELKASSE);
 		wrbIdent.setActionCommand(ACTION_SORTIERUNG_IDENT);
+		wrbArtikelbezeichnung
+				.setActionCommand(ACTION_SORTIERUNG_ARTIKELBEZEICHNUNG);
 		wrbLagerLagerort.setActionCommand(ACTION_SORTIERUNG_LAGERORT);
 		wrbMontageartSchale.setActionCommand(ACTION_SORTIERUNG_MONTAGEART);
 		wrbLagerortLager.setActionCommand(ACTION_SORTIERUNG_LAGERORT_LAGER);
 
 		wrbArtikelklasse.addActionListener(this);
 		wrbIdent.addActionListener(this);
+		wrbArtikelbezeichnung.addActionListener(this);
 		wrbLagerLagerort.addActionListener(this);
 		wrbMontageartSchale.addActionListener(this);
 
@@ -254,6 +260,7 @@ public class ReportAusgabeliste extends PanelBasis implements PanelReportIfJRDS 
 		bgSortierung.add(wrbLagerLagerort);
 		bgSortierung.add(wrbLagerortLager);
 		bgSortierung.add(wrbIdent);
+		bgSortierung.add(wrbArtikelbezeichnung);
 
 		wlaSortierung.setText(LPMain.getInstance().getTextRespectUISPr(
 				"label.sortierung"));
@@ -267,6 +274,8 @@ public class ReportAusgabeliste extends PanelBasis implements PanelReportIfJRDS 
 				"fert.lagerortlager"));
 		wrbIdent.setText(LPMain.getInstance()
 				.getTextRespectUISPr("label.ident"));
+		wrbArtikelbezeichnung.setText(LPMain.getInstance().getTextRespectUISPr(
+				"fert.ausgabeliste.sortierung.artikelbezeichnung"));
 
 		wcoVorrangigNachFarbcodeSortiert.setText(LPMain.getInstance()
 				.getTextRespectUISPr("los.ausgabeliste.sortiertnachfarbcode"));
@@ -339,6 +348,10 @@ public class ReportAusgabeliste extends PanelBasis implements PanelReportIfJRDS 
 		jpaWorkingOn.add(wcoVerdichtetNachIdent, new GridBagConstraints(2,
 				iZeile, 1, 1, 1.5, 0.0, GridBagConstraints.WEST,
 				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+		iZeile++;
+		jpaWorkingOn.add(wrbArtikelbezeichnung, new GridBagConstraints(1,
+				iZeile, 1, 1, 1.0, 0.0, GridBagConstraints.WEST,
+				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
 
 	}
 
@@ -375,6 +388,8 @@ public class ReportAusgabeliste extends PanelBasis implements PanelReportIfJRDS 
 			}
 		} else if (wrbIdent.isSelected()) {
 			iSortierung = new Integer(Helper.SORTIERUNG_NACH_IDENT);
+		} else if (wrbArtikelbezeichnung.isSelected()) {
+			iSortierung = new Integer(Helper.SORTIERUNG_NACH_ARTIKELBEZEICHNUNG);
 		} else if (wrbLagerLagerort.isSelected()) {
 			iSortierung = new Integer(Helper.SORTIERUNG_NACH_LAGER_UND_LAGERORT);
 		} else if (wrbLagerortLager.isSelected()) {

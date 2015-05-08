@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -387,6 +387,7 @@ public abstract class PanelTabelle extends PanelBasis implements ISourceEvent {
 		FilterBlock filter = new FilterBlock(aDefaultFilter,
 				FilterKriterium.BOOLOPERATOR_AND);
 
+		table.invalidate();
 		QueryParameters query = new QueryParameters(
 				new Integer(this.idUsecase), null, filter, null, null);
 

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -42,6 +42,8 @@ import javax.help.HelpSet;
 import javax.help.JHelp;
 import javax.help.SwingHelpUtilities;
 import javax.swing.JPanel;
+
+import com.lp.client.frame.delegate.DelegateFactory;
 
 
 /**
@@ -109,10 +111,12 @@ public class OnlineHelp extends JPanel{
 		} catch (ExceptionInInitializerError ex) {
 			System.err.println("initialization error:");
 			ex.getException().printStackTrace();
+		} catch(Throwable t) {
+			System.out.println("Help Set " + helpsetName + " not found." + t.getMessage()) ;
 		}
   }
 
-  private void createNetworkedHelpSet() {
+  private void createNetworkedHelpSet() throws Throwable {
           ClassLoader loader = null;
           URL helpsetURL = null;
           URL helpsetURLFull = null;
@@ -144,61 +148,60 @@ public class OnlineHelp extends JPanel{
 
 
 
-  private void createHelpSet() {
-          ClassLoader loader = this.getClass().getClassLoader();
-          URL url;
-          try {
-              url = HelpSet.findHelpSet(loader, helpsetName);
-              System.out.println("findHelpSet url=" + url);
-              if (url == null) {
-                  System.out.println("codeBase url=<" + url+">");
-              }
-              hs = new HelpSet(loader, url);
-          } catch (Exception ee) {
-              System.out.println ("Trouble in createHelpSet;");
-              System.out.println( "HelpSet " + ee.getMessage());
-              ee.printStackTrace();
-              return;
-          }
-      }
+//  private void createHelpSet() {
+//          ClassLoader loader = this.getClass().getClassLoader();
+//          URL url;
+//          try {
+//              url = HelpSet.findHelpSet(loader, helpsetName);
+//              System.out.println("findHelpSet url=" + url);
+//              if (url == null) {
+//                  System.out.println("codeBase url=<" + url+">");
+//              }
+//              hs = new HelpSet(loader, url);
+//          } catch (Exception ee) {
+//              System.out.println ("Trouble in createHelpSet;");
+//              System.out.println( "HelpSet " + ee.getMessage());
+//              ee.printStackTrace();
+//              return;
+//          }
+//      }
 
+	/**
+	 * Erzeuge URL zu der Online Help. Hat die Form
+	 * http://servername:portname/onlinehelpcontextname/
+	 * 
+	 * @return String
+	 */
+	private String createOnlineHelpURL() throws Throwable {
+		String serverPort = DelegateFactory.getInstance().getSystemDelegate()
+				.getServerWebPort();
 
- /**
-   * Erzeuge URL zu der Online Help.
-   * Hat die Form http://servername:portname/onlinehelpcontextname/
-   *
-   * @return String
-   */
-private String createOnlineHelpURL(){
-  StringBuffer sOnlineHelpURL = new StringBuffer();
-  sOnlineHelpURL.append("http://");
+		StringBuffer sOnlineHelpURL = new StringBuffer();
+		sOnlineHelpURL.append("http://");
+		String sServerName = getServerName();
+		sOnlineHelpURL.append(sServerName);
+		// sOnlineHelpURL.append(":"+HELPPORT);
+		sOnlineHelpURL.append(":" + serverPort);
+		sOnlineHelpURL.append(HELPCONTEXTROOT);
 
-  String sServerName = getServerName();
-  sOnlineHelpURL.append(sServerName);
-  sOnlineHelpURL.append(":"+HELPPORT);
+		return sOnlineHelpURL.toString();
+	}
 
-  sOnlineHelpURL.append(HELPCONTEXTROOT);
+	/**
+	 * Servername aus Client naming provider herauslesen
+	 * 
+	 * @return String
+	 */
+	private String getServerName() {
+		String server = System.getProperty("java.naming.provider.url");
 
-  return sOnlineHelpURL.toString();
-}
-
-/**
- * Servername aus Client naming provider herauslesen
- * @return String
- */
-private String getServerName(){
-  String server = System.getProperty("java.naming.provider.url");
-
-  try {
-     int iB = server.indexOf("//") + 2;
-     int iM = server.lastIndexOf(":");
-     server = server.substring(iB, iM);
-  }catch (Exception ex) {
-       server = "?";
-  }
-  return server;
-}
-
-
-
+		try {
+			int iB = server.indexOf("//") + 2;
+			int iM = server.lastIndexOf(":");
+			server = server.substring(iB, iM);
+		} catch (Exception ex) {
+			server = "?";
+		}
+		return server;
+	}
 }

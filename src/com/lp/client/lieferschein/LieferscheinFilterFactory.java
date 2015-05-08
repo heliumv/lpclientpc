@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -224,6 +224,20 @@ public class LieferscheinFilterFactory {
 			kriterien[0] = new FilterKriterium(
 					LieferscheinpositionFac.FLR_LIEFERSCHEINPOSITION_FLRLIEFERSCHEIN
 							+ "." + LieferscheinFac.FLR_LIEFERSCHEIN_I_ID,
+					true, iIdLieferscheinI.toString(),
+					FilterKriterium.OPERATOR_EQUAL, false);
+		}
+
+		return kriterien;
+	}
+	public FilterKriterium[] createFKVerkettet(Integer iIdLieferscheinI)
+			throws Throwable {
+		FilterKriterium[] kriterien = null;
+
+		if (iIdLieferscheinI != null) {
+			kriterien = new FilterKriterium[1];
+
+			kriterien[0] = new FilterKriterium("lieferschein_i_id",
 					true, iIdLieferscheinI.toString(),
 					FilterKriterium.OPERATOR_EQUAL, false);
 		}
@@ -591,14 +605,14 @@ public class LieferscheinFilterFactory {
 	}
 
 	public PanelQueryFLR createPanelQueryFLRLieferschein(
-			InternalFrame internalFrameI, FilterKriterium[] fk, String sTitle)
+			InternalFrame internalFrameI, FilterKriterium[] fk, String sTitle, FilterKriterium fkVersteckt)
 			throws Throwable {
 		String[] aWhichButtonIUse = { PanelBasis.ACTION_REFRESH, };
 
 		QueryType[] qt = null;
 		PanelQueryFLR panelQueryFLRLieferschein = new PanelQueryFLR(qt, fk,
 				QueryParameters.UC_ID_LIEFERSCHEIN, aWhichButtonIUse,
-				internalFrameI, sTitle);
+				internalFrameI, sTitle,fkVersteckt,null);
 		panelQueryFLRLieferschein.befuellePanelFilterkriterienDirekt(
 				createFKDLieferscheinnummer(), createFKDKundenname());
 		panelQueryFLRLieferschein.addDirektFilter(LieferscheinFilterFactory

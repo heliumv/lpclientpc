@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -35,8 +35,13 @@ package com.lp.client.frame.report;
 import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 
+import javax.swing.JComponent;
 import javax.swing.JDialog;
+import javax.swing.KeyStroke;
 
 import net.sf.jasperreports.engine.JRException;
 import net.sf.jasperreports.engine.JasperPrint;
@@ -44,49 +49,54 @@ import net.sf.jasperreports.engine.JasperPrint;
 import com.lp.client.frame.dialog.DialogFactory;
 import com.lp.client.pc.LPMain;
 
-@SuppressWarnings("static-access") 
-class JDialogDruckVorschau
-    extends JDialog {
-  /**
+@SuppressWarnings("static-access")
+class JDialogDruckVorschau extends JDialog {
+	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-private JasperPrint print = null;
+	private JasperPrint print = null;
 
-  public JDialogDruckVorschau(Frame frame, String sTitle, JasperPrint print) throws
-      Throwable {
-    super(frame, sTitle, true);
-    this.print = print;
-    jbInit();
-  }
+	public JDialogDruckVorschau(Frame frame, String sTitle, JasperPrint print)
+			throws Throwable {
+		super(frame, sTitle, true);
+		this.print = print;
+		jbInit();
+	}
 
-  private void jbInit() throws Throwable {
-    if (print == null) {
-      DialogFactory.showModalDialog(LPMain.getInstance().
-                                           getTextRespectUISPr("lp.error"),
-                                           "No print possible");
-      return;
-    }
-    ReportViewer viewer = null;
-    try {
-      viewer = new ReportViewer(print);
-    }
-    catch (JRException ex) {
-      DialogFactory.showModalDialog(LPMain.getInstance().
-                                           getTextRespectUISPr("lp.error"),
-                                           "Fehler beim Erstellen des Viewers");
-      this.dispose();
-      return;
-    }
-    getContentPane().add(viewer);
-    pack();
-    this.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+	private void jbInit() throws Throwable {
+		if (print == null) {
+			DialogFactory.showModalDialog(LPMain.getInstance()
+					.getTextRespectUISPr("lp.error"), "No print possible");
+			return;
+		}
+		ReportViewer viewer = null;
+		try {
+			viewer = new ReportViewer(print);
+		} catch (JRException ex) {
+			DialogFactory.showModalDialog(LPMain.getInstance()
+					.getTextRespectUISPr("lp.error"),
+					"Fehler beim Erstellen des Viewers");
+			this.dispose();
+			return;
+		}
+		getRootPane().registerKeyboardAction(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				dispose();
+			}
+		}, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
+				JComponent.WHEN_IN_FOCUSED_WINDOW);
+		getContentPane().add(viewer);
+		pack();
+		this.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 
-    Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-    Dimension frameSize = new Dimension((int)screenSize.getWidth(),(int)screenSize.getHeight()-40) ;
-    setSize(frameSize);
-    setLocation(0, (screenSize.height - frameSize.height) /  2);
-    viewer.getBtnFitPage().doClick();
-    setVisible(true);
-  }
+		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+		Dimension frameSize = new Dimension((int) screenSize.getWidth(),
+				(int) screenSize.getHeight() - 40);
+		setSize(frameSize);
+		setLocation(0, (screenSize.height - frameSize.height) / 2);
+		viewer.getBtnFitPage().doClick();
+		setVisible(true);
+	}
 }

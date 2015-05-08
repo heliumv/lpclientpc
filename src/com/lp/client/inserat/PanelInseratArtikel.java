@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -55,6 +55,7 @@ import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.pc.LPMain;
 import com.lp.server.artikel.service.ArtikelDto;
 import com.lp.server.inserat.service.InseratartikelDto;
+import com.lp.server.inserat.service.InseraterDto;
 import com.lp.server.system.service.LocaleFac;
 
 public class PanelInseratArtikel extends PanelBasis {
@@ -124,30 +125,76 @@ public class PanelInseratArtikel extends PanelBasis {
 	public LockStateValue getLockedstateDetailMainKey() throws Throwable {
 		LockStateValue lockStateValue = super.getLockedstateDetailMainKey();
 
-		if (internalFrameInserat.getTabbedPaneInserat().getInseratDto()
-				.getIId() != null) {
-			if (internalFrameInserat.getTabbedPaneInserat().getInseratDto()
+		if (internalFrameInserat.getTabbedPaneInserat().getDto().getIId() != null) {
+			if (internalFrameInserat.getTabbedPaneInserat().getDto()
 					.getStatusCNr().equals(LocaleFac.STATUS_BESTELLT)) {
+
 				lockStateValue = new LockStateValue(
 						PanelBasis.LOCK_ENABLE_REFRESHANDUPDATE_ONLY);
-			} else if (internalFrameInserat.getTabbedPaneInserat()
-					.getInseratDto().getStatusCNr()
-					.equals(LocaleFac.STATUS_VERRECHNET)
-					|| internalFrameInserat.getTabbedPaneInserat()
-							.getInseratDto().getStatusCNr()
+
+			} else if (internalFrameInserat.getTabbedPaneInserat().getDto()
+					.getStatusCNr().equals(LocaleFac.STATUS_VERRECHNET)
+					|| internalFrameInserat.getTabbedPaneInserat().getDto()
+							.getStatusCNr()
 							.equals(LocaleFac.STATUS_TEILBEZAHLT)
-					|| internalFrameInserat.getTabbedPaneInserat()
-							.getInseratDto().getStatusCNr()
-							.equals(LocaleFac.STATUS_BEZAHLT)
-					|| internalFrameInserat.getTabbedPaneInserat()
-							.getInseratDto().getStatusCNr()
-							.equals(LocaleFac.STATUS_ERLEDIGT)) {
-				lockStateValue = new LockStateValue(
-						PanelBasis.LOCK_ENABLE_REFRESHANDPRINT_ONLY);
+					|| internalFrameInserat.getTabbedPaneInserat().getDto()
+							.getStatusCNr().equals(LocaleFac.STATUS_BEZAHLT)
+					|| internalFrameInserat.getTabbedPaneInserat().getDto()
+							.getStatusCNr().equals(LocaleFac.STATUS_ERLEDIGT)) {
+
+				// PJ18948 EK-Preis kann geaendert werden, solange es keine
+				// Er-Zuordnung gibt
+				InseraterDto[] inseraterDtos = DelegateFactory
+						.getInstance()
+						.getInseratDelegate()
+						.inseraterFindByInseratIId(
+								internalFrameInserat.getTabbedPaneInserat()
+										.getDto().getIId());
+
+				if (inseraterDtos.length == 0) {
+
+					lockStateValue = new LockStateValue(
+							PanelBasis.LOCK_ENABLE_REFRESHANDUPDATE_ONLY);
+				} else {
+					lockStateValue = new LockStateValue(
+							PanelBasis.LOCK_ENABLE_REFRESHANDPRINT_ONLY);
+				}
 			}
 		}
 
 		return lockStateValue;
+	}
+
+	protected void eventActionUpdate(ActionEvent aE, boolean bNeedNoUpdateI)
+			throws Throwable {
+		super.eventActionUpdate(aE, bNeedNoUpdateI);
+
+		if (internalFrameInserat.getTabbedPaneInserat().getDto().getStatusCNr()
+				.equals(LocaleFac.STATUS_VERRECHNET)
+				|| internalFrameInserat.getTabbedPaneInserat().getDto()
+						.getStatusCNr().equals(LocaleFac.STATUS_TEILBEZAHLT)
+				|| internalFrameInserat.getTabbedPaneInserat().getDto()
+						.getStatusCNr().equals(LocaleFac.STATUS_BEZAHLT)
+				|| internalFrameInserat.getTabbedPaneInserat().getDto()
+						.getStatusCNr().equals(LocaleFac.STATUS_ERLEDIGT)) {
+			
+			enableAllComponents(this, false);
+			
+			
+			// PJ18948 EK-Preis kann geaendert werden, solange es keine
+			// Er-Zuordnung gibt
+			InseraterDto[] inseraterDtos = DelegateFactory
+					.getInstance()
+					.getInseratDelegate()
+					.inseraterFindByInseratIId(
+							internalFrameInserat.getTabbedPaneInserat()
+									.getDto().getIId());
+
+			if (inseraterDtos.length == 0) {
+				wnfPreisEK.setEditable(true);
+			}
+
+		}
 	}
 
 	public void eventActionNew(EventObject eventObject, boolean bLockMeI,
@@ -175,7 +222,7 @@ public class PanelInseratArtikel extends PanelBasis {
 
 	protected void components2Dto() throws Throwable {
 		inseratartikelDto.setInseratIId(internalFrameInserat
-				.getTabbedPaneInserat().getInseratDto().getIId());
+				.getTabbedPaneInserat().getDto().getIId());
 
 		inseratartikelDto.setNMenge(wnfMenge.getBigDecimal());
 		inseratartikelDto.setNNettoeinzelpreisEk(wnfPreisEK.getBigDecimal());
@@ -216,10 +263,11 @@ public class PanelInseratArtikel extends PanelBasis {
 		wnfPreisEK.setMandatoryField(true);
 		wnfPreisVK.setMandatoryField(true);
 		wnfMenge.setMandatoryField(true);
-		
-		wnfPreisEK.setFractionDigits(Defaults.getInstance().getIUINachkommastellenPreiseEK());
-		wnfPreisVK.setFractionDigits(Defaults.getInstance().getIUINachkommastellenPreiseVK());
-		
+
+		wnfPreisEK.setFractionDigits(Defaults.getInstance()
+				.getIUINachkommastellenPreiseEK());
+		wnfPreisVK.setFractionDigits(Defaults.getInstance()
+				.getIUINachkommastellenPreiseVK());
 
 		this.add(jpaButtonAction, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(0,

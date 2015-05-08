@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -339,16 +339,7 @@ public class PanelRechnungSichtLieferschein
       panelHandeingabe.wnfMenge.setEditable(false);
       panelHandeingabe.wcoEinheit.setEnabled(false);
 
-      panelTexteingabe.getLpEditor().setEditable(false);
-      panelTexteingabe.getLpEditor().showAlignmentItems(false);
-      panelTexteingabe.getLpEditor().showFileItems(false);
-      panelTexteingabe.getLpEditor().showFontStyleItems(false);
-      panelTexteingabe.getLpEditor().showMenu(false);
-      panelTexteingabe.getLpEditor().showStatusBar(false);
-      panelTexteingabe.getLpEditor().showTableItems(false);
-      panelTexteingabe.getLpEditor().showTabRuler(false);
-      panelTexteingabe.getLpEditor().showToolBar(false);
-
+      panelTexteingabe.setEditable(false);
       panelBetreff.wtfBetreff.setEditable(false);
 
       panelUrsprung.wtfUrsprung.setEditable(false);

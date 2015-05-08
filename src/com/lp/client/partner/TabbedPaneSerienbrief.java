@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -55,10 +55,12 @@ import com.lp.client.pc.LPMain;
 import com.lp.client.stueckliste.PanelDialogStuecklisteKommentar;
 import com.lp.client.util.fastlanereader.gui.QueryType;
 import com.lp.server.partner.fastlanereader.generated.service.FLRSerienbriefselektionPK;
+import com.lp.server.partner.fastlanereader.generated.service.FLRSerienbriefselektionnegativPK;
 import com.lp.server.partner.service.PASelektionDto;
 import com.lp.server.partner.service.PartnerDto;
 import com.lp.server.partner.service.SerienbriefDto;
 import com.lp.server.partner.service.SerienbriefselektionDto;
+import com.lp.server.partner.service.SerienbriefselektionnegativDto;
 import com.lp.server.util.fastlanereader.service.query.FilterKriterium;
 import com.lp.server.util.fastlanereader.service.query.QueryParameters;
 
@@ -82,11 +84,13 @@ public class TabbedPaneSerienbrief extends TabbedPane {
 	private PartnerDto partnerDto = new PartnerDto();
 	private SerienbriefDto serienbriefDto = new SerienbriefDto();
 	private SerienbriefselektionDto serienbriefselektionDto = new SerienbriefselektionDto();
+	private SerienbriefselektionnegativDto serienbriefselektionnegativDto = new SerienbriefselektionnegativDto();
 	private PASelektionDto pASelektionDto = new PASelektionDto();
 
 	private final static int IDX_PANEL_SERIENBRIEF_QP1 = 0;
 	private final static int IDX_PANEL_SERIENBRIEF_KOPFDATEN_D2 = 1;
 	private final static int IDX_PANEL_SERIENBRIEF_SELEKTION_SP3 = 2;
+	private final static int IDX_PANEL_SERIENBRIEF_SELEKTIONNEGATIV_SP3 = 3;
 
 	private final String MENUE_ACTION_EMPFAENGERLISTE = "MENUE_ACTION_EMPFAENGERLISTE";
 
@@ -101,6 +105,10 @@ public class TabbedPaneSerienbrief extends TabbedPane {
 	private PanelQuery panelSerienbriefSelektionTopQP3 = null;
 	private PanelPartnerSerienbriefSelektion panelSerienbriefSelektionBottomD3 = null;
 	private PanelSplit panelSerienbriefSelektionSP3 = null;
+
+	private PanelQuery panelSerienbriefSelektionnegativTopQP3 = null;
+	private PanelPartnerSerienbriefselektionnegativ panelSerienbriefSelektionnegativBottomD3 = null;
+	private PanelSplit panelSerienbriefSelektionnegativSP3 = null;
 
 	public TabbedPaneSerienbrief(InternalFrame internalFrameI) throws Throwable {
 		super(internalFrameI, LPMain.getTextRespectUISPr("lp.serienbrief"));
@@ -132,6 +140,16 @@ public class TabbedPaneSerienbrief extends TabbedPane {
 				null, null,
 				LPMain.getInstance().getTextRespectUISPr("lp.selektion"),
 				IDX_PANEL_SERIENBRIEF_SELEKTION_SP3);
+
+		// 4 tab oben; Splitpane Serienbriefnegativ; lazy loading
+		insertTab(
+				LPMain.getInstance().getTextRespectUISPr(
+						"part.negative.selektion"),
+				null,
+				null,
+				LPMain.getInstance().getTextRespectUISPr(
+						"part.negative.selektion"),
+				IDX_PANEL_SERIENBRIEF_SELEKTIONNEGATIV_SP3);
 
 		// defaults
 		// QP1 ist default.
@@ -256,6 +274,14 @@ public class TabbedPaneSerienbrief extends TabbedPane {
 			panelSerienbriefSelektionSP3.eventYouAreSelected(false);
 			panelSerienbriefSelektionTopQP3.updateButtons();
 		}
+
+		else if (selectedIndex == IDX_PANEL_SERIENBRIEF_SELEKTIONNEGATIV_SP3) {
+			Integer iId = (Integer) panelSerienbriefQP1.getSelectedId();
+			refreshSerienbriefSelektionnegativSP3(iId);
+			panelSerienbriefSelektionnegativSP3.eventYouAreSelected(false);
+			panelSerienbriefSelektionnegativTopQP3.updateButtons();
+		}
+
 		refreshTitle();
 	}
 
@@ -299,6 +325,41 @@ public class TabbedPaneSerienbrief extends TabbedPane {
 
 	}
 
+	private void refreshSerienbriefSelektionnegativSP3(Integer iIdSerienbriefI)
+			throws Throwable {
+
+		if (panelSerienbriefSelektionnegativTopQP3 == null) {
+			String[] aWhichStandardButtonIUse = { PanelBasis.ACTION_NEW };
+
+			QueryType[] querytypes = null;
+			FilterKriterium[] filters = PartnerFilterFactory.getInstance()
+					.createFKSerienbrief(iIdSerienbriefI);
+			panelSerienbriefSelektionnegativTopQP3 = new PanelQuery(querytypes,
+					filters, QueryParameters.UC_ID_SERIENBRIEFSELEKTIONNEGATIV,
+					aWhichStandardButtonIUse, getInternalFrame(), LPMain
+							.getInstance().getTextRespectUISPr(
+									"lp.uebersicht.detail"), true);
+
+			panelSerienbriefSelektionnegativBottomD3 = new PanelPartnerSerienbriefselektionnegativ(
+					getInternalFrame(), LPMain.getInstance()
+							.getTextRespectUISPr("part.negative.selektion"),
+					null, this);
+
+			panelSerienbriefSelektionnegativSP3 = new PanelSplit(
+					getInternalFrame(),
+					panelSerienbriefSelektionnegativBottomD3,
+					panelSerienbriefSelektionnegativTopQP3, 200);
+			setComponentAt(IDX_PANEL_SERIENBRIEF_SELEKTIONNEGATIV_SP3,
+					panelSerienbriefSelektionnegativSP3);
+		} else {
+			// filter refreshen.
+			panelSerienbriefSelektionnegativTopQP3
+					.setDefaultFilter(PartnerFilterFactory.getInstance()
+							.createFKSerienbriefSelektion(iIdSerienbriefI));
+		}
+
+	}
+
 	public void lPEventItemChanged(ItemChangedEvent eI) throws Throwable {
 
 		if (eI.getID() == ItemChangedEvent.ITEM_CHANGED) {
@@ -331,6 +392,14 @@ public class TabbedPaneSerienbrief extends TabbedPane {
 						.setKeyWhenDetailPanel(fLRSerienbriefselektionPK);
 				panelSerienbriefSelektionBottomD3.eventYouAreSelected(false);
 				panelSerienbriefSelektionTopQP3.updateButtons();
+			} else if (eI.getSource() == panelSerienbriefSelektionnegativTopQP3) {
+				FLRSerienbriefselektionnegativPK fLRSerienbriefselektionnegativPK = (FLRSerienbriefselektionnegativPK) panelSerienbriefSelektionnegativTopQP3
+						.getSelectedId();
+				panelSerienbriefSelektionnegativBottomD3
+						.setKeyWhenDetailPanel(fLRSerienbriefselektionnegativPK);
+				panelSerienbriefSelektionnegativBottomD3
+						.eventYouAreSelected(false);
+				panelSerienbriefSelektionnegativTopQP3.updateButtons();
 			}
 		} else if (eI.getID() == ItemChangedEvent.ACTION_YOU_ARE_SELECTED) {
 			refreshTitle();
@@ -346,6 +415,13 @@ public class TabbedPaneSerienbrief extends TabbedPane {
 						false);
 				panelSerienbriefSelektionBottomD3.eventYouAreSelected(false);
 				setSelectedComponent(panelSerienbriefSelektionSP3);
+			} else if (eI.getSource() == panelSerienbriefSelektionnegativTopQP3) {
+				// refreshSerienbriefSelektionSP3();
+				panelSerienbriefSelektionnegativBottomD3.eventActionNew(eI,
+						true, false);
+				panelSerienbriefSelektionnegativBottomD3
+						.eventYouAreSelected(false);
+				setSelectedComponent(panelSerienbriefSelektionnegativSP3);
 			}
 		}
 
@@ -369,6 +445,11 @@ public class TabbedPaneSerienbrief extends TabbedPane {
 				refreshSerienbriefSelektionSP3(iId);
 				getInternalFrame().setKeyWasForLockMe(iId + "");
 				panelSerienbriefSelektionSP3.eventYouAreSelected(false);
+			} else if (eI.getSource() == panelSerienbriefSelektionnegativBottomD3) {
+				Integer iId = (Integer) panelSerienbriefQP1.getSelectedId();
+				refreshSerienbriefSelektionnegativSP3(iId);
+				getInternalFrame().setKeyWasForLockMe(iId + "");
+				panelSerienbriefSelektionnegativSP3.eventYouAreSelected(false);
 			}
 		}
 
@@ -382,6 +463,13 @@ public class TabbedPaneSerienbrief extends TabbedPane {
 																			// gesamte
 																			// 1:n
 																			// panel
+			} else if (eI.getSource() == panelSerienbriefSelektionnegativBottomD3) {
+				panelSerienbriefSelektionnegativSP3.eventYouAreSelected(false); // refresh
+				// auf
+				// das
+				// gesamte
+				// 1:n
+				// panel
 			}
 		}
 
@@ -389,6 +477,10 @@ public class TabbedPaneSerienbrief extends TabbedPane {
 			// hier kommt man nach upd im D bei einem 1:n hin.
 			if (eI.getSource() == panelSerienbriefSelektionBottomD3) {
 				panelSerienbriefSelektionTopQP3
+						.updateButtons(new LockStateValue(
+								PanelBasis.LOCK_FOR_NEW));
+			} else if (eI.getSource() == panelSerienbriefSelektionnegativBottomD3) {
+				panelSerienbriefSelektionnegativTopQP3
 						.updateButtons(new LockStateValue(
 								PanelBasis.LOCK_FOR_NEW));
 			}
@@ -408,6 +500,13 @@ public class TabbedPaneSerienbrief extends TabbedPane {
 				refreshSerienbriefSelektionSP3(iIdSerienbrief);
 				getInternalFrame().setKeyWasForLockMe(iIdSerienbrief + "");
 				panelSerienbriefSelektionBottomD3.eventYouAreSelected(false);
+			} else if (eI.getSource() == panelSerienbriefSelektionnegativTopQP3) {
+				Integer iIdSerienbrief = (Integer) panelSerienbriefQP1
+						.getSelectedId();
+				refreshSerienbriefSelektionnegativSP3(iIdSerienbrief);
+				getInternalFrame().setKeyWasForLockMe(iIdSerienbrief + "");
+				panelSerienbriefSelektionnegativBottomD3
+						.eventYouAreSelected(false);
 			}
 		}
 
@@ -426,6 +525,13 @@ public class TabbedPaneSerienbrief extends TabbedPane {
 				panelSerienbriefSelektionTopQP3.eventYouAreSelected(false);
 				panelSerienbriefSelektionTopQP3.setSelectedId(oKey);
 				panelSerienbriefSelektionSP3.eventYouAreSelected(false);
+			} else if (eI.getSource() == panelSerienbriefSelektionnegativBottomD3) {
+				Object oKey = panelSerienbriefSelektionnegativBottomD3
+						.getKeyWhenDetailPanel();
+				panelSerienbriefSelektionnegativTopQP3
+						.eventYouAreSelected(false);
+				panelSerienbriefSelektionnegativTopQP3.setSelectedId(oKey);
+				panelSerienbriefSelektionnegativSP3.eventYouAreSelected(false);
 			}
 		}
 
@@ -477,6 +583,16 @@ public class TabbedPaneSerienbrief extends TabbedPane {
 	public SerienbriefselektionDto getSerienbriefselektionDto() {
 		return serienbriefselektionDto;
 	}
+	
+
+	public SerienbriefselektionnegativDto getSerienbriefselektionnegativDto() {
+		return serienbriefselektionnegativDto;
+	}
+
+	public void setSerienbriefselektionnegativDto(
+			SerienbriefselektionnegativDto serienbriefselektionnegativDto) {
+		this.serienbriefselektionnegativDto = serienbriefselektionnegativDto;
+	}
 
 	public void setSerienbriefselektionDto(
 			SerienbriefselektionDto serienbriefselektionDto) {
@@ -491,7 +607,7 @@ public class TabbedPaneSerienbrief extends TabbedPane {
 		this.pASelektionDto = pASelektionDto;
 	}
 
-	public Object getInseratDto() {
+	public Object getDto() {
 		return serienbriefDto;
 	}
 

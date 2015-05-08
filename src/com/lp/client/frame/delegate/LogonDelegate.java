@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -41,6 +41,7 @@ import javax.naming.InitialContext;
 
 import com.lp.client.frame.ExceptionLP;
 import com.lp.client.pc.LPMain;
+import com.lp.client.util.ClientConfiguration;
 import com.lp.server.benutzer.service.LogonFac;
 import com.lp.server.system.service.TheClientDto;
 import com.lp.util.Helper;
@@ -74,48 +75,22 @@ public class LogonDelegate
   public TheClientDto logon(String benutzer, char[] kennwort, Locale uILocale, String sMandantI)
       throws ExceptionLP {
 
-	TheClientDto r = null;
 	String name = benutzer.substring(0,benutzer.indexOf("|"));
 	
 	try {
-      r = logonFac.logon(
+      return logonFac.logon(
           benutzer,
           Helper.getMD5Hash((name + new String(kennwort)).toCharArray()),
           uILocale,
           sMandantI,
-          LPMain.getTheClient(),
-          new Integer(Integer.parseInt(
-              LPMain.getInstance().getLPParameter("lp.version.client.build"))),
+          ClientConfiguration.getBuildNumber(),
           new Timestamp(System.currentTimeMillis()));
     }
     catch (Throwable ex) {
       handleThrowable(ex);
     }
-    return r;
-  }
-/*
-  public String logon(String benutzer, char[] kennwort, Locale uILocale, String sMandantI)
-  throws ExceptionLP {
-
-	  String r = null;
-	  try {
-		  r = logonFac.logon(
-				  benutzer,
-				  kennwort,
-				  uILocale,
-				  sMandantI,
-				  LPMain.getInstance().getCNrUser(),
-				  new Integer(Integer.parseInt(
-						  LPMain.getInstance().getLPParameter("lp.version.client.build"))),
-						  new Timestamp(System.currentTimeMillis()));
-	  }
-	  catch (Throwable ex) {
-		  handleThrowable(ex);
-	  }
-	  return r;
-  }
-*/
- 
+    return null;
+  } 
 
 
   public void logout(TheClientDto theClientDto)

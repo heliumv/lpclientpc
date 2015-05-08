@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -45,6 +45,7 @@ import com.lp.client.pc.LPMain;
 import com.lp.server.auftrag.service.AuftragDto;
 import com.lp.server.lieferschein.service.LieferscheinDto;
 import com.lp.server.lieferschein.service.LieferscheinReportFac;
+import com.lp.server.lieferschein.service.VerkettetDto;
 import com.lp.server.partner.service.KundeDto;
 import com.lp.server.personal.service.PersonalDto;
 import com.lp.server.system.service.LocaleFac;
@@ -83,6 +84,21 @@ public class ReportLieferschein extends ReportBeleg {
 				lieferscheinDtoI.getKostenstelleIId());
 		lieferscheinDto = lieferscheinDtoI;
 
+		// PJ18739 Wenn ich verktettet bin, dann Kopf drucken
+		VerkettetDto verkettetDto = DelegateFactory
+				.getInstance()
+				.getLieferscheinServiceDelegate()
+				.verkettetfindByLieferscheinIIdVerkettetOhneExc(
+						lieferscheinDto.getIId());
+
+		if (verkettetDto != null) {
+			lieferscheinDto = DelegateFactory
+					.getInstance()
+					.getLsDelegate()
+					.lieferscheinFindByPrimaryKey(
+							verkettetDto.getLieferscheinIId());
+		}
+
 		kundeDto = DelegateFactory
 				.getInstance()
 				.getKundeDelegate()
@@ -91,7 +107,7 @@ public class ReportLieferschein extends ReportBeleg {
 
 		wnfKopien.setInteger(kundeDto.getIDefaultlskopiendrucken());
 	}
-	
+
 	@Override
 	protected String getLockMeWer() throws Exception {
 		return HelperClient.LOCKME_LIEFERSCHEIN;

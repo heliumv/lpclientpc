@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -66,13 +66,18 @@ import com.lp.client.stueckliste.TabbedPaneStueckliste;
 import com.lp.client.system.SystemFilterFactory;
 import com.lp.client.zeiterfassung.ZeiterfassungFilterFactory;
 import com.lp.server.anfrage.service.ZertifikatartDto;
+import com.lp.server.artikel.service.AlergenDto;
 import com.lp.server.artikel.service.ArtgruDto;
 import com.lp.server.artikel.service.ArtikelDto;
 import com.lp.server.artikel.service.ArtikelkommentarartDto;
 import com.lp.server.artikel.service.ArtklaDto;
+import com.lp.server.artikel.service.AutomotiveDto;
 import com.lp.server.artikel.service.HerstellerDto;
 import com.lp.server.artikel.service.LagerDto;
 import com.lp.server.artikel.service.LagerplatzDto;
+import com.lp.server.artikel.service.MedicalDto;
+import com.lp.server.artikel.service.ReachDto;
+import com.lp.server.artikel.service.RohsDto;
 import com.lp.server.artikel.service.ShopgruppeDto;
 import com.lp.server.artikel.service.VkpfartikelpreislisteDto;
 import com.lp.server.eingangsrechnung.service.EingangsrechnungDto;
@@ -93,6 +98,7 @@ import com.lp.server.partner.service.LfliefergruppeDto;
 import com.lp.server.partner.service.LieferantDto;
 import com.lp.server.partner.service.PartnerDto;
 import com.lp.server.partner.service.PartnerklasseDto;
+import com.lp.server.partner.service.PartnerkommentarartDto;
 import com.lp.server.personal.service.BereitschaftartDto;
 import com.lp.server.personal.service.FahrzeugDto;
 import com.lp.server.personal.service.LohnartDto;
@@ -174,17 +180,23 @@ public class WrapperSelectField extends JPanel implements ActionListener,
 	public static final String KOSTENTRAEGER = "KOSTENTRAEGER";
 	public static final String GEWERK = "GEWERK";
 	public static final String ARTIKELKOMMENTARART = "ARTIKELKOMMENTARART";
+	public static final String PARTNERKOMMENTARART = "PARTNERKOMMENTARART";
 	public static final String BELEGART = "BELEGART";
 	public static final String MASCHINE = "MASCHINE";
 	public static final String PROJEKT = "PROJEKT";
 	public static final String MAHNSTUFE = "MAHNSTUFE";
 	public static final String LOSBEREICH = "LOSBEREICH";
 	public static final String SHOPGRUPPE = "SHOPGRUPPE";
+	public static final String ALLERGEN = "ALLERGEN";
 	public static final String SACHKONTO = "SACHKONTO";
 	public static final String FINANZAMT = "FINANZAMT";
 	public static final String BEREITSCHAFTSART = "BEREITSCHAFTSART";
 	public static final String EINGANGSRECHNUNGEN = "EINGANGSRECHNUNGEN";
 	public static final String FAHRZEUG = "FAHRZEUG";
+	public static final String REACH = "REACH";
+	public static final String ROHS = "ROHS";
+	public static final String AUTOMOTIVE = "AUTOMOTIVE";
+	public static final String MEDICAL = "MEDCIAL";
 
 	// Der Code muss zusaetzlich an 3 Stellen erweitert werden: in jbInit(), in
 	// actionPerformed() und in changed()
@@ -375,6 +387,13 @@ public class WrapperSelectField extends JPanel implements ActionListener,
 								.artikelkommentarartFindByPrimaryKey(getIKey());
 						wrapperTextField.setText(artikelkommentarartDto
 								.getCNr());
+					} else if (sTyp.equals(PARTNERKOMMENTARART)) {
+
+						PartnerkommentarartDto artikelkommentarartDto = DelegateFactory
+								.getInstance().getPartnerServicesDelegate()
+								.partnerkommentarartFindByPrimaryKey(getIKey());
+						wrapperTextField.setText(artikelkommentarartDto
+								.getCBez());
 					} else if (sTyp.equals(BRANCHE)) {
 
 						BrancheDto brancheDto = DelegateFactory.getInstance()
@@ -504,9 +523,9 @@ public class WrapperSelectField extends JPanel implements ActionListener,
 								.tagesartFindByPrimaryKey(getIKey());
 
 						wrapperTextField.setText(tagesartDto.getBezeichnung());
-					}else if (sTyp.equals(EINGANGSRECHNUNGEN)) {
-						EingangsrechnungDto erDto = DelegateFactory.getInstance()
-								.getEingangsrechnungDelegate()
+					} else if (sTyp.equals(EINGANGSRECHNUNGEN)) {
+						EingangsrechnungDto erDto = DelegateFactory
+								.getInstance().getEingangsrechnungDelegate()
 								.eingangsrechnungFindByPrimaryKey(getIKey());
 
 						wrapperTextField.setText(erDto.getCNr());
@@ -573,6 +592,12 @@ public class WrapperSelectField extends JPanel implements ActionListener,
 								.getArtikelDelegate()
 								.shopgruppeFindByPrimaryKey(getIKey());
 						wrapperTextField.setText(dto.getBezeichnung());
+					} else if (sTyp.equals(ALLERGEN)) {
+
+						AlergenDto dto = DelegateFactory.getInstance()
+								.getArtikelDelegate()
+								.allergenFindByPrimaryKey(getIKey());
+						wrapperTextField.setText(dto.getCBez());
 					} else if (sTyp.equals(SACHKONTO)) {
 
 						KontoDto dto = DelegateFactory.getInstance()
@@ -590,10 +615,33 @@ public class WrapperSelectField extends JPanel implements ActionListener,
 								.formatFixTitelName1Name2());
 					} else if (sTyp.equals(FAHRZEUG)) {
 
-						FahrzeugDto dto = DelegateFactory
-								.getInstance()
+						FahrzeugDto dto = DelegateFactory.getInstance()
 								.getPersonalDelegate()
 								.fahrzeugFindByPrimaryKey(getIKey());
+						wrapperTextField.setText(dto.getCBez());
+					} else if (sTyp.equals(REACH)) {
+
+						ReachDto dto = DelegateFactory.getInstance()
+								.getArtikelDelegate()
+								.reachFindByPrimaryKey(getIKey());
+						wrapperTextField.setText(dto.getCBez());
+					} else if (sTyp.equals(ROHS)) {
+
+						RohsDto dto = DelegateFactory.getInstance()
+								.getArtikelDelegate()
+								.rohsFindByPrimaryKey(getIKey());
+						wrapperTextField.setText(dto.getCBez());
+					} else if (sTyp.equals(MEDICAL)) {
+
+						MedicalDto dto = DelegateFactory.getInstance()
+								.getArtikelDelegate()
+								.medicalFindByPrimaryKey(getIKey());
+						wrapperTextField.setText(dto.getCBez());
+					} else if (sTyp.equals(AUTOMOTIVE)) {
+
+						AutomotiveDto dto = DelegateFactory.getInstance()
+								.getArtikelDelegate()
+								.automotiveFindByPrimaryKey(getIKey());
 						wrapperTextField.setText(dto.getCBez());
 					} else if (sTyp.equals(BELEGART)) {
 
@@ -676,9 +724,8 @@ public class WrapperSelectField extends JPanel implements ActionListener,
 		wrapperTextField.setActivatable(false);
 		wrapperTextField.setColumnsMax(Facade.MAX_UNBESCHRAENKT);
 
-		
 		wrapperTextField.setZugehoerigesSelectField(this);
-		
+
 		internalFrame.addItemChangedListener(this);
 
 		if (sTyp.equals(ARTIKEL_OHNE_ARBEISZEIT)) {
@@ -789,7 +836,8 @@ public class WrapperSelectField extends JPanel implements ActionListener,
 			wrapperButton.setText(LPMain.getTextRespectUISPr("lp.tagesart")
 					+ "...");
 		} else if (sTyp.equals(EINGANGSRECHNUNGEN)) {
-			wrapperButton.setText(LPMain.getTextRespectUISPr("button.eingangsrechnung"));
+			wrapperButton.setText(LPMain
+					.getTextRespectUISPr("button.eingangsrechnung"));
 		} else if (sTyp.equals(BEREITSCHAFTSART)) {
 			wrapperButton.setText(LPMain
 					.getTextRespectUISPr("pers.bereitschaftsart") + "...");
@@ -806,6 +854,9 @@ public class WrapperSelectField extends JPanel implements ActionListener,
 			wrapperButton.setText(LPMain.getTextRespectUISPr("is.gewerk")
 					+ "...");
 		} else if (sTyp.equals(ARTIKELKOMMENTARART)) {
+			wrapperButton.setText(LPMain.getTextRespectUISPr("lp.kommentarart")
+					+ "...");
+		} else if (sTyp.equals(PARTNERKOMMENTARART)) {
 			wrapperButton.setText(LPMain.getTextRespectUISPr("lp.kommentarart")
 					+ "...");
 		} else if (sTyp.equals(BELEGART)) {
@@ -834,6 +885,10 @@ public class WrapperSelectField extends JPanel implements ActionListener,
 			wrapperButton.setText(LPMain.getTextRespectUISPr("lp.shopgruppe")
 					+ "...");
 
+		} else if (sTyp.equals(ALLERGEN)) {
+			wrapperButton.setText(LPMain
+					.getTextRespectUISPr("artikel.allergen") + "...");
+
 		} else if (sTyp.equals(SACHKONTO)) {
 			wrapperButton.setText(LPMain
 					.getTextRespectUISPr("button.sachkonto"));
@@ -842,9 +897,25 @@ public class WrapperSelectField extends JPanel implements ActionListener,
 			wrapperButton.setText(LPMain
 					.getTextRespectUISPr("button.finanzamt"));
 
-		}else if (sTyp.equals(FAHRZEUG)) {
+		} else if (sTyp.equals(FAHRZEUG)) {
+			wrapperButton.setText(LPMain.getTextRespectUISPr("pers.fahrzeug")
+					+ "...");
+
+		} else if (sTyp.equals(REACH)) {
+			wrapperButton.setText(LPMain.getTextRespectUISPr("artikel.reach")
+					+ "...");
+
+		} else if (sTyp.equals(ROHS)) {
+			wrapperButton.setText(LPMain.getTextRespectUISPr("artikel.rohs")
+					+ "...");
+
+		} else if (sTyp.equals(AUTOMOTIVE)) {
 			wrapperButton.setText(LPMain
-					.getTextRespectUISPr("pers.fahrzeug")+"...");
+					.getTextRespectUISPr("artikel.automotive") + "...");
+
+		} else if (sTyp.equals(MEDICAL)) {
+			wrapperButton.setText(LPMain.getTextRespectUISPr("artikel.medical")
+					+ "...");
 
 		}
 
@@ -984,7 +1055,7 @@ public class WrapperSelectField extends JPanel implements ActionListener,
 				} else if (sTyp.equals(KOSTENSTELLE)) {
 					panelQueryFLR = SystemFilterFactory.getInstance()
 							.createPanelFLRKostenstelle(internalFrame, false,
-									false);
+									bMitLeerenButton);
 				} else if (sTyp.equals(STUECKLISTE)) {
 					panelQueryFLR = StuecklisteFilterFactory.getInstance()
 							.createPanelFLRStueckliste(internalFrame,
@@ -1062,9 +1133,10 @@ public class WrapperSelectField extends JPanel implements ActionListener,
 					panelQueryFLR = PersonalFilterFactory.getInstance()
 							.createPanelFLRTagesart(internalFrame, getIKey(),
 									bMitLeerenButton);
-				}  else if (sTyp.equals(EINGANGSRECHNUNGEN)) {
+				} else if (sTyp.equals(EINGANGSRECHNUNGEN)) {
 					panelQueryFLR = EingangsrechnungFilterFactory.getInstance()
-							.createPanelFLREingangsrechnungGoto(internalFrame, getIKey(), null, true, bMitLeerenButton);
+							.createPanelFLREingangsrechnungGoto(internalFrame,
+									getIKey(), null, true, bMitLeerenButton);
 				} else if (sTyp.equals(BEREITSCHAFTSART)) {
 					panelQueryFLR = ZeiterfassungFilterFactory.getInstance()
 							.createPanelFLRBereitschaftsart(internalFrame,
@@ -1089,6 +1161,10 @@ public class WrapperSelectField extends JPanel implements ActionListener,
 					panelQueryFLR = ArtikelFilterFactory.getInstance()
 							.createPanelFLRArtikelkommentarart(internalFrame,
 									getIKey(), bMitLeerenButton);
+				} else if (sTyp.equals(PARTNERKOMMENTARART)) {
+					panelQueryFLR = PartnerFilterFactory.getInstance()
+							.createPanelFLRPartnerkommentarart(internalFrame,
+									getIKey(), bMitLeerenButton);
 				} else if (sTyp.equals(BELEGART)) {
 					panelQueryFLR = SystemFilterFactory.getInstance()
 							.createPanelFLRBelegart(internalFrame,
@@ -1110,6 +1186,10 @@ public class WrapperSelectField extends JPanel implements ActionListener,
 							.createPanelFLRShopgruppe(internalFrame,
 									(Integer) getOKey(), bMitLeerenButton,
 									ausgeschlosseneIds);
+				} else if (sTyp.equals(ALLERGEN)) {
+					panelQueryFLR = ArtikelFilterFactory.getInstance()
+							.createPanelFLRAlergen(internalFrame,
+									(Integer) getOKey(), bMitLeerenButton);
 				} else if (sTyp.equals(SACHKONTO)) {
 					panelQueryFLR = FinanzFilterFactory.getInstance()
 							.createPanelFLRSachKonto(internalFrame,
@@ -1118,9 +1198,25 @@ public class WrapperSelectField extends JPanel implements ActionListener,
 					panelQueryFLR = FertigungFilterFactory.getInstance()
 							.createPanelFLRLosbereich(internalFrame,
 									(Integer) getOKey(), bMitLeerenButton);
-				}else if (sTyp.equals(FAHRZEUG)) {
+				} else if (sTyp.equals(FAHRZEUG)) {
 					panelQueryFLR = PersonalFilterFactory.getInstance()
 							.createPanelFLRFahrzeug(internalFrame,
+									(Integer) getOKey(), bMitLeerenButton);
+				} else if (sTyp.equals(REACH)) {
+					panelQueryFLR = ArtikelFilterFactory.getInstance()
+							.createPanelFLRReach(internalFrame,
+									(Integer) getOKey(), bMitLeerenButton);
+				} else if (sTyp.equals(ROHS)) {
+					panelQueryFLR = ArtikelFilterFactory.getInstance()
+							.createPanelFLRRohs(internalFrame,
+									(Integer) getOKey(), bMitLeerenButton);
+				} else if (sTyp.equals(AUTOMOTIVE)) {
+					panelQueryFLR = ArtikelFilterFactory.getInstance()
+							.createPanelFLRAutomotive(internalFrame,
+									(Integer) getOKey(), bMitLeerenButton);
+				} else if (sTyp.equals(MEDICAL)) {
+					panelQueryFLR = ArtikelFilterFactory.getInstance()
+							.createPanelFLRMedical(internalFrame,
 									(Integer) getOKey(), bMitLeerenButton);
 				}
 
@@ -1162,11 +1258,12 @@ public class WrapperSelectField extends JPanel implements ActionListener,
 	public void removeCib() {
 		wrapperButton.removeCib();
 	}
+
 	@Override
 	public String getToken() {
 		return wrapperButton.getToken();
 	}
-	
+
 	@Override
 	public boolean hasContent() throws Throwable {
 		return wrapperTextField.hasContent();

@@ -1,33 +1,33 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
- * 
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
+ *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published 
- * by the Free Software Foundation, either version 3 of theLicense, or 
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of theLicense, or
  * (at your option) any later version.
- * 
- * According to sec. 7 of the GNU Affero General Public License, version 3, 
+ *
+ * According to sec. 7 of the GNU Affero General Public License, version 3,
  * the terms of the AGPL are supplemented with the following terms:
- * 
- * "HELIUM V" and "HELIUM 5" are registered trademarks of 
- * HELIUM V IT-Solutions GmbH. The licensing of the program under the 
+ *
+ * "HELIUM V" and "HELIUM 5" are registered trademarks of
+ * HELIUM V IT-Solutions GmbH. The licensing of the program under the
  * AGPL does not imply a trademark license. Therefore any rights, title and
  * interest in our trademarks remain entirely with us. If you want to propagate
  * modified versions of the Program under the name "HELIUM V" or "HELIUM 5",
- * you may only do so if you have a written permission by HELIUM V IT-Solutions 
+ * you may only do so if you have a written permission by HELIUM V IT-Solutions
  * GmbH (to acquire a permission please contact HELIUM V IT-Solutions
  * at trademark@heliumv.com).
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Affero General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Contact: developers@heliumv.com
  ******************************************************************************/
 package com.lp.client.angebot;
@@ -47,8 +47,8 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import org.xml.sax.SAXException;
 
+import com.lp.client.artikel.DialogNeueArtikelnummer;
 import com.lp.client.auftrag.AuftragFilterFactory;
-import com.lp.client.eingangsrechnung.PanelEingangsrechnungKopfdaten;
 import com.lp.client.frame.ExceptionLP;
 import com.lp.client.frame.ICopyPaste;
 import com.lp.client.frame.LockStateValue;
@@ -77,13 +77,10 @@ import com.lp.server.angebot.service.AngebotFac;
 import com.lp.server.angebot.service.AngebotServiceFac;
 import com.lp.server.angebot.service.AngebotpositionDto;
 import com.lp.server.angebot.service.AngebottextDto;
+import com.lp.server.artikel.service.ArtikelDto;
+import com.lp.server.artikel.service.ArtikelFac;
 import com.lp.server.benutzer.service.RechteFac;
-import com.lp.server.lieferschein.service.LieferscheinpositionFac;
 import com.lp.server.partner.service.KundeDto;
-import com.lp.server.projekt.service.ProjektDto;
-import com.lp.server.rechnung.service.RechnungFac;
-import com.lp.server.rechnung.service.RechnungPositionDto;
-import com.lp.server.system.service.LocaleFac;
 import com.lp.server.system.service.MandantFac;
 import com.lp.server.system.service.MediaFac;
 import com.lp.server.system.service.ParameterFac;
@@ -100,14 +97,14 @@ import com.lp.util.Helper;
 /*
  * <p>TabbedPane fuer Modul Angebot.</p> <p>Copyright Logistik Pur Software GmbH
  * (c) 2004-2008</p> <p>Erstellungsdatum 04.07.05</p> <p> </p>
- * 
+ *
  * @author Uli Walch
- * 
+ *
  * @version $Revision: 1.30 $
  */
 public class TabbedPaneAngebot extends TabbedPane implements ICopyPaste {
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = 1L;
 	private PanelQuery angebotAuswahl = null;
@@ -146,6 +143,7 @@ public class TabbedPaneAngebot extends TabbedPane implements ICopyPaste {
 	private final String MENU_DATEI_DRUCKEN_VORKALKULATION = "MENU_ACTION_DRUCKEN_VORKALKULATION";
 	private final String MENU_DATEI_LIEFERSCHEINETIKETT = "MENU_DATEI_LIEFERSCHEINETIKETT";
 	private final String MENU_BEARBEITEN_AKQUISEDATEN = "MENU_BEARBEITEN_AKQUISEDATEN";
+	private final String MENU_BEARBEITEN_HANDARTIKEL_UMANDELN = "MENU_BEARBEITEN_HANDARTIKEL_UMANDELN";
 	private final String MENU_BEARBEITEN_MANUELL_ERLEDIGEN = "MENU_BEARBEITEN_MANUELL_ERLEDIGEN";
 	// kommentar: 2 Je ein Menueeintrag fuer internen und externen Kommentar
 	private final String MENU_BEARBEITEN_INTERNER_KOMMENTAR = "MENU_BEARBEITEN_INTERNER_KOMMENTAR";
@@ -367,7 +365,7 @@ public class TabbedPaneAngebot extends TabbedPane implements ICopyPaste {
 	}
 
 	public void erstelleAngebotAusProjekt(Integer projektIId) throws Throwable {
-		
+
 		ItemChangedEvent e = new ItemChangedEvent(this, -99);
 		getAngebotAuswahl().eventActionNew(e, true, false);
 		getAngebotKopfdaten().eventYouAreSelected(false);
@@ -767,22 +765,24 @@ public class TabbedPaneAngebot extends TabbedPane implements ICopyPaste {
 						TableModel tm = angebotPositionenTop.getTable()
 								.getModel();
 
-//						AngebotpositionDto posDto = getSelectedAngebotpositionDto();
-//						if (LieferscheinpositionFac.LIEFERSCHEINPOSITIONSART_INTELLIGENTE_ZWISCHENSUMME
-//								.equals(posDto.getPositionsartCNr())) {
-//							Integer myPosNumber = DelegateFactory.getInstance()
-//									.getAngebotpositionDelegate()
-//									.getPositionNummer(posDto.getIId());
-//							Integer previousIId = DelegateFactory
-//									.getInstance()
-//									.getAngebotpositionDelegate()
-//									.getPositionIIdFromPositionNummer(
-//											getAngebotDto().getIId(),
-//											myPosNumber - 1);
-//							if (previousIId.equals(posDto.getZwsBisPosition())) {
-//								return;
-//							}
-//						}
+						// AngebotpositionDto posDto =
+						// getSelectedAngebotpositionDto();
+						// if
+						// (LieferscheinpositionFac.LIEFERSCHEINPOSITIONSART_INTELLIGENTE_ZWISCHENSUMME
+						// .equals(posDto.getPositionsartCNr())) {
+						// Integer myPosNumber = DelegateFactory.getInstance()
+						// .getAngebotpositionDelegate()
+						// .getPositionNummer(posDto.getIId());
+						// Integer previousIId = DelegateFactory
+						// .getInstance()
+						// .getAngebotpositionDelegate()
+						// .getPositionIIdFromPositionNummer(
+						// getAngebotDto().getIId(),
+						// myPosNumber - 1);
+						// if (previousIId.equals(posDto.getZwsBisPosition())) {
+						// return;
+						// }
+						// }
 
 						DelegateFactory.getInstance()
 								.getAngebotpositionDelegate()
@@ -825,32 +825,34 @@ public class TabbedPaneAngebot extends TabbedPane implements ICopyPaste {
 
 						TableModel tm = angebotPositionenTop.getTable()
 								.getModel();
-//						AngebotpositionDto posDto = getSelectedAngebotpositionDto();
-//						Integer myPosNumber = DelegateFactory.getInstance()
-//								.getAngebotpositionDelegate()
-//								.getPositionNummer(posDto.getIId());
-//						if (myPosNumber != null) {
-//							Integer nextIId = DelegateFactory
-//									.getInstance()
-//									.getAngebotpositionDelegate()
-//									.getPositionIIdFromPositionNummer(
-//											getAngebotDto().getIId(),
-//											myPosNumber + 1);
-//							if (nextIId != null) {
-//								AngebotpositionDto nextDto = DelegateFactory
-//										.getInstance()
-//										.getAngebotpositionDelegate()
-//										.angebotpositionFindByPrimaryKey(
-//												nextIId);
-//								if (LieferscheinpositionFac.LIEFERSCHEINPOSITIONSART_INTELLIGENTE_ZWISCHENSUMME
-//										.equals(nextDto.getPositionsartCNr())) {
-//									if (posDto.getIId().equals(
-//											nextDto.getZwsBisPosition())) {
-//										return;
-//									}
-//								}
-//							}
-//						}
+						// AngebotpositionDto posDto =
+						// getSelectedAngebotpositionDto();
+						// Integer myPosNumber = DelegateFactory.getInstance()
+						// .getAngebotpositionDelegate()
+						// .getPositionNummer(posDto.getIId());
+						// if (myPosNumber != null) {
+						// Integer nextIId = DelegateFactory
+						// .getInstance()
+						// .getAngebotpositionDelegate()
+						// .getPositionIIdFromPositionNummer(
+						// getAngebotDto().getIId(),
+						// myPosNumber + 1);
+						// if (nextIId != null) {
+						// AngebotpositionDto nextDto = DelegateFactory
+						// .getInstance()
+						// .getAngebotpositionDelegate()
+						// .angebotpositionFindByPrimaryKey(
+						// nextIId);
+						// if
+						// (LieferscheinpositionFac.LIEFERSCHEINPOSITIONSART_INTELLIGENTE_ZWISCHENSUMME
+						// .equals(nextDto.getPositionsartCNr())) {
+						// if (posDto.getIId().equals(
+						// nextDto.getZwsBisPosition())) {
+						// return;
+						// }
+						// }
+						// }
+						// }
 						DelegateFactory.getInstance()
 								.getAngebotpositionDelegate()
 								.vertauscheAngebotpositionPlus(iPos, tm);
@@ -996,7 +998,7 @@ public class TabbedPaneAngebot extends TabbedPane implements ICopyPaste {
 
 	/**
 	 * Verarbeitung von ItemChangedEvent.GOTO_DETAIL_PANEL.
-	 * 
+	 *
 	 * @param e
 	 *            ItemChangedEvent
 	 * @throws Throwable
@@ -1022,7 +1024,7 @@ public class TabbedPaneAngebot extends TabbedPane implements ICopyPaste {
 			if (iIdAngebotBasis != null) {
 				Integer angebotIId = DelegateFactory.getInstance()
 						.getAngebotDelegate()
-						.erzeugeAngebotAusAngebot(iIdAngebotBasis);
+						.erzeugeAngebotAusAngebot(iIdAngebotBasis,getInternalFrame());
 				// PJ09/0014616
 				angebotKopfdaten.setKeyWhenDetailPanel(angebotIId);
 				initializeDtos(angebotIId); // befuellt das Angebot und den
@@ -1101,21 +1103,28 @@ public class TabbedPaneAngebot extends TabbedPane implements ICopyPaste {
 			Object key = angebotPositionenTop.getIdSelected();
 			angebotPositionenBottom.setKeyWhenDetailPanel(key);
 			angebotPositionenBottom.eventYouAreSelected(false);
-			
-			
+
 			// im QP die Buttons in den Zustand nolocking/save setzen.
 			angebotPositionenTop.updateButtons(angebotPositionenBottom
 					.getLockedstateDetailMainKey());
 			updateISortButtons();
-			
+
 		}
 	}
-	
+
 	private void updateISortButtons() {
-		if(angebotPositionenTop.getTable().getSelectedRow() == 0)
-			angebotPositionenTop.enableToolsPanelButtons(false, PanelBasis.ACTION_POSITION_VONNNACHNMINUS1);
-		else if(angebotPositionenTop.getTable().getSelectedRow() == angebotPositionenTop.getTable().getRowCount()-1)
-			angebotPositionenTop.enableToolsPanelButtons(false, PanelBasis.ACTION_POSITION_VONNNACHNPLUS1);
+		angebotPositionenTop.enableToolsPanelButtons(true,
+				PanelBasis.ACTION_POSITION_VONNNACHNMINUS1);
+		angebotPositionenTop.enableToolsPanelButtons(true,
+				PanelBasis.ACTION_POSITION_VONNNACHNPLUS1);
+
+		if (angebotPositionenTop.getTable().getSelectedRow() == 0)
+			angebotPositionenTop.enableToolsPanelButtons(false,
+					PanelBasis.ACTION_POSITION_VONNNACHNMINUS1);
+		else if (angebotPositionenTop.getTable().getSelectedRow() == angebotPositionenTop
+				.getTable().getRowCount() - 1)
+			angebotPositionenTop.enableToolsPanelButtons(false,
+					PanelBasis.ACTION_POSITION_VONNNACHNPLUS1);
 	}
 
 	private void initializeDtos(Integer iIdAngebot) throws Throwable {
@@ -1155,7 +1164,7 @@ public class TabbedPaneAngebot extends TabbedPane implements ICopyPaste {
 
 	/**
 	 * Den Text der Titelleiste ueberschreiben.
-	 * 
+	 *
 	 * @param panelTitle
 	 *            der Title des aktuellen panel
 	 * @throws Exception
@@ -1202,7 +1211,7 @@ public class TabbedPaneAngebot extends TabbedPane implements ICopyPaste {
 	 * Je nach Mandantenparameter muss der Benutzer die Konditionen nicht
 	 * erfassen. Damit das Angebot gedruckt werden kann, muessen die Konditionen
 	 * aber initialisiert worden sein.
-	 * 
+	 *
 	 * @throws Throwable
 	 *             Ausnahme
 	 */
@@ -1218,7 +1227,7 @@ public class TabbedPaneAngebot extends TabbedPane implements ICopyPaste {
 
 	/**
 	 * Kopf- und Fusstext vorbelegen.
-	 * 
+	 *
 	 * @throws Throwable
 	 *             Ausnahme
 	 */
@@ -1281,11 +1290,11 @@ public class TabbedPaneAngebot extends TabbedPane implements ICopyPaste {
 	/**
 	 * Diese Methode prueft, ob zur aktuellen Angebot Konditionen erfasst
 	 * wurden.
-	 * 
+	 *
 	 * @return boolean
 	 * @throws Throwable
 	 */
-	private boolean pruefeKonditionen() throws Throwable {
+	protected boolean pruefeKonditionen() throws Throwable {
 		boolean bErfasst = true;
 
 		ParametermandantDto parameter = DelegateFactory
@@ -1356,7 +1365,7 @@ public class TabbedPaneAngebot extends TabbedPane implements ICopyPaste {
 	/**
 	 * Diese Methode setzt die aktuelle Angebot aus der Auswahlliste als die zu
 	 * lockende Angebot.
-	 * 
+	 *
 	 * @throws java.lang.Throwable
 	 *             Ausnahme
 	 */
@@ -1526,7 +1535,7 @@ public class TabbedPaneAngebot extends TabbedPane implements ICopyPaste {
 						 * LPMain.getInstance().getTextRespectUISPr("lp.hint"),
 						 * javax.swing.JOptionPane.YES_NO_OPTION) ==
 						 * javax.swing.JOptionPane.YES_OPTION) {
-						 * 
+						 *
 						 * // der Erledigungsgrund muss aus der Liste
 						 * ausgewaehlt werden
 						 * dialogQueryAngeboterledigungsgrundFromListe(e); }
@@ -1544,6 +1553,66 @@ public class TabbedPaneAngebot extends TabbedPane implements ICopyPaste {
 			angebotAuswahl.eventYouAreSelected(false);
 			deselektAllMenueBoxes();
 			menuItemAlle.setSelected(true);
+
+		} else if (e.getActionCommand().equals(
+				MENU_BEARBEITEN_HANDARTIKEL_UMANDELN)) {
+			if (angebotPositionenTop != null
+					&& angebotPositionenTop.getSelectedId() != null) {
+
+				AngebotpositionDto posDto = DelegateFactory
+						.getInstance()
+						.getAngebotpositionDelegate()
+						.angebotpositionFindByPrimaryKey(
+								(Integer) angebotPositionenTop.getSelectedId());
+
+				if (posDto.getArtikelIId() != null
+						&& getAngebotDto() != null
+						&& getAngebotDto().getStatusCNr().equals(
+								AngebotServiceFac.ANGEBOTSTATUS_OFFEN)) {
+
+					ArtikelDto aDto = DelegateFactory.getInstance()
+							.getArtikelDelegate()
+							.artikelFindByPrimaryKey(posDto.getArtikelIId());
+					if (aDto.getArtikelartCNr().equals(
+							ArtikelFac.ARTIKELART_HANDARTIKEL)) {
+						DialogNeueArtikelnummer d = new DialogNeueArtikelnummer(
+								getInternalFrame());
+						LPMain.getInstance().getDesktop()
+								.platziereDialogInDerMitteDesFensters(d);
+						d.setVisible(true);
+						if (d.getArtikelnummerNeu() != null) {
+
+							DelegateFactory
+									.getInstance()
+									.getArtikelDelegate()
+									.wandleHandeingabeInArtikelUm(
+											posDto.getIId(),
+											ArtikelFac.HANDARTIKEL_UMWANDELN_ANGEBOT,
+											d.getArtikelnummerNeu());
+						}
+
+					} else {
+						DialogFactory
+								.showModalDialog(
+										LPMain.getInstance()
+												.getTextRespectUISPr("lp.info"),
+										LPMain.getInstance()
+												.getTextRespectUISPr(
+														"angebot.bearbeiten.handartikelumwandeln.error"));
+					}
+
+				} else {
+					DialogFactory
+							.showModalDialog(
+									LPMain.getInstance().getTextRespectUISPr(
+											"lp.info"),
+									LPMain.getInstance()
+											.getTextRespectUISPr(
+													"angebot.bearbeiten.handartikelumwandeln.error1"));
+				}
+				angebotPositionen.eventYouAreSelected(false);
+				angebotPositionenTop.setSelectedId(posDto.getIId());
+			}
 
 		} else if (e.getActionCommand().equals(MENU_ANSICHT_ANGEBOT_OFFENE)) {
 			FilterKriterium[] fk = AngebotFilterFactory.getInstance()
@@ -1615,17 +1684,18 @@ public class TabbedPaneAngebot extends TabbedPane implements ICopyPaste {
 				if (!getAngebotKopfdaten().isLockedDlg()) {
 					// pruefen, ob das Hauptlager des Mandanten angelegt ist
 					// wegen Werteberechnungen
-					DelegateFactory.getInstance()
-							.getLagerDelegate().getHauptlagerDesMandanten();
-					
+					DelegateFactory.getInstance().getLagerDelegate()
+							.getHauptlagerDesMandanten();
+
 					// das aktuelle Panel wegen Statusanzeige aktualisieren
 					refreshAktuellesPanel();
 
 					// das Angebot drucken
 					getInternalFrame()
 							.showReportKriterien(
-									new ReportAngebot(getInternalFrame(), getAktuellesPanel(),
-											angebotDto, getTitleDruck()),
+									new ReportAngebot(getInternalFrame(),
+											getAktuellesPanel(), angebotDto,
+											getTitleDruck()),
 									getKundeDto().getPartnerDto(),
 									getAngebotDto()
 											.getAnsprechpartnerIIdKunde(),
@@ -1641,8 +1711,8 @@ public class TabbedPaneAngebot extends TabbedPane implements ICopyPaste {
 				if (!getAngebotKopfdaten().isLockedDlg()) {
 					// pruefen, ob das Hauptlager des Mandanten angelegt ist
 					// wegen Werteberechnungen
-					DelegateFactory.getInstance()
-							.getLagerDelegate().getHauptlagerDesMandanten();
+					DelegateFactory.getInstance().getLagerDelegate()
+							.getHauptlagerDesMandanten();
 
 					// das aktuelle Panel wegen Statusanzeige aktualisieren
 					refreshAktuellesPanel();
@@ -1666,7 +1736,7 @@ public class TabbedPaneAngebot extends TabbedPane implements ICopyPaste {
 	/**
 	 * Der Status des Angebots kann in einigen Faellen ueber den Update Button
 	 * geaendert werden.
-	 * 
+	 *
 	 * @return boolean true, wenn das aktuelle Angebot geaendert werden darf
 	 * @throws Throwable
 	 *             Ausnahme
@@ -1727,7 +1797,7 @@ public class TabbedPaneAngebot extends TabbedPane implements ICopyPaste {
 	/**
 	 * Diese Methode prueft den Status des aktuellen Angebots und legt fest, ob
 	 * eine Aenderung in den Kopfdaten bzw. Konditionen erlaubt ist.
-	 * 
+	 *
 	 * @return boolean true, wenn ein update erlaubt ist
 	 * @throws java.lang.Throwable
 	 *             Ausnahme
@@ -1842,6 +1912,14 @@ public class TabbedPaneAngebot extends TabbedPane implements ICopyPaste {
 		jmBearbeiten.add(new JSeparator(), 0);
 
 		// manuellerledigen: 3 Menueeintrag erzeugen
+		JMenuItem menuItemHandartikelUmwandeln = new JMenuItem(LPMain
+				.getInstance().getTextRespectUISPr(
+						"angebot.bearbeiten.handartikelumwandeln"));
+		menuItemHandartikelUmwandeln.addActionListener(this);
+		menuItemHandartikelUmwandeln
+				.setActionCommand(MENU_BEARBEITEN_HANDARTIKEL_UMANDELN);
+		jmBearbeiten.add(menuItemHandartikelUmwandeln, 0);
+
 		JMenuItem menuItemBearbeitenManuellErledigen = new JMenuItem(LPMain
 				.getInstance().getTextRespectUISPr("ang.menu.menuellerledigen"));
 		menuItemBearbeitenManuellErledigen.addActionListener(this);
@@ -1947,16 +2025,8 @@ public class TabbedPaneAngebot extends TabbedPane implements ICopyPaste {
 	}
 
 	public String getAngebotStatus() throws Throwable {
-		StatusDto statusDto = DelegateFactory.getInstance().getLocaleDelegate()
-				.statusFindByPrimaryKey(getAngebotDto().getStatusCNr());
-
-		String cNrStatus = statusDto.getCNr();
-
-		if (statusDto.getStatussprDto() != null) {
-			cNrStatus = statusDto.getStatussprDto().getCBez();
-		}
-
-		return cNrStatus;
+		return DelegateFactory.getInstance().getLocaleDelegate()
+				.getStatusCBez(getAngebotDto().getStatusCNr());
 	}
 
 	private String getTitleDruck() {
@@ -2007,7 +2077,7 @@ public class TabbedPaneAngebot extends TabbedPane implements ICopyPaste {
 		return this.angebotKonditionen;
 	}
 
-	public Object getInseratDto() {
+	public Object getDto() {
 		return angebotDto;
 	}
 

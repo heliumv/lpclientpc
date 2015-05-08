@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -38,8 +38,10 @@ import java.awt.Insets;
 
 import com.lp.client.pc.LPMain;
 import com.lp.editor.LpEditor;
+import com.lp.editor.util.TextBlockOverflowException;
 import com.lp.server.system.service.ParameterFac;
 import com.lp.server.system.service.SystemFac;
+import com.lp.util.Helper;
 
 /**
  * <p>
@@ -57,11 +59,8 @@ import com.lp.server.system.service.SystemFac;
  * @author Uli Walch
  * @version $Revision: 1.4 $
  */
-public class PanelPositionenTexteingabe extends PanelBasis {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
+public class PanelPositionenTexteingabe extends PanelBasis implements IControlContent {
+	private static final long serialVersionUID = -8403033992510482070L;
 	private LpEditor lpEditor = null;
 
 	public PanelPositionenTexteingabe(InternalFrame internalFrame,
@@ -89,14 +88,51 @@ public class PanelPositionenTexteingabe extends PanelBasis {
 	}
 
 	protected void setDefaults() throws Throwable {
-		lpEditor.setText("");
+		removeContent() ;
 	}
 
 	public void requestFocus() {
 		lpEditor.requestFocusInWindow();
 	}
 	
-	public LpEditor getLpEditor() {
-		return lpEditor;
+//  LPEditor ist ein Implementierungsdetail, das soll nicht nach draussen
+//	
+//	public LpEditor getLpEditor() {
+//		return lpEditor;
+//	}
+	
+	public void setText(String newText) {
+		lpEditor.setText(newText) ;
+	}
+	
+	public String getText() throws TextBlockOverflowException {
+		return lpEditor.getText() ;
+	}
+
+	@Override
+	public void removeContent() throws Throwable {
+		setText("") ;
+	}
+
+	@Override
+	public boolean hasContent() throws Throwable {
+		return !Helper.isStringEmpty(getText()) ;
+	}
+
+	/**
+	 * Setzt den internen Editor auf (non)-editable</br>
+	 * <p>Schaltet zus&auml;tzlich auch noch alle Buttons weg/zur&uuml;ck</p>
+	 * @param value true f&uuml;r einschalten, sonst false.
+	 */
+	public void setEditable(boolean value) {
+	    lpEditor.setEditable(value);
+	    lpEditor.showAlignmentItems(value);
+	    lpEditor.showFileItems(value);
+	    lpEditor.showFontStyleItems(value);
+	    lpEditor.showMenu(value);
+	    lpEditor.showStatusBar(value);
+	    lpEditor.showTableItems(value);
+	    lpEditor.showTabRuler(value);
+	    lpEditor.showToolBar(value);		
 	}
 }

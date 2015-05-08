@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -70,16 +70,16 @@ public class PersonalFilterFactory {
 		QueryType[] types = new QueryType[3];
 
 		FilterKriterium f1 = new FilterKriterium(
-				PersonalFac.FLR_PERSONAL_FLRKOSTENSTELLEABTEILUNG+".c_nr", true, "",
-				FilterKriterium.OPERATOR_LIKE, true);
+				PersonalFac.FLR_PERSONAL_FLRKOSTENSTELLEABTEILUNG + ".c_nr",
+				true, "", FilterKriterium.OPERATOR_LIKE, true);
 
 		types[0] = new QueryType(LPMain.getInstance().getTextRespectUISPr(
 				"lp.abteilung"), f1,
 				new String[] { FilterKriterium.OPERATOR_EQUAL }, true, true);
 
 		FilterKriterium f2 = new FilterKriterium(
-				PersonalFac.FLR_PERSONAL_FLRKOSTENSTELLESTAMM+".c_nr", true, "",
-				FilterKriterium.OPERATOR_LIKE, true);
+				PersonalFac.FLR_PERSONAL_FLRKOSTENSTELLESTAMM + ".c_nr", true,
+				"", FilterKriterium.OPERATOR_LIKE, true);
 
 		types[1] = new QueryType(LPMain.getInstance().getTextRespectUISPr(
 				"pers.personal.heimatkostenstelle"), f2,
@@ -128,7 +128,8 @@ public class PersonalFilterFactory {
 	}
 
 	public PanelQueryFLR createPanelFLRPersonalgruppe(
-			InternalFrame internalFrameI, Integer selectedId, boolean bMitLeerenButton) throws Throwable {
+			InternalFrame internalFrameI, Integer selectedId,
+			boolean bMitLeerenButton) throws Throwable {
 		String[] aWhichButtonIUse = null;
 		if (bMitLeerenButton == true) {
 			aWhichButtonIUse = new String[] { PanelBasis.ACTION_REFRESH,
@@ -150,8 +151,7 @@ public class PersonalFilterFactory {
 		return panelQueryFLRPg;
 
 	}
-	
-	
+
 	public FilterKriterium[] createFKFahrzeug() throws Throwable {
 
 		FilterKriterium[] kriterien = new FilterKriterium[1];
@@ -162,9 +162,8 @@ public class PersonalFilterFactory {
 
 	}
 
-	
-	public PanelQueryFLR createPanelFLRFahrzeug(
-			InternalFrame internalFrameI, Integer selectedId, boolean bMitLeerenButton) throws Throwable {
+	public PanelQueryFLR createPanelFLRFahrzeug(InternalFrame internalFrameI,
+			Integer selectedId, boolean bMitLeerenButton) throws Throwable {
 		String[] aWhichButtonIUse = null;
 		if (bMitLeerenButton == true) {
 			aWhichButtonIUse = new String[] { PanelBasis.ACTION_REFRESH,
@@ -174,10 +173,10 @@ public class PersonalFilterFactory {
 					PanelBasis.ACTION_FILTER };
 		}
 
-		PanelQueryFLR panelQueryFLRPg = new PanelQueryFLR(null, createFKFahrzeug(),
-				QueryParameters.UC_ID_FAHRZEUG, aWhichButtonIUse,
-				internalFrameI, LPMain.getInstance().getTextRespectUISPr(
-						"pers.fahrzeug"));
+		PanelQueryFLR panelQueryFLRPg = new PanelQueryFLR(null,
+				createFKFahrzeug(), QueryParameters.UC_ID_FAHRZEUG,
+				aWhichButtonIUse, internalFrameI, LPMain.getInstance()
+						.getTextRespectUISPr("pers.fahrzeug"));
 		panelQueryFLRPg.befuellePanelFilterkriterienDirekt(SystemFilterFactory
 				.getInstance().createFKDBezeichnung(), null);
 		if (selectedId != null) {
@@ -187,8 +186,8 @@ public class PersonalFilterFactory {
 
 	}
 
-	public PanelQueryFLR createPanelFLRTagesart(
-			InternalFrame internalFrameI, Integer selectedId, boolean bMitLeerenButton) throws Throwable {
+	public PanelQueryFLR createPanelFLRTagesart(InternalFrame internalFrameI,
+			Integer selectedId, boolean bMitLeerenButton) throws Throwable {
 		String[] aWhichButtonIUse = null;
 		if (bMitLeerenButton == true) {
 			aWhichButtonIUse = new String[] { PanelBasis.ACTION_REFRESH,
@@ -211,12 +210,11 @@ public class PersonalFilterFactory {
 
 	}
 
-	public PanelQueryFLR createPanelFLRLohnart(
-			InternalFrame internalFrameI, Integer selectedId, boolean bShowLeerenButton) throws Throwable {
-		
+	public PanelQueryFLR createPanelFLRLohnart(InternalFrame internalFrameI,
+			Integer selectedId, boolean bShowLeerenButton) throws Throwable {
+
 		String[] aWhichButtonIUse = SystemFilterFactory.getInstance()
-		.createButtonArray(false, bShowLeerenButton);
-		
+				.createButtonArray(false, bShowLeerenButton);
 
 		PanelQueryFLR panelQueryFLRPg = new PanelQueryFLR(null, null,
 				QueryParameters.UC_ID_LOHNART, aWhichButtonIUse,
@@ -236,8 +234,8 @@ public class PersonalFilterFactory {
 		FilterKriterium[] filtersMandant = new FilterKriterium[1];
 		String mandant = "'" + LPMain.getInstance().getTheClient().getMandant()
 				+ "'";
-		FilterKriterium krit1 = new FilterKriterium("zeitmodell.mandant_c_nr", true,
-				mandant, FilterKriterium.OPERATOR_EQUAL, false);
+		FilterKriterium krit1 = new FilterKriterium("zeitmodell.mandant_c_nr",
+				true, mandant, FilterKriterium.OPERATOR_EQUAL, false);
 		filtersMandant[0] = krit1;
 		String[] aWhichButtonIUse = null;
 
@@ -254,14 +252,52 @@ public class PersonalFilterFactory {
 		panelQueryFLRZeitmodell
 				.befuellePanelFilterkriterienDirekt(
 						new FilterKriteriumDirekt("zeitmodell.c_nr", "",
-								FilterKriterium.OPERATOR_LIKE, LPMain.getInstance()
-										.getTextRespectUISPr("label.kennung"),
-								FilterKriteriumDirekt.PROZENT_TRAILING, // Auswertung als 'XX%'
+								FilterKriterium.OPERATOR_LIKE, LPMain
+										.getInstance().getTextRespectUISPr(
+												"label.kennung"),
+								FilterKriteriumDirekt.PROZENT_TRAILING, // Auswertung
+																		// als
+																		// 'XX%'
 								true, true, Facade.MAX_UNBESCHRAENKT),
 						SystemFilterFactory
 								.getInstance()
 								.createFKDSprTabelleBezeichnung(
 										ZeiterfassungFac.FLR_ZEITMODELL_ZEITMODELLSPRSET));
+
+		panelQueryFLRZeitmodell.setSelectedId(selectedId);
+
+		return panelQueryFLRZeitmodell;
+
+	}
+
+	public PanelQueryFLR createPanelFLRMaschinezm(
+			InternalFrame internalFrameI, Integer selectedId,
+			boolean bMitLeerenButton) throws Throwable {
+		FilterKriterium[] filtersMandant = new FilterKriterium[1];
+		String mandant = "'" + LPMain.getInstance().getTheClient().getMandant()
+				+ "'";
+		FilterKriterium krit1 = new FilterKriterium("mandant_c_nr",
+				true, mandant, FilterKriterium.OPERATOR_EQUAL, false);
+		filtersMandant[0] = krit1;
+		String[] aWhichButtonIUse = null;
+
+		if (bMitLeerenButton) {
+			aWhichButtonIUse = new String[] { PanelBasis.ACTION_REFRESH,
+					PanelBasis.ACTION_LEEREN };
+		} else {
+			aWhichButtonIUse = new String[] { PanelBasis.ACTION_REFRESH };
+		}
+		PanelQueryFLR panelQueryFLRZeitmodell = new PanelQueryFLR(null,
+				filtersMandant, QueryParameters.UC_ID_MASCHINEZM,
+				aWhichButtonIUse, internalFrameI, LPMain.getInstance()
+						.getTextRespectUISPr("title.zeitmodellauswahlliste"));
+		panelQueryFLRZeitmodell.befuellePanelFilterkriterienDirekt(
+				new FilterKriteriumDirekt("c_bez", "",
+						FilterKriterium.OPERATOR_LIKE, LPMain.getInstance()
+								.getTextRespectUISPr("lp.bezeichnung"),
+						FilterKriteriumDirekt.PROZENT_TRAILING, // Auswertung
+																// als 'XX%'
+						true, true, Facade.MAX_UNBESCHRAENKT), null);
 
 		panelQueryFLRZeitmodell.setSelectedId(selectedId);
 
@@ -303,8 +339,8 @@ public class PersonalFilterFactory {
 
 	public FilterKriteriumDirekt createFKDLohnart() throws Throwable {
 
-		return new FilterKriteriumDirekt("flrlohnart.i_lohnart",
-				"", FilterKriterium.OPERATOR_LIKE, LPMain.getInstance()
+		return new FilterKriteriumDirekt("flrlohnart.i_lohnart", "",
+				FilterKriterium.OPERATOR_LIKE, LPMain.getInstance()
 						.getTextRespectUISPr("pers.lohnart"),
 				FilterKriteriumDirekt.PROZENT_TRAILING, true, true,
 				Facade.MAX_UNBESCHRAENKT);
@@ -427,12 +463,22 @@ public class PersonalFilterFactory {
 		kriterien[0] = krit1;
 		return kriterien;
 	}
-	public FilterKriterium[] createFKBereitschafttag(Integer bereitschaftart_i_id) {
+	public FilterKriterium[] createFKMaschinezmtagesart(Integer zeitmodell_i_id) {
 		FilterKriterium[] kriterien = new FilterKriterium[1];
 		FilterKriterium krit1 = new FilterKriterium(
-				"flrbereitschaftart.i_id",
-				true, bereitschaftart_i_id + "", FilterKriterium.OPERATOR_EQUAL,
+				"flrmaschinenzm.i_id",
+				true, zeitmodell_i_id + "", FilterKriterium.OPERATOR_EQUAL,
 				false);
+		kriterien[0] = krit1;
+		return kriterien;
+	}
+
+	public FilterKriterium[] createFKBereitschafttag(
+			Integer bereitschaftart_i_id) {
+		FilterKriterium[] kriterien = new FilterKriterium[1];
+		FilterKriterium krit1 = new FilterKriterium("flrbereitschaftart.i_id",
+				true, bereitschaftart_i_id + "",
+				FilterKriterium.OPERATOR_EQUAL, false);
 		kriterien[0] = krit1;
 		return kriterien;
 	}
@@ -445,12 +491,22 @@ public class PersonalFilterFactory {
 		kriterien[0] = krit1;
 		return kriterien;
 	}
+
 	public FilterKriterium[] createFKFahrzeugkosten(Integer fahrzeug_i_id) {
 		FilterKriterium[] kriterien = new FilterKriterium[1];
-		FilterKriterium krit1 = new FilterKriterium(
-				"flrfahrzeug.i_id", true,
+		FilterKriterium krit1 = new FilterKriterium("flrfahrzeug.i_id", true,
 				fahrzeug_i_id + "", FilterKriterium.OPERATOR_EQUAL, false);
 		kriterien[0] = krit1;
+		return kriterien;
+	}
+
+	public FilterKriterium[] createFKPersonalKey(Integer personalIId)
+			throws Throwable {
+
+		FilterKriterium[] kriterien = new FilterKriterium[1];
+		kriterien[0] = new FilterKriterium("i_id", true, personalIId + "",
+				FilterKriterium.OPERATOR_EQUAL, false);
+
 		return kriterien;
 	}
 
@@ -587,6 +643,14 @@ public class PersonalFilterFactory {
 				FilterKriteriumDirekt.PROZENT_TRAILING, // Auswertung als 'XX%'
 				true, true, Facade.MAX_UNBESCHRAENKT); // wrapWithSingleQuotes
 	}
+	public FilterKriteriumDirekt createFKDMaschinenzeitmodellBezeichnung() {
+		return new FilterKriteriumDirekt("maschinenzm.c_bez", "",
+				FilterKriterium.OPERATOR_LIKE, LPMain.getInstance()
+						.getTextRespectUISPr("lp.bezeichnung"),
+				FilterKriteriumDirekt.PROZENT_TRAILING, // Auswertung als 'XX%'
+				true, true, Facade.MAX_UNBESCHRAENKT); // wrapWithSingleQuotes
+	}
+
 	public FilterKriteriumDirekt createFKDZeitmodellSpr() {
 		return new FilterKriteriumDirekt("zeitmodellsprset.c_bez", "",
 				FilterKriterium.OPERATOR_LIKE, LPMain.getInstance()
@@ -594,6 +658,7 @@ public class PersonalFilterFactory {
 				FilterKriteriumDirekt.PROZENT_TRAILING, // Auswertung als 'XX%'
 				true, true, Facade.MAX_UNBESCHRAENKT); // wrapWithSingleQuotes
 	}
+
 	public FilterKriteriumDirekt createFKDBereitschaftartBezeichnung() {
 		return new FilterKriteriumDirekt("c_bez", "",
 				FilterKriterium.OPERATOR_LIKE, LPMain.getInstance()
@@ -602,10 +667,9 @@ public class PersonalFilterFactory {
 				true, true, Facade.MAX_UNBESCHRAENKT); // wrapWithSingleQuotes
 	}
 
-	
 	public FilterKriterium createFKVZeitmodell() {
-		FilterKriterium fkVersteckt = new FilterKriterium("zeitmodell."+
-				ZeiterfassungFac.FLR_ZEITMODELL_B_VERSTECKT, true, "(1)", // wenn
+		FilterKriterium fkVersteckt = new FilterKriterium("zeitmodell."
+				+ ZeiterfassungFac.FLR_ZEITMODELL_B_VERSTECKT, true, "(1)", // wenn
 																			// das
 																			// Kriterium
 																			// verwendet
@@ -662,9 +726,10 @@ public class PersonalFilterFactory {
 
 		return panelQueryFLRPersonal;
 	}
-	public PanelQueryFLR createPanelFLRPersonalMitKostenstelle(InternalFrame internalFrameI,
-			boolean bShowFilterButton, boolean bShowLeerenButton,
-			Integer selectedIIdI) throws Throwable {
+
+	public PanelQueryFLR createPanelFLRPersonalMitKostenstelle(
+			InternalFrame internalFrameI, boolean bShowFilterButton,
+			boolean bShowLeerenButton, Integer selectedIIdI) throws Throwable {
 
 		String[] aWhichButtonIUse = SystemFilterFactory.getInstance()
 				.createButtonArray(bShowFilterButton, bShowLeerenButton);
@@ -688,5 +753,42 @@ public class PersonalFilterFactory {
 
 		return panelQueryFLRPersonal;
 	}
-	
+
+	public FilterKriterium createFKHasEmailAddress() throws Throwable {
+		return new FilterKriterium("flrpartner.c_email", true, "",
+				FilterKriterium.OPERATOR_IS + " "
+						+ FilterKriterium.OPERATOR_NOT_NULL, false);
+	}
+
+	public PanelQueryFLR createPanelFLRPersonalMitEmailAdresse(
+			InternalFrame internalFrameI, boolean bShowFilterButton,
+			boolean bShowLeerenButton, Integer selectedIIdI) throws Throwable {
+		String[] aWhichButtonIUse = SystemFilterFactory.getInstance()
+				.createButtonArray(bShowFilterButton, bShowLeerenButton);
+
+		FilterKriterium[] mandantFilter = SystemFilterFactory.getInstance()
+				.createFKMandantCNr(LPMain.getTheClient().getMandant());
+		FilterKriterium[] otherFilters = new FilterKriterium[2];
+		otherFilters[0] = createFKHasEmailAddress();
+		otherFilters[1] = createFKVPersonal();
+		FilterKriterium[] allFilters = FilterKriterium.concat(mandantFilter,
+				otherFilters);
+
+		PanelQueryFLR panelQueryFLRPersonal = new PanelQueryFLR(
+				PersonalFilterFactory.getInstance().createQTPersonal(),
+				allFilters, QueryParameters.UC_ID_PERSONAL, aWhichButtonIUse,
+				internalFrameI, LPMain.getInstance().getTextRespectUISPr(
+						"title.personalauswahlliste"));
+
+		panelQueryFLRPersonal.addDirektFilter(createFKDPersonalname());
+		panelQueryFLRPersonal.addDirektFilter(createFKDPersonalnummer());
+		panelQueryFLRPersonal.addDirektFilter(createFKDAusweis());
+
+		if (selectedIIdI != null) {
+			panelQueryFLRPersonal.setSelectedId(selectedIIdI);
+		}
+
+		return panelQueryFLRPersonal;
+	}
+
 }

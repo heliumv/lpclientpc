@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -109,16 +109,14 @@ public class StuecklisteReportDelegate extends Delegate {
 	public JasperPrintLP printAusgabestueckliste(Integer stuecklisteIId[],
 			Integer lagerIId, boolean bMitStuecklistenkommentar,
 			boolean bUnterstuecklistenEinbinden,
-			boolean bGleichePositionenZusammenfassen,
-			int iOptionSortierungUnterstuecklisten, BigDecimal nLossgroesse,
-			boolean bUnterstklstrukurBelassen) throws Throwable {
+			boolean bGleichePositionenZusammenfassen, BigDecimal nLossgroesse,
+			boolean bSortiertNachArtikelbezeichnung,boolean bNurAbbuchungslaeger) throws Throwable {
 		try {
 			return stuecklisteReportFac.printAusgabestueckliste(stuecklisteIId,
 					lagerIId, new Boolean(bMitStuecklistenkommentar),
 					new Boolean(bUnterstuecklistenEinbinden), new Boolean(
-							bGleichePositionenZusammenfassen), new Integer(
-							iOptionSortierungUnterstuecklisten), nLossgroesse,
-					bUnterstklstrukurBelassen, LPMain.getTheClient());
+							bGleichePositionenZusammenfassen), nLossgroesse,
+					bSortiertNachArtikelbezeichnung, bNurAbbuchungslaeger, LPMain.getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 			return null;
@@ -148,10 +146,14 @@ public class StuecklisteReportDelegate extends Delegate {
 	}
 
 	public JasperPrintLP printGesamtkalkulation(Integer stuecklisteIId,
-			BigDecimal nLosgroesse) throws Throwable {
+			BigDecimal nLosgroesse, boolean lief1PreisInKalkpreisUebernehmen,
+			boolean bMitPreisenDerLetzten2Jahre,
+			boolean unterstuecklistenVerdichten) throws Throwable {
 		try {
 			return stuecklisteReportFac.printGesamtkalkulation(stuecklisteIId,
-					nLosgroesse, LPMain.getTheClient());
+					nLosgroesse, lief1PreisInKalkpreisUebernehmen,
+					bMitPreisenDerLetzten2Jahre, unterstuecklistenVerdichten,
+					LPMain.getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 			return null;

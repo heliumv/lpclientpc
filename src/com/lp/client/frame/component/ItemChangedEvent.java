@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -34,6 +34,7 @@ package com.lp.client.frame.component;
 
 import java.awt.Component;
 import java.awt.MenuComponent;
+import java.awt.event.MouseEvent;
 
 
 /**
@@ -122,14 +123,31 @@ public class ItemChangedEvent
 
   public final static int ACTION_ESCAPE = 23;
 
+  public final static int ACTION_DROP = 24 ;
+  public final static int ACTION_DROP_DONE = 25 ;
+  
+  private MouseEvent theMouseEvent ;
+  
   public ItemChangedEvent(Object source, int idI) {
     super(source, idI);
   }
 
+  public ItemChangedEvent(Object source, int idI, MouseEvent e) {
+	super(source, idI) ; 
+	theMouseEvent = e ;
+  }
+  
   public void setId(int iDI) {
     super.id = iDI;
   }
 
+  public void setMouseEvent(MouseEvent e) {
+	  theMouseEvent = e ;
+  }
+  
+  public MouseEvent getEvent() {
+	  return theMouseEvent ;
+  }
 
   /**
    * Returns a String representation of this object.
@@ -224,6 +242,10 @@ public class ItemChangedEvent
         case ACTION_LEAVE_ME_ALONE_BUTTON: {
           sAction="ACTION_LEAVE_ME_ALONE_BUTTON";
           break;
+        }
+        
+        case ACTION_DROP : {
+        	sAction = "ACTION_DROP" ;
         }
       }
       String sUseCase=null;

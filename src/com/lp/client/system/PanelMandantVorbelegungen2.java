@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -54,6 +54,7 @@ import com.lp.client.frame.component.PanelQueryFLR;
 import com.lp.client.frame.component.WrapperBildField;
 import com.lp.client.frame.component.WrapperButton;
 import com.lp.client.frame.component.WrapperLabel;
+import com.lp.client.frame.component.WrapperSelectField;
 import com.lp.client.frame.component.WrapperTextField;
 import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.partner.PartnerFilterFactory;
@@ -106,6 +107,9 @@ public class PanelMandantVorbelegungen2 extends PanelBasis {
 	private WrapperTextField wtfFinanzamt = new WrapperTextField();
 	private WrapperLabel wlaFibu = null;
 
+	private WrapperSelectField wsfKostenstelle = new WrapperSelectField(
+			WrapperSelectField.KOSTENSTELLE, getInternalFrame(), true);
+	
 	public PanelMandantVorbelegungen2(InternalFrame internalFrame,
 			String add2TitleI, Object keyI) throws Throwable {
 		super(internalFrame, add2TitleI, keyI);
@@ -248,6 +252,13 @@ public class PanelMandantVorbelegungen2 extends PanelBasis {
 		jpaWorkingOn.add(wtfFinanzamt, new GridBagConstraints(1, iZeile, 1, 1,
 				0.5, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(1, 2, 1, 2), 0, 0));
+		iZeile++;
+		jpaWorkingOn.add(wsfKostenstelle.getWrapperButton(), new GridBagConstraints(0, iZeile, 1, 1,
+				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
+				new Insets(1, 2, 1, 2), 0, 0));
+		jpaWorkingOn.add(wsfKostenstelle.getWrapperTextField(), new GridBagConstraints(1, iZeile, 1, 1,
+				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
+				new Insets(1, 2, 1, 2), 0, 0));
 	}
 
 	protected void dto2Components() throws Throwable {
@@ -272,12 +283,15 @@ public class PanelMandantVorbelegungen2 extends PanelBasis {
 		} else {
 			wtfFinanzamt.setText(null);
 		}
+		
+		wsfKostenstelle.setKey(getMandantDto().getKostenstelleIIdFibu());
 
 	}
 
 	protected void components2Dto() throws Throwable {
 		getMandantDto().getPartnerDto().setOBild(
 				Helper.imageToByteArray((BufferedImage) wmcBild.getImage()));
+		getMandantDto().setKostenstelleIIdFibu(wsfKostenstelle.getIKey());
 	}
 
 	public void eventYouAreSelected(boolean bNeedNoYouAreSelectedI)

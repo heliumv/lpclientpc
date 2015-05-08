@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -32,6 +32,7 @@
  ******************************************************************************/
 package com.lp.client.frame.delegate;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
@@ -59,7 +60,6 @@ import com.lp.server.finanz.service.UvaartDto;
 import com.lp.server.finanz.service.UvaartsprDto;
 import com.lp.server.finanz.service.UvaverprobungDto;
 import com.lp.server.finanz.service.WarenverkehrsnummerDto;
-import com.lp.util.EJBExceptionLP;
 
 public class FinanzServiceDelegate extends Delegate {
 	private Context context;
@@ -417,7 +417,7 @@ public class FinanzServiceDelegate extends Delegate {
 		try {
 			Locale locale1 = LPMain.getTheClient().getLocUi();
 			Locale locale2 = LPMain.getTheClient().getLocMandant();
-			arten = finanzServiceFac.getAllBuchungsarten(locale1, locale2);
+			arten = finanzServiceFac.getAllBuchungsarten(locale1, locale2, LPMain.getTheClient().getMandant());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 			return null;
@@ -569,9 +569,9 @@ public class FinanzServiceDelegate extends Delegate {
 	 * 
 	 * @param finanzamtIId
 	 *            die zu betrachtende ID des Finanzamts
+	 * @throws ExceptionLP
 	 * @return null wenn es keine gibt, ansonsten die bekannten
 	 *         SteuerkategorieDtos
-	 * @throws EJBExceptionLP
 	 */
 	public SteuerkategorieDto[] steuerkategorieFindByFinanzamtIId(
 			Integer finanzamtIId) throws ExceptionLP {
@@ -591,7 +591,7 @@ public class FinanzServiceDelegate extends Delegate {
 	 * Kategorien fuer dieses Finanzamt gibt.
 	 * 
 	 * @param finanzamtIId
-	 * @param theClientDto
+	 * @throws ExceptionLP 
 	 */
 	public void createIfNeededSteuerkategorieForFinanzamtIId(
 			Integer finanzamtIId) throws ExceptionLP {
@@ -611,8 +611,7 @@ public class FinanzServiceDelegate extends Delegate {
 	 * auch diese angelegt.
 	 * 
 	 * @param finanzamtIId
-	 * @param theClientDto
-	 * @throws EJBExceptionLP
+	 * @throws ExceptionLP
 	 */
 	public void createIfNeededSteuerkategoriekontoForFinanzamtIId(
 			Integer finanzamtIId) throws ExceptionLP {
@@ -702,7 +701,15 @@ public class FinanzServiceDelegate extends Delegate {
 			finanzServiceFac.createFinanzamtsbuchungen(geschaeftsjahr, periode, LPMain.getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
+		}	
+	}
+	
+	public BigDecimal getLiquiditaetsKontostand(Integer geschaeftsjahrIId) throws ExceptionLP {
+		try {
+			return finanzServiceFac.getLiquiditaetsKontostand(geschaeftsjahrIId, LPMain.getTheClient());
+		} catch(Throwable t) {
+			handleThrowable(t);
 		}
-		
+		return null;
 	}
 }

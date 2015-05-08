@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -237,7 +237,7 @@ public class PanelArtikellieferantstaffelpreise extends PanelBasis {
 	}
 
 	protected void eventItemchanged(EventObject eI) throws Throwable {
-		
+
 	}
 
 	protected void eventActionSpecial(ActionEvent e) throws Throwable {
@@ -272,26 +272,28 @@ public class PanelArtikellieferantstaffelpreise extends PanelBasis {
 					.getPartnerDto().formatAnrede());
 			wnfEinzelpreis.setBigDecimal(artikellieferantDto.getNEinzelpreis());
 
-			
 			BigDecimal faktor = internalFrameArtikel.getArtikelDto()
 					.getNUmrechnungsfaktor();
-			
+			boolean bInvers = Helper.short2boolean(internalFrameArtikel
+					.getArtikelDto().getbBestellmengeneinheitInvers());
+			if (faktor == null
+					&& artikellieferantDto.getEinheitCNrVpe() != null) {
+				faktor = artikellieferantDto.getNVerpackungseinheit();
+				bInvers = true;
+			}
+
 			wnfEinzelpreisBestellmenge.setBigDecimal(null);
-			if (faktor != null && wnfEinzelpreis.getBigDecimal()!=null) {
+			if (faktor != null && wnfEinzelpreis.getBigDecimal() != null) {
 				if (faktor.doubleValue() != 0) {
-					if (Helper.short2boolean(internalFrameArtikel
-							.getArtikelDto()
-							.getbBestellmengeneinheitInvers())) {
-						wnfEinzelpreisBestellmenge
-						.setBigDecimal(wnfEinzelpreis
+					if (bInvers) {
+						wnfEinzelpreisBestellmenge.setBigDecimal(wnfEinzelpreis
 								.getBigDecimal().multiply(faktor));
 					} else {
-						wnfEinzelpreisBestellmenge
-						.setBigDecimal(wnfEinzelpreis
+						wnfEinzelpreisBestellmenge.setBigDecimal(wnfEinzelpreis
 								.getBigDecimal().divide(faktor, 2,
 										BigDecimal.ROUND_HALF_EVEN));
 					}
-					
+
 				}
 			}
 			wlaArtikellieferantGueltigab
@@ -303,7 +305,7 @@ public class PanelArtikellieferantstaffelpreise extends PanelBasis {
 									LPMain.getTheClient().getLocUi()));
 			setTooltipMandantenwaehrung(wnfEinzelpreis, artikellieferantDto
 					.getLieferantDto().getWaehrungCNr());
-			if (artikellieferantDto.getNEinzelpreis() == null) {
+			if (artikellieferantDto.getNEinzelpreis() == null || artikellieferantDto.getNEinzelpreis().doubleValue() == 0) {
 				DialogFactory.showModalDialog(
 						LPMain.getInstance().getTextRespectUISPr("lp.error"),
 						LPMain.getInstance().getTextRespectUISPr(
@@ -351,11 +353,43 @@ public class PanelArtikellieferantstaffelpreise extends PanelBasis {
 						.getArtikelDelegate()
 						.artikellieferantstaffelFindByPrimaryKey((Integer) key);
 
-				if (internalFrameArtikel.getArtikelDto()
-						.getEinheitCNrBestellung() != null) {
+				String einheit = internalFrameArtikel.getArtikelDto()
+						.getEinheitCNrBestellung();
+				if (einheit == null) {
+					einheit = artikellieferantDto.getEinheitCNrVpe();
+				}
 
-					wlaEinheitBestellmenge.setText(internalFrameArtikel
-							.getArtikelDto().getEinheitCNrBestellung().trim());
+				if (einheit != null) {
+
+					if (faktor != null) {
+
+						String s = einheit + "(";
+
+						if (bInvers == true
+								&& internalFrameArtikel.getArtikelDto()
+										.getNUmrechnungsfaktor() != null) {
+
+							s += Helper.formatZahl(BigDecimal.ONE.divide(
+									internalFrameArtikel.getArtikelDto()
+											.getNUmrechnungsfaktor(), 2,
+									BigDecimal.ROUND_HALF_EVEN), 2, LPMain
+									.getTheClient().getLocUi())
+									+ " ";
+
+						} else {
+							s += Helper.formatZahl(faktor, 2, LPMain
+									.getTheClient().getLocUi());
+						}
+
+						s += " "
+								+ internalFrameArtikel.getArtikelDto()
+										.getEinheitCNr().trim();
+
+						s += ")";
+
+						wlaEinheitBestellmenge.setText(s);
+					}
+
 					wlaEinheitBestellmenge.setVisible(true);
 					wlaEinheitArtikelmenge.setVisible(true);
 					wnfEinzelpreisBestellmenge.setVisible(true);
@@ -370,12 +404,9 @@ public class PanelArtikellieferantstaffelpreise extends PanelBasis {
 
 				dto2Components();
 
-				
 				if (faktor != null) {
 					if (faktor.doubleValue() != 0) {
-						if (Helper.short2boolean(internalFrameArtikel
-								.getArtikelDto()
-								.getbBestellmengeneinheitInvers())) {
+						if (bInvers) {
 							wnfEinzelpreisBestellmenge
 									.setBigDecimal(wnfEinzelpreis
 											.getBigDecimal().multiply(faktor));
@@ -563,48 +594,112 @@ public class PanelArtikellieferantstaffelpreise extends PanelBasis {
 		wnfNettopreisBestellmenge.setFractionDigits(iNachkommastellen);
 		wnfEinzelpreisBestellmenge.setFractionDigits(iNachkommastellen);
 
-		this.add(jpaButtonAction, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(0, 0, 0, 0), 0, 0));
-		this.add(jpalWorkingOn, new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0, GridBagConstraints.NORTHEAST, GridBagConstraints.BOTH, new Insets(-9, 0, 9, 0), 0, 0));
-		this.add(getPanelStatusbar(), new GridBagConstraints(0, 2, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(0, 0, 0, 0), 0, 0));
+		this.add(jpaButtonAction, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
+				GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(0,
+						0, 0, 0), 0, 0));
+		this.add(jpalWorkingOn, new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0,
+				GridBagConstraints.NORTHEAST, GridBagConstraints.BOTH,
+				new Insets(-9, 0, 9, 0), 0, 0));
+		this.add(getPanelStatusbar(), new GridBagConstraints(0, 2, 1, 1, 1.0,
+				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
+				new Insets(0, 0, 0, 0), 0, 0));
 
 		int iZeile = 0;
-		
-		jpalWorkingOn.add(wlaLieferant, new GridBagConstraints(0, iZeile, 1, 1, 0.0, 0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 30, 2), 0, 0));
-		jpalWorkingOn.add(wtfLieferant, new GridBagConstraints(1, iZeile, 6, 1, 0.0, 0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 30, 2), 0, 0));
+
+		jpalWorkingOn.add(wlaLieferant, new GridBagConstraints(0, iZeile, 1, 1,
+				0.0, 0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 30, 2), 0, 0));
+		jpalWorkingOn.add(wtfLieferant, new GridBagConstraints(1, iZeile, 6, 1,
+				0.0, 0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 30, 2), 0, 0));
 		iZeile++;
-		jpalWorkingOn.add(wlaEinheitArtikelmenge, new GridBagConstraints(1, iZeile, 1, 1, 0, 0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpalWorkingOn.add(wlaEinheitBestellmenge, new GridBagConstraints(3, iZeile, 1, 1, 0.0, 0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpalWorkingOn.add(wlaEinheitArtikelmenge, new GridBagConstraints(1,
+				iZeile, 1, 1, 0, 0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpalWorkingOn.add(wlaEinheitBestellmenge, new GridBagConstraints(3,
+				iZeile, 1, 1, 0.0, 0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
 		iZeile++;
-		jpalWorkingOn.add(wlaMenge, new GridBagConstraints(0, iZeile, 1, 1, 0.6, 0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpalWorkingOn.add(wnfMenge, new GridBagConstraints(1, iZeile, 1, 1, 0.5, 0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpalWorkingOn.add(wlaEinheitMenge, new GridBagConstraints(2, iZeile, 1, 1, 0.5, 0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpalWorkingOn.add(wlaMenge, new GridBagConstraints(0, iZeile, 1, 1,
+				0.6, 0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpalWorkingOn.add(wnfMenge, new GridBagConstraints(1, iZeile, 1, 1,
+				0.5, 0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
+				new Insets(2, 2, 2, 2), 0, 0));
+		jpalWorkingOn.add(wlaEinheitMenge, new GridBagConstraints(2, iZeile, 1,
+				1, 0.5, 0, GridBagConstraints.WEST,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
 		iZeile++;
-		jpalWorkingOn.add(wlaEinzelpreis, new GridBagConstraints(0, iZeile, 1, 1, 0, 0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpalWorkingOn.add(wnfEinzelpreis, new GridBagConstraints(1, iZeile, 1, 1, 0, 0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpalWorkingOn.add(wlaEinheitEinzelpreis, new GridBagConstraints(2, iZeile, 1, 1, 0, 0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpalWorkingOn.add(wnfEinzelpreisBestellmenge, new GridBagConstraints(3, iZeile, 1, 1, 0, 0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpalWorkingOn.add(wlaArtikellieferantGueltigab, new GridBagConstraints(4, iZeile, 3, 1, 0.5, 0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpalWorkingOn.add(wlaEinzelpreis, new GridBagConstraints(0, iZeile, 1,
+				1, 0, 0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpalWorkingOn.add(wnfEinzelpreis, new GridBagConstraints(1, iZeile, 1,
+				1, 0, 0, GridBagConstraints.WEST,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpalWorkingOn.add(wlaEinheitEinzelpreis, new GridBagConstraints(2,
+				iZeile, 1, 1, 0, 0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpalWorkingOn.add(wnfEinzelpreisBestellmenge, new GridBagConstraints(3,
+				iZeile, 1, 1, 0, 0, GridBagConstraints.WEST,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpalWorkingOn.add(wlaArtikellieferantGueltigab, new GridBagConstraints(
+				4, iZeile, 3, 1, 0.5, 0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
 		iZeile++;
-		jpalWorkingOn.add(wlaRabatt, new GridBagConstraints(0, iZeile, 1, 1, 0, 0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpalWorkingOn.add(wnfRabatt, new GridBagConstraints(1, iZeile, 1, 1, 0, 0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpalWorkingOn.add(wlaRabatt, new GridBagConstraints(0, iZeile, 1, 1, 0,
+				0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+				new Insets(2, 2, 2, 2), 0, 0));
+		jpalWorkingOn.add(wnfRabatt, new GridBagConstraints(1, iZeile, 1, 1, 0,
+				0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
+				new Insets(2, 2, 2, 2), 0, 0));
 		JPanel prozentPanel = new JPanel(new GridBagLayout());
-		prozentPanel.add(wlaProzent, new GridBagConstraints(0, 0, 1, 1, 0.5, 0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		prozentPanel.add(wrbRabatt, new GridBagConstraints(1, 0, 1, 1, 0.5, 0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpalWorkingOn.add(prozentPanel, new GridBagConstraints(2, iZeile, 1, 1, 0, 0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		prozentPanel.add(wlaProzent, new GridBagConstraints(0, 0, 1, 1, 0.5, 0,
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+				new Insets(2, 2, 2, 2), 0, 0));
+		prozentPanel.add(wrbRabatt, new GridBagConstraints(1, 0, 1, 1, 0.5, 0,
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+				new Insets(2, 2, 2, 2), 0, 0));
+		jpalWorkingOn.add(prozentPanel, new GridBagConstraints(2, iZeile, 1, 1,
+				0, 0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+				new Insets(2, 2, 2, 2), 0, 0));
 		iZeile++;
-		jpalWorkingOn.add(wlaNettopreis, new GridBagConstraints(0, iZeile, 1, 1, 0, 0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpalWorkingOn.add(wnfNettopreis, new GridBagConstraints(1, iZeile, 1, 1, 0, 0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpalWorkingOn.add(wlaNettopreis, new GridBagConstraints(0, iZeile, 1,
+				1, 0, 0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpalWorkingOn.add(wnfNettopreis, new GridBagConstraints(1, iZeile, 1,
+				1, 0, 0, GridBagConstraints.WEST,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
 		JPanel rabattPanel = new JPanel(new GridBagLayout());
-		rabattPanel.add(wlaEinheitNettopreis, new GridBagConstraints(0, 0, 1, 1, 0.5, 0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0));
-		rabattPanel.add(wrbNettopreis, new GridBagConstraints(1, 0, 1, 1, 0.5, 0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpalWorkingOn.add(rabattPanel, new GridBagConstraints(2, iZeile, 1, 1, 0, 0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpalWorkingOn.add(wnfNettopreisBestellmenge, new GridBagConstraints(3, iZeile, 1, 1, 0, 0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		rabattPanel.add(wlaEinheitNettopreis, new GridBagConstraints(0, 0, 1,
+				1, 0.5, 0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0));
+		rabattPanel.add(wrbNettopreis, new GridBagConstraints(1, 0, 1, 1, 0.5,
+				0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+				new Insets(2, 2, 2, 2), 0, 0));
+		jpalWorkingOn.add(rabattPanel, new GridBagConstraints(2, iZeile, 1, 1,
+				0, 0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+				new Insets(2, 2, 2, 2), 0, 0));
+		jpalWorkingOn.add(wnfNettopreisBestellmenge, new GridBagConstraints(3,
+				iZeile, 1, 1, 0, 0, GridBagConstraints.WEST,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
 		iZeile++;
-		jpalWorkingOn.add(wlaGueltigab, new GridBagConstraints(0, iZeile, 1, 1, 0, 0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpalWorkingOn.add(wdfGueltigab, new GridBagConstraints(1, iZeile, 1, 1, 0, 0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpalWorkingOn.add(wlaWiederbeschaffungszeit, new GridBagConstraints(2, iZeile, 3, 1, 1.0, 0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpalWorkingOn.add(wnfWiederbeschaffungszeit, new GridBagConstraints(5, iZeile, 1, 1, 0.0, 0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpalWorkingOn.add(wlaWiederbeschaffungszeitEinheit, new GridBagConstraints(6, iZeile, 1, 1, 0.0, 0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpalWorkingOn.add(wlaGueltigab, new GridBagConstraints(0, iZeile, 1, 1,
+				0, 0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+				new Insets(2, 2, 2, 2), 0, 0));
+		jpalWorkingOn.add(wdfGueltigab, new GridBagConstraints(1, iZeile, 1, 1,
+				0, 0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
+				new Insets(2, 2, 2, 2), 0, 0));
+		jpalWorkingOn.add(wlaWiederbeschaffungszeit, new GridBagConstraints(2,
+				iZeile, 3, 1, 1.0, 0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpalWorkingOn.add(wnfWiederbeschaffungszeit, new GridBagConstraints(5,
+				iZeile, 1, 1, 0.0, 0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpalWorkingOn.add(wlaWiederbeschaffungszeitEinheit,
+				new GridBagConstraints(6, iZeile, 1, 1, 0.0, 0,
+						GridBagConstraints.CENTER,
+						GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2),
+						0, 0));
 		String[] aWhichButtonIUse = new String[] { ACTION_UPDATE, ACTION_SAVE,
 				ACTION_DELETE, ACTION_DISCARD, };
 
@@ -676,6 +771,11 @@ public class PanelArtikellieferantstaffelpreise extends PanelBasis {
 		try {
 			BigDecimal faktor = internalFrameArtikel.getArtikelDto()
 					.getNUmrechnungsfaktor();
+
+			if (faktor == null
+					&& artikellieferantDto.getNVerpackungseinheit() != null) {
+				faktor = artikellieferantDto.getNVerpackungseinheit();
+			}
 			if (faktor != null
 					&& wnfEinzelpreisBestellmenge.getBigDecimal() != null
 					&& wnfNettopreisBestellmenge.getBigDecimal() != null

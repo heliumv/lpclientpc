@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -193,7 +193,7 @@ public class PanelFinanzUmbuchung extends PanelDialogKriterien {
 
 	public PanelFinanzUmbuchung(InternalFrame internalFrame) throws Throwable {
 		super(internalFrame, LPMain.getInstance().getTextRespectUISPr(
-				"fb.menu.umbuchung"));
+				"fb.menu.umbuchung"),"/com/lp/client/res/server_ok.png");
 		jbInit();
 		setDefaults();
 		initComponents();
@@ -612,7 +612,6 @@ public class PanelFinanzUmbuchung extends PanelDialogKriterien {
 	 * Defaults setzen.
 	 * 
 	 * @throws Exception
-	 * @throws ExceptionForLPClients
 	 * @throws Throwable
 	 */
 	private void setDefaults() throws Throwable {
@@ -632,6 +631,14 @@ public class PanelFinanzUmbuchung extends PanelDialogKriterien {
 		if (bAutoAuszugsnummer)
 			setAutoAuszugNummer();
 		setKursBetrag();
+		wrbKontoSachkonto.setSelected(true);
+		wrbGegenkontoSachkonto.setSelected(true);
+		setSteuersatz(true);
+		
+		
+		kostenstelleDto = getInternalFrameFinanz().getDefaultKostenstelle();
+		dto2ComponentsKostenstelle();
+		
 	}
 
 	private void setAutoAuszugNummer() throws ExceptionLP {
@@ -685,8 +692,6 @@ public class PanelFinanzUmbuchung extends PanelDialogKriterien {
 	 *            ActionEvent
 	 * @param bNeedNoSaveI
 	 *            boolean
-	 * @throws ExitFrameException
-	 * @throws ExceptionForLPClients
 	 * @throws Throwable
 	 */
 	public void eventActionSave(ActionEvent e, boolean bNeedNoSaveI)
@@ -866,6 +871,10 @@ public class PanelFinanzUmbuchung extends PanelDialogKriterien {
 			tauscheKonten();
 		} else if (e.getActionCommand().equals(ACTION_SPECIAL_BUCHUNGSART)) {
 			setAutoAuszugNummer();
+			if (wcoBuchungsart.getKeyOfSelectedItem().equals(FinanzFac.BUCHUNGSART_MWST_ABSCHLUSS)) {
+				// Buchung ist nur am letzten des Monats erlaubt
+				
+			}
 		}
 	}
 
@@ -974,7 +983,6 @@ public class PanelFinanzUmbuchung extends PanelDialogKriterien {
 	/**
 	 * erzeuge eine neue Belegnummer.
 	 * 
-	 * @throws ExceptionForLPClients
 	 * @throws Throwable
 	 */
 	private void erzeugeBelegnummer() throws Throwable {
@@ -999,8 +1007,6 @@ public class PanelFinanzUmbuchung extends PanelDialogKriterien {
 		buchungDto.setIGeschaeftsjahr(getInternalFrameFinanz()
 				.getIAktuellesGeschaeftsjahr());
 
-		BigDecimal zero = new BigDecimal(0);
-
 		/**
 		 * @todo weiterfuehrendes UST konto holen, falls noch nicht definiert PJ
 		 *       4979
@@ -1008,52 +1014,47 @@ public class PanelFinanzUmbuchung extends PanelDialogKriterien {
 		Integer ustKontoIId = null; // gegenkontoDto.getKontoIIdWeiterfuehrendUst();
 		boolean bSteuerSoll = false;
 		if (wcoUst.isEnabled() && wnfUST.getBigDecimal().floatValue() != 0.0) {
-			if (kontoDto.getKontotypCNr().equals(
-					FinanzServiceFac.KONTOTYP_DEBITOR)
-					|| kontoDto.getKontotypCNr().equals(
-							FinanzServiceFac.KONTOTYP_KREDITOR)) {
+			
+			KontoDto besteuertesKonto = null;
+			if (kontoDto.getSteuerkategorieIId() != null) {
 				// Brutto ist Soll, Steuer in Haben buchen
 				bSteuerSoll = false;
-				if (kontoDto.getKontotypCNr().equals(
-						FinanzServiceFac.KONTOTYP_DEBITOR))
-					ustKontoIId = DelegateFactory
-							.getInstance()
-							.getFinanzServiceDelegate()
-							.getUstKontoFuerSteuerkategorie(
-									kontoDto.getSteuerkategorieIId(),
-									mwstsatzDto.getIIMwstsatzbezId());
-				else if (kontoDto.getKontotypCNr().equals(
-						FinanzServiceFac.KONTOTYP_KREDITOR))
-					ustKontoIId = DelegateFactory
-							.getInstance()
-							.getFinanzServiceDelegate()
-							.getVstKontoFuerSteuerkategorie(
-									kontoDto.getSteuerkategorieIId(),
-									mwstsatzDto.getIIMwstsatzbezId());
-			}
-
-			if (gegenkontoDto.getKontotypCNr().equals(
-					FinanzServiceFac.KONTOTYP_DEBITOR)
-					|| gegenkontoDto.getKontotypCNr().equals(
-							FinanzServiceFac.KONTOTYP_KREDITOR)) {
+				besteuertesKonto = kontoDto;
+			} else if (gegenkontoDto.getSteuerkategorieIId() != null) {
 				// Brutto ist Haben, Steuer in Soll buchen
 				bSteuerSoll = true;
-				if (gegenkontoDto.getKontotypCNr().equals(
-						FinanzServiceFac.KONTOTYP_DEBITOR))
+				besteuertesKonto = gegenkontoDto;
+			}
+			
+			boolean isUstNotVst = false;
+			if (besteuertesKonto.getKontotypCNr().equals(FinanzServiceFac.KONTOTYP_DEBITOR)) {
+				isUstNotVst = true;
+			} else if (besteuertesKonto.getKontotypCNr().equals(FinanzServiceFac.KONTOTYP_KREDITOR)) {
+				isUstNotVst = false;
+			} else if (FinanzServiceFac.STEUERART_UST.equals(besteuertesKonto.getcSteuerart())) {
+				isUstNotVst = true;
+				bSteuerSoll = !bSteuerSoll;
+			} else if (FinanzServiceFac.STEUERART_VST.equals(besteuertesKonto.getcSteuerart())) {
+				isUstNotVst = false;
+				bSteuerSoll = !bSteuerSoll;
+			}
+			
+			if(besteuertesKonto != null) {
+				if(isUstNotVst) {
 					ustKontoIId = DelegateFactory
 							.getInstance()
 							.getFinanzServiceDelegate()
 							.getUstKontoFuerSteuerkategorie(
-									gegenkontoDto.getSteuerkategorieIId(),
+									besteuertesKonto.getSteuerkategorieIId(),
 									mwstsatzDto.getIIMwstsatzbezId());
-				else if (gegenkontoDto.getKontotypCNr().equals(
-						FinanzServiceFac.KONTOTYP_KREDITOR))
+				} else {
 					ustKontoIId = DelegateFactory
 							.getInstance()
 							.getFinanzServiceDelegate()
 							.getVstKontoFuerSteuerkategorie(
-									gegenkontoDto.getSteuerkategorieIId(),
+									besteuertesKonto.getSteuerkategorieIId(),
 									mwstsatzDto.getIIMwstsatzbezId());
+				}
 			}
 		}
 		if (ustKontoIId == null) {
@@ -1077,9 +1078,10 @@ public class PanelFinanzUmbuchung extends PanelDialogKriterien {
 		boolean bUmrechnen = !wcoWaehrung.getKeyOfSelectedItem().equals(
 				LPMain.getTheClient().getSMandantenwaehrung())
 				&& kursDto != null;
-		BigDecimal betragNettoMandant = null;
-		BigDecimal betragMandant = null;
-		BigDecimal betragUstMandant = null;
+		BigDecimal betragNettoMandant = wnfBetrag.getBigDecimal()
+				.subtract(wnfUST.getBigDecimal());
+		BigDecimal betragMandant = wnfBetrag.getBigDecimal();
+		BigDecimal betragUstMandant = wnfUST.getBigDecimal();
 		if (bUmrechnen) {
 			// in Mandantenwaehrung umrechnen
 			betragNettoMandant = Helper.rundeKaufmaennisch(
@@ -1093,22 +1095,11 @@ public class PanelFinanzUmbuchung extends PanelDialogKriterien {
 		}
 
 		if (bSteuerSoll) {
-			if (bUmrechnen) {
-				buchungdetailDtos[0].setNBetrag(betragNettoMandant);
-			} else {
-				buchungdetailDtos[0].setNBetrag(wnfBetrag.getBigDecimal()
-						.subtract(wnfUST.getBigDecimal()));
-			}
-			buchungdetailDtos[0].setNUst(zero);
+			buchungdetailDtos[0].setNBetrag(betragNettoMandant);
+			buchungdetailDtos[0].setNUst(BigDecimal.ZERO);
 		} else {
-			if (bUmrechnen) {
-				// in Mandantenwaehrung umrechnen
-				buchungdetailDtos[0].setNBetrag(betragMandant);
-				buchungdetailDtos[0].setNUst(betragUstMandant);
-			} else {
-				buchungdetailDtos[0].setNBetrag(wnfBetrag.getBigDecimal());
-				buchungdetailDtos[0].setNUst(wnfUST.getBigDecimal());
-			}
+			buchungdetailDtos[0].setNBetrag(betragMandant);
+			buchungdetailDtos[0].setNUst(betragUstMandant);
 		}
 		buchungdetailDtos[0].setIAuszug(auszug);
 
@@ -1117,21 +1108,11 @@ public class PanelFinanzUmbuchung extends PanelDialogKriterien {
 		buchungdetailDtos[1].setBuchungdetailartCNr(BuchenFac.HabenBuchung);
 		buchungdetailDtos[1].setKommentar(wefKommentar.getText());
 		if (bSteuerSoll) {
-			if (bUmrechnen) {
-				buchungdetailDtos[1].setNBetrag(betragMandant);
-				buchungdetailDtos[1].setNUst(betragUstMandant);
-			} else {
-				buchungdetailDtos[1].setNBetrag(wnfBetrag.getBigDecimal());
-				buchungdetailDtos[1].setNUst(wnfUST.getBigDecimal());
-			}
+			buchungdetailDtos[1].setNBetrag(betragMandant);
+			buchungdetailDtos[1].setNUst(betragUstMandant);
 		} else {
-			if (bUmrechnen) {
-				buchungdetailDtos[1].setNBetrag(betragNettoMandant);
-			} else {
-				buchungdetailDtos[1].setNBetrag(wnfBetrag.getBigDecimal()
-						.subtract(wnfUST.getBigDecimal()));
-			}
-			buchungdetailDtos[1].setNUst(zero);
+			buchungdetailDtos[1].setNBetrag(betragNettoMandant);
+			buchungdetailDtos[1].setNUst(BigDecimal.ZERO);
 		}
 		buchungdetailDtos[1].setIAuszug(wnfAuszugGegenkonto.getInteger());
 
@@ -1139,25 +1120,22 @@ public class PanelFinanzUmbuchung extends PanelDialogKriterien {
 			buchungdetailDtos[2].setKontoIId(ustKontoIId);
 			buchungdetailDtos[2].setKontoIIdGegenkonto(kontoDto.getIId());
 			buchungdetailDtos[2].setKommentar(wefKommentar.getText());
-			if (bSteuerSoll)
+			if (bSteuerSoll) {
 				buchungdetailDtos[2]
 						.setBuchungdetailartCNr(BuchenFac.SollBuchung);
-			else
+			} else {
 				buchungdetailDtos[2]
 						.setBuchungdetailartCNr(BuchenFac.HabenBuchung);
-			if (bUmrechnen) {
-				buchungdetailDtos[2].setNBetrag(betragUstMandant);
-			} else {
-				buchungdetailDtos[2].setNBetrag(wnfUST.getBigDecimal());
 			}
-			buchungdetailDtos[2].setNUst(zero);
+			buchungdetailDtos[2].setNBetrag(betragUstMandant);
+			buchungdetailDtos[2].setNUst(BigDecimal.ZERO);
 			buchungdetailDtos[2].setIAuszug(auszug);
 		}
 	}
 
 	private void dto2Components() throws ExceptionLP, Throwable {
 		wcoBuchungsart.setSelectedItem(buchungDto.getBuchungsartCNr());
-		wtfBeleg.setText(buchungDto.getCBelegnummer());
+		wtfBeleg.setText(buchungDto.getCBelegnummer().trim());
 		wtfText.setText(buchungDto.getCText());
 		wdfDatum.setDate(buchungDto.getDBuchungsdatum());
 		kostenstelleDto = DelegateFactory.getInstance().getSystemDelegate()
@@ -1335,12 +1313,14 @@ public class PanelFinanzUmbuchung extends PanelDialogKriterien {
 				kontoDto = DelegateFactory.getInstance().getFinanzDelegate()
 						.kontoFindByPrimaryKey((Integer) key);
 				dto2ComponentsKonto();
+				setSteuersatz(false);
 			} else if (e.getSource() == panelQueryFLRGegenkonto) {
 				Object key = ((ISourceEvent) e.getSource()).getIdSelected();
 				gegenkontoDto = DelegateFactory.getInstance()
 						.getFinanzDelegate()
 						.kontoFindByPrimaryKey((Integer) key);
 				dto2ComponentsGegenkonto();
+				setSteuersatz(false);
 			}
 		}
 	}
@@ -1417,8 +1397,12 @@ public class PanelFinanzUmbuchung extends PanelDialogKriterien {
 		MwstsatzbezDto mwstbezDto = DelegateFactory.getInstance()
 				.getMandantDelegate().getMwstsatzbezSteuerfrei();
 		boolean bSteuerzulaessig = false;
-		if (wrbKontoSachkonto.isSelected() != wrbGegenkontoSachkonto.isSelected())
-			bSteuerzulaessig = true;
+//		if (wrbKontoSachkonto.isSelected() != wrbGegenkontoSachkonto.isSelected())
+//			bSteuerzulaessig = true;
+		if(kontoDto != null && gegenkontoDto != null) {
+			//es darf nur eines der Konten eine Steuerkategorie haben, damit Steuer gebucht werden kann/darf.
+			bSteuerzulaessig = (kontoDto.getSteuerkategorieIId() == null) != (gegenkontoDto.getSteuerkategorieIId() == null);
+		}
 		wcoUst.setEnabled(bSteuerzulaessig);
 
 		if (!bSteuerzulaessig || bsetSteuerfrei)

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -91,8 +91,8 @@ public class WrapperEditorField extends PanelBasis implements IControl {
 	private WrapperButton wbuEdit = new WrapperButton();
 	private GridBagLayout gridBagLayout2 = new GridBagLayout();
 	private WrapperButton wbuDefault = new WrapperButton();
-	private JScrollPane jspScrollPane = new JScrollPane();
-	private LpEditor lpEditor;
+	public JScrollPane jspScrollPane = new JScrollPane();
+	public LpEditor lpEditor;
 	private boolean bWithoutButtons = false;
 
 	public WrapperEditorField(InternalFrame internalFrame, String addTitleI)
@@ -282,7 +282,9 @@ public class WrapperEditorField extends PanelBasis implements IControl {
 	}
 
 	public void removeContent() {
-		lpEditor.setText("");
+		if(lpEditor != null) {
+			lpEditor.setText("");
+		}
 	}
 
 	public LpEditor getLpEditor() {

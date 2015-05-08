@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -60,6 +60,7 @@ import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.pc.LPMain;
 import com.lp.server.angebotstkl.service.AgstklDto;
 import com.lp.server.angebotstkl.service.AufschlagDto;
+import com.lp.server.partner.service.KundeDto;
 import com.lp.util.Helper;
 
 public class PanelAngebotstklAufschlaege extends PanelBasis {
@@ -122,9 +123,23 @@ public class PanelAngebotstklAufschlaege extends PanelBasis {
 			dto2Components();
 
 			String cBez = "";
+			
+			if (getInternalFrameAngebotstkl().getAgstklDto().getKundeIId() != null) {
+
+				KundeDto kundeDto = DelegateFactory
+						.getInstance()
+						.getKundeDelegate()
+						.kundeFindByPrimaryKey(
+								getInternalFrameAngebotstkl().getAgstklDto()
+										.getKundeIId());
+
+				cBez = kundeDto.getPartnerDto()
+						.formatFixTitelName1Name2();
+			}
+			
 			if (getInternalFrameAngebotstkl().getAgstklDto() != null) {
 				if (getInternalFrameAngebotstkl().getAgstklDto().getCBez() != null) {
-					cBez = getInternalFrameAngebotstkl().getAgstklDto()
+					cBez +=" "+ getInternalFrameAngebotstkl().getAgstklDto()
 							.getCBez();
 				}
 			}

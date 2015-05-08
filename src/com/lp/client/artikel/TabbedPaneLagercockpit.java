@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -177,7 +177,7 @@ public class TabbedPaneLagercockpit extends TabbedPane {
 					aWhichButtonIUse, getInternalFrame(), LPMain.getInstance()
 							.getTextRespectUISPr("lp.auswahl"), true,
 					ArtikelFilterFactory.getInstance()
-							.createFKVArtikelLagercockpit());
+							.createFKVArtikelLagercockpit(), null);
 
 			panelQueryArtikel.befuellePanelFilterkriterienDirekt(
 					ArtikelFilterFactory.getInstance()
@@ -430,7 +430,8 @@ public class TabbedPaneLagercockpit extends TabbedPane {
 
 	private void dialogFehlmengenUmbuchen() throws Throwable {
 		Integer fehlmengeIId = null;
-		if ((Integer) panelQueryFehlmengen.getSelectedId() != -1) {
+		if (panelQueryFehlmengen.getSelectedId() != null
+				&& (Integer) panelQueryFehlmengen.getSelectedId() != -1) {
 			fehlmengeIId = (Integer) panelQueryFehlmengen.getSelectedId();
 		}
 		DialogLagercockpitUmbuchen dialog = new DialogLagercockpitUmbuchen(
@@ -477,9 +478,11 @@ public class TabbedPaneLagercockpit extends TabbedPane {
 							InternalFrame.TITLE_IDX_OHRWASCHLUNTEN,
 							LPMain.getInstance().getTextRespectUISPr(
 									"ww.lagercockpit"));
+
 			getInternalFrame().setLpTitle(
 					InternalFrame.TITLE_IDX_OHRWASCHLOBEN,
 					((PanelBasis) this.getSelectedComponent()).getAdd2Title());
+
 			getInternalFrame().setLpTitle(InternalFrame.TITLE_IDX_AS_I_LIKE,
 					getArtikelDto().formatArtikelbezeichnung());
 		}
@@ -499,6 +502,13 @@ public class TabbedPaneLagercockpit extends TabbedPane {
 				createFehlmengen(getArtikelDto().getIId());
 				panelQueryFehlmengen.eventYouAreSelected(false);
 				panelQueryFehlmengen.updateButtons();
+			} else {
+
+				DialogFactory.showModalDialog(
+						LPMain.getInstance().getTextRespectUISPr("lp.error"),
+						LPMain.getInstance().getTextRespectUISPr(
+								"ww.lagercockpit.error.keinartikel"));
+				setSelectedIndex(IDX_PANEL_AUSWAHL);
 			}
 		} else if (selectedIndex == IDX_PANEL_LOSSOLLMATERIAL) {
 			createLossollmaterial();

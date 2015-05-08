@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -195,9 +195,14 @@ public abstract class WrapperTextFieldWithIconButton extends JPanel implements
 
 	public void setText(String text) {
 		wtfText.setText(text);
+		wtfText.setToolTipText(text);
 	}
 	public String getText() {
 		return wtfText.getText();
+	}
+	
+	public void setColumnsMax(int columnsMax) {
+		wtfText.setColumnsMax(columnsMax);
 	}
 	
 	/**

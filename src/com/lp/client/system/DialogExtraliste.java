@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -82,6 +82,7 @@ public class DialogExtraliste extends JDialog implements ActionListener {
 	private String ACTION_CSV_EXPORT = "CSV_EXPORT";
 	private String ACTION_PRINT = "ACTION_PRINT";
 	private String ACTION_COPY_TO_CLIPBOARD = "ACTION_COPY_TO_CLIPBOARD";
+	private String ACTION_COPY_TO_CLIPBOARD_HTML = "ACTION_COPY_TO_CLIPBOARD_HTML";
 	public ExtralisteRueckgabeTabelleDto extralisteRueckgabeTabelleDto = null;
 	public boolean bPrint = false;
 
@@ -237,8 +238,9 @@ public class DialogExtraliste extends JDialog implements ActionListener {
 								//
 							}
 						} else if (zeile[j] instanceof String) {
-							String s=(String)zeile[j];
-							excelStr.append("\"" + escape(s.replaceAll("\"", "\"\"")) + "\"");
+							String s = (String) zeile[j];
+							excelStr.append("\""
+									+ escape(s.replaceAll("\"", "\"\"")) + "\"");
 						} else {
 							excelStr.append(escape(zeile[j]));
 						}
@@ -255,6 +257,70 @@ public class DialogExtraliste extends JDialog implements ActionListener {
 					.getSystemClipboard()
 					.setContents(new StringSelection(excelStr.toString()), null);
 
+		} else if (e.getActionCommand().equals(ACTION_COPY_TO_CLIPBOARD_HTML)) {
+			StringBuffer htmlStr = new StringBuffer("<tr>");
+			htmlStr.append(LINE_BREAK);
+			if (extralisteRueckgabeTabelleDto != null
+					&& extralisteRueckgabeTabelleDto.getData() != null) {
+
+				// Ueberschriften
+				for (int i = 0; i < extralisteRueckgabeTabelleDto
+						.getColumnNames().length; i++) {
+
+					htmlStr.append("  <td>");
+
+					htmlStr.append(extralisteRueckgabeTabelleDto
+							.getColumnNames()[i]);
+					htmlStr.append("</td>");
+					htmlStr.append(LINE_BREAK);
+
+				}
+				htmlStr.append("</tr>");
+				htmlStr.append(LINE_BREAK);
+				// Daten
+				for (int i = 0; i < extralisteRueckgabeTabelleDto.getData().length; i++) {
+					Object[] zeile = extralisteRueckgabeTabelleDto.getData()[i];
+
+					htmlStr.append("<tr>");
+					htmlStr.append(LINE_BREAK);
+
+					for (int j = 0; j < zeile.length; j++) {
+						htmlStr.append("  <td>");
+						if (zeile[j] instanceof Number) {
+							try {
+								htmlStr.append(Helper.formatZahl(
+										(Number) zeile[j], LPMain
+												.getTheClient().getLocUi()));
+							} catch (Throwable e1) {
+								//
+							}
+						} if (zeile[j] instanceof Number) {
+							try {
+								htmlStr.append(Helper.formatZahl(
+										(Number) zeile[j], LPMain
+												.getTheClient().getLocUi()));
+							} catch (Throwable e1) {
+								//
+							}
+						} else if (zeile[j] instanceof String) {
+							String s = (String) zeile[j];
+							s=s.replaceAll(LINE_BREAK, "<br>");
+							htmlStr.append(s);
+						} else {
+							htmlStr.append(escape(zeile[j]));
+						}
+
+						htmlStr.append("</td>");
+						htmlStr.append(LINE_BREAK);
+					}
+					htmlStr.append("</tr>");
+				}
+			}
+
+			htmlStr.append("</tr>");
+
+			Toolkit.getDefaultToolkit().getSystemClipboard()
+					.setContents(new StringSelection(htmlStr.toString()), null);
 		}
 	}
 
@@ -291,6 +357,8 @@ public class DialogExtraliste extends JDialog implements ActionListener {
 
 		ImageIcon iiCopy = new ImageIcon(getClass().getResource(
 				"/com/lp/client/res/copy.png"));
+		ImageIcon iiCopyHtml = new ImageIcon(getClass().getResource(
+				"/com/lp/client/res/download.png"));
 
 		JButton buttoncc = new JButton();
 		buttoncc.setToolTipText(LPMain
@@ -300,6 +368,17 @@ public class DialogExtraliste extends JDialog implements ActionListener {
 		buttoncc.setMinimumSize(HelperClient.getToolsPanelButtonDimension());
 		buttoncc.setPreferredSize(HelperClient.getToolsPanelButtonDimension());
 		buttoncc.addActionListener(this);
+
+		JButton buttoncchtml = new JButton();
+		buttoncchtml.setToolTipText(LPMain
+				.getTextRespectUISPr("lp.inzwischenablagekopieren.htmltable"));
+		buttoncchtml.setActionCommand(ACTION_COPY_TO_CLIPBOARD_HTML);
+		buttoncchtml.setIcon(iiCopyHtml);
+		buttoncchtml
+				.setMinimumSize(HelperClient.getToolsPanelButtonDimension());
+		buttoncchtml.setPreferredSize(HelperClient
+				.getToolsPanelButtonDimension());
+		buttoncchtml.addActionListener(this);
 
 		ImageIcon ii = new ImageIcon(getClass().getResource(
 				"/com/lp/client/res/goto.png"));
@@ -372,6 +451,9 @@ public class DialogExtraliste extends JDialog implements ActionListener {
 				GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(0,
 						0, 0, 0), 0, 0));
 		jpaWorkingOn.add(buttoncc, new GridBagConstraints(1, 0, 1, 1, 0, 0,
+				GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(0,
+						0, 0, 0), 0, 0));
+		jpaWorkingOn.add(buttoncchtml, new GridBagConstraints(2, 0, 1, 1, 0, 0,
 				GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(0,
 						0, 0, 0), 0, 0));
 		jpaWorkingOn.add(buttonPrint, new GridBagConstraints(2, 0, 1, 1, 0, 0,

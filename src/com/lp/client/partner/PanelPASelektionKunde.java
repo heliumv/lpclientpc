@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -314,18 +314,15 @@ public class PanelPASelektionKunde extends PanelBasis {
 
 		if (e.getActionCommand().equals(ACTION_SPECIAL_FLR_SELEKTION)) {
 
-			String[] aWhichButtonIUse = null;
-
-			FilterKriterium[] f = SystemFilterFactory.getInstance()
-					.createFKMandantCNr();
-			QueryType[] querytypes = null;
-			panelQueryFLRSelektionAuswahl = new PanelQueryFLR(querytypes, f,
-					QueryParameters.UC_ID_SELEKTION, aWhichButtonIUse,
-					getInternalFrame(), LPMain.getInstance()
-							.getTextRespectUISPr("lp.selektion"));
+			panelQueryFLRSelektionAuswahl = PartnerFilterFactory.getInstance()
+					.createPanelFLRSelektion(
+							getInternalFrame(),
+							false,
+							pASelektionDto.getSelektionIId());
+			new DialogQuery(
+					panelQueryFLRSelektionAuswahl);
 		} 
-		new DialogQuery(
-				panelQueryFLRSelektionAuswahl);
+		
 	}
 
 	protected void eventItemchanged(EventObject eI) throws ExceptionLP,

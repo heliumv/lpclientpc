@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -33,12 +33,16 @@
 package com.lp.client.fertigung;
 
 import java.awt.event.ActionEvent;
+import java.beans.PropertyVetoException;
 import java.math.BigDecimal;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -58,6 +62,7 @@ import com.lp.client.frame.component.DialogArtikelbilder;
 import com.lp.client.frame.component.DialogQuery;
 import com.lp.client.frame.component.DialogSerienChargenauswahl;
 import com.lp.client.frame.component.DialogSnrauswahl;
+import com.lp.client.frame.component.FehlmengenAufloesen;
 import com.lp.client.frame.component.ISourceEvent;
 import com.lp.client.frame.component.InternalFrame;
 import com.lp.client.frame.component.ItemChangedEvent;
@@ -66,6 +71,7 @@ import com.lp.client.frame.component.PanelQuery;
 import com.lp.client.frame.component.PanelQueryFLR;
 import com.lp.client.frame.component.PanelSplit;
 import com.lp.client.frame.component.PanelTabelle;
+import com.lp.client.frame.component.ReportAufgeloestefehlmengen;
 import com.lp.client.frame.component.TabbedPane;
 import com.lp.client.frame.component.WrapperLabel;
 import com.lp.client.frame.component.WrapperMenu;
@@ -218,8 +224,10 @@ public class TabbedPaneLos extends TabbedPane implements ICopyPaste {
 	private final static String MENUE_ACTION_JOURNAL_RANKINGLISTE = "MENUE_ACTION_JOURNAL_RANKINGLISTE";
 	private final static String MENUE_ACTION_JOURNAL_ZEITENTWICKLUNG = "MENUE_ACTION_JOURNAL_ZEITENTWICKLUNG";
 	private final static String MENUE_ACTION_JOURNAL_AUSLASTUNGSVORSCHAU = "MENUE_ACTION_JOURNAL_AUSLASTUNGSVORSCHAU";
+	private final static String MENUE_ACTION_JOURNAL_AUSLASTUNGSVORSCHAU_DETAILIERT = "MENUE_ACTION_JOURNAL_AUSLASTUNGSVORSCHAU_DETAILIERT";
 	private final static String MENUE_ACTION_JOURNAL_AUSLIEFERLISTE = "MENUE_ACTION_JOURNAL_AUSLIEFERLISTE";
 	private final static String MENUE_ACTION_JOURNAL_FEHLERSTATISTIK = "MENUE_ACTION_JOURNAL_FEHLERSTATISTIK";
+	private final static String MENUE_ACTION_BEARBEITEN_ALLE_FEHLMENGEN_AUFLOSEN = "MENUE_ACTION_BEARBEITEN_ALLE_FEHLMENGEN_AUFLOSEN";
 
 	static final private String ACTION_SPECIAL_GERAETESNR_KOPIEREN = PanelBasis.ACTION_MY_OWN_NEW
 			+ "action_special_geraetesnr_kopieren";
@@ -233,6 +241,8 @@ public class TabbedPaneLos extends TabbedPane implements ICopyPaste {
 	private final static String MENUE_ACTION_JOURNAL_STUECKRUECKMELDUNG = "menu_action_stueckrueckmeldung";
 	private static final String ACTION_SPECIAL_ABLIEFERUNGEN_NEU_KALKULIEREN = PanelBasis.ACTION_MY_OWN_NEW
 			+ "action_special_ablieferungen_neu_kalkulieren";
+	private static final String ACTION_SPECIAL_SOLLPREISE_MATERIAL_NEU_KALKULIEREN = PanelBasis.ACTION_MY_OWN_NEW
+			+ "action_special_solpreise_material_neu_kalkulieren";
 	private final static String ACTION_SPECIAL_TECHNIKER = PanelBasis.ACTION_MY_OWN_NEW
 			+ "ACTION_TECHNIKER_SPECIAL_BEARBEITEN";
 
@@ -241,7 +251,8 @@ public class TabbedPaneLos extends TabbedPane implements ICopyPaste {
 	private final String MENU_BEARBEITEN_KOMMENTAR = "MENU_BEARBEITEN_KOMMENTAR";
 	private final String MENU_BEARBEITEN_PRODUKTIONSINFORMATION = "MENU_BEARBEITEN_PRODUKTIONSINFORMATION";
 	private final String MENU_ACTION_BEARBEITEN_BEWERTUNG = "MENU_ACTION_BEARBEITEN_BEWERTUNG";
-	private final String MENUE_ACTION_MEHRERE_LOSE_AUSGEBEN = "MENUE_ACTION_MEHRERE_LOSE_AUSGEBEN";
+	private final String MENUE_ACTION_MEHRERE_LOSE_AUSGEBEN_FTG_GRUPPE = "MENUE_ACTION_MEHRERE_LOSE_AUSGEBEN_FTG_GRUPPE";
+	private final String MENUE_ACTION_MEHRERE_LOSE_AUSGEBEN_ENTHALTENE_STKL = "MENUE_ACTION_MEHRERE_LOSE_AUSGEBEN_ENTHALTENE_STKL";
 
 	private final String MENUE_ACTION_ZUSATZSTATUS = PanelBasis.ACTION_MY_OWN_NEW
 			+ "MENUE_ACTION_ZUSATZSTATUS";
@@ -269,6 +280,8 @@ public class TabbedPaneLos extends TabbedPane implements ICopyPaste {
 
 	private final static String EXTRA_ARTIKELBILD = PanelBasis.ACTION_MY_OWN_NEW
 			+ "EXTRA_ARTIKELBILD";
+
+	private final static String MENUE_ACTION_INFO_GESAMTKALKULATION = "menu_action_gesamtkalkulation";
 
 	private PanelQueryFLR panelQueryFLRFertigungsgruppe = null;
 	private PanelQueryFLR panelQueryFLRAuftragauswahl = null;
@@ -585,10 +598,50 @@ public class TabbedPaneLos extends TabbedPane implements ICopyPaste {
 
 			panelQueryAuswahl.befuellePanelFilterkriterienDirekt(fkDirekt1,
 					fkDirekt2);
-			panelQueryAuswahl.addDirektFilter(FertigungFilterFactory
-					.getInstance().createFKDLosAuftagsnummer());
+
+			if (LPMain
+					.getInstance()
+					.getDesktop()
+					.darfAnwenderAufZusatzfunktionZugreifen(
+							MandantFac.ZUSATZFUNKTION_PROJEKTKLAMMER)) {
+				panelQueryAuswahl.addDirektFilter(FertigungFilterFactory
+						.getInstance().createFKDLosProjektnummerAusAuftrag());
+			} else {
+
+				ParametermandantDto parameterLo = DelegateFactory
+						.getInstance()
+						.getParameterDelegate()
+						.getMandantparameter(
+								LPMain.getTheClient().getMandant(),
+								ParameterFac.KATEGORIE_FERTIGUNG,
+								ParameterFac.PARAMETER_LOSNUMMER_AUFTRAGSBEZOGEN);
+
+				int iLosnummerAuftragsbezogen = (Integer) parameterLo
+						.getCWertAsObject();
+
+				if (iLosnummerAuftragsbezogen >= 1) {
+					panelQueryAuswahl.addDirektFilter(FertigungFilterFactory
+							.getInstance().createFKDVolltextsucheArtikel());
+				} else {
+					panelQueryAuswahl.addDirektFilter(FertigungFilterFactory
+							.getInstance().createFKDLosAuftagsnummer());
+				}
+
+			}
+
 			panelQueryAuswahl.addDirektFilter(FertigungFilterFactory
 					.getInstance().createFKDLosKunde());
+
+			if (LPMain
+					.getInstance()
+					.getDesktop()
+					.darfAnwenderAufZusatzfunktionZugreifen(
+							MandantFac.ZUSATZFUNKTION_PROJEKTKLAMMER)) {
+
+				panelQueryAuswahl.addDirektFilter(FertigungFilterFactory
+						.getInstance().createFKDLosProjektbezeichnung());
+
+			}
 
 			// PJ17681
 			if (mEingeschraenkteFertigungsgruppen != null) {
@@ -682,21 +735,35 @@ public class TabbedPaneLos extends TabbedPane implements ICopyPaste {
 						.hatRecht(RechteFac.RECHT_PERS_ZEITEREFASSUNG_CUD);
 				if (hatRecht) {
 
-					panelQueryAuswahl.getToolBar().addButtonLeft(
-							"/com/lp/client/res/gear_run.png",
-							LPMain.getTextRespectUISPr("proj.startzeit"),
-							Desktop.MY_OWN_NEW_ZEIT_START, null, null);
-					panelQueryAuswahl.getToolBar().addButtonLeft(
-							"/com/lp/client/res/gear_stop.png",
-							LPMain.getTextRespectUISPr("proj.stopzeit"),
-							Desktop.MY_OWN_NEW_ZEIT_STOP, null, null);
+					ParametermandantDto parameterVB = DelegateFactory
+							.getInstance()
+							.getParameterDelegate()
+							.getMandantparameter(
+									LPMain.getTheClient().getMandant(),
+									ParameterFac.KATEGORIE_PERSONAL,
+									ParameterFac.PARAMETER_VON_BIS_ERFASSUNG);
+					boolean bVonBisErfassung = (java.lang.Boolean) parameterVB
+							.getCWertAsObject();
 
-					((LPButtonAction) panelQueryAuswahl.getHmOfButtons().get(
-							Desktop.MY_OWN_NEW_ZEIT_START)).getButton()
-							.setEnabled(true);
-					((LPButtonAction) panelQueryAuswahl.getHmOfButtons().get(
-							Desktop.MY_OWN_NEW_ZEIT_STOP)).getButton()
-							.setEnabled(true);
+					// SP2352
+					if (bVonBisErfassung == false) {
+
+						panelQueryAuswahl.getToolBar().addButtonLeft(
+								"/com/lp/client/res/gear_run.png",
+								LPMain.getTextRespectUISPr("proj.startzeit"),
+								Desktop.MY_OWN_NEW_ZEIT_START, null, null);
+						panelQueryAuswahl.getToolBar().addButtonLeft(
+								"/com/lp/client/res/gear_stop.png",
+								LPMain.getTextRespectUISPr("proj.stopzeit"),
+								Desktop.MY_OWN_NEW_ZEIT_STOP, null, null);
+
+						((LPButtonAction) panelQueryAuswahl.getHmOfButtons()
+								.get(Desktop.MY_OWN_NEW_ZEIT_START))
+								.getButton().setEnabled(true);
+						((LPButtonAction) panelQueryAuswahl.getHmOfButtons()
+								.get(Desktop.MY_OWN_NEW_ZEIT_STOP)).getButton()
+								.setEnabled(true);
+					}
 
 				}
 			}
@@ -1151,7 +1218,8 @@ public class TabbedPaneLos extends TabbedPane implements ICopyPaste {
 			} else if (sAspectInfo.equals(ACTION_SPECIAL_AUSGEBEN)) {
 				// los aktualisieren und Stuecklistenaenderungen pruefen
 				// getTabbedPaneLos().reloadLosDto();
-				int iAnswer = pruefeStuecklisteAktuellerAlsLosDlg();
+				int iAnswer = pruefeStuecklisteAktuellerAlsLosDlg(getLosDto()
+						.getIId());
 				if (iAnswer != JOptionPane.CANCEL_OPTION) {
 					DelegateFactory
 							.getInstance()
@@ -1160,9 +1228,11 @@ public class TabbedPaneLos extends TabbedPane implements ICopyPaste {
 									getLosDto().getIId(),
 									false,
 									getAbzubuchendeSeriennrChargen(getLosDto()
-											.getNLosgroesse()));
+											.getIId(), getLosDto()
+											.getNLosgroesse(), false));
 					// refresh aufs panel
-					printAusgabelisteUndFertigungsbegleitscheinDlg();
+					printAusgabelisteUndFertigungsbegleitscheinDlg(getLosDto()
+							.getIId(), true);
 				}
 
 			} else if (sAspectInfo.equals(ACTION_SPECIAL_GERAETESNR_KOPIEREN)) {
@@ -1190,15 +1260,36 @@ public class TabbedPaneLos extends TabbedPane implements ICopyPaste {
 					String[] cSelectedSnrs = d.sSeriennrArray;
 					d.dispose();
 
-					if (cSelectedSnrs != null) {
+					if (cSelectedSnrs != null && cSelectedSnrs.length > 0) {
 						BigDecimal bdErledigt = DelegateFactory.getInstance()
 								.getFertigungDelegate()
 								.getErledigteMenge(getLosDto().getIId());
+
+						LosablieferungDto losablieferungDto = new LosablieferungDto();
+						losablieferungDto.setLosIId(getLosDto().getIId());
+						losablieferungDto.setNMenge(new BigDecimal(
+								cSelectedSnrs.length));
+
+						boolean bErledigt = false;
+						List<SeriennrChargennrMitMengeDto> lTemp = new ArrayList<SeriennrChargennrMitMengeDto>();
+
 						for (int i = 0; i < cSelectedSnrs.length; i++) {
 							String gsnrs = cSelectedSnrs[i];
 
-							List<SeriennrChargennrMitMengeDto> lTemp = SeriennrChargennrMitMengeDto
-									.erstelleDtoAusEinerSeriennummer(gsnrs);
+							SeriennrChargennrMitMengeDto snr = new SeriennrChargennrMitMengeDto();
+							snr.setCSeriennrChargennr(gsnrs);
+
+							// SP2841 -> Version hinzufuegen
+
+							for (int x = 0; x < l.size(); x++) {
+								if (l.get(x).getCSeriennrChargennr()
+										.equals(gsnrs)) {
+									snr.setCVersion(l.get(x).getCVersion());
+									break;
+								}
+							}
+
+							snr.setNMenge(new BigDecimal(1));
 
 							ArrayList<GeraetesnrDto> lGs = new ArrayList<GeraetesnrDto>();
 							GeraetesnrDto gsnrDto = new GeraetesnrDto();
@@ -1207,31 +1298,27 @@ public class TabbedPaneLos extends TabbedPane implements ICopyPaste {
 									.getArtikelIId());
 							lGs.add(gsnrDto);
 
-							lTemp.get(0).setAlGeraetesnr(lGs);
-
-							LosablieferungDto losablieferungDto = new LosablieferungDto();
-							losablieferungDto.setLosIId(getLosDto().getIId());
-							losablieferungDto.setNMenge(new BigDecimal(1));
-							losablieferungDto
-									.setSeriennrChargennrMitMenge(lTemp);
+							snr.setAlGeraetesnr(lGs);
+							lTemp.add(snr);
 
 							bdErledigt = bdErledigt.add(new BigDecimal(1));
 
 							BigDecimal offen = getLosDto().getNLosgroesse()
 									.subtract(bdErledigt);
 
-							boolean bErledigt = false;
 							if (offen.doubleValue() <= 0
 									&& i == cSelectedSnrs.length - 1) {
 								bErledigt = true;
 
 							}
-							DelegateFactory
-									.getInstance()
-									.getFertigungDelegate()
-									.createLosablieferung(losablieferungDto,
-											bErledigt);
+
 						}
+						losablieferungDto.setSeriennrChargennrMitMenge(lTemp);
+						DelegateFactory
+								.getInstance()
+								.getFertigungDelegate()
+								.createLosablieferung(losablieferungDto,
+										bErledigt);
 
 						panelSplitAblieferung.eventYouAreSelected(false);
 
@@ -1417,11 +1504,10 @@ public class TabbedPaneLos extends TabbedPane implements ICopyPaste {
 					}
 				} else {
 					if (auftragsnummer != null) {
-						DialogFactory
-								.showModalDialog(
-										LPMain.getTextRespectUISPr("lp.error"),
-										"Keine g\u00FCltige Autragsnummer "
-												+ auftragsnummer);
+						DialogFactory.showModalDialog(
+								LPMain.getTextRespectUISPr("lp.error"),
+								"Keine g\u00FCltige Autragsnummer "
+										+ auftragsnummer);
 						return;
 					}
 				}
@@ -1556,6 +1642,17 @@ public class TabbedPaneLos extends TabbedPane implements ICopyPaste {
 							.aktualisiereNachtraeglichPreiseAllerLosablieferungen(
 									getLosDto().getIId());
 					getPanelQueryAblieferung(true).eventYouAreSelected(false);
+				}
+			} else if (sAspectInfo != null
+					&& sAspectInfo
+							.endsWith(ACTION_SPECIAL_SOLLPREISE_MATERIAL_NEU_KALKULIEREN)) {
+				if (getLosDto() != null) {
+					DelegateFactory
+							.getInstance()
+							.getFertigungDelegate()
+							.sollpreiseAllerSollmaterialpositionenNeuKalkulieren(
+									getLosDto().getIId());
+					getPanelQueryMaterial(true).eventYouAreSelected(false);
 				}
 			} else if (sAspectInfo.equals(ACTION_SPECIAL_NEU_ANHAND_AUFTRAG)) {
 				dialogQueryAuftragFromListe(null);
@@ -1804,6 +1901,13 @@ public class TabbedPaneLos extends TabbedPane implements ICopyPaste {
 							new ReportAuslastungsvorschau(getInternalFrame(),
 									add2Title));
 		} else if (e.getActionCommand().equals(
+				MENUE_ACTION_JOURNAL_AUSLASTUNGSVORSCHAU_DETAILIERT)) {
+			String add2Title = LPMain
+					.getTextRespectUISPr("fert.menu.auslastungsvorschaudetailliert");
+			getInternalFrame().showReportKriterien(
+					new ReportAuslastungsvorschauDetailiert(getInternalFrame(),
+							add2Title));
+		} else if (e.getActionCommand().equals(
 				MENUE_ACTION_JOURNAL_AUSLIEFERLISTE)) {
 			String add2Title = LPMain
 					.getTextRespectUISPr("fert.menu.auslieferliste");
@@ -1839,13 +1943,13 @@ public class TabbedPaneLos extends TabbedPane implements ICopyPaste {
 
 		} else if (e.getActionCommand().equals(
 				MENUE_ACTION_MODUL_DRUCKEN_AUSGABELISTE)) {
-			printAusgabeliste(false);
+			printAusgabeliste(getLosDto(), false);
 		} else if (e.getActionCommand().equals(
 				MENUE_ACTION_MODUL_DRUCKEN_PRODUKTIONSINFORMATION)) {
 			printProduktionsinformation();
 		} else if (e.getActionCommand().equals(
 				MENUE_ACTION_MODUL_DRUCKEN_FERTIGUNGSBEGLEITSCHEIN)) {
-			printFertigungsbegleitschein();
+			printFertigungsbegleitschein(getLosDto());
 		} else if (e.getActionCommand()
 				.equals(MENU_ACTION_BEARBEITEN_BEWERTUNG)) {
 			if (getLosDto() != null) {
@@ -1938,6 +2042,26 @@ public class TabbedPaneLos extends TabbedPane implements ICopyPaste {
 			}
 
 		} else if (e.getActionCommand().equals(
+				MENUE_ACTION_BEARBEITEN_ALLE_FEHLMENGEN_AUFLOSEN)) {
+
+			boolean bOption = DialogFactory
+					.showModalJaNeinDialog(
+							getInternalFrame(),
+							LPMain.getTextRespectUISPr("fert.los.allefelhmengenaufloesen.warning"),
+							LPMain.getTextRespectUISPr("lp.frage"));
+			if (bOption) {
+
+				TreeMap<?, ?> aufgeloest = DelegateFactory.getInstance()
+						.getFehlmengeDelegate()
+						.alleFehlmengenDesMandantenAufloesen();
+
+				getInternalFrame().showReportKriterien(
+						new ReportAufgeloestefehlmengen(getInternalFrame(),
+								aufgeloest));
+
+			}
+
+		} else if (e.getActionCommand().equals(
 				MENUE_ACTION_JOURNAL_HALBFERTIGFABRIKATSINVENTUR)) {
 			if (getLosDto() != null) {
 				getInternalFrame()
@@ -1964,6 +2088,15 @@ public class TabbedPaneLos extends TabbedPane implements ICopyPaste {
 				getInternalFrame().showReportKriterien(
 						new ReportOffeneAg(getInternalFrame(), LPMain
 								.getTextRespectUISPr("fert.menu.offeneag")));
+			}
+		} else if (e.getActionCommand().equals(
+				MENUE_ACTION_INFO_GESAMTKALKULATION)) {
+			if (getLosDto() != null) {
+				getInternalFrame()
+						.showReportKriterien(
+								new ReportLosGesamtkalkulation(
+										(InternalFrameFertigung) getInternalFrame(),
+										LPMain.getTextRespectUISPr("fert.report.gesamtkalkulation")));
 			}
 		} else if (e.getActionCommand().equals(
 				MENUE_ACTION_JOURNAL_STUECKRUECKMELDUNG)) {
@@ -2036,7 +2169,7 @@ public class TabbedPaneLos extends TabbedPane implements ICopyPaste {
 				}
 			}
 		} else if (e.getActionCommand().equals(
-				MENUE_ACTION_MEHRERE_LOSE_AUSGEBEN)) {
+				MENUE_ACTION_MEHRERE_LOSE_AUSGEBEN_FTG_GRUPPE)) {
 			dialogQueryFertigungsgruppeFromListe();
 
 		} else if (e.getActionCommand().equals(MENU_BEARBEITEN_ZUORDNUNG)) {
@@ -2059,90 +2192,183 @@ public class TabbedPaneLos extends TabbedPane implements ICopyPaste {
 			getInternalFrame().showReportKriterien(
 					new ReportLosetikettA4(getInternalFrame(), add2Title,
 							getLosDto().getIId()));
+		} else if (e.getActionCommand().equals(
+				MENUE_ACTION_MEHRERE_LOSE_AUSGEBEN_ENTHALTENE_STKL)) {
+
+			MessageFormat mf = new MessageFormat(
+					LPMain.getTextRespectUISPr("fert.los.stlbaumausgeben"));
+			mf.setLocale(LPMain.getTheClient().getLocUi());
+
+			Object pattern[] = { getLosDto().getCNr() };
+			String sMsg = mf.format(pattern);
+
+			boolean bAntwort = DialogFactory.showModalJaNeinDialog(
+					getInternalFrame(), sMsg);
+
+			if (bAntwort == true) {
+				TreeSet ts = DelegateFactory.getInstance()
+						.getFertigungDelegate()
+						.getLoseEinesStuecklistenbaums(getLosDto().getIId());
+				Iterator it = ts.iterator();
+
+				while (it.hasNext()) {
+
+					Integer losIId = (Integer) it.next();
+
+					LosDto losDto = DelegateFactory.getInstance()
+							.getFertigungDelegate().losFindByPrimaryKey(losIId);
+
+					int iAnswer = pruefeStuecklisteAktuellerAlsLosDlg(losIId);
+					if (iAnswer != JOptionPane.CANCEL_OPTION) {
+						boolean bAusgabeErfolgreich = DelegateFactory
+								.getInstance()
+								.getFertigungDelegate()
+								.gebeLosAus(
+										losIId,
+										false,
+										getAbzubuchendeSeriennrChargen(
+												losDto.getIId(),
+												losDto.getNLosgroesse(), false));
+
+						if (bAusgabeErfolgreich == false) {
+
+							mf = new MessageFormat(
+									LPMain.getTextRespectUISPr("fert.los.stlbaumausgeben.fehler"));
+							mf.setLocale(LPMain.getTheClient().getLocUi());
+
+							pattern = new Object[] { losDto.getCNr() };
+							sMsg = mf.format(pattern);
+
+							boolean b = DialogFactory.showModalJaNeinDialog(
+									getInternalFrame(), sMsg);
+
+							if (b == true) {
+								return;
+							}
+						}
+
+						// refresh aufs panel
+						printAusgabelisteUndFertigungsbegleitscheinDlg(losIId,
+								false);
+					} else {
+						return;
+					}
+				}
+			}
 		}
 	}
 
-	public void printAusgabelisteUndFertigungsbegleitscheinDlg()
-			throws Throwable {
+	public void printAusgabelisteUndFertigungsbegleitscheinDlg(Integer losIId,
+			boolean bFrageAnzeigen) throws Throwable {
 
-		if (LPMain
+		LosDto losDto = DelegateFactory.getInstance().getFertigungDelegate()
+				.losFindByPrimaryKey(losIId);
+
+		FertigungsgruppeDto ftgDto = DelegateFactory
 				.getInstance()
-				.getDesktop()
-				.darfAnwenderAufModulZugreifen(LocaleFac.BELEGART_ZEITERFASSUNG)) {
+				.getStuecklisteDelegate()
+				.fertigungsgruppeFindByPrimaryKey(
+						losDto.getFertigungsgruppeIId());
 
-			FertigungsgruppeDto ftgDto = DelegateFactory
-					.getInstance()
-					.getStuecklisteDelegate()
-					.fertigungsgruppeFindByPrimaryKey(
-							getLosDto().getFertigungsgruppeIId());
+		// PJ 17672
+		if (ftgDto.getIFormularnummer() != null
+				&& ftgDto.getIFormularnummer() == -1) {
+			return;
+		}
 
-			// PJ 17672
-			if (ftgDto.getIFormularnummer() != null
-					&& ftgDto.getIFormularnummer() == -1) {
-				return;
-			}
+		boolean bFertigungspapiereDrucken = true;
 
-			boolean bFertigungspapiereDrucken = DialogFactory
+		if (bFrageAnzeigen == true) {
+
+			bFertigungspapiereDrucken = DialogFactory
 					.showModalJaNeinDialog(
 							getInternalFrame(),
 							LPMain.getTextRespectUISPr("fert.frage.fertigungspapieredrucken"),
 							LPMain.getTextRespectUISPr("lp.frage"));
-			if (bFertigungspapiereDrucken) {
-				printAusgabeliste(false);
+		}
+		if (bFertigungspapiereDrucken) {
+			printAusgabeliste(losDto, false);
 
-				ParametermandantDto parameter = (ParametermandantDto) DelegateFactory
-						.getInstance()
-						.getParameterDelegate()
-						.getParametermandant(
-								ParameterFac.PARAMETER_LOSAUSGABELISTE2_AUTOMATISCH_DRUCKEN,
-								ParameterFac.KATEGORIE_FERTIGUNG,
-								LPMain.getTheClient().getMandant());
-				if (((Boolean) parameter.getCWertAsObject()) == true) {
-					printAusgabeliste(true);
-				}
+			ParametermandantDto parameter = (ParametermandantDto) DelegateFactory
+					.getInstance()
+					.getParameterDelegate()
+					.getParametermandant(
+							ParameterFac.PARAMETER_LOSAUSGABELISTE2_AUTOMATISCH_DRUCKEN,
+							ParameterFac.KATEGORIE_FERTIGUNG,
+							LPMain.getTheClient().getMandant());
+			if (((Boolean) parameter.getCWertAsObject()) == true) {
+				printAusgabeliste(losDto, true);
+			}
 
-				printFertigungsbegleitschein();
+			if (LPMain
+					.getInstance()
+					.getDesktop()
+					.darfAnwenderAufModulZugreifen(
+							LocaleFac.BELEGART_ZEITERFASSUNG)) {
+				printFertigungsbegleitschein(losDto);
 			}
 		}
+
 	}
 
-	public int pruefeStuecklisteAktuellerAlsLosDlg() throws Throwable {
+	public int pruefeStuecklisteAktuellerAlsLosDlg(Integer losIId)
+			throws Throwable {
 		// Default ist NO, damits fuer materiallisten auch geht
 		int iAnswer = JOptionPane.NO_OPTION;
 		// nur wenn das Los sich auf eine Stueckliste bezieht
-		if (getLosDto().getStuecklisteIId() != null) {
+		LosDto losDto = DelegateFactory.getInstance().getFertigungDelegate()
+				.losFindByPrimaryKey(losIId);
+
+		if (losDto.getStuecklisteIId() != null) {
 			// ist der Arbeitsplan der Stueckliste aktueller als der des Loses?
-			if (getLosDto().getTAktualisierungarbeitszeit() != null
-					&& getStuecklisteDto().getTAendernarbeitsplan().after(
-							getLosDto().getTAktualisierungarbeitszeit())) {
-				iAnswer = DialogFactory
-						.showModalJaNeinAbbrechenDialog(
-								getInternalFrame(),
-								LPMain.getTextRespectUISPr("fert.frage.stklarbeitsplanaktualisieren"),
-								LPMain.getTextRespectUISPr("lp.frage"));
+
+			StuecklisteDto stklDto = DelegateFactory.getInstance()
+					.getStuecklisteDelegate()
+					.stuecklisteFindByPrimaryKey(losDto.getStuecklisteIId());
+
+			if (losDto.getTAktualisierungarbeitszeit() != null
+					&& stklDto.getTAendernarbeitsplan().after(
+							losDto.getTAktualisierungarbeitszeit())) {
+
+				MessageFormat mf = new MessageFormat(
+						LPMain.getTextRespectUISPr("fert.frage.stklarbeitsplanaktualisieren"));
+				mf.setLocale(LPMain.getTheClient().getLocUi());
+
+				Object pattern[] = { losDto.getCNr() };
+				String sMsg = mf.format(pattern);
+
+				iAnswer = DialogFactory.showModalJaNeinAbbrechenDialog(
+						getInternalFrame(), sMsg,
+						LPMain.getTextRespectUISPr("lp.frage"));
 				if (iAnswer == JOptionPane.YES_OPTION) {
 					DelegateFactory
 							.getInstance()
 							.getFertigungDelegate()
 							.aktualisiereSollArbeitsplanAusStueckliste(
-									getLosDto().getIId());
+									losDto.getIId());
 				}
 			}
 			// ist das Material der Stueckliste aktueller als der des Loses?
-			if (getLosDto().getTAktualisierungstueckliste() != null
-					&& getStuecklisteDto().getTAendernposition().after(
-							getLosDto().getTAktualisierungstueckliste())) {
-				iAnswer = DialogFactory
-						.showModalJaNeinAbbrechenDialog(
-								getInternalFrame(),
-								LPMain.getTextRespectUISPr("fert.frage.stklmaterialaktualisieren"),
-								LPMain.getTextRespectUISPr("lp.frage"));
+			if (losDto.getTAktualisierungstueckliste() != null
+					&& stklDto.getTAendernposition().after(
+							losDto.getTAktualisierungstueckliste())) {
+
+				MessageFormat mf = new MessageFormat(
+						LPMain.getTextRespectUISPr("fert.frage.stklmaterialaktualisieren"));
+				mf.setLocale(LPMain.getTheClient().getLocUi());
+
+				Object pattern[] = { losDto.getCNr() };
+				String sMsg = mf.format(pattern);
+
+				iAnswer = DialogFactory.showModalJaNeinAbbrechenDialog(
+						getInternalFrame(), sMsg,
+						LPMain.getTextRespectUISPr("lp.frage"));
 				if (iAnswer == JOptionPane.YES_OPTION) {
 					DelegateFactory
 							.getInstance()
 							.getFertigungDelegate()
 							.aktualisiereSollMaterialAusStueckliste(
-									getLosDto().getIId());
+									losDto.getIId());
 				}
 			}
 		}
@@ -2175,15 +2401,19 @@ public class TabbedPaneLos extends TabbedPane implements ICopyPaste {
 		}
 	}
 
-	protected void printAusgabeliste(boolean bAlternativerReport)
+	protected void printAusgabeliste(LosDto losDto, boolean bAlternativerReport)
 			throws Throwable {
-		reloadLosDto();
-		if (getLosDto() != null) {
-			getInternalFrame().showReportKriterien(
-					new ReportAusgabeliste(getInternalFrame(), getLosDto()
-							.getIId(), LPMain
-							.getTextRespectUISPr("fert.report.ausgabeliste")
-							+ " " + losDto.getCNr(), bAlternativerReport));
+
+		if (losDto != null) {
+
+			getInternalFrame()
+					.showReportKriterien(
+							new ReportAusgabeliste(
+									getInternalFrame(),
+									losDto.getIId(),
+									LPMain.getTextRespectUISPr("fert.report.ausgabeliste")
+											+ " " + losDto.getCNr(),
+									bAlternativerReport));
 
 		}
 	}
@@ -2201,33 +2431,32 @@ public class TabbedPaneLos extends TabbedPane implements ICopyPaste {
 		}
 	}
 
-	protected void printFertigungsbegleitschein() throws Throwable {
-		reloadLosDto();
-		if (getLosDto() != null) {
-			if (getLosDto().getStatusCNr()
-					.equals(FertigungFac.STATUS_STORNIERT)) {
+	protected void printFertigungsbegleitschein(LosDto losDto) throws Throwable {
+
+		if (losDto != null) {
+			if (losDto.getStatusCNr().equals(FertigungFac.STATUS_STORNIERT)) {
 				throw new ExceptionLP(
 						EJBExceptionLP.FEHLER_FERTIGUNG_DAS_LOS_IST_STORNIERT,
-						new Exception("Los " + getLosDto().getCNr() + " ist "
-								+ getLosDto().getStatusCNr()));
-			} else if (getLosDto().getStatusCNr().equals(
+						new Exception("Los " + losDto.getCNr() + " ist "
+								+ losDto.getStatusCNr()));
+			} else if (losDto.getStatusCNr().equals(
 					FertigungFac.STATUS_ANGELEGT)) {
 				throw new ExceptionLP(
 						EJBExceptionLP.FEHLER_FERTIGUNG_DAS_LOS_IST_NOCH_NICHT_AUSGEGEBEN,
-						new Exception("Los " + getLosDto().getCNr() + " ist "
-								+ getLosDto().getStatusCNr()));
-			} else if (getLosDto().getStatusCNr().equals(
+						new Exception("Los " + losDto.getCNr() + " ist "
+								+ losDto.getStatusCNr()));
+			} else if (losDto.getStatusCNr().equals(
 					FertigungFac.STATUS_ERLEDIGT)) {
 				throw new ExceptionLP(
 						EJBExceptionLP.FEHLER_FERTIGUNG_DAS_LOS_IST_BEREITS_ERLEDIGT,
-						new Exception("Los " + getLosDto().getCNr() + " ist "
-								+ getLosDto().getStatusCNr()));
+						new Exception("Los " + losDto.getCNr() + " ist "
+								+ losDto.getStatusCNr()));
 			} else {
 				getInternalFrame()
 						.showReportKriterien(
 								new ReportFertigungsbegleitschein(
 										getInternalFrame(),
-										getLosDto().getIId(),
+										losDto.getIId(),
 										LPMain.getTextRespectUISPr("fert.report.fertigungsbegleitschein")
 												+ " " + losDto.getCNr()));
 			}
@@ -2398,12 +2627,26 @@ public class TabbedPaneLos extends TabbedPane implements ICopyPaste {
 				.setActionCommand(MENU_BEARBEITEN_PRODUKTIONSINFORMATION);
 		jmBearbeiten.add(menuItemBearbeitenProduktionsinformation);
 
-		WrapperMenuItem menuItemMehrereLoseAugeben = new WrapperMenuItem(
-				LPMain.getTextRespectUISPr("lp.menu.mehrereausgeben"),
+		JMenu menuItemMehrereLoseAugeben = new JMenu(
+				LPMain.getTextRespectUISPr("lp.menu.mehrereausgeben"));
+
+		WrapperMenuItem menuItemMehrereLoseAugebenFTG = new WrapperMenuItem(
+				LPMain.getTextRespectUISPr("lp.menu.mehrereausgeben.anhandftg"),
 				RechteFac.RECHT_FERT_LOS_CUD);
-		menuItemMehrereLoseAugeben.addActionListener(this);
+		menuItemMehrereLoseAugebenFTG.addActionListener(this);
+		menuItemMehrereLoseAugebenFTG
+				.setActionCommand(MENUE_ACTION_MEHRERE_LOSE_AUSGEBEN_FTG_GRUPPE);
+		menuItemMehrereLoseAugeben.add(menuItemMehrereLoseAugebenFTG);
+
+		WrapperMenuItem menuItemMehrereLoseAugebenEnthalteneStkl = new WrapperMenuItem(
+				LPMain.getTextRespectUISPr("lp.menu.mehrereausgeben.enthaltenestkl"),
+				RechteFac.RECHT_FERT_LOS_CUD);
+		menuItemMehrereLoseAugebenEnthalteneStkl.addActionListener(this);
+		menuItemMehrereLoseAugebenEnthalteneStkl
+				.setActionCommand(MENUE_ACTION_MEHRERE_LOSE_AUSGEBEN_ENTHALTENE_STKL);
 		menuItemMehrereLoseAugeben
-				.setActionCommand(MENUE_ACTION_MEHRERE_LOSE_AUSGEBEN);
+				.add(menuItemMehrereLoseAugebenEnthalteneStkl);
+
 		jmBearbeiten.add(new JSeparator());
 		jmBearbeiten.add(menuItemMehrereLoseAugeben);
 
@@ -2425,6 +2668,21 @@ public class TabbedPaneLos extends TabbedPane implements ICopyPaste {
 			menuItemTerminverschieben
 					.setActionCommand(MENUE_ACTION_BEARBEITEN_TERMINVERSCHIEBEN);
 			jmBearbeiten.add(menuItemTerminverschieben);
+		}
+
+		if (DelegateFactory
+				.getInstance()
+				.getTheJudgeDelegate()
+				.hatRecht(
+						RechteFac.RECHT_FERT_DARF_FEHLMENGEN_PER_DIALOG_AUFLOESEN)) {
+			jmBearbeiten.add(new JSeparator());
+			WrapperMenuItem menuItemFehlmengrnAufloesen = new WrapperMenuItem(
+					LPMain.getTextRespectUISPr("fert.los.allefelhmengenaufloesen"),
+					RechteFac.RECHT_FERT_LOS_CUD);
+			menuItemFehlmengrnAufloesen.addActionListener(this);
+			menuItemFehlmengrnAufloesen
+					.setActionCommand(MENUE_ACTION_BEARBEITEN_ALLE_FEHLMENGEN_AUFLOSEN);
+			jmBearbeiten.add(menuItemFehlmengrnAufloesen);
 		}
 
 		if (DelegateFactory.getInstance().getTheJudgeDelegate()
@@ -2525,20 +2783,29 @@ public class TabbedPaneLos extends TabbedPane implements ICopyPaste {
 
 			jmJournal.add(menuItemJournalAuslastungsvorschau, 14);
 
+			JMenuItem menuItemJournalAuslastungsvorschauDetailiert = new JMenuItem(
+					LPMain.getTextRespectUISPr("fert.menu.auslastungsvorschaudetailliert"));
+			menuItemJournalAuslastungsvorschauDetailiert
+					.addActionListener(this);
+			menuItemJournalAuslastungsvorschauDetailiert
+					.setActionCommand(MENUE_ACTION_JOURNAL_AUSLASTUNGSVORSCHAU_DETAILIERT);
+
+			jmJournal.add(menuItemJournalAuslastungsvorschauDetailiert, 15);
+
 			JMenuItem menuItemJournalAuslieferliste = new JMenuItem(
 					LPMain.getTextRespectUISPr("fert.menu.auslieferliste"));
 			menuItemJournalAuslieferliste.addActionListener(this);
 			menuItemJournalAuslieferliste
 					.setActionCommand(MENUE_ACTION_JOURNAL_AUSLIEFERLISTE);
 
-			jmJournal.add(menuItemJournalAuslieferliste, 15);
+			jmJournal.add(menuItemJournalAuslieferliste, 16);
 
 			JMenuItem menuItemJournalFehlerstatistik = new JMenuItem(
 					LPMain.getTextRespectUISPr("fert.los.report.fehlerstatistik"));
 			menuItemJournalFehlerstatistik.addActionListener(this);
 			menuItemJournalFehlerstatistik
 					.setActionCommand(MENUE_ACTION_JOURNAL_FEHLERSTATISTIK);
-			jmJournal.add(menuItemJournalFehlerstatistik, 16);
+			jmJournal.add(menuItemJournalFehlerstatistik, 17);
 
 			if (LPMain
 					.getInstance()
@@ -2551,8 +2818,17 @@ public class TabbedPaneLos extends TabbedPane implements ICopyPaste {
 				menuItemJournalRankingliste
 						.setActionCommand(MENUE_ACTION_JOURNAL_RANKINGLISTE);
 
-				jmJournal.add(menuItemJournalRankingliste, 17);
+				jmJournal.add(menuItemJournalRankingliste, 18);
 			}
+
+			JMenu menuInfo = new WrapperMenu("lp.info", this);
+			JMenuItem menuItemInfoGesamtkalkulation = new JMenuItem(
+					LPMain.getTextRespectUISPr("fert.report.gesamtkalkulation"));
+			menuItemInfoGesamtkalkulation.addActionListener(this);
+			menuItemInfoGesamtkalkulation
+					.setActionCommand(MENUE_ACTION_INFO_GESAMTKALKULATION);
+			menuInfo.add(menuItemInfoGesamtkalkulation);
+			wmb.addJMenuItem(menuInfo);
 		}
 
 		// return wmb;
@@ -2641,6 +2917,13 @@ public class TabbedPaneLos extends TabbedPane implements ICopyPaste {
 							"/com/lp/client/res/document_exchange.png",
 							LPMain.getTextRespectUISPr("fert.tooltip.istmaterialaendern"),
 							ACTION_SPECIAL_ISTMENGE_AENDERN,
+							RechteFac.RECHT_FERT_LOS_CUD);
+
+			panelQueryMaterial
+					.createAndSaveAndShowButton(
+							"/com/lp/client/res/calculator16x16.png",
+							LPMain.getTextRespectUISPr("fert.tooltip.sollpreiseneukalkulieren"),
+							ACTION_SPECIAL_SOLLPREISE_MATERIAL_NEU_KALKULIEREN,
 							RechteFac.RECHT_FERT_LOS_CUD);
 
 			refreshFilterMaterial();
@@ -3189,7 +3472,16 @@ public class TabbedPaneLos extends TabbedPane implements ICopyPaste {
 	}
 
 	public ArrayList<BucheSerienChnrAufLosDto> getAbzubuchendeSeriennrChargen(
-			BigDecimal nMenge) throws Throwable {
+			Integer losIId, BigDecimal nMenge, boolean bEsWirdAbgeliefert)
+			throws Throwable {
+
+		LosDto losDto = DelegateFactory.getInstance().getFertigungDelegate()
+				.losFindByPrimaryKey(losIId);
+		StuecklisteDto stklDto = null;
+		if (losDto.getStuecklisteIId() != null) {
+			stklDto = DelegateFactory.getInstance().getStuecklisteDelegate()
+					.stuecklisteFindByPrimaryKey(losDto.getStuecklisteIId());
+		}
 
 		ParametermandantDto parameter = (ParametermandantDto) DelegateFactory
 				.getInstance()
@@ -3198,20 +3490,33 @@ public class TabbedPaneLos extends TabbedPane implements ICopyPaste {
 						ParameterFac.PARAMETER_KEINE_AUTOMATISCHE_MATERIALBUCHUNG,
 						ParameterFac.KATEGORIE_FERTIGUNG,
 						LPMain.getTheClient().getMandant());
-		if (((Boolean) parameter.getCWertAsObject()) == false) {
+
+		boolean bKeineAutomatischeMateriabuchung = ((Boolean) parameter
+				.getCWertAsObject());
+
+		// 18630 Kann von Stkl uebersteuert werden
+		if (stklDto != null) {
+			bKeineAutomatischeMateriabuchung = Helper.short2boolean(stklDto
+					.getBKeineAutomatischeMaterialbuchung());
+		}
+
+		if (bKeineAutomatischeMateriabuchung == false) {
 
 			boolean bLosausgabeAutomatisch = false;
 			boolean bGanzeChargenVerwenden = false;
 			boolean bUnterstuecklistenAusgeben = true;
-			if (getLosDto().getStuecklisteIId() != null) {
-				StuecklisteDto stuecklisteDto = DelegateFactory
-						.getInstance()
-						.getStuecklisteDelegate()
-						.stuecklisteFindByPrimaryKey(
-								getLosDto().getStuecklisteIId());
-				bUnterstuecklistenAusgeben = Helper
-						.short2boolean(stuecklisteDto
-								.getBAusgabeunterstueckliste());
+			if (stklDto != null) {
+
+				bUnterstuecklistenAusgeben = Helper.short2boolean(stklDto
+						.getBAusgabeunterstueckliste());
+
+				// 18616 Wenn Materialbuchung bei Ablieferung, dann brauch ich
+				// bei der Ausgabe nicht weitermachen
+				if (Helper.short2boolean(stklDto
+						.getBMaterialbuchungbeiablieferung())
+						&& bEsWirdAbgeliefert == false) {
+					return null;
+				}
 
 			}
 
@@ -3240,12 +3545,11 @@ public class TabbedPaneLos extends TabbedPane implements ICopyPaste {
 			ArrayList al = new ArrayList();
 			LoslagerentnahmeDto[] laeger = DelegateFactory.getInstance()
 					.getFertigungDelegate()
-					.loslagerentnahmeFindByLosIId(getLosDto().getIId());
+					.loslagerentnahmeFindByLosIId(losIId);
 			HashMap<Integer, List<SeriennrChargennrMitMengeDto>> hmSelSeriennummern = new HashMap<Integer, List<SeriennrChargennrMitMengeDto>>();
 
 			LossollmaterialDto[] dtos = DelegateFactory.getInstance()
-					.getFertigungDelegate()
-					.lossollmaterialFindByLosIId(getLosDto().getIId());
+					.getFertigungDelegate().lossollmaterialFindByLosIId(losIId);
 			for (int i = 0; i < dtos.length; i++) {
 
 				if (dtos[i].getArtikelIId() != null) {
@@ -3268,18 +3572,21 @@ public class TabbedPaneLos extends TabbedPane implements ICopyPaste {
 							.getAusgegebeneMenge(dtos[i].getIId());
 
 					BigDecimal sollsatzgroesse = dtos[i].getNMenge().divide(
-							getLosDto().getNLosgroesse(), 4,
+							losDto.getNLosgroesse(), 10,
 							BigDecimal.ROUND_HALF_EVEN);
 
 					BigDecimal erledigteMenge = DelegateFactory.getInstance()
 							.getFertigungDelegate()
-							.getErledigteMenge(getLosDto().getIId());
+							.getErledigteMenge(losDto.getIId());
 
 					// Wenn bereits Material ausgegeben ist, muss dieses
 					// beruecksichtigt werden
 
 					BigDecimal abzubuchendeMenge = nMenge.add(erledigteMenge)
 							.multiply(sollsatzgroesse).subtract(bdAusgegeben);
+
+					abzubuchendeMenge = Helper.rundeKaufmaennisch(
+							abzubuchendeMenge, 3);
 
 					if (Helper.short2boolean(artikelDto.getBChargennrtragend())) {
 
@@ -3317,8 +3624,8 @@ public class TabbedPaneLos extends TabbedPane implements ICopyPaste {
 								// PJ 14637
 
 								DialogBucheSerienChargennrAufLos dialog = new DialogBucheSerienChargennrAufLos(
-										getLosDto().getIId(), artikelDto,
-										abzubuchendeMenge, al);
+										losDto.getIId(), losDto.getCNr(),
+										artikelDto, abzubuchendeMenge, al);
 								LPMain.getInstance()
 										.getDesktop()
 										.platziereDialogInDerMitteDesFensters(
@@ -3490,16 +3797,11 @@ public class TabbedPaneLos extends TabbedPane implements ICopyPaste {
 									laeger[0].getLagerIId(),
 									hmSelSeriennummern.get(dtos[i]
 											.getArtikelIId()), true, true,
-									getInternalFrame(), null);
+									getInternalFrame(), null, false);
 							LPMain.getInstance().getDesktop()
 									.platziereDialogInDerMitteDesFensters(d);
 
-							d.getLabelBenoetigt().setText(
-									"Ben\u00F6tigt: "
-											+ Helper.formatZahl(
-													abzubuchendeMenge, 4,
-													LPMain.getTheClient()
-															.getLocUi()));
+							d.setBdBenoetigteMenge(abzubuchendeMenge);
 
 							d.setVisible(true);
 
@@ -3589,7 +3891,7 @@ public class TabbedPaneLos extends TabbedPane implements ICopyPaste {
 		}
 	}
 
-	public Object getInseratDto() {
+	public Object getDto() {
 		return losDto;
 	}
 

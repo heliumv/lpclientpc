@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -49,6 +49,7 @@ import com.lp.client.frame.stammdatencrud.PanelStammdatenCRUD;
 import com.lp.client.lieferschein.PanelBegruendung;
 import com.lp.client.pc.LPMain;
 import com.lp.client.system.SystemFilterFactory;
+import com.lp.server.system.service.MandantFac;
 import com.lp.server.system.service.MediaFac;
 import com.lp.server.util.fastlanereader.service.query.QueryParameters;
 
@@ -80,6 +81,10 @@ public class TabbedPaneAuftragGrunddaten extends TabbedPane {
 	private PanelSplit panelAuftragartSP;
 	private PanelStammdatenCRUD panelAuftragartBottomD;
 
+	private PanelQuery panelMeilensteinTopQP;
+	private PanelSplit panelMeilensteinSP;
+	private PanelStammdatenCRUD panelMeilensteinBottomD;
+
 	private PanelQuery panelAuftragpositionartTopQP;
 	private PanelSplit panelAuftragpositionartSP;
 	private PanelStammdatenCRUD panelAuftragpositionartBottomD;
@@ -91,12 +96,13 @@ public class TabbedPaneAuftragGrunddaten extends TabbedPane {
 	private PanelQuery panelBegruendungTopQP;
 	private PanelSplit panelBegruendungSP;
 	private PanelAuftragbegruendung panelBegruendungBottomD;
-	
+
 	private static final int IDX_PANEL_AUFTRAGTEXT = 0;
 	private static final int IDX_PANEL_AUFTRAGART = 1;
 	private static final int IDX_PANEL_AUFTRAGPOSITIONART = 2;
 	private static final int IDX_PANEL_AUFTRAGDOKUMENTE = 3;
 	private static final int IDX_PANEL_BEGRUENDUNG = 4;
+	private static final int IDX_PANEL_MEILENSTEIN = 5;
 
 	public TabbedPaneAuftragGrunddaten(InternalFrame internalFrameI)
 			throws Throwable {
@@ -111,27 +117,53 @@ public class TabbedPaneAuftragGrunddaten extends TabbedPane {
 
 	private void jbInit() throws Throwable {
 		insertTab(LPMain.getInstance().getTextRespectUISPr("lp.auftragtext"),
-				null, null, LPMain.getInstance().getTextRespectUISPr(
-						"lp.auftragtext"), IDX_PANEL_AUFTRAGTEXT);
+				null, null,
+				LPMain.getInstance().getTextRespectUISPr("lp.auftragtext"),
+				IDX_PANEL_AUFTRAGTEXT);
 
-		insertTab(LPMain.getInstance().getTextRespectUISPr(
-				"detail.label.auftragart"), null, null, LPMain.getInstance()
-				.getTextRespectUISPr("detail.label.auftragart"),
-				IDX_PANEL_AUFTRAGART);
+		insertTab(
+				LPMain.getInstance().getTextRespectUISPr(
+						"detail.label.auftragart"),
+				null,
+				null,
+				LPMain.getInstance().getTextRespectUISPr(
+						"detail.label.auftragart"), IDX_PANEL_AUFTRAGART);
 
-		insertTab(LPMain.getInstance().getTextRespectUISPr(
-				"auft.auftragpositionart"), null, null, LPMain.getInstance()
-				.getTextRespectUISPr("auft.auftragpositionart"),
+		insertTab(
+				LPMain.getInstance().getTextRespectUISPr(
+						"auft.auftragpositionart"),
+				null,
+				null,
+				LPMain.getInstance().getTextRespectUISPr(
+						"auft.auftragpositionart"),
 				IDX_PANEL_AUFTRAGPOSITIONART);
 
-		insertTab(LPMain.getInstance().getTextRespectUISPr(
-				"auft.auftragdokument"), null, null, LPMain.getInstance()
-				.getTextRespectUISPr("auft.auftragdokument"),
+		insertTab(
+				LPMain.getInstance()
+						.getTextRespectUISPr("auft.auftragdokument"), null,
+				null,
+				LPMain.getInstance()
+						.getTextRespectUISPr("auft.auftragdokument"),
 				IDX_PANEL_AUFTRAGDOKUMENTE);
 		insertTab(LPMain.getInstance().getTextRespectUISPr("ls.begruendung"),
 				null, null,
 				LPMain.getInstance().getTextRespectUISPr("ls.begruendung"),
 				IDX_PANEL_BEGRUENDUNG);
+
+		if (LPMain
+				.getInstance()
+				.getDesktop()
+				.darfAnwenderAufZusatzfunktionZugreifen(
+						MandantFac.ZUSATZFUNKTION_ERWEITERTE_PROJEKTSTEUERUNG)) {
+
+			insertTab(
+					LPMain.getInstance()
+							.getTextRespectUISPr("auft.meilenstein"), null,
+					null,
+					LPMain.getInstance()
+							.getTextRespectUISPr("auft.meilenstein"),
+					IDX_PANEL_MEILENSTEIN);
+		}
 		// default
 		refreshPanelAuftragtext();
 
@@ -182,20 +214,28 @@ public class TabbedPaneAuftragGrunddaten extends TabbedPane {
 								.getLockedstateDetailMainKey());
 			} else if (eI.getSource() == panelAuftragDokumentQP) {
 				Integer iId = (Integer) panelAuftragDokumentQP.getSelectedId();
-				getInternalFrame().setKeyWasForLockMe(iId+"");
+				getInternalFrame().setKeyWasForLockMe(iId + "");
 				panelAuftragDokumentD.setKeyWhenDetailPanel(iId);
 				panelAuftragDokumentD.eventYouAreSelected(false);
 
 				// im QP die Buttons in den Zustand nolocking/save setzen.
 				panelAuftragDokumentQP.updateButtons(panelAuftragDokumentD
 						.getLockedstateDetailMainKey());
-			}else if (eI.getSource() == panelBegruendungTopQP) {
+			} else if (eI.getSource() == panelBegruendungTopQP) {
 				Integer iId = (Integer) panelBegruendungTopQP.getSelectedId();
 				getInternalFrame().setKeyWasForLockMe(iId + "");
 				panelBegruendungBottomD.setKeyWhenDetailPanel(iId);
 				panelBegruendungBottomD.eventYouAreSelected(false);
 
 				panelBegruendungTopQP.updateButtons(panelBegruendungBottomD
+						.getLockedstateDetailMainKey());
+			} else if (eI.getSource() == panelMeilensteinTopQP) {
+				Integer iId = (Integer) panelMeilensteinTopQP.getSelectedId();
+				getInternalFrame().setKeyWasForLockMe(iId + "");
+				panelMeilensteinBottomD.setKeyWhenDetailPanel(iId);
+				panelMeilensteinBottomD.eventYouAreSelected(false);
+
+				panelMeilensteinTopQP.updateButtons(panelMeilensteinBottomD
 						.getLockedstateDetailMainKey());
 			}
 		} else if (eI.getID() == ItemChangedEvent.ACTION_UPDATE) {
@@ -220,11 +260,15 @@ public class TabbedPaneAuftragGrunddaten extends TabbedPane {
 				panelAuftragDokumentQP.updateButtons(new LockStateValue(
 						PanelBasis.LOCK_FOR_NEW));
 				;
-			}else if (eI.getSource() == panelBegruendungBottomD) {
+			} else if (eI.getSource() == panelBegruendungBottomD) {
 				// im QP die Buttons in den Zustand neu setzen.
 				panelBegruendungTopQP.updateButtons(new LockStateValue(
 						PanelBasis.LOCK_FOR_NEW));
 				;
+			} else if (eI.getSource() == panelMeilensteinBottomD) {
+				// im QP die Buttons in den Zustand neu setzen.
+				panelMeilensteinTopQP.updateButtons(new LockStateValue(
+						PanelBasis.LOCK_FOR_NEW));
 			}
 		} else if (e.getID() == ItemChangedEvent.ACTION_DISCARD) {
 			if (e.getSource() == panelAuftragtextBottomD) {
@@ -235,8 +279,10 @@ public class TabbedPaneAuftragGrunddaten extends TabbedPane {
 				panelAuftragpositionartSP.eventYouAreSelected(false);
 			} else if (e.getSource() == panelAuftragDokumentD) {
 				panelAuftragDokumentSP.eventYouAreSelected(false);
-			}else if (e.getSource() == panelBegruendungBottomD) {
+			} else if (e.getSource() == panelBegruendungBottomD) {
 				panelBegruendungSP.eventYouAreSelected(false);
+			} else if (e.getSource() == panelMeilensteinTopQP) {
+				panelMeilensteinSP.eventYouAreSelected(false);
 			}
 		} else if (e.getID() == ItemChangedEvent.ACTION_SAVE) {
 			if (e.getSource() == panelAuftragtextBottomD) {
@@ -260,11 +306,16 @@ public class TabbedPaneAuftragGrunddaten extends TabbedPane {
 				panelAuftragDokumentQP.eventYouAreSelected(false);
 				panelAuftragDokumentQP.setSelectedId(oKey);
 				panelAuftragDokumentSP.eventYouAreSelected(false);
-			}else if (e.getSource() == panelBegruendungBottomD) {
+			} else if (e.getSource() == panelBegruendungBottomD) {
 				Object oKey = panelBegruendungBottomD.getKeyWhenDetailPanel();
 				panelBegruendungTopQP.eventYouAreSelected(false);
 				panelBegruendungTopQP.setSelectedId(oKey);
 				panelBegruendungSP.eventYouAreSelected(false);
+			} else if (e.getSource() == panelMeilensteinBottomD) {
+				Object oKey = panelMeilensteinBottomD.getKeyWhenDetailPanel();
+				panelMeilensteinTopQP.eventYouAreSelected(false);
+				panelMeilensteinTopQP.setSelectedId(oKey);
+				panelMeilensteinSP.eventYouAreSelected(false);
 			}
 		} else if (e.getID() == ItemChangedEvent.ACTION_GOTO_MY_DEFAULT_QP) {
 			if (e.getSource() == panelAuftragtextBottomD) {
@@ -296,6 +347,8 @@ public class TabbedPaneAuftragGrunddaten extends TabbedPane {
 				// gesamte
 				// 1:n
 				// panel
+			} else if (e.getSource() == panelMeilensteinBottomD) {
+				panelMeilensteinSP.eventYouAreSelected(false);
 			}
 		} else if (eI.getID() == ItemChangedEvent.ACTION_NEW) {
 			if (eI.getSource() == panelAuftragtextTopQP) {
@@ -326,13 +379,20 @@ public class TabbedPaneAuftragGrunddaten extends TabbedPane {
 				panelAuftragDokumentD.eventActionNew(eI, true, false);
 				panelAuftragDokumentD.eventYouAreSelected(false);
 				setSelectedComponent(panelAuftragDokumentSP);
-			}else if (eI.getSource() == panelBegruendungTopQP) {
+			} else if (eI.getSource() == panelBegruendungTopQP) {
 				if (panelBegruendungTopQP.getSelectedId() == null) {
 					getInternalFrame().enableAllPanelsExcept(true);
 				}
 				panelBegruendungBottomD.eventActionNew(eI, true, false);
 				panelBegruendungBottomD.eventYouAreSelected(false);
 				setSelectedComponent(panelBegruendungSP);
+			} else if (eI.getSource() == panelMeilensteinTopQP) {
+				if (panelMeilensteinTopQP.getSelectedId() == null) {
+					getInternalFrame().enableAllPanelsExcept(true);
+				}
+				panelMeilensteinBottomD.eventActionNew(eI, true, false);
+				panelMeilensteinBottomD.eventYouAreSelected(false);
+				setSelectedComponent(panelMeilensteinSP);
 			}
 		}
 	}
@@ -381,6 +441,24 @@ public class TabbedPaneAuftragGrunddaten extends TabbedPane {
 			}
 			break;
 		}
+		case IDX_PANEL_MEILENSTEIN: {
+			refreshPanelMeilenstein();
+			panelMeilensteinTopQP.eventYouAreSelected(false);
+			setTitle(LPMain.getInstance().getTextRespectUISPr(
+					"auft.meilenstein"));
+
+			// im QP die Buttons setzen.
+			panelMeilensteinTopQP.updateButtons(panelMeilensteinBottomD
+					.getLockedstateDetailMainKey());
+
+			// wenn es fuer das tabbed pane noch keinen Eintrag gibt,
+			// die restlichen oberen Laschen deaktivieren, ausser ...
+			if (panelMeilensteinTopQP.getSelectedId() == null) {
+				getInternalFrame().enableAllOberePanelsExceptMe(this,
+						IDX_PANEL_MEILENSTEIN, false);
+			}
+			break;
+		}
 
 		case IDX_PANEL_AUFTRAGPOSITIONART: {
 			refreshPanelAuftragpositionart();
@@ -422,16 +500,15 @@ public class TabbedPaneAuftragGrunddaten extends TabbedPane {
 			panelBegruendungTopQP.updateButtons(panelBegruendungBottomD
 					.getLockedstateDetailMainKey());
 
-		
 			break;
 		}
 
 		}
 	}
+
 	private void refreshPanelBegruendung() throws Throwable {
 		if (panelBegruendungSP == null) {
-			String[] aWhichStandardButtonIUse = {
-			          PanelBasis.ACTION_NEW};
+			String[] aWhichStandardButtonIUse = { PanelBasis.ACTION_NEW };
 
 			panelBegruendungTopQP = new PanelQuery(null, null,
 					QueryParameters.UC_ID_AUFTRAGBEGRUENDUNG,
@@ -439,9 +516,9 @@ public class TabbedPaneAuftragGrunddaten extends TabbedPane {
 							.getInstance()
 							.getTextRespectUISPr("ls.begruendung"), true);
 
-			panelBegruendungBottomD = new PanelAuftragbegruendung(getInternalFrame(),
-					LPMain.getInstance().getTextRespectUISPr("ls.begruendung"),
-					null);
+			panelBegruendungBottomD = new PanelAuftragbegruendung(
+					getInternalFrame(), LPMain.getInstance()
+							.getTextRespectUISPr("ls.begruendung"), null);
 
 			panelBegruendungSP = new PanelSplit(getInternalFrame(),
 					panelBegruendungBottomD, panelBegruendungTopQP, 350);
@@ -457,14 +534,18 @@ public class TabbedPaneAuftragGrunddaten extends TabbedPane {
 		if (panelAuftragtextSP == null) {
 			// der Kopftext muss in der Konzerndatensprache hinterlegt sein oder
 			// werden
-			DelegateFactory.getInstance().getAuftragServiceDelegate()
+			DelegateFactory
+					.getInstance()
+					.getAuftragServiceDelegate()
 					.auftragtextFindByMandantLocaleCNr(
 							LPMain.getInstance().getTheClient()
 									.getLocUiAsString(),
 							MediaFac.MEDIAART_KOPFTEXT);
 			// der Fusstext muss in der Konzerndatensprache hinterlegt sein oder
 			// werden
-			DelegateFactory.getInstance().getAuftragServiceDelegate()
+			DelegateFactory
+					.getInstance()
+					.getAuftragServiceDelegate()
 					.auftragtextFindByMandantLocaleCNr(
 							LPMain.getInstance().getTheClient()
 									.getLocUiAsString(),
@@ -517,6 +598,32 @@ public class TabbedPaneAuftragGrunddaten extends TabbedPane {
 		}
 	}
 
+	private void refreshPanelMeilenstein() throws Throwable {
+		if (panelMeilensteinSP == null) {
+			String[] aWhichStandardButtonIUse = { PanelBasis.ACTION_NEW };
+
+			panelMeilensteinTopQP = new PanelQuery(null, SystemFilterFactory
+					.getInstance().createFKMandantCNr(),
+					QueryParameters.UC_ID_MEILENSTEIN,
+					aWhichStandardButtonIUse, getInternalFrame(), LPMain
+							.getInstance().getTextRespectUISPr(
+									"auft.meilenstein"), true);
+
+			panelMeilensteinBottomD = new PanelStammdatenCRUD(
+					getInternalFrame(), LPMain.getInstance()
+							.getTextRespectUISPr("auft.meilenstein"), null,
+					HelperClient.SCRUD_MEILENSTEIN_FILE,
+					getInternalFrameAuftrag(), HelperClient.LOCKME_MEILENSTEIN);
+
+			panelMeilensteinSP = new PanelSplit(getInternalFrame(),
+					panelMeilensteinBottomD, panelMeilensteinTopQP,
+					400 - ((PanelStammdatenCRUD) panelMeilensteinBottomD)
+							.getAnzahlControls() * 30);
+
+			setComponentAt(IDX_PANEL_MEILENSTEIN, panelMeilensteinSP);
+		}
+	}
+
 	private void refreshPanelAuftragpositionart() throws Throwable {
 		if (panelAuftragpositionartSP == null) {
 			String[] aWhichStandardButtonIUse = null;
@@ -548,8 +655,7 @@ public class TabbedPaneAuftragGrunddaten extends TabbedPane {
 
 	private void refreshPanelAuftragdokument() throws Throwable {
 		if (panelAuftragDokumentSP == null) {
-			 String[] aWhichStandardButtonIUse = {
-			          PanelBasis.ACTION_NEW};
+			String[] aWhichStandardButtonIUse = { PanelBasis.ACTION_NEW };
 
 			panelAuftragDokumentQP = new PanelQuery(null, null,
 					QueryParameters.UC_ID_AUFTRAGDOKUMENT,
@@ -557,12 +663,13 @@ public class TabbedPaneAuftragGrunddaten extends TabbedPane {
 							.getInstance().getTextRespectUISPr(
 									"auft.auftragdokument"), true);
 
-			
-			panelAuftragDokumentQP.befuellePanelFilterkriterienDirektUndVersteckte(
-					AuftragFilterFactory.getInstance().createFKDAuftragdokumentKennung(), null,
-							AuftragFilterFactory.getInstance().createFKVAuftragdokument());
-			
-			
+			panelAuftragDokumentQP
+					.befuellePanelFilterkriterienDirektUndVersteckte(
+							AuftragFilterFactory.getInstance()
+									.createFKDAuftragdokumentKennung(), null,
+							AuftragFilterFactory.getInstance()
+									.createFKVAuftragdokument());
+
 			panelAuftragDokumentD = new PanelAuftragdokument(
 					getInternalFrame(), LPMain.getInstance()
 							.getTextRespectUISPr("auft.auftragdokument"), null);

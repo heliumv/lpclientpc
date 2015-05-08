@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -50,6 +50,7 @@ import com.lp.client.frame.component.ISourceEvent;
 import com.lp.client.frame.component.InternalFrame;
 import com.lp.client.frame.component.ItemChangedEvent;
 import com.lp.client.frame.component.PanelBasis;
+import com.lp.client.frame.component.PanelDialog;
 import com.lp.client.frame.component.PanelQueryFLR;
 import com.lp.client.frame.component.WrapperButton;
 import com.lp.client.frame.component.WrapperLabel;
@@ -395,6 +396,8 @@ public class ReportWepEtikett extends PanelBasis implements PanelReportIfJRDS {
 	}
 
 	protected void eventActionSpecial(ActionEvent e) throws Throwable {
+		
+
 		if (e.getActionCommand().equals(
 				ACTION_SPECIAL_WARENVERKEHRSNUMMER_FROM_LISTE)) {
 			dialogQueryWarenverkehrsnummerFromListe(e);

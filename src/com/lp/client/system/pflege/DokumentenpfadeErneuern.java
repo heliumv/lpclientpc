@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -658,7 +658,7 @@ public class DokumentenpfadeErneuern extends PflegefunktionSupportsProgressBar
 		return "<html>Mit dieser Funktion werden alle Dokumente der Dokumentenablage "
 				+ "auf die neue Pfadstruktur umgestellt. Mit dieser k\u00F6nnen CNRs und "
 				+ "Partnernamen ver\u00E4ndert werden, ohne dass Dokumente verloren gehen.<br/>"
-				+ "<span style=\"color:red\">Legen Sie <b>umbedingt</b> ein Backup von <b>LP_DOKUMENTE</b> an "
+				+ "<span style=\"color:red\">Legen Sie <b>unbedingt</b> ein Backup von <b>LP_DOKUMENTE</b> an "
 				+ "<b>bevor</b> Sie diese Funktion nutzen!</span></html>";
 	}
 

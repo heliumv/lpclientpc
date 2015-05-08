@@ -1,33 +1,33 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
- * 
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
+ *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published 
- * by the Free Software Foundation, either version 3 of theLicense, or 
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of theLicense, or
  * (at your option) any later version.
- * 
- * According to sec. 7 of the GNU Affero General Public License, version 3, 
+ *
+ * According to sec. 7 of the GNU Affero General Public License, version 3,
  * the terms of the AGPL are supplemented with the following terms:
- * 
- * "HELIUM V" and "HELIUM 5" are registered trademarks of 
- * HELIUM V IT-Solutions GmbH. The licensing of the program under the 
+ *
+ * "HELIUM V" and "HELIUM 5" are registered trademarks of
+ * HELIUM V IT-Solutions GmbH. The licensing of the program under the
  * AGPL does not imply a trademark license. Therefore any rights, title and
  * interest in our trademarks remain entirely with us. If you want to propagate
  * modified versions of the Program under the name "HELIUM V" or "HELIUM 5",
- * you may only do so if you have a written permission by HELIUM V IT-Solutions 
+ * you may only do so if you have a written permission by HELIUM V IT-Solutions
  * GmbH (to acquire a permission please contact HELIUM V IT-Solutions
  * at trademark@heliumv.com).
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Affero General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Contact: developers@heliumv.com
  ******************************************************************************/
 package com.lp.client.rechnung;
@@ -63,19 +63,19 @@ import com.lp.server.system.service.ModulberechtigungDto;
 
 @SuppressWarnings("static-access")
 /*
- * 
+ *
  * <p>Diese Klasse kuemmert sich um das Modul Rechnung</p> <p>Copyright Logistik
  * Pur Software GmbH (c) 2004-2008</p> <p>Erstellungsdatum 20.11.2004</p> <p>
  * </p>
- * 
+ *
  * @author Martin Bluehweis
- * 
+ *
  * @version $Revision: 1.12 $
  */
 public class InternalFrameRechnung extends InternalFrame {
 
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = 1L;
 
@@ -230,7 +230,7 @@ public class InternalFrameRechnung extends InternalFrame {
 		// TODO-AGILCHANGES
 		/**
 		 * AGILPRO CHANGES BEGIN
-		 * 
+		 *
 		 * @author Lukas Lisowski
 		 */
 		int selectedCur = 0;
@@ -274,7 +274,7 @@ public class InternalFrameRechnung extends InternalFrame {
 		return tabbedPaneRechnung;
 	}
 
-	private TabbedPaneGutschrift getTabbedPaneGutschrift() throws Throwable {
+	public TabbedPaneGutschrift getTabbedPaneGutschrift() throws Throwable {
 		if (tabbedPaneGutschrift == null) {
 			// lazy loading
 			tabbedPaneGutschrift = new TabbedPaneGutschrift(this);
@@ -288,7 +288,7 @@ public class InternalFrameRechnung extends InternalFrame {
 		return tabbedPaneGutschrift;
 	}
 
-	private TabbedPaneProformarechnung getTabbedPaneProformarechnung()
+	public TabbedPaneProformarechnung getTabbedPaneProformarechnung()
 			throws Throwable {
 		if (tabbedPaneProformarechnung == null) {
 			// lazy loading
@@ -329,11 +329,11 @@ public class InternalFrameRechnung extends InternalFrame {
 	public boolean isUpdateAllowedForRechnungDto(RechnungDto rechnungDto)
 			throws Throwable {
 		if (rechnungDto != null) {
-			
+
 			Integer aktuelleMahnstufeIId=DelegateFactory.getInstance()
 			.getMahnwesenDelegate()
 			.getAktuelleMahnstufeEinerRechnung(rechnungDto.getIId());
-			
+
 			if (aktuelleMahnstufeIId != null) {
 				DialogFactory
 						.showModalDialog(
@@ -410,7 +410,15 @@ public class InternalFrameRechnung extends InternalFrame {
 				if (bZuruecknehmen == true) {
 					DelegateFactory.getInstance().getRechnungDelegate()
 							.setRechnungStatusAufAngelegt(rechnungDto.getIId());
-					getTabbedPaneRechnung().reloadRechnungDto();
+					if (rechnungartDto.getRechnungtypCNr().equals(RechnungFac.RECHNUNGTYP_RECHNUNG)) {
+						getTabbedPaneRechnung().reloadRechnungDto();
+					}
+					else if (rechnungartDto.getRechnungtypCNr().equals(RechnungFac.RECHNUNGTYP_GUTSCHRIFT)) {
+						getTabbedPaneGutschrift().reloadRechnungDto();
+					}
+					else if (rechnungartDto.getRechnungtypCNr().equals(RechnungFac.RECHNUNGTYP_PROFORMARECHNUNG)) {
+						getTabbedPaneProformarechnung().reloadRechnungDto();
+					}
 				}
 				return bZuruecknehmen;
 			} else if (rechnungDto.getStatusCNr().equals(
@@ -540,5 +548,18 @@ public class InternalFrameRechnung extends InternalFrame {
 
 	public java.sql.Date getNeuDatum() {
 		return neuDatum;
+	}
+
+	public void enableAllPanelsExcept(boolean enableI) {
+		super.enableAllPanelsExcept(enableI);
+
+		try {
+			getTabbedPaneRechnung().enableTabAuftraege();
+			getTabbedPaneRechnung().enableTabSichtAuftrag();
+			getTabbedPaneRechnung().enableTabSichtLieferschein();
+		} catch (Throwable e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 }

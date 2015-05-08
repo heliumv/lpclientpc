@@ -50,4 +50,14 @@
   labelbez="label.bezeichnung_lang" istsprache="">
   <attribut setColumnsMax="30"/>
 </control>
+
+ <control klasse="com.lp.client.frame.component.WrapperEditorField"
+    colname="XText" dtyp="java.lang.String"
+    labelbez="label.text" istsprache="">
+
+    <attribut setMandatoryField="false"/>
+    <attribut setActivatable="true"/>
+
+  </control>
+
 </controls>

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -105,7 +105,7 @@ public class PanelPositionenArtikelVerkaufSNR extends
 
 	private void jbInitPanel() throws Exception {
 
-		wtfSerienchargennummer = new WrapperSnrChnrField(getInternalFrame());
+		wtfSerienchargennummer = new WrapperSnrChnrField(getInternalFrame(),false);
 		wtfSerienchargennummer.setWnfBelegMenge(wnfMenge);
 		wtfSerienchargennummer.setActivatable(false);
 	}
@@ -149,7 +149,7 @@ public class PanelPositionenArtikelVerkaufSNR extends
 		ItemChangedEvent e = (ItemChangedEvent) eI;
 
 		if (e.getID() == ItemChangedEvent.GOTO_DETAIL_PANEL) {
-			if (e.getSource().equals(panelQueryFLRLager)) {
+			if (e.getSource().equals(panelQueryFLRArtikellager)) {
 
 				Object key = ((ISourceEvent) e.getSource()).getIdSelected();
 				
@@ -172,7 +172,7 @@ public class PanelPositionenArtikelVerkaufSNR extends
 				}
 
 			} else if (e.getID() == ItemChangedEvent.ACTION_LEEREN) {
-				if (e.getSource().equals(panelQueryFLRLager)) {
+				if (e.getSource().equals(panelQueryFLRArtikellager)) {
 					wtfSerienchargennummer.setArtikelIdLagerId(getArtikelDto(),
 							lagerIIdVorAenderung);
 				}
@@ -266,7 +266,6 @@ public class PanelPositionenArtikelVerkaufSNR extends
 				}
 				wtfSerienchargennummer.getButtonSnrAuswahl().setEnabled(
 						bEditableI);
-				wtfSerienchargennummer.setEditable(bEditableI);
 
 				if (wnfMenge.getBigDecimal() != null
 						&& wnfMenge.getBigDecimal().doubleValue() == 0) {
@@ -287,7 +286,6 @@ public class PanelPositionenArtikelVerkaufSNR extends
 
 				wtfSerienchargennummer.getButtonSnrAuswahl().setEnabled(
 						bEditableI);
-				wtfSerienchargennummer.setEditable(bEditableI);
 				wtfSerienchargennummer.setMandatoryField(true);
 
 				addWbuSerienchargennummer();

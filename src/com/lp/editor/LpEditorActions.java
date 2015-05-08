@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -33,6 +33,7 @@
 package com.lp.editor;
 
 import java.awt.Color;
+import java.awt.HeadlessException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -43,6 +44,7 @@ import java.util.Locale;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ImageIcon;
+import javax.swing.JColorChooser;
 import javax.swing.JEditorPane;
 import javax.swing.JOptionPane;
 import javax.swing.KeyStroke;
@@ -61,12 +63,18 @@ import javax.swing.text.TextAction;
 import javax.swing.undo.CannotRedoException;
 import javax.swing.undo.CannotUndoException;
 
+import com.lp.client.frame.component.DialogQuery;
+import com.lp.client.frame.component.PanelQueryFLR;
 import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.frame.delegate.PersonalDelegate;
 import com.lp.client.pc.LPMain;
+import com.lp.client.system.SystemFilterFactory;
 import com.lp.client.util.logger.LpLogger;
+import com.lp.editor.ui.LpFontChooser;
 import com.lp.editor.util.LpEditorMessages;
 import com.lp.server.personal.service.PersonalDto;
+import com.lp.server.system.service.MediaFac;
+import com.lp.server.system.service.MediastandardDto;
 import com.lp.server.system.service.TheClientDto;
 
 /**
@@ -625,6 +633,92 @@ class ActionInsertSignatur extends TextAction {
 
 }
 
+class ActionInsertTextbaustein extends TextAction {
+	/**
+ * 
+ */
+	private static final long serialVersionUID = 1L;
+	String sName;
+	String sShortDescription; // Tooltip
+	KeyStroke kAcceleratorKey;
+	Integer iMnemonicKey;
+	ImageIcon imgIcon;
+	LpEditor lpEditor;
+
+	public ActionInsertTextbaustein(LpEditor lpEditor) {
+		super("InsertTextbaustein");
+		sName = LpEditorMessages.getInstance().getString(
+				"Action.InsertTextbaustein");
+		sShortDescription = sName;
+
+		imgIcon = lpEditor.iconManager
+				.getIcon(LpEditorIconManager.ICON_EDIT_INSERT_TEXTBAUSTEIN);
+
+		putValue(NAME, sName);
+		putValue(SHORT_DESCRIPTION, sShortDescription);
+
+		putValue(SMALL_ICON, imgIcon);
+
+		this.lpEditor = lpEditor;
+	}
+
+	@SuppressWarnings("static-access")
+	public void actionPerformed(ActionEvent e) {
+		JTextComponent target = getTextComponent(e);
+		if ((target != null) && (e != null)) {
+			if ((!target.isEditable()) || (!target.isEnabled())) {
+				UIManager.getLookAndFeel().provideErrorFeedback(target);
+				return;
+			}
+
+			String content = "";
+
+			// Personal Kurzzeichen des Bearbeiters
+			try {
+				// Alle Texbtausteine holen
+
+				DialogTextbausteine d = new DialogTextbausteine();
+				LPMain.getInstance().getDesktop()
+				.platziereDialogInDerMitteDesFensters(d);
+				d.setVisible(true);
+
+				if (d.mediastandardIId != null) {
+					MediastandardDto mDto = DelegateFactory.getInstance()
+							.getMediaDelegate()
+							.mediastandardFindByPrimaryKey(d.mediastandardIId);
+
+					// In Dialog anzeigen
+
+					String signatur = "";
+					if (mDto.getOMediaText() != null) {
+						content = mDto.getOMediaText();
+					}
+
+				}
+				d.dispose();
+
+			} catch (Throwable ex) {
+			}
+
+			if (content != null) {
+
+				String text = target.getText();
+
+				text = text + content;
+
+				target.setText(text);
+			}
+		}
+
+		lpEditor.requestFocusInWindow();
+	}
+
+	public KeyStroke getAcceleratorKey() {
+		return kAcceleratorKey;
+	}
+
+}
+
 class ActionEditPaste extends StyledEditorKit.PasteAction {
 	/**
 	 * 
@@ -1120,13 +1214,18 @@ class ActionFormatFont extends AbstractAction {
 		}
 		AttributeSet attr = lpEditor.getStyledDocument()
 				.getCharacterElement(pos).getAttributes();
-		lpEditor.fontChooser.setAttributes(attr,
-				lpEditor.jTextPane.getSelectedText());
-		lpEditor.fontChooser.setVisible(true);
-		if (lpEditor.fontChooser.getOption() == JOptionPane.OK_OPTION) {
-			lpEditor.setCharacterAttributes(
-					lpEditor.fontChooser.getAttributes(), false); // fontChooser.getSelectedFont()
+
+		LpFontChooser fontChooser = new LpFontChooser(lpEditor.getOwnerFrame(),
+				lpEditor.getEditorMode(), null,
+				lpEditor.getAsAvailableFontSizes());
+
+		fontChooser.setAttributes(attr, lpEditor.jTextPane.getSelectedText());
+		fontChooser.setVisible(true);
+		if (fontChooser.getOption() == JOptionPane.OK_OPTION) {
+			lpEditor.setCharacterAttributes(fontChooser.getAttributes(), false); // fontChooser.getSelectedFont()
 		}
+		fontChooser.dispose();
+		fontChooser = null;
 		lpEditor.requestFocusInWindow();
 	}
 }
@@ -1168,7 +1267,7 @@ class ActionFormatColorForeground extends AbstractAction {
 		Color colorOld, colorNew;
 		AttributeSet attributeSetOld = lpEditor.getCharacterAttributes();
 		colorOld = lpEditor.getStyledDocument().getForeground(attributeSetOld);
-		colorNew = lpEditor.jColorChooser.showDialog(lpEditor, sName, colorOld);
+		colorNew = JColorChooser.showDialog(lpEditor, sName, colorOld);
 		if (colorNew != null) {
 			SimpleAttributeSet attributeSetNew = new SimpleAttributeSet();
 			StyleConstants.setForeground(attributeSetNew, colorNew);
@@ -1214,7 +1313,8 @@ class ActionFormatColorBackground extends AbstractAction {
 		Color colorOld, colorNew;
 		AttributeSet attributeSetOld = lpEditor.getCharacterAttributes();
 		colorOld = lpEditor.getStyledDocument().getBackground(attributeSetOld);
-		colorNew = lpEditor.jColorChooser.showDialog(lpEditor, sName, colorOld);
+
+		colorNew = JColorChooser.showDialog(lpEditor, sName, colorOld);
 		if (colorNew != null) {
 			SimpleAttributeSet attributeSetNew = new SimpleAttributeSet();
 			StyleConstants.setBackground(attributeSetNew, colorNew);

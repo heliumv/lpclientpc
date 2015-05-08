@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -156,13 +156,11 @@ public class PanelRechnungPositionenSichtAuftrag extends
 		if (intFrame.isUpdateAllowedForRechnungDto(tpRechnung.getRechnungDto())) {
 			boolean bAendern = true;
 
-			AuftragDto auftragDto = DelegateFactory
-					.getInstance()
+			AuftragDto auftragDto = DelegateFactory.getInstance()
 					.getAuftragDelegate()
-					.auftragFindByPrimaryKey(
-							oAuftragpositionDto.getBelegIId());
+					.auftragFindByPrimaryKey(oAuftragpositionDto.getBelegIId());
 
-			if (auftragDto.getAuftragstatusCNr().equals(
+			if (auftragDto.getStatusCNr().equals(
 					AuftragServiceFac.AUFTRAGSTATUS_ERLEDIGT)) {
 				DialogFactory
 						.showModalDialog(
@@ -239,9 +237,12 @@ public class PanelRechnungPositionenSichtAuftrag extends
 				}
 				// super.eventActionUpdate(aE, false);
 
-				if (oAuftragpositionDto.getPositionsartCNr().equals(
-						LocaleFac.POSITIONSART_IDENT)) {
+				zeigeSerienchargennummer(true, false);
 
+				super.eventActionUpdate(aE, false); // die Buttons muessen auf
+
+				if (LocaleFac.POSITIONSART_IDENT.equals(oAuftragpositionDto
+						.getPositionsartCNr())) {
 					// IMS 1553 Wenn die Rechnungposition neu angelegt
 					// wird, ist der
 					// Vorschlagswert die offene Menge im Auftrag, sonst
@@ -263,8 +264,8 @@ public class PanelRechnungPositionenSichtAuftrag extends
 					// getBChargennrtragend()) &&
 					// !Helper.short2boolean(panelArtikel.artikelDto.
 					// getBSeriennrtragend())) {
-				} else if (oAuftragpositionDto.getPositionsartCNr()
-						.equals(LocaleFac.POSITIONSART_HANDEINGABE)) {
+				} else if (oAuftragpositionDto.getPositionsartCNr().equals(
+						LocaleFac.POSITIONSART_HANDEINGABE)) {
 					// IMS 1553 Wenn die Rechnungsposition neu angelegt
 					// wird, ist der
 					// Vorschlagswert die offene Menge im Auftrag, sonst
@@ -284,10 +285,6 @@ public class PanelRechnungPositionenSichtAuftrag extends
 										.getNMenge());
 					}
 				}
-
-				zeigeSerienchargennummer(true, false);
-
-				super.eventActionUpdate(aE, false); // die Buttons muessen auf
 
 				if (oAuftragpositionDto.getPositionsartCNr().equals(
 						LocaleFac.POSITIONSART_IDENT)) {
@@ -463,22 +460,24 @@ public class PanelRechnungPositionenSichtAuftrag extends
 				oRechnungpositionDto
 						.setBNettopreisuebersteuert(oAuftragpositionDto
 								.getBNettopreisuebersteuert());
-				
+
 				if (oAuftragpositionDto.isIntelligenteZwischensumme()) {
 					// SPJ 1779 - Mwstsatzfelder belegen
-					oRechnungpositionDto.setBMwstsatzuebersteuert(oAuftragpositionDto
-							.getBMwstsatzuebersteuert());
+					oRechnungpositionDto
+							.setBMwstsatzuebersteuert(oAuftragpositionDto
+									.getBMwstsatzuebersteuert());
 					oRechnungpositionDto.setMwstsatzIId(oAuftragpositionDto
 							.getMwstsatzIId());
 					oRechnungpositionDto.setFRabattsatz(oAuftragpositionDto
 							.getFRabattsatz());
 
 					// SPJ 1779 - Mwstsatzfelder belegen
-					oRechnungpositionDto.setBMwstsatzuebersteuert(oAuftragpositionDto
-							.getBMwstsatzuebersteuert());
+					oRechnungpositionDto
+							.setBMwstsatzuebersteuert(oAuftragpositionDto
+									.getBMwstsatzuebersteuert());
 					oRechnungpositionDto.setMwstsatzIId(oAuftragpositionDto
 							.getMwstsatzIId());
-					
+
 					Integer vonPosNr = DelegateFactory
 							.getInstance()
 							.getAuftragpositionDelegate()
@@ -774,6 +773,12 @@ public class PanelRechnungPositionenSichtAuftrag extends
 					oRechnungspositionDto
 							.setKostentraegerIId(oAuftragpositionDto
 									.getKostentraegerIId());
+					oRechnungspositionDto
+							.setNMaterialzuschlagKurs(oAuftragpositionDto
+									.getNMaterialzuschlagKurs());
+					oRechnungspositionDto
+							.setTMaterialzuschlagDatum(oAuftragpositionDto
+									.getTMaterialzuschlagDatum());
 					oRechnungspositionDto.setRechnungIId(tpRechnung
 							.getRechnungDto().getIId());
 					oRechnungspositionDto.setMwstsatzIId(oAuftragpositionDto
@@ -1029,7 +1034,12 @@ public class PanelRechnungPositionenSichtAuftrag extends
 						.getFZusatzrabattsatz());
 				oRechnungspositionDto.setKostentraegerIId(oAuftragpositionDto
 						.getKostentraegerIId());
-
+				oRechnungspositionDto
+						.setNMaterialzuschlagKurs(oAuftragpositionDto
+								.getNMaterialzuschlagKurs());
+				oRechnungspositionDto
+						.setTMaterialzuschlagDatum(oAuftragpositionDto
+								.getTMaterialzuschlagDatum());
 				oRechnungspositionDto.setRechnungIId(tpRechnung
 						.getRechnungDto().getIId());
 				oRechnungspositionDto.setMwstsatzIId(oAuftragpositionDto
@@ -1296,9 +1306,9 @@ public class PanelRechnungPositionenSichtAuftrag extends
 	}
 
 	/**
-	 * ACHTUNG: Das ist eine ganz b&ouml;se Routine. Sie castet - mit dem Wissen dass
-	 * es sich nur um Auftragpositionen handeln kann(!) - von Belegpositionen
-	 * auf Auftragpositionen.
+	 * ACHTUNG: Das ist eine ganz b&ouml;se Routine. Sie castet - mit dem Wissen
+	 * dass es sich nur um Auftragpositionen handeln kann(!) - von
+	 * Belegpositionen auf Auftragpositionen.
 	 * 
 	 * @param artikelset
 	 * @return AuftragpositionDto[]

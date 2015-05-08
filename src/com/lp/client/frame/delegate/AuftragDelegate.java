@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -42,13 +42,17 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 
 import com.lp.client.frame.ExceptionLP;
+import com.lp.client.frame.component.InternalFrame;
+import com.lp.client.frame.dialog.DialogFactory;
 import com.lp.client.pc.LPMain;
+import com.lp.server.artikel.service.ArtikelDto;
 import com.lp.server.auftrag.service.AuftragDto;
 import com.lp.server.auftrag.service.AuftragFac;
-import com.lp.server.auftrag.service.SichtLieferstatusDto;
 import com.lp.server.lieferschein.service.LieferscheinDto;
 import com.lp.server.partner.service.KundeDto;
+import com.lp.server.system.service.BelegPruefungDto;
 import com.lp.server.system.service.LocaleFac;
+import com.lp.server.system.service.PaneldatenDto;
 
 /**
  * <p>
@@ -227,13 +231,13 @@ public class AuftragDelegate extends Delegate {
 		return auftragDto;
 	}
 
-	public AuftragDto auftragFindByMandantCNrCNrOhneExc(String cNrMandantI, String cNrI)
-			throws ExceptionLP {
+	public AuftragDto auftragFindByMandantCNrCNrOhneExc(String cNrMandantI,
+			String cNrI) throws ExceptionLP {
 		AuftragDto auftragDto = null;
 
 		try {
-			auftragDto = auftragFac.auftragFindByMandantCNrCNrOhneExc(cNrMandantI,
-					cNrI);
+			auftragDto = auftragFac.auftragFindByMandantCNrCNrOhneExc(
+					cNrMandantI, cNrI);
 		} catch (Throwable t) {
 			handleThrowable(t);
 		}
@@ -252,7 +256,7 @@ public class AuftragDelegate extends Delegate {
 	 */
 	public void setAuftragstatus(AuftragDto auftragDto, String pStatus)
 			throws ExceptionLP {
-		auftragDto.setAuftragstatusCNr(pStatus);
+		auftragDto.setStatusCNr(pStatus);
 		updateAuftrag(auftragDto, null);
 	}
 
@@ -306,8 +310,9 @@ public class AuftragDelegate extends Delegate {
 
 		return auftragswert;
 	}
-	
-	public BigDecimal berechneBestellwertAuftrag(Integer iIdAuftrag) throws ExceptionLP {
+
+	public BigDecimal berechneBestellwertAuftrag(Integer iIdAuftrag)
+			throws ExceptionLP {
 		try {
 			return auftragFac.berechneBestellwertAuftrag(iIdAuftrag);
 		} catch (Throwable t) {
@@ -315,8 +320,9 @@ public class AuftragDelegate extends Delegate {
 		}
 		return null;
 	}
-	
-	public BigDecimal berechneSummeSplittbetrag(Integer iIdAuftrag) throws ExceptionLP {
+
+	public BigDecimal berechneSummeSplittbetrag(Integer iIdAuftrag)
+			throws ExceptionLP {
 		try {
 			return auftragFac.berechneSummeSplittbetragAuftrag(iIdAuftrag);
 		} catch (Throwable t) {
@@ -347,33 +353,6 @@ public class AuftragDelegate extends Delegate {
 		}
 
 		return statusGeaendert;
-	}
-
-	/**
-	 * Alle Informationen fuer die Sicht des Auftrags auf den Lieferstatus
-	 * sammeln. <br>
-	 * Es muessen auch jene Positionen in den Lieferscheinen beruecksichtigt
-	 * werden, die im Nachhinein erfasst wurden und im Auftrag selbst nicht
-	 * aufscheinen.
-	 * 
-	 * @param iIdAuftragI
-	 *            pk des Auftrag
-	 * @throws ExceptionLP
-	 *             Ausnahme
-	 * @return SichtLieferstatusDto[] Infos, NULL wenn es keine gibt
-	 */
-	public SichtLieferstatusDto[] getSichtLieferstatus(Integer iIdAuftragI)
-			throws ExceptionLP {
-		SichtLieferstatusDto[] aLieferstatusDto = null;
-
-		try {
-			aLieferstatusDto = auftragFac.getSichtLieferstatus(iIdAuftragI,
-					LPMain.getTheClient());
-		} catch (Throwable t) {
-			handleThrowable(t);
-		}
-
-		return aLieferstatusDto;
 	}
 
 	/**
@@ -425,31 +404,41 @@ public class AuftragDelegate extends Delegate {
 		}
 		return iAnzahlBelgeO;
 	}
-	
-	public void aktiviereBelegControlled(Integer iid, Timestamp t) throws ExceptionLP {
+
+	public void aktiviereBelegControlled(Integer iid, Timestamp t)
+			throws ExceptionLP {
 		try {
-			auftragFac.aktiviereBelegControlled(iid, t, LPMain.getTheClient());
-			// SP1881
-			DelegateFactory
-					.getInstance()
-					.getSystemDelegate()
-					.enthaeltEinVKBelegUmsatzsteuerObwohlKundeSteuerfrei(
-							LocaleFac.BELEGART_AUFTRAG, iid);
+			BelegPruefungDto pruefungDto = auftragFac.aktiviereBelegControlled(iid, t, LPMain.getTheClient());
+			dialogBelegpruefung(pruefungDto) ;
+//			// SP1881
+//			DelegateFactory
+//					.getInstance()
+//					.getSystemDelegate()
+//					.enthaeltEinVKBelegUmsatzsteuerObwohlKundeSteuerfrei(
+//							LocaleFac.BELEGART_AUFTRAG, iid);
 		} catch (Throwable t1) {
 			handleThrowable(t1);
 		}
 	}
-	
+
 	public Timestamp berechneBelegControlled(Integer iid) throws ExceptionLP {
 		try {
-			Timestamp t = auftragFac.berechneBelegControlled(iid, LPMain.getTheClient());
-			// SP1881
-			DelegateFactory
-					.getInstance()
-					.getSystemDelegate()
-					.enthaeltEinVKBelegUmsatzsteuerObwohlKundeSteuerfrei(
-							LocaleFac.BELEGART_AUFTRAG, iid);
-			return t;
+			BelegPruefungDto pruefungDto = auftragFac.berechneBelegControlled(iid,
+					LPMain.getTheClient());
+			dialogBelegpruefung(pruefungDto) ;
+			return pruefungDto.getBerechnungsZeitpunkt() ;
+		} catch (Throwable t1) {
+			handleThrowable(t1);
+		}
+		return null;
+	}
+
+	public Timestamp berechneAktiviereBelegControlled(Integer iid) throws ExceptionLP {
+		try {
+			BelegPruefungDto pruefungDto = auftragFac.berechneAktiviereBelegControlled(iid,
+					LPMain.getTheClient());
+			dialogBelegpruefung(pruefungDto) ;
+			return pruefungDto.getBerechnungsZeitpunkt() ;
 		} catch (Throwable t1) {
 			handleThrowable(t1);
 		}
@@ -481,6 +470,7 @@ public class AuftragDelegate extends Delegate {
 			handleThrowable(ex);
 		}
 	}
+
 	public void toggleVerrechenbar(Integer iIdAuftragI) throws ExceptionLP {
 		try {
 			auftragFac.toggleVerrechenbar(iIdAuftragI, LPMain.getTheClient());
@@ -536,8 +526,23 @@ public class AuftragDelegate extends Delegate {
 	 * @throws ExceptionLP
 	 *             Ausnahme
 	 */
-	public Integer erzeugeAuftragAusAuftrag(Integer iIdAuftragI)
+
+	public Integer erzeugeAuftragUeberSchnellanlage(AuftragDto auftragDto,
+			ArtikelDto artikelDto, PaneldatenDto[] paneldatenDtos)
 			throws ExceptionLP {
+		Integer iIdAuftrag = null;
+		try {
+			iIdAuftrag = auftragFac.erzeugeAuftragUeberSchnellanlage(
+					auftragDto, artikelDto, paneldatenDtos,
+					LPMain.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+		return iIdAuftrag;
+	}
+
+	public Integer erzeugeAuftragAusAuftrag(Integer iIdAuftragI,
+			InternalFrame internalFrame) throws ExceptionLP {
 		Integer iIdAuftrag = null;
 		try {
 			iIdAuftrag = auftragFac.erzeugeAuftragAusAuftrag(iIdAuftragI,
@@ -566,8 +571,11 @@ public class AuftragDelegate extends Delegate {
 				Iterator<Integer> it = hmKunden.keySet().iterator();
 
 				while (it.hasNext()) {
-					DelegateFactory.getInstance().getKundeDelegate()
-							.pruefeKunde(it.next());
+					DelegateFactory
+							.getInstance()
+							.getKundeDelegate()
+							.pruefeKunde(it.next(), LocaleFac.BELEGART_AUFTRAG,
+									internalFrame);
 				}
 
 			}
@@ -606,7 +614,8 @@ public class AuftragDelegate extends Delegate {
 	 *             Ausnahme
 	 */
 	public Integer erzeugeLieferscheinAusAuftrag(Integer iIdAuftragI,
-			LieferscheinDto lieferscheinDtoI) throws ExceptionLP {
+			LieferscheinDto lieferscheinDtoI, InternalFrame internalFrame)
+			throws ExceptionLP {
 		Integer iIdLieferschein = null;
 		try {
 
@@ -634,8 +643,12 @@ public class AuftragDelegate extends Delegate {
 				Iterator<Integer> it = hmKunden.keySet().iterator();
 
 				while (it.hasNext()) {
-					DelegateFactory.getInstance().getKundeDelegate()
-							.pruefeKunde(it.next());
+					DelegateFactory
+							.getInstance()
+							.getKundeDelegate()
+							.pruefeKunde(it.next(),
+									LocaleFac.BELEGART_LIEFERSCHEIN,
+									internalFrame);
 				}
 
 			}
@@ -770,24 +783,47 @@ public class AuftragDelegate extends Delegate {
 		return null;
 	}
 
-	
-	public boolean hatAuftragVersandweg(AuftragDto auftragDto) throws ExceptionLP {
+	public boolean hatAuftragVersandweg(AuftragDto auftragDto)
+			throws ExceptionLP {
 		try {
-			return auftragFac.hatAuftragVersandweg(auftragDto, LPMain.getTheClient()) ;
-		} catch(Throwable t) {
-			handleThrowable(t) ;
+			return auftragFac.hatAuftragVersandweg(auftragDto,
+					LPMain.getTheClient());
+		} catch (Throwable t) {
+			handleThrowable(t);
 		}
-		return false ;
+		return false;
 	}
-	
-	
-	public String createOrderResponsePost(AuftragDto auftragDto) throws ExceptionLP {
+
+	public String createOrderResponsePost(AuftragDto auftragDto)
+			throws ExceptionLP {
 		try {
-			return auftragFac.createOrderResponsePost(auftragDto, LPMain.getTheClient()) ;
-		} catch(Throwable t) {
-			handleThrowable(t) ;
+			return auftragFac.createOrderResponsePost(auftragDto,
+					LPMain.getTheClient());
+		} catch (Throwable t) {
+			handleThrowable(t);
 		}
-		
-		return "" ;
+
+		return "";
 	}
+
+	public void korrekturbetragZuruecknehmen(Integer auftragIId)
+			throws ExceptionLP {
+		try {
+
+			AuftragDto abDto = auftragFindByPrimaryKey(auftragIId);
+
+			if (abDto.getNKorrekturbetrag() != null
+					&& abDto.getNKorrekturbetrag().doubleValue() != 0) {
+				DialogFactory
+						.showModalDialog(
+								LPMain.getTextRespectUISPr("lp.hinweis"),
+								LPMain.getTextRespectUISPr("lp.korrekturbetragzurueckgenommen"));
+			}
+
+			auftragFac.korrekturbetragZuruecknehmen(auftragIId);
+		} catch (Throwable t) {
+			handleThrowable(t);
+		}
+	}
+
 }

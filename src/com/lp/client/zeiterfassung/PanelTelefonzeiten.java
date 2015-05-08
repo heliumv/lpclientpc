@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -42,9 +42,13 @@ import java.awt.event.FocusListener;
 import java.awt.event.KeyEvent;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.text.MessageFormat;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.EventObject;
+import java.util.GregorianCalendar;
+import java.util.Locale;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
@@ -70,15 +74,21 @@ import com.lp.client.frame.component.WrapperLabel;
 import com.lp.client.frame.component.WrapperTextField;
 import com.lp.client.frame.component.WrapperTimeField;
 import com.lp.client.frame.delegate.DelegateFactory;
+import com.lp.client.frame.delegate.PersonalDelegate;
 import com.lp.client.frame.dialog.DialogFactory;
 import com.lp.client.partner.PartnerFilterFactory;
 import com.lp.client.pc.LPMain;
 import com.lp.client.projekt.ProjektFilterFactory;
+import com.lp.server.benutzer.service.RechteFac;
 import com.lp.server.partner.service.AnsprechpartnerDto;
 import com.lp.server.partner.service.PartnerDto;
+import com.lp.server.personal.service.PersonalDto;
 import com.lp.server.personal.service.TelefonzeitenDto;
 import com.lp.server.projekt.service.ProjektDto;
 import com.lp.server.system.service.MandantFac;
+import com.lp.server.system.service.ParameterFac;
+import com.lp.server.system.service.ParametermandantDto;
+import com.lp.server.system.service.TheClientDto;
 import com.lp.server.util.Facade;
 import com.lp.util.EJBExceptionLP;
 import com.lp.util.Helper;
@@ -223,10 +233,13 @@ public class PanelTelefonzeiten extends PanelBasis {
 	protected void eventActionDelete(ActionEvent e,
 			boolean bAdministrateLockKeyI, boolean bNeedNoDeleteI)
 			throws Throwable {
-		DelegateFactory.getInstance().getZeiterfassungDelegate()
-				.removeTelefonzeiten(telefonzeitenDto);
-		this.setKeyWhenDetailPanel(null);
-		super.eventActionDelete(e, false, false);
+		if (pruefeObBuchungMoeglich()) {
+
+			DelegateFactory.getInstance().getZeiterfassungDelegate()
+					.removeTelefonzeiten(telefonzeitenDto);
+			this.setKeyWhenDetailPanel(null);
+			super.eventActionDelete(e, false, false);
+		}
 	}
 
 	protected void eventActionUnlock(ActionEvent e) throws Throwable {
@@ -307,73 +320,211 @@ public class PanelTelefonzeiten extends PanelBasis {
 
 	}
 
+	private boolean pruefeObBuchungMoeglich() throws ExceptionLP, Throwable {
+
+		Calendar date = Calendar.getInstance();
+		Calendar temp = Calendar.getInstance();
+		date.setTime(wdfDate.getDate());
+
+		temp.setTimeInMillis(wtfVon.getTime().getTime());
+		temp.set(date.get(Calendar.YEAR), date.get(Calendar.MONTH),
+				date.get(Calendar.DATE));
+
+		Timestamp tVon = new Timestamp(temp.getTimeInMillis()
+				- temp.getTimeInMillis() % 1000);
+
+		if (tVon != null) {
+
+			// SP3285
+			if (LPMain
+					.getInstance()
+					.getDesktop()
+					.darfAnwenderAufZusatzfunktionZugreifen(
+							MandantFac.ZUSATZFUNKTION_ZEITEN_ABSCHLIESSEN)) {
+
+				java.sql.Timestamp t = DelegateFactory
+						.getInstance()
+						.getZeiterfassungDelegate()
+						.gibtEsBereitseinenZeitabschlussBisZurKW(
+								internalFrameZeiterfassung.getPersonalDto()
+										.getIId(), tVon);
+
+				if (t != null) {
+					MessageFormat mf = new MessageFormat(
+							LPMain.getTextRespectUISPr("pers.zeiterfassung.zeitenbereitsabgeschlossen.bis"));
+					mf.setLocale(LPMain.getTheClient().getLocUi());
+
+					Calendar c = Calendar.getInstance();
+					c.setTimeInMillis(t.getTime());
+					c.get(Calendar.WEEK_OF_YEAR);
+					Object pattern[] = { c.get(Calendar.WEEK_OF_YEAR) };
+
+					String sMsg = mf.format(pattern);
+
+					DialogFactory.showModalDialog(
+							LPMain.getTextRespectUISPr("lp.error"), sMsg);
+					return false;
+				}
+
+			}
+
+			boolean bRechtChefbuchhalter = DelegateFactory.getInstance()
+					.getTheJudgeDelegate()
+					.hatRecht(RechteFac.RECHT_FB_CHEFBUCHHALTER);
+
+			ParametermandantDto parameter = (ParametermandantDto) DelegateFactory
+					.getInstance()
+					.getParameterDelegate()
+					.getParametermandant(
+							ParameterFac.ZEITBUCHUNGEN_NACHTRAEGLICH_BUCHEN_BIS,
+							ParameterFac.KATEGORIE_PERSONAL,
+							LPMain.getTheClient().getMandant());
+
+			int iTag = (Integer) parameter.getCWertAsObject();
+
+			Calendar cAktuelleZeit = Calendar.getInstance();
+			cAktuelleZeit.setTimeInMillis(DelegateFactory.getInstance()
+					.getSystemDelegate().getServerTimestamp().getTime());
+
+			Calendar cBisDahinDarfGeaendertWerden = Calendar.getInstance();
+			cBisDahinDarfGeaendertWerden.setTimeInMillis(Helper.cutTimestamp(
+					DelegateFactory.getInstance().getSystemDelegate()
+							.getServerTimestamp()).getTime());
+
+			// Im aktuelle Monat darf geaendert werden
+			cBisDahinDarfGeaendertWerden.set(Calendar.DAY_OF_MONTH, 1);
+
+			if (cAktuelleZeit.get(Calendar.DAY_OF_MONTH) <= iTag) {
+				// Im Vormonat darf geaendert werden
+				cBisDahinDarfGeaendertWerden.set(Calendar.MONTH,
+						cBisDahinDarfGeaendertWerden.get(Calendar.MONTH) - 1);
+			}
+
+			if (cBisDahinDarfGeaendertWerden.getTimeInMillis() > tVon.getTime()) {
+
+				if (bRechtChefbuchhalter) {
+					// Warnung anzeigen
+					MessageFormat mf = new MessageFormat(
+							LPMain.getTextRespectUISPr("pers.error.zeitbuchungenduerfenichtmehrgeaendertwerden.trotzdem"));
+					mf.setLocale(LPMain.getTheClient().getLocUi());
+
+					Object pattern[] = { Helper.formatDatum(
+							cBisDahinDarfGeaendertWerden.getTime(), LPMain
+									.getTheClient().getLocUi()) };
+					String sMsg = mf.format(pattern);
+
+					boolean b = DialogFactory.showModalJaNeinDialog(
+							getInternalFrame(), sMsg,
+							LPMain.getTextRespectUISPr("lp.warning"));
+					if (b == false) {
+						return false;
+					}
+
+				} else {
+					// Fehler anzeigen
+					MessageFormat mf = new MessageFormat(
+							LPMain.getTextRespectUISPr("pers.error.zeitbuchungenduerfenichtmehrgeaendertwerden"));
+
+					try {
+						mf.setLocale(LPMain.getTheClient().getLocUi());
+					} catch (Throwable ex) {
+					}
+
+					Object pattern[] = { Helper.formatDatum(
+							cBisDahinDarfGeaendertWerden.getTime(), LPMain
+									.getTheClient().getLocUi()) };
+
+					String sMsg = mf.format(pattern);
+
+					DialogFactory.showModalDialog(
+							LPMain.getTextRespectUISPr("lp.error"), sMsg);
+
+					return false;
+				}
+
+			}
+		}
+
+		return true;
+	}
+
 	public void eventActionSave(ActionEvent e, boolean bNeedNoSaveI)
 			throws Throwable {
 
 		if (allMandatoryFieldsSetDlg()) {
-			components2Dto();
-			stopUhrzeitAktualisieren();
-			boolean gespeichert = false;
-			while (!gespeichert) {
-				try {
-					if (telefonzeitenDto.getIId() == null) {
-						telefonzeitenDto.setIId(DelegateFactory.getInstance()
-								.getZeiterfassungDelegate()
-								.createTelefonzeiten(telefonzeitenDto));
+			if (pruefeObBuchungMoeglich()) {
+				components2Dto();
+				stopUhrzeitAktualisieren();
+				boolean gespeichert = false;
+				while (!gespeichert) {
+					try {
+						if (telefonzeitenDto.getIId() == null) {
+							telefonzeitenDto.setIId(DelegateFactory
+									.getInstance().getZeiterfassungDelegate()
+									.createTelefonzeiten(telefonzeitenDto));
 
-						setKeyWhenDetailPanel(telefonzeitenDto.getIId());
-					} else {
-						DelegateFactory.getInstance()
-								.getZeiterfassungDelegate()
-								.updateTelefonzeiten(telefonzeitenDto);
-					}
-					gespeichert = true;
-				} catch (ExceptionLP ex) {
-					if (ex.getICode() == EJBExceptionLP.FEHLER_ZEITBUCHUNGEN_VORHANDEN) {
+							setKeyWhenDetailPanel(telefonzeitenDto.getIId());
+						} else {
+							DelegateFactory.getInstance()
+									.getZeiterfassungDelegate()
+									.updateTelefonzeiten(telefonzeitenDto);
+						}
+						gespeichert = true;
+					} catch (ExceptionLP ex) {
+						if (ex.getICode() == EJBExceptionLP.FEHLER_ZEITBUCHUNGEN_VORHANDEN) {
 
-						Object[] options = {
-								LPMain.getTextRespectUISPr("pers.zeitdaten.vorher"),
-								LPMain.getTextRespectUISPr("pers.zeitdaten.nachher"),
-								LPMain.getTextRespectUISPr("lp.abbrechen") };
+							Object[] options = {
+									LPMain.getTextRespectUISPr("pers.zeitdaten.vorher"),
+									LPMain.getTextRespectUISPr("pers.zeitdaten.nachher"),
+									LPMain.getTextRespectUISPr("lp.abbrechen") };
 
-						int iOption = DialogFactory
-								.showModalDialog(
-										getInternalFrame(),
-										LPMain.getTextRespectUISPr("pers.error.zeitdatenvorhandenum")
-												+ " "
-												+ Helper.formatTimestamp(
-														(Timestamp) ex
-																.getAlInfoForTheClient()
-																.get(0), LPMain
-																.getTheClient()
-																.getLocUi()),
-										"", options, options[1]);
-						if (iOption == JOptionPane.YES_OPTION) {
-							telefonzeitenDto.setTVon(new java.sql.Timestamp(
-									telefonzeitenDto.getTVon().getTime() - 10));
-							telefonzeitenDto.setTBis(new java.sql.Timestamp(
-									telefonzeitenDto.getTBis().getTime() - 10));
-						} else if (iOption == JOptionPane.NO_OPTION) {
-							telefonzeitenDto.setTVon(new java.sql.Timestamp(
-									telefonzeitenDto.getTVon().getTime() + 10));
-							telefonzeitenDto.setTBis(new java.sql.Timestamp(
-									telefonzeitenDto.getTBis().getTime() + 10));
-						} else if (iOption == JOptionPane.CANCEL_OPTION) {
+							int iOption = DialogFactory
+									.showModalDialog(
+											getInternalFrame(),
+											LPMain.getTextRespectUISPr("pers.error.zeitdatenvorhandenum")
+													+ " "
+													+ Helper.formatTimestamp(
+															(Timestamp) ex
+																	.getAlInfoForTheClient()
+																	.get(0),
+															LPMain.getTheClient()
+																	.getLocUi()),
+											"", options, options[1]);
+							if (iOption == JOptionPane.YES_OPTION) {
+								telefonzeitenDto
+										.setTVon(new java.sql.Timestamp(
+												telefonzeitenDto.getTVon()
+														.getTime() - 10));
+								telefonzeitenDto
+										.setTBis(new java.sql.Timestamp(
+												telefonzeitenDto.getTBis()
+														.getTime() - 10));
+							} else if (iOption == JOptionPane.NO_OPTION) {
+								telefonzeitenDto
+										.setTVon(new java.sql.Timestamp(
+												telefonzeitenDto.getTVon()
+														.getTime() + 10));
+								telefonzeitenDto
+										.setTBis(new java.sql.Timestamp(
+												telefonzeitenDto.getTBis()
+														.getTime() + 10));
+							} else if (iOption == JOptionPane.CANCEL_OPTION) {
+								return;
+							}
+						} else {
+							handleException(ex, false);
 							return;
 						}
-					} else {
-						handleException(ex, false);
-						return;
 					}
 				}
-			}
-			super.eventActionSave(e, true);
+				super.eventActionSave(e, true);
 
-			if (getInternalFrame().getKeyWasForLockMe() == null) {
-				getInternalFrame().setKeyWasForLockMe(
-						telefonzeitenDto.getIId() + "");
+				if (getInternalFrame().getKeyWasForLockMe() == null) {
+					getInternalFrame().setKeyWasForLockMe(
+							telefonzeitenDto.getIId() + "");
+				}
+				eventYouAreSelected(false);
 			}
-			eventYouAreSelected(false);
 		}
 
 	}
@@ -645,6 +796,66 @@ public class PanelTelefonzeiten extends PanelBasis {
 				}
 			}
 		}, 0, 500);
+	}
+
+	public void setzeAusWrapperTelefonField(Integer partnerIId,
+			Integer ansprechpartnerIId, Integer projektIId) throws Throwable {
+
+		telefonzeitenDto.setPartnerIId(partnerIId);
+		telefonzeitenDto.setAnsprechpartnerIId(ansprechpartnerIId);
+
+		telefonzeitenDto.setProjektIId(projektIId);
+
+		if (ansprechpartnerIId != null) {
+			AnsprechpartnerDto ansprechpartnerDto = DelegateFactory
+					.getInstance().getAnsprechpartnerDelegate()
+					.ansprechpartnerFindByPrimaryKey(ansprechpartnerIId);
+			wtfAnsprechpartner.setText(ansprechpartnerDto.getPartnerDto()
+					.formatFixTitelName1Name2());
+		} else {
+			wtfAnsprechpartner.setText(null);
+		}
+		if (partnerIId != null) {
+			PartnerDto partnerDto = DelegateFactory.getInstance()
+					.getPartnerDelegate().partnerFindByPrimaryKey(partnerIId);
+			wtfPartner.setText(partnerDto.formatFixTitelName1Name2());
+		} else {
+			wtfPartner.setText(null);
+		}
+		if (projektIId != null) {
+			ProjektDto pDto = DelegateFactory.getInstance()
+					.getProjektDelegate().projektFindByPrimaryKey(projektIId);
+
+			wtfProjekt.setText(pDto.getCNr() + " " + pDto.getCTitel());
+		}
+
+		// Heutiges Datum und Zeit in richtigem Locale, und Bearbeiter
+		// Kurzzeichen einfuegen
+		Locale editorLocale = LPMain.getInstance().getUISprLocale();
+		GregorianCalendar cal = new GregorianCalendar(editorLocale);
+		// Datum
+		SimpleDateFormat sdDateFormat = new SimpleDateFormat("dd.MM.yyyy",
+				editorLocale);
+		String content = sdDateFormat.format(cal.getTime());
+		// Uhrzeit
+		SimpleDateFormat sdTimeFormat = new SimpleDateFormat("HH:mm",
+				editorLocale);
+		content += " " + sdTimeFormat.format(cal.getTime());
+		// Personal Kurzzeichen des Bearbeiters
+		try {
+			TheClientDto clientDto = LPMain.getInstance().getTheClient();
+			Integer iPersonalID = clientDto.getIDPersonal();
+			PersonalDelegate persDelegate = DelegateFactory.getInstance()
+					.getPersonalDelegate();
+			PersonalDto persDto = persDelegate
+					.personalFindByPrimaryKey(iPersonalID);
+			String sPersKurzzeichen = persDto.getCKurzzeichen();
+			content += " " + sPersKurzzeichen;
+		} catch (Throwable ex) {
+		}
+
+		wefKommentarExtern.setText(content);
+
 	}
 
 	private void berechneDauer() throws ExceptionLP {

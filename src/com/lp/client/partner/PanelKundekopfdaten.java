@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -32,7 +32,7 @@
  ******************************************************************************/
 package com.lp.client.partner;
 
-import java.awt.Dimension;
+import java.awt.Color;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
@@ -136,6 +136,10 @@ public class PanelKundekopfdaten extends PanelPartnerDetail {
 
 	private boolean bFibuInstalliert = false;
 	
+	private static final int OPTION_JA = 0;
+	private static final int OPTION_UEBERSCHREIBEN = 1;
+	private static final int OPTION_VERWERFEN = 2;
+
 	public PanelKundekopfdaten(InternalFrame internalFrame, String add2TitleI,
 			Object keyI) throws Throwable {
 
@@ -158,17 +162,16 @@ public class PanelKundekopfdaten extends PanelPartnerDetail {
 
 			leereAlleFelder(this);
 			setDefaults();
-			
+
 			if (getKundeDto().getPartnerIId() != null) {
 				// Neu aus Partner;
 
-				
-				
 				setBNeuAusPartner(true);
 
 				getKundeDto()
 						.setPartnerDto(
-								DelegateFactory.getInstance()
+								DelegateFactory
+										.getInstance()
 										.getPartnerDelegate()
 										.partnerFindByPrimaryKey(
 												(Integer) getKundeDto()
@@ -238,8 +241,11 @@ public class PanelKundekopfdaten extends PanelPartnerDetail {
 				PanelBasis.ACTION_DELETE, PanelBasis.ACTION_DISCARD };
 		enableToolsPanelButtons(aButton);
 
-		bFibuInstalliert = DelegateFactory.getInstance().getMandantDelegate().darfAnwenderAufModulZugreifen(
-				LocaleFac.BELEGART_FINANZBUCHHALTUNG);
+		bFibuInstalliert = DelegateFactory
+				.getInstance()
+				.getMandantDelegate()
+				.darfAnwenderAufModulZugreifen(
+						LocaleFac.BELEGART_FINANZBUCHHALTUNG);
 
 		// Partnerfelder von der Oberklasse, es folgen die Kundenfelder.
 
@@ -304,7 +310,8 @@ public class PanelKundekopfdaten extends PanelPartnerDetail {
 				"kund.offenls"));
 
 		// Zahlungsmoral
-		wkvZahlungsmoral = new WrapperKeyValueField(Defaults.getInstance().bySizeFactor(200));
+		wkvZahlungsmoral = new WrapperKeyValueField(Defaults.getInstance()
+				.bySizeFactor(200));
 		wkvZahlungsmoral.setKey(LPMain.getInstance().getTextRespectUISPr(
 				"lp.zahlungsmoral"));
 
@@ -325,43 +332,79 @@ public class PanelKundekopfdaten extends PanelPartnerDetail {
 		// CK: mit WH besprochen: Interessent (obwohl Kundeneigenschaft)
 		// einfuegen:
 
-		jpaWorkingOn.add(wcbInteressent, new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0, GridBagConstraints.EAST, GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wcbInteressent, new GridBagConstraints(2, 0, 1, 1,
+				0.0, 0.0, GridBagConstraints.EAST, GridBagConstraints.BOTH,
+				new Insets(2, 2, 2, 2), 0, 0));
 
-		jpaWorkingOn.add(wlaAdressart, new GridBagConstraints(5, 0, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wlaAdressart, new GridBagConstraints(5, 0, 1, 1, 0.0,
+				0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
+				new Insets(2, 2, 2, 2), 0, 0));
 
-		jpaWorkingOn.add(wcoAdressart, new GridBagConstraints(6, 0, 2, 1, 0.0, 0.0, GridBagConstraints.EAST, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-
-		// Zeile
-		iZeile++;
-		jpaWorkingOn.add(wlaMwst, new GridBagConstraints(0, iZeile, 1, 1, 0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wcoMwst, new GridBagConstraints(1, iZeile, 2, 1, 0, 0.0, GridBagConstraints.SOUTHEAST, GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wlaEinheitProzentMwst, new GridBagConstraints(3, iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wbtPreislisteFLR, new GridBagConstraints(4, iZeile, 2, 1, 0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wtfPreisliste, new GridBagConstraints(6, iZeile, 2, 1, 0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wcoAdressart, new GridBagConstraints(6, 0, 2, 1, 0.0,
+				0.0, GridBagConstraints.EAST, GridBagConstraints.HORIZONTAL,
+				new Insets(2, 2, 2, 2), 0, 0));
 
 		// Zeile
 		iZeile++;
-		jpaWorkingOn.add(wkvUmsatzLfdJahr, new GridBagConstraints(0, iZeile, 2, 1, 0.0, 0.0, GridBagConstraints.NORTH, GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wkvUmsatzVorjahr, new GridBagConstraints(2, iZeile, 3, 1, 0.0, 0.0, GridBagConstraints.NORTH, GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wkvZahlungsmoral, new GridBagConstraints(5, iZeile, 3, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 180, 0));
+		jpaWorkingOn.add(wlaMwst, new GridBagConstraints(0, iZeile, 1, 1, 0,
+				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
+				new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wcoMwst, new GridBagConstraints(1, iZeile, 2, 1, 0,
+				0.0, GridBagConstraints.SOUTHEAST, GridBagConstraints.BOTH,
+				new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wlaEinheitProzentMwst, new GridBagConstraints(3,
+				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wbtPreislisteFLR, new GridBagConstraints(4, iZeile, 2,
+				1, 0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
+				new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wtfPreisliste, new GridBagConstraints(6, iZeile, 2, 1,
+				0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
+				new Insets(2, 2, 2, 2), 0, 0));
 
 		// Zeile
 		iZeile++;
-		jpaWorkingOn.add(wkvGelegteRechnungenLfdJahr, new GridBagConstraints(0, iZeile, 2, 1, 0.0, 0.0, GridBagConstraints.NORTH, GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wkvGelegteRechnungenVorjahr, new GridBagConstraints(2, iZeile, 3, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-
-		jpaWorkingOn.add(wrbKundenadresse, new GridBagConstraints(5, iZeile, 1, 1, 0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(2, 2, 2, 2), 0, 0));
-
-		jpaWorkingOn.add(wrbStatistikadresse, new GridBagConstraints(6, iZeile, 2, 1, 0, 0.0, GridBagConstraints.EAST, GridBagConstraints.NONE, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wkvUmsatzLfdJahr, new GridBagConstraints(0, iZeile, 2,
+				1, 0.0, 0.0, GridBagConstraints.NORTH, GridBagConstraints.BOTH,
+				new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wkvUmsatzVorjahr, new GridBagConstraints(2, iZeile, 3,
+				1, 0.0, 0.0, GridBagConstraints.NORTH, GridBagConstraints.BOTH,
+				new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wkvZahlungsmoral, new GridBagConstraints(5, iZeile, 3,
+				1, 0.0, 0.0, GridBagConstraints.WEST,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 180, 0));
 
 		// Zeile
 		iZeile++;
-		jpaWorkingOn.add(wkvOffenerRechnungswert, new GridBagConstraints(0, iZeile, 2, 1, 0.0, 0.0, GridBagConstraints.NORTH, GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wkvOffenerLSwert, new GridBagConstraints(2, iZeile, 3, 1, 0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wkvGelegteRechnungenLfdJahr, new GridBagConstraints(0,
+				iZeile, 2, 1, 0.0, 0.0, GridBagConstraints.NORTH,
+				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wkvGelegteRechnungenVorjahr, new GridBagConstraints(2,
+				iZeile, 3, 1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+
+		jpaWorkingOn.add(wrbKundenadresse, new GridBagConstraints(5, iZeile, 1,
+				1, 0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE,
+				new Insets(2, 2, 2, 2), 0, 0));
+
+		jpaWorkingOn.add(wrbStatistikadresse, new GridBagConstraints(6, iZeile,
+				2, 1, 0, 0.0, GridBagConstraints.EAST, GridBagConstraints.NONE,
+				new Insets(2, 2, 2, 2), 0, 0));
+
+		// Zeile
+		iZeile++;
+		jpaWorkingOn.add(wkvOffenerRechnungswert, new GridBagConstraints(0,
+				iZeile, 2, 1, 0.0, 0.0, GridBagConstraints.NORTH,
+				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wkvOffenerLSwert, new GridBagConstraints(2, iZeile, 3,
+				1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
 
 		jpaWorkingOn.add(new WrapperLabel(LPMain.getInstance().getTheClient()
-				.getSMandantenwaehrung()), new GridBagConstraints(5, iZeile, 1, 1, 0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(2, 2, 2, 2), 25, 0));
-		
+				.getSMandantenwaehrung()), new GridBagConstraints(5, iZeile, 1,
+				1, 0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE,
+				new Insets(2, 2, 2, 2), 25, 0));
+
 		createAndSaveAndShowButton("/com/lp/client/res/book_open2.png",
 				LPMain.getTextRespectUISPr("part.partner.export.vcard"),
 				ACTION_SPECIAL_VCARD_EXPORT, null);
@@ -426,8 +469,10 @@ public class PanelKundekopfdaten extends PanelPartnerDetail {
 
 	public void setDefaultMWSTforLand(LandDto landDto) {
 		try {
-			MandantDto mandantDto = DelegateFactory.getInstance()
-					.getMandantDelegate().mandantFindByPrimaryKey(
+			MandantDto mandantDto = DelegateFactory
+					.getInstance()
+					.getMandantDelegate()
+					.mandantFindByPrimaryKey(
 							LPMain.getInstance().getTheClient().getMandant());
 			String sLKZMandant = mandantDto.getPartnerDto().getLandplzortDto()
 					.getLandDto().getCLkz();
@@ -505,32 +550,46 @@ public class PanelKundekopfdaten extends PanelPartnerDetail {
 			if (wrbKundenadresse.isSelected()) {
 
 				wkvUmsatzLfdJahr.setValue(Helper.formatZahl(
-						DelegateFactory.getInstance().getRechnungDelegate()
+						DelegateFactory
+								.getInstance()
+								.getRechnungDelegate()
 								.getUmsatzVomKundenHeuer(
 										getKundeDto().getIId(), false), 2,
 						LPMain.getTheClient().getLocUi()));
-				wkvUmsatzVorjahr.setValue(Helper.formatZahl(DelegateFactory
-						.getInstance().getRechnungDelegate()
-						.getUmsatzVomKundenVorjahr(getKundeDto().getIId(),
-								false), 2, LPMain.getTheClient().getLocUi()));
+				wkvUmsatzVorjahr.setValue(Helper.formatZahl(
+						DelegateFactory
+								.getInstance()
+								.getRechnungDelegate()
+								.getUmsatzVomKundenVorjahr(
+										getKundeDto().getIId(), false), 2,
+						LPMain.getTheClient().getLocUi()));
 				wkvGelegteRechnungenLfdJahr.setValue(Helper.formatZahl(
-						DelegateFactory.getInstance().getRechnungDelegate()
+						DelegateFactory
+								.getInstance()
+								.getRechnungDelegate()
 								.getAnzahlDerRechnungenVomKundenHeuer(
 										getKundeDto().getIId(), false), 0,
 						LPMain.getTheClient().getLocUi()));
 
 				wkvGelegteRechnungenVorjahr.setValue(Helper.formatZahl(
-						DelegateFactory.getInstance().getRechnungDelegate()
+						DelegateFactory
+								.getInstance()
+								.getRechnungDelegate()
 								.getAnzahlDerRechnungenVomKundenVorjahr(
 										getKundeDto().getIId(), false), 0,
 						LPMain.getTheClient().getLocUi()));
 
-				wkvZahlungsmoral.setValue(Helper.formatZahl(DelegateFactory
-						.getInstance().getRechnungDelegate()
-						.getZahlungsmoraleinesKunden(getKundeDto().getIId(),
-								false), 0, LPMain.getTheClient().getLocUi()));
+				wkvZahlungsmoral.setValue(Helper.formatZahl(
+						DelegateFactory
+								.getInstance()
+								.getRechnungDelegate()
+								.getZahlungsmoraleinesKunden(
+										getKundeDto().getIId(), false), 0,
+						LPMain.getTheClient().getLocUi()));
 				wkvOffenerRechnungswert.setValue(Helper.formatZahl(
-						DelegateFactory.getInstance().getRechnungDelegate()
+						DelegateFactory
+								.getInstance()
+								.getRechnungDelegate()
 								.berechneSummeOffenNetto(
 										getKundeDto().getIId(), false), 2,
 						LPMain.getTheClient().getLocUi()));
@@ -541,31 +600,43 @@ public class PanelKundekopfdaten extends PanelPartnerDetail {
 						.getUmsatzVomKundenHeuer(getKundeDto().getIId(), true),
 						2, LPMain.getTheClient().getLocUi()));
 				wkvUmsatzVorjahr.setValue(Helper.formatZahl(
-						DelegateFactory.getInstance().getRechnungDelegate()
+						DelegateFactory
+								.getInstance()
+								.getRechnungDelegate()
 								.getUmsatzVomKundenVorjahr(
 										getKundeDto().getIId(), true), 2,
 						LPMain.getTheClient().getLocUi()));
 				wkvGelegteRechnungenLfdJahr.setValue(Helper.formatZahl(
-						DelegateFactory.getInstance().getRechnungDelegate()
+						DelegateFactory
+								.getInstance()
+								.getRechnungDelegate()
 								.getAnzahlDerRechnungenVomKundenHeuer(
 										getKundeDto().getIId(), true), 0,
 						LPMain.getTheClient().getLocUi()));
 
 				wkvGelegteRechnungenVorjahr.setValue(Helper.formatZahl(
-						DelegateFactory.getInstance().getRechnungDelegate()
+						DelegateFactory
+								.getInstance()
+								.getRechnungDelegate()
 								.getAnzahlDerRechnungenVomKundenVorjahr(
 										getKundeDto().getIId(), true), 0,
 						LPMain.getTheClient().getLocUi()));
-				wkvZahlungsmoral.setValue(Helper.formatZahl(DelegateFactory
-						.getInstance().getRechnungDelegate()
-						.getZahlungsmoraleinesKunden(getKundeDto().getIId(),
-								true), 0, LPMain.getTheClient().getLocUi()));
+				wkvZahlungsmoral.setValue(Helper.formatZahl(
+						DelegateFactory
+								.getInstance()
+								.getRechnungDelegate()
+								.getZahlungsmoraleinesKunden(
+										getKundeDto().getIId(), true), 0,
+						LPMain.getTheClient().getLocUi()));
 				wkvOffenerRechnungswert.setValue(Helper.formatZahl(
-						DelegateFactory.getInstance().getRechnungDelegate()
+						DelegateFactory
+								.getInstance()
+								.getRechnungDelegate()
 								.berechneSummeOffenNetto(
 										getKundeDto().getIId(), true), 2,
 						LPMain.getTheClient().getLocUi()));
 			}
+			hintergrundAnhandKreditlimitAendern();
 
 		}
 	}
@@ -583,14 +654,33 @@ public class PanelKundekopfdaten extends PanelPartnerDetail {
 			boolean uidGeaendert = false;
 			if (wtfUID.getText() == null && getPartnerDto().getCUid() != null)
 				uidGeaendert = true;
-			else if (getPartnerDto().getCUid() == null && wtfUID.getText() != null)
+			else if (getPartnerDto().getCUid() == null
+					&& wtfUID.getText() != null)
 				uidGeaendert = true;
-			else if (getPartnerDto().getCUid() == null && wtfUID.getText() == null)
+			else if (getPartnerDto().getCUid() == null
+					&& wtfUID.getText() == null)
 				uidGeaendert = false;
 			else if (getPartnerDto().getCUid().compareTo(wtfUID.getText()) != 0)
 				uidGeaendert = true;
-			
+
 			components2Dto();
+			
+			if(isBNeuAusPartner() && getPartnerDto().getIId() != null) {
+				KundeDto kundeDto = DelegateFactory.getInstance().getKundeDelegate()
+					.kundeFindByiIdPartnercNrMandantOhneExc(getPartnerDto().getIId(), 
+							LPMain.getInstance().getTheClient().getMandant());
+				//SP3231 Kunde aus Partner anlegen: Kunde besteht bereits, soll er kopiert werden?
+				if(kundeDto != null) {
+					int dialogReturnValue = showKundeSaveOptionsDialog();
+					if(dialogReturnValue == OPTION_JA) {
+						getPartnerDto().setIId(null);
+					} else if(dialogReturnValue == OPTION_VERWERFEN) {
+						doActionDiscard();
+						return;
+					}
+				}
+			}
+			
 			if (getKundeDto().getIId() == null) {
 				// create
 				Integer key = DelegateFactory.getInstance().getKundeDelegate()
@@ -601,8 +691,8 @@ public class PanelKundekopfdaten extends PanelPartnerDetail {
 				getInternalFrameKunde().getKundeDto().setIId(key);
 			} else {
 				// update
-				DelegateFactory.getInstance().getKundeDelegate().updateKunde(
-						getKundeDto());
+				DelegateFactory.getInstance().getKundeDelegate()
+						.updateKunde(getKundeDto());
 			}
 			super.eventActionSave(e, true);
 			if (getInternalFrame().getKeyWasForLockMe() == null) {
@@ -619,31 +709,66 @@ public class PanelKundekopfdaten extends PanelPartnerDetail {
 		}
 	}
 
-	private void pruefeSteuerkategorie() throws Throwable {
+	/**
+	 * Zeigt ein Dialogfenster &uuml;ber die Speicherm&ouml;glichkeiten des
+	 * Kunden bei Neu aus Partner. Ja: Kunde soll kopiert werden.
+	 * &Uuml;berschreiben: Kunde soll &uuml;berschrieben werden. Nein, 
+	 * &Auml;nderungen sollen verworfen werden.
+	 * 
+	 * @return 0, wenn Ja; 1, wenn &Uuml;berschreiben; 2, wenn Verworfen;
+	 */
+	private int showKundeSaveOptionsDialog() {
+		String[] options = {LPMain.getTextRespectUISPr("lp.ja"), 
+				LPMain.getTextRespectUISPr("lp.ueberschreiben"), 
+				LPMain.getTextRespectUISPr("lp.verwerfen_ohne_frage")};
+		int iOption = DialogFactory.showModalDialog(getInternalFrame(), 
+				LPMain.getInstance().getTextRespectUISPr("part.kunde.warning.kundebestehtschon"), 
+				LPMain.getInstance().getTextRespectUISPr("lp.frage"), 
+				options, 2);
+		if(iOption != OPTION_JA && iOption != OPTION_UEBERSCHREIBEN) {
+			iOption = OPTION_VERWERFEN;
+		}		
 		
+		return iOption;
+	}
+
+	private void pruefeSteuerkategorie() throws Throwable {
+
 		if (bFibuInstalliert) {
 			if (getKundeDto().getIidDebitorenkonto() != null) {
-				KontoDto kontoDto = DelegateFactory.getInstance().getFinanzDelegate()
-						.kontoFindByPrimaryKey(getKundeDto().getIidDebitorenkonto());
-				SteuerkategorieDto steuerkategorieDto = DelegateFactory.getInstance().getFinanzServiceDelegate()
-					.steuerkategorieFindByPrimaryKey(kontoDto.getSteuerkategorieIId());
-				
+				KontoDto kontoDto = DelegateFactory
+						.getInstance()
+						.getFinanzDelegate()
+						.kontoFindByPrimaryKey(
+								getKundeDto().getIidDebitorenkonto());
+				SteuerkategorieDto steuerkategorieDto = DelegateFactory
+						.getInstance()
+						.getFinanzServiceDelegate()
+						.steuerkategorieFindByPrimaryKey(
+								kontoDto.getSteuerkategorieIId());
+
 				if (getPartnerDto().getCUid() == null) {
 					// Steuerkategorie muss ohne UID sein
-					if (steuerkategorieDto.getCNr().compareTo(FinanzServiceFac.STEUERKATEGORIE_AUSLANDEU_UID)==0)
-						zeigeSteuerMeldung(LPMain.getTextRespectUISPr("kunde.meldung.steuerkategorie.ohneuid"));
+					if (steuerkategorieDto.getCNr().compareTo(
+							FinanzServiceFac.STEUERKATEGORIE_AUSLANDEU_UID) == 0)
+						zeigeSteuerMeldung(LPMain
+								.getTextRespectUISPr("kunde.meldung.steuerkategorie.ohneuid"));
 				} else {
 					// Steuerkategorie muss mit UID sein
-					if ((steuerkategorieDto.getCNr().compareTo(FinanzServiceFac.STEUERKATEGORIE_AUSLAND)==0) ||
-							(steuerkategorieDto.getCNr().compareTo(FinanzServiceFac.STEUERKATEGORIE_AUSLANDEU)==0))
-						zeigeSteuerMeldung(LPMain.getTextRespectUISPr("kunde.meldung.steuerkategorie.mituid"));
+					if ((steuerkategorieDto.getCNr().compareTo(
+							FinanzServiceFac.STEUERKATEGORIE_AUSLAND) == 0)
+							|| (steuerkategorieDto.getCNr().compareTo(
+									FinanzServiceFac.STEUERKATEGORIE_AUSLANDEU) == 0))
+						zeigeSteuerMeldung(LPMain
+								.getTextRespectUISPr("kunde.meldung.steuerkategorie.mituid"));
 				}
 			}
 		}
 	}
-	
+
 	private void zeigeSteuerMeldung(String meldung) {
-		String titel = LPMain.getTextRespectUISPr("kunde.titel.steuerkategorie.pruefen");
+		String titel = LPMain
+				.getTextRespectUISPr("kunde.titel.steuerkategorie.pruefen");
 		DialogFactory.showMeldung(meldung, titel, JOptionPane.DEFAULT_OPTION);
 	}
 
@@ -653,13 +778,56 @@ public class PanelKundekopfdaten extends PanelPartnerDetail {
 
 		LockStateValue lockstateValue = getLockedstateDetailMainKey();
 		if (lockstateValue.getIState() == PanelBasis.LOCK_IS_NOT_LOCKED) {
-			DelegateFactory.getInstance().getKundeDelegate().removeKunde(
-					getKundeDto());
+			DelegateFactory.getInstance().getKundeDelegate()
+					.removeKunde(getKundeDto());
 
 			getInternalFrameKunde().setKundeDto(new KundeDto());
 
 			super.eventActionDelete(e, true, true);
 		}
+	}
+
+	protected void hintergrundAnhandKreditlimitAendern() throws Throwable {
+		wkvOffenerRechnungswert.getWlaValue().setBackground(
+				new Color(240, 240, 240));
+		wkvOffenerLSwert.getWlaValue().setBackground(new Color(240, 240, 240));
+		if (getKundeDto().getNKreditlimit() != null) {
+
+			BigDecimal bdLs = DelegateFactory.getInstance().getLsDelegate()
+					.berechneOffenenLieferscheinwert(getKundeDto().getIId());
+
+			BigDecimal bdRE = DelegateFactory
+					.getInstance()
+					.getRechnungDelegate()
+					.berechneSummeOffenNetto(getKundeDto().getIId(),
+							!wrbKundenadresse.isSelected());
+
+			BigDecimal offen = bdRE.add(bdLs);
+
+			BigDecimal wert80Prozent = BigDecimal.ZERO;
+
+			if (getKundeDto().getNKreditlimit().doubleValue() != 0) {
+				wert80Prozent = getKundeDto()
+						.getNKreditlimit()
+						.divide(new BigDecimal(100), 4,
+								BigDecimal.ROUND_HALF_EVEN)
+						.multiply(new BigDecimal(80));
+			}
+
+			if (offen.doubleValue() > 0) {
+				if (offen.doubleValue() >= getKundeDto().getNKreditlimit()
+						.doubleValue()) {
+					wkvOffenerRechnungswert.getWlaValue().setBackground(
+							Color.RED);
+					wkvOffenerLSwert.getWlaValue().setBackground(Color.RED);
+				} else if (offen.doubleValue() >= wert80Prozent.doubleValue()) {
+					wkvOffenerRechnungswert.getWlaValue().setBackground(
+							Color.YELLOW);
+					wkvOffenerLSwert.getWlaValue().setBackground(Color.YELLOW);
+				}
+			}
+		}
+
 	}
 
 	protected void dto2Components() throws Throwable {
@@ -685,32 +853,46 @@ public class PanelKundekopfdaten extends PanelPartnerDetail {
 			if (wrbKundenadresse.isSelected()) {
 
 				wkvUmsatzLfdJahr.setValue(Helper.formatZahl(
-						DelegateFactory.getInstance().getRechnungDelegate()
+						DelegateFactory
+								.getInstance()
+								.getRechnungDelegate()
 								.getUmsatzVomKundenHeuer(
 										getKundeDto().getIId(), false), 2,
 						LPMain.getTheClient().getLocUi()));
-				wkvUmsatzVorjahr.setValue(Helper.formatZahl(DelegateFactory
-						.getInstance().getRechnungDelegate()
-						.getUmsatzVomKundenVorjahr(getKundeDto().getIId(),
-								false), 2, LPMain.getTheClient().getLocUi()));
+				wkvUmsatzVorjahr.setValue(Helper.formatZahl(
+						DelegateFactory
+								.getInstance()
+								.getRechnungDelegate()
+								.getUmsatzVomKundenVorjahr(
+										getKundeDto().getIId(), false), 2,
+						LPMain.getTheClient().getLocUi()));
 				wkvGelegteRechnungenLfdJahr.setValue(Helper.formatZahl(
-						DelegateFactory.getInstance().getRechnungDelegate()
+						DelegateFactory
+								.getInstance()
+								.getRechnungDelegate()
 								.getAnzahlDerRechnungenVomKundenHeuer(
 										getKundeDto().getIId(), false), 0,
 						LPMain.getTheClient().getLocUi()));
 
 				wkvGelegteRechnungenVorjahr.setValue(Helper.formatZahl(
-						DelegateFactory.getInstance().getRechnungDelegate()
+						DelegateFactory
+								.getInstance()
+								.getRechnungDelegate()
 								.getAnzahlDerRechnungenVomKundenVorjahr(
 										getKundeDto().getIId(), false), 0,
 						LPMain.getTheClient().getLocUi()));
-				wkvZahlungsmoral.setValue(Helper.formatZahl(DelegateFactory
-						.getInstance().getRechnungDelegate()
-						.getZahlungsmoraleinesKunden(getKundeDto().getIId(),
-								false), 0, LPMain.getTheClient().getLocUi()));
+				wkvZahlungsmoral.setValue(Helper.formatZahl(
+						DelegateFactory
+								.getInstance()
+								.getRechnungDelegate()
+								.getZahlungsmoraleinesKunden(
+										getKundeDto().getIId(), false), 0,
+						LPMain.getTheClient().getLocUi()));
 
 				wkvOffenerRechnungswert.setValue(Helper.formatZahl(
-						DelegateFactory.getInstance().getRechnungDelegate()
+						DelegateFactory
+								.getInstance()
+								.getRechnungDelegate()
 								.berechneSummeOffenNetto(
 										getKundeDto().getIId(), false), 2,
 						LPMain.getTheClient().getLocUi()));
@@ -722,39 +904,55 @@ public class PanelKundekopfdaten extends PanelPartnerDetail {
 						.getUmsatzVomKundenHeuer(getKundeDto().getIId(), true),
 						2, LPMain.getTheClient().getLocUi()));
 				wkvUmsatzVorjahr.setValue(Helper.formatZahl(
-						DelegateFactory.getInstance().getRechnungDelegate()
+						DelegateFactory
+								.getInstance()
+								.getRechnungDelegate()
 								.getUmsatzVomKundenVorjahr(
 										getKundeDto().getIId(), true), 2,
 						LPMain.getTheClient().getLocUi()));
 				wkvGelegteRechnungenLfdJahr.setValue(Helper.formatZahl(
-						DelegateFactory.getInstance().getRechnungDelegate()
+						DelegateFactory
+								.getInstance()
+								.getRechnungDelegate()
 								.getAnzahlDerRechnungenVomKundenHeuer(
 										getKundeDto().getIId(), true), 0,
 						LPMain.getTheClient().getLocUi()));
 
 				wkvGelegteRechnungenVorjahr.setValue(Helper.formatZahl(
-						DelegateFactory.getInstance().getRechnungDelegate()
+						DelegateFactory
+								.getInstance()
+								.getRechnungDelegate()
 								.getAnzahlDerRechnungenVomKundenVorjahr(
 										getKundeDto().getIId(), true), 0,
 						LPMain.getTheClient().getLocUi()));
-				wkvZahlungsmoral.setValue(Helper.formatZahl(DelegateFactory
-						.getInstance().getRechnungDelegate()
-						.getZahlungsmoraleinesKunden(getKundeDto().getIId(),
-								true), 0, LPMain.getTheClient().getLocUi()));
+				wkvZahlungsmoral.setValue(Helper.formatZahl(
+						DelegateFactory
+								.getInstance()
+								.getRechnungDelegate()
+								.getZahlungsmoraleinesKunden(
+										getKundeDto().getIId(), true), 0,
+						LPMain.getTheClient().getLocUi()));
 
 				wkvOffenerRechnungswert.setValue(Helper.formatZahl(
-						DelegateFactory.getInstance().getRechnungDelegate()
+						DelegateFactory
+								.getInstance()
+								.getRechnungDelegate()
 								.berechneSummeOffenNetto(
 										getKundeDto().getIId(), true), 2,
 						LPMain.getTheClient().getLocUi()));
 
 			}
+
+			hintergrundAnhandKreditlimitAendern();
+
 		}
 	}
 
 	private void initPanel() throws Throwable {
 
-		tmMwst = DelegateFactory.getInstance().getMandantDelegate()
+		tmMwst = DelegateFactory
+				.getInstance()
+				.getMandantDelegate()
 				.getAllMwstsatzbez(
 						LPMain.getInstance().getTheClient().getMandant());
 		wcoMwst.setMap(tmMwst);
@@ -822,14 +1020,18 @@ public class PanelKundekopfdaten extends PanelPartnerDetail {
 	 */
 	protected void setDefaults() throws Throwable {
 
-		DelegateFactory.getInstance()
-				.getPersonalDelegate().personalFindByPrimaryKey(
+		DelegateFactory
+				.getInstance()
+				.getPersonalDelegate()
+				.personalFindByPrimaryKey(
 						LPMain.getInstance().getTheClient().getIDPersonal());
-		MandantDto mandantDto = DelegateFactory.getInstance()
-				.getMandantDelegate().mandantFindByPrimaryKey(
+		MandantDto mandantDto = DelegateFactory
+				.getInstance()
+				.getMandantDelegate()
+				.mandantFindByPrimaryKey(
 						LPMain.getInstance().getTheClient().getMandant());
 		getKundeDto().setKostenstelleIId(mandantDto.getIIdKostenstelle());
-		//getKundeDto().setKostenstelleIId(personalDto.getKostenstelleIIdStamm()
+		// getKundeDto().setKostenstelleIId(personalDto.getKostenstelleIIdStamm()
 		// );
 		getKundeDto().setMandantCNr(mandantDto.getCNr());
 
@@ -837,10 +1039,10 @@ public class PanelKundekopfdaten extends PanelPartnerDetail {
 
 		super.setDefaults();
 
-		
-
-		String sKreditlimit = DelegateFactory.getInstance()
-				.getParameterDelegate().getMandantparameter(
+		String sKreditlimit = DelegateFactory
+				.getInstance()
+				.getParameterDelegate()
+				.getMandantparameter(
 						LPMain.getInstance().getTheClient().getMandant(),
 						ParameterFac.KATEGORIE_KUNDEN,
 						ParameterFac.PARAMETER_KREDITLIMIT).getCWert();
@@ -880,7 +1082,16 @@ public class PanelKundekopfdaten extends PanelPartnerDetail {
 
 		getKundeDto().setBPreiseanlsandrucken(Helper.boolean2Short(false));
 
-		getKundeDto().setBRechnungsdruckmitrabatt(Helper.boolean2Short(false));
+		parameter = (ParametermandantDto) DelegateFactory
+				.getInstance()
+				.getParameterDelegate()
+				.getParametermandant(
+						ParameterFac.PARAMETER_DEFAULT_BELEGDRUCK_MIT_RABATT,
+						ParameterFac.KATEGORIE_KUNDEN,
+						LPMain.getInstance().getTheClient().getMandant());
+
+		getKundeDto().setBRechnungsdruckmitrabatt(
+				Helper.boolean2Short((Boolean) parameter.getCWertAsObject()));
 
 		getKundeDto().setBSammelrechnung(Helper.boolean2Short(false));
 
@@ -906,8 +1117,8 @@ public class PanelKundekopfdaten extends PanelPartnerDetail {
 
 	private void defaultFieldIsNullDlg() throws Throwable {
 		MandantDto mandantDto = DelegateFactory.getInstance()
-				.getMandantDelegate().mandantFindByPrimaryKey(
-						getKundeDto().getMandantCNr());
+				.getMandantDelegate()
+				.mandantFindByPrimaryKey(getKundeDto().getMandantCNr());
 
 		if (mandantDto.getLieferartIIdKunde() == null) {
 			throw new ExceptionLP(EJBExceptionLP.FEHLER_PARTNER_LIEFERART, null);

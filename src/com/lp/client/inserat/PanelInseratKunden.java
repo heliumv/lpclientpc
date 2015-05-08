@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -179,17 +179,17 @@ public class PanelInseratKunden extends PanelBasis {
 	public LockStateValue getLockedstateDetailMainKey() throws Throwable {
 		LockStateValue lockStateValue = super.getLockedstateDetailMainKey();
 
-		if (internalFrameInserat.getTabbedPaneInserat().getInseratDto()
+		if (internalFrameInserat.getTabbedPaneInserat().getDto()
 				.getIId() != null) {
-			if (internalFrameInserat.getTabbedPaneInserat().getInseratDto()
+			if (internalFrameInserat.getTabbedPaneInserat().getDto()
 					.getStatusCNr().equals(LocaleFac.STATUS_VERRECHNET)
 					|| internalFrameInserat.getTabbedPaneInserat()
-							.getInseratDto().getStatusCNr()
+							.getDto().getStatusCNr()
 							.equals(LocaleFac.STATUS_TEILBEZAHLT)
 					|| internalFrameInserat.getTabbedPaneInserat()
-							.getInseratDto().getStatusCNr()
+							.getDto().getStatusCNr()
 							.equals(LocaleFac.STATUS_BEZAHLT)|| internalFrameInserat.getTabbedPaneInserat()
-							.getInseratDto().getStatusCNr()
+							.getDto().getStatusCNr()
 							.equals(LocaleFac.STATUS_ERLEDIGT)) {
 				lockStateValue = new LockStateValue(
 						PanelBasis.LOCK_ENABLE_REFRESHANDPRINT_ONLY);
@@ -243,7 +243,7 @@ public class PanelInseratKunden extends PanelBasis {
 
 	protected void components2Dto() throws Throwable {
 		inseratkundebnDto.setInseratIId(internalFrameInserat
-				.getTabbedPaneInserat().getInseratDto().getIId());
+				.getTabbedPaneInserat().getDto().getIId());
 	}
 
 	protected void eventItemchanged(EventObject eI) throws Throwable {
@@ -256,7 +256,7 @@ public class PanelInseratKunden extends PanelBasis {
 						.getKundeDelegate().kundeFindByPrimaryKey(iIdKunde);
 
 				DelegateFactory.getInstance().getKundeDelegate()
-						.pruefeKunde(iIdKunde);
+						.pruefeKunde(iIdKunde,null,getInternalFrame());
 
 				wtfKunde.setText(kundeDto.getPartnerDto().formatTitelAnrede());
 				inseratkundebnDto.setKundeIId(iIdKunde);

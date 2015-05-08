@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -208,10 +208,18 @@ public class PanelReklamationbild extends PanelBasis {
 	protected void eventActionDelete(ActionEvent e,
 			boolean bAdministrateLockKeyI, boolean bNeedNoDeleteI)
 			throws Throwable {
-		DelegateFactory.getInstance().getReklamationDelegate()
-				.removeReklamationbild(reklamationbildDto);
-		this.setKeyWhenDetailPanel(null);
-		super.eventActionDelete(e, false, false);
+
+		boolean b = internalFrameReklamation.getTabbedPaneReklamation()
+				.pruefeObReklamationAenderbar();
+		if (b == true) {
+
+			DelegateFactory.getInstance().getReklamationDelegate()
+					.removeReklamationbild(reklamationbildDto);
+			this.setKeyWhenDetailPanel(null);
+			super.eventActionDelete(e, false, false);
+		} else {
+			return;
+		}
 	}
 
 	protected void components2Dto() throws Throwable {
@@ -239,8 +247,8 @@ public class PanelReklamationbild extends PanelBasis {
 			components2Dto();
 			if (reklamationbildDto.getIId() == null) {
 				reklamationbildDto.setIId(DelegateFactory.getInstance()
-						.getReklamationDelegate().createReklamationbild(
-								reklamationbildDto));
+						.getReklamationDelegate()
+						.createReklamationbild(reklamationbildDto));
 				setKeyWhenDetailPanel(reklamationbildDto.getIId());
 			} else {
 				DelegateFactory.getInstance().getReklamationDelegate()
@@ -264,15 +272,17 @@ public class PanelReklamationbild extends PanelBasis {
 		if (key == null || (key.equals(LPMain.getLockMeForNew()))) {
 			leereAlleFelder(this);
 			clearStatusbar();
-			wnfSort.setInteger(DelegateFactory.getInstance()
-					.getReklamationDelegate().getNextReklamationbild(
+			wnfSort.setInteger(DelegateFactory
+					.getInstance()
+					.getReklamationDelegate()
+					.getNextReklamationbild(
 							((InternalFrameReklamation) getInternalFrame())
 									.getReklamationDto().getIId()));
 
 		} else {
 			reklamationbildDto = DelegateFactory.getInstance()
-					.getReklamationDelegate().reklamationbildFindByPrimaryKey(
-							(Integer) key);
+					.getReklamationDelegate()
+					.reklamationbildFindByPrimaryKey((Integer) key);
 			dto2Components();
 		}
 	}

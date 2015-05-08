@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -70,6 +70,7 @@ import com.lp.server.personal.service.ReligionDto;
 import com.lp.server.personal.service.SchichtzeitmodellDto;
 import com.lp.server.personal.service.StundenabrechnungDto;
 import com.lp.server.personal.service.UrlaubsanspruchDto;
+import com.lp.server.personal.service.ZeitabschlussDto;
 import com.lp.server.personal.service.ZulageDto;
 import com.lp.server.util.report.JasperPrintLP;
 import com.lp.util.EJBExceptionLP;
@@ -406,6 +407,16 @@ public class PersonalDelegate extends Delegate {
 		try {
 			personalFac.updateFeiertag(feiertagDto, LPMain.getInstance()
 					.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+	}
+
+	public void updateZeitabschluss(ZeitabschlussDto zeitabschlussDto)
+			throws ExceptionLP {
+		try {
+			personalFac.updateZeitabschluss(zeitabschlussDto, LPMain
+					.getInstance().getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 		}
@@ -1242,6 +1253,17 @@ public class PersonalDelegate extends Delegate {
 		}
 	}
 
+	public ZeitabschlussDto zeitabschlussFindByPrimaryKey(Integer iId)
+			throws ExceptionLP {
+		try {
+			return personalFac.zeitabschlussFindByPrimaryKey(iId, LPMain
+					.getInstance().getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
+
 	public LohnartDto lohnartFindByPrimaryKey(Integer iId) throws ExceptionLP {
 		try {
 			return personalFac.lohnartFindByPrimaryKey(iId);
@@ -1382,6 +1404,17 @@ public class PersonalDelegate extends Delegate {
 		}
 	}
 
+	public Integer createZeitabschluss(ZeitabschlussDto zeitabschlussDto)
+			throws ExceptionLP {
+		try {
+			return personalFac.createZeitabschluss(zeitabschlussDto, LPMain
+					.getInstance().getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
+
 	public void removeBeruf(Integer iId) throws ExceptionLP {
 		try {
 			personalFac.removeBeruf(iId);
@@ -1416,6 +1449,16 @@ public class PersonalDelegate extends Delegate {
 	public void removeFeiertag(FeiertagDto feiertagDto) throws ExceptionLP {
 		try {
 			personalFac.removeFeiertag(feiertagDto);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+	}
+
+	public void removeZeitabschluss(ZeitabschlussDto zeitabschlussDto)
+			throws ExceptionLP {
+		try {
+			personalFac.removeZeitabschluss(zeitabschlussDto, LPMain
+					.getInstance().getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 		}
@@ -1591,4 +1634,14 @@ public class PersonalDelegate extends Delegate {
 		}
 	}
 
+	public PersonalDto[] personalFindByMandantCNrWithEmail(String mandantCNr,
+			boolean bPlusVersteckte) throws ExceptionLP {
+		try {
+			return personalFac.personalFindByMandantCNrWithEmail(mandantCNr,
+					bPlusVersteckte);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
 }

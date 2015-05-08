@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -34,18 +34,21 @@ package com.lp.client.lieferschein;
 
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.sql.Date;
 import java.text.MessageFormat;
 import java.util.EventObject;
 
+import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
 import com.lp.client.frame.Defaults;
 import com.lp.client.frame.HelperClient;
 import com.lp.client.frame.component.InternalFrame;
 import com.lp.client.frame.component.ItemChangedEvent;
+import com.lp.client.frame.component.PanelBasis;
 import com.lp.client.frame.component.WrapperCheckBox;
 import com.lp.client.frame.component.WrapperDateField;
 import com.lp.client.frame.component.WrapperLabel;
@@ -74,7 +77,7 @@ import com.lp.server.util.report.JasperPrintLP;
  * 
  * @version $Revision: 1.12 $
  */
-public class ReportLieferscheinWAEetikett extends ReportEtikett implements
+public class ReportLieferscheinWAEetikett extends PanelBasis implements
 		PanelReportIfJRDS {
 	private static final long serialVersionUID = 1L;
 	private LieferscheinDto lieferscheinDto = null;
@@ -96,6 +99,11 @@ public class ReportLieferscheinWAEetikett extends ReportEtikett implements
 	private WrapperTextField wtfVersandnummer = null;
 	private WrapperLabel wlaHandmenge = null;
 	private WrapperNumberField wnfHandmenge = null;
+	
+	private WrapperLabel wlaExemplare = null;
+	protected WrapperNumberField wnfExemplare = null;
+
+	
 
 	public ReportLieferscheinWAEetikett(InternalFrame internalFrame,
 			LieferscheinDto lieferscheinDto, Integer lieferscheinpositionIId,
@@ -133,7 +141,7 @@ public class ReportLieferscheinWAEetikett extends ReportEtikett implements
 				.getLieferscheinReportDelegate()
 				.printLieferscheinWAEtikett(lieferscheinDto.getIId(),
 						lieferscheinpositionIId, iPaketnummer,
-						wnfHandmenge.getBigDecimal());
+						wnfHandmenge.getBigDecimal(),wnfExemplare.getInteger());
 	}
 
 	public boolean getBErstelleReportSofort() {
@@ -149,6 +157,25 @@ public class ReportLieferscheinWAEetikett extends ReportEtikett implements
 	private void jbInit() throws Throwable {
 		iZeile++;
 
+		JPanel jpaWorkingOn = new JPanel();
+		jpaWorkingOn.setLayout(new GridBagLayout());
+		
+		
+		wlaExemplare = new WrapperLabel();
+		wlaExemplare.setText(LPMain.getTextRespectUISPr("report.exemplare"));
+		wlaExemplare.setMinimumSize(new Dimension(100, Defaults.getInstance()
+				.getControlHeight()));
+		wlaExemplare.setPreferredSize(new Dimension(100, Defaults.getInstance()
+				.getControlHeight()));
+		wnfExemplare = new WrapperNumberField();
+		wnfExemplare.setMinimumSize(new Dimension(30, Defaults.getInstance()
+				.getControlHeight()));
+		wnfExemplare.setPreferredSize(new Dimension(30, Defaults.getInstance()
+				.getControlHeight()));
+		wnfExemplare.setFractionDigits(0);
+		wnfExemplare.setMandatoryField(true);
+		wnfExemplare.setInteger(1);
+		
 		String[] aWhichButtonIUse = { ACTION_UPDATE, ACTION_SAVE,
 				ACTION_DISCARD };
 		wlaPaketnummer = new WrapperLabel();
@@ -222,6 +249,13 @@ public class ReportLieferscheinWAEetikett extends ReportEtikett implements
 		wtfVersandnummer = new WrapperTextField();
 
 		iZeile++;
+		jpaWorkingOn.add(wlaExemplare, new GridBagConstraints(0, iZeile, 1,
+				1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wnfExemplare, new GridBagConstraints(1, iZeile, 1,
+				1, 0.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+		iZeile++;
 		jpaWorkingOn.add(wlaVersandnummer, new GridBagConstraints(0, iZeile, 1,
 				1, 0.0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
@@ -260,10 +294,10 @@ public class ReportLieferscheinWAEetikett extends ReportEtikett implements
 				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
 		jpaWorkingOn.add(wlaPaketanzahl, new GridBagConstraints(2, iZeile, 1,
 				1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 50, 0));
 		jpaWorkingOn.add(wcbAlle, new GridBagConstraints(3, iZeile, 1, 1, 8.0,
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
+				new Insets(2, 2, 2, 2), 400, 0));
 		iZeile++;
 		jpaWorkingOn.add(wlaHandmenge, new GridBagConstraints(0, iZeile, 1, 1,
 				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
@@ -273,12 +307,17 @@ public class ReportLieferscheinWAEetikett extends ReportEtikett implements
 				new Insets(2, 2, 2, 2), 0, 0));
 		iZeile++;
 
+		jpaWorkingOn.add(getToolsPanel(), new GridBagConstraints(0, iZeile, 3, 1, 1.0,
+				1.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
+				new Insets(0, 0, 0, 0), 0, 0));
+		this.add(jpaWorkingOn, new GridBagConstraints(0, iZeile, 1, 1, 1.0,
+				1.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
+				new Insets(0, 0, 0, 0), 0, 0));
+		iZeile++;
 		enableToolsPanelButtons(aWhichButtonIUse);
 		getInternalFrame().addItemChangedListener(this);
 
-		this.add(getToolsPanel(), new GridBagConstraints(0, iZeile, 1, 1, 1.0,
-				1.0, GridBagConstraints.NORTHWEST, GridBagConstraints.NONE,
-				new Insets(0, 0, 0, 0), 0, 0));
+		
 
 	}
 

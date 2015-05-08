@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -40,6 +40,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.FocusEvent;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.text.MessageFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.EventObject;
@@ -47,6 +48,7 @@ import java.util.LinkedHashMap;
 
 import javax.swing.ButtonGroup;
 import javax.swing.JComponent;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
@@ -91,6 +93,7 @@ import com.lp.server.auftrag.service.AuftragpositionDto;
 import com.lp.server.benutzer.service.RechteFac;
 import com.lp.server.fertigung.service.FertigungFac;
 import com.lp.server.fertigung.service.LosDto;
+import com.lp.server.fertigung.service.LossollmaterialDto;
 import com.lp.server.partner.service.KundeDto;
 import com.lp.server.partner.service.PartnerDto;
 import com.lp.server.personal.service.PersonalDto;
@@ -100,6 +103,7 @@ import com.lp.server.stueckliste.service.StuecklisteFac;
 import com.lp.server.system.service.KostenstelleDto;
 import com.lp.server.system.service.LocaleFac;
 import com.lp.server.system.service.MandantDto;
+import com.lp.server.system.service.MandantFac;
 import com.lp.server.system.service.ParameterFac;
 import com.lp.server.system.service.ParametermandantDto;
 import com.lp.server.system.service.SystemFac;
@@ -155,6 +159,10 @@ public class PanelLosKopfdaten extends PanelBasis {
 	private static final String ACTION_SPECIAL_AUSGEBEN = "action_special_los_ausgeben";
 	private static final String ACTION_SPECIAL_HANDAUSGABE = "action_special_los_handausgabe";
 	static final public String ACTION_SPECIAL_FERTIGUNGSGRUPPE_FROM_LISTE = "ACTION_SPECIAL_FERTIGUNGSGRUPPE_FROM_LISTE";
+
+	private static final String ACTION_SPECIAL_MATERIAL_VOLLSTAENDIG = "action_special_material_vollstaendig";
+	private JLabel wlaMaterialVollstaendig = new JLabel();
+
 	private static final String ACTION_SPECIAL_LOSEFUERAUFTRAG = "ACTION_SPECIAL_LOSEFUERAUFTRAG";
 	private WrapperButton wbuFertigungsgruppe = new WrapperButton();
 	private WrapperTextField wtfFertigungsgruppe = new WrapperTextField();
@@ -177,7 +185,8 @@ public class PanelLosKopfdaten extends PanelBasis {
 	private WrapperTextField wtfAbteilung = new WrapperTextField();
 	private WrapperButton wlaKunde = new WrapperButton();
 	private WrapperTextField wtfAuftragNummer = new WrapperTextField();
-	private WrapperButton wbuAuftrag = new WrapperButton();
+	private WrapperGotoButton wbuAuftrag = new WrapperGotoButton(
+			WrapperGotoButton.GOTO_AUFTRAG_AUSWAHL);
 	private WrapperTextField wtfAuftragBezeichnung = new WrapperTextField();
 	private WrapperTextField wtfKunde = new WrapperTextField();
 	private WrapperTextField wtfKostenstelleNummer = new WrapperTextField();
@@ -186,6 +195,9 @@ public class PanelLosKopfdaten extends PanelBasis {
 	private WrapperTextField wtfLager = new WrapperTextField();
 	private WrapperButton wbuLager = new WrapperButton();
 	private WrapperTextField wtfAdresse = new WrapperTextField();
+
+	private WrapperSelectField wsfProjekt = new WrapperSelectField(
+			WrapperSelectField.PROJEKT, getInternalFrame(), true);
 
 	private WrapperButton wbuLoseFurAuftragAnlegen = new WrapperButton();
 
@@ -203,7 +215,8 @@ public class PanelLosKopfdaten extends PanelBasis {
 	private WrapperTextField wtfStuecklisteZusatzBezeichnung = new WrapperTextField();
 
 	private WrapperButton wbuFertigungsort = new WrapperButton();
-	private WrapperTextField wtfFertigungsort = new WrapperTextField();
+	private WrapperTextField wtfFertigungsort = new WrapperTextField(
+			Facade.MAX_UNBESCHRAENKT);
 
 	private WrapperLabel wlaLosgroesse = new WrapperLabel();
 	private WrapperNumberField wnfLosgroesse = null;
@@ -338,6 +351,20 @@ public class PanelLosKopfdaten extends PanelBasis {
 				getInternalFrame(), false);
 
 		this.enableToolsPanelButtons(aWhichButtonIUse);
+
+		if (DelegateFactory
+				.getInstance()
+				.getTheJudgeDelegate()
+				.hatRecht(
+						com.lp.server.benutzer.service.RechteFac.RECHT_AUFT_DARF_AUFTRAG_ERLEDIGEN)) {
+			createAndSaveAndShowButton(
+					"/com/lp/client/res/server_ok.png",
+					LPMain.getTextRespectUISPr("fert.los.materialvollstaendig"),
+					ACTION_SPECIAL_MATERIAL_VOLLSTAENDIG,
+					RechteFac.RECHT_AUFT_DARF_AUFTRAG_ERLEDIGEN);
+			getToolBar().getToolsPanelCenter().add(wlaMaterialVollstaendig);
+		}
+
 		// Komponenten instantiieren
 		wrbTerminVorwaerts = new WrapperRadioButton();
 		wrbTerminRueckwaerts = new WrapperRadioButton();
@@ -537,15 +564,22 @@ public class PanelLosKopfdaten extends PanelBasis {
 		wbuLager.setPreferredSize(new Dimension(110, Defaults.getInstance()
 				.getControlHeight()));
 
-		jPanelWorkingOn.setLayout(new MigLayout("wrap 5, hidemode 3", "[25%][30%][15%][25%][25%]"));
-		this.add(panelButtonAction, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.NORTHWEST, GridBagConstraints.NONE, new Insets(0, 0, 0, 0), 0, 0));
-		this.add(jPanelWorkingOn, new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(0, 0, 0, 0), 0, 0));
+		jPanelWorkingOn.setLayout(new MigLayout("wrap 5, hidemode 3",
+				"[25%][30%][15%][25%][25%]"));
+		this.add(panelButtonAction, new GridBagConstraints(0, 0, 1, 1, 0.0,
+				0.0, GridBagConstraints.NORTHWEST, GridBagConstraints.NONE,
+				new Insets(0, 0, 0, 0), 0, 0));
+		this.add(jPanelWorkingOn, new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0,
+				GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(
+						0, 0, 0, 0), 0, 0));
 		// statusbarneu: 1 an den unteren rand des panels haengen
-		this.add(getPanelStatusbar(), new GridBagConstraints(0, 2, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(0, 0, 0, 0), 0, 0));
-		
+		this.add(getPanelStatusbar(), new GridBagConstraints(0, 2, 1, 1, 1.0,
+				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
+				new Insets(0, 0, 0, 0), 0, 0));
+
 		jPanelWorkingOn.add(wlaLosart, "growx");
 		jPanelWorkingOn.add(wcoLosart, "growx, span");
-		
+
 		jPanelWorkingOn.add(wbuAuftrag, "growx");
 		jPanelWorkingOn.add(wtfAuftragNummer, "growx");
 		jPanelWorkingOn.add(wtfAuftragBezeichnung, "growx 90, split 2, span");
@@ -559,46 +593,49 @@ public class PanelLosKopfdaten extends PanelBasis {
 			jPanelWorkingOn.add(wtfAuftragpositionNummer, "growx");
 
 			if (bLosnummerIstAuftragsnummer == 1) {
-				jPanelWorkingOn.add(wtfAuftragpositionBezeichnung, "growx, span2");
+				jPanelWorkingOn.add(wtfAuftragpositionBezeichnung,
+						"growx, span2");
 
 				wcbKeinPositionsbezug.addActionListener(this);
 
 				jPanelWorkingOn.add(wcbKeinPositionsbezug, "growx");
 			} else if (bLosnummerIstAuftragsnummer == 0) {
-				jPanelWorkingOn.add(wtfAuftragpositionBezeichnung, "growx, span 3");
+				jPanelWorkingOn.add(wtfAuftragpositionBezeichnung,
+						"growx, span 3");
 			}
 		}
 		jPanelWorkingOn.add(wlaKunde, "newline, growx");
 		jPanelWorkingOn.add(wtfKunde, "growx, span");
-		
+
 		jPanelWorkingOn.add(wtfAdresse, "skip, growx, span");
-		
+
 		jPanelWorkingOn.add(wlaAbteilung, "growx");
 		jPanelWorkingOn.add(wtfAbteilung, "growx, span");
-		
+
 		jPanelWorkingOn.add(wbuKostenstelle, "growx");
 		jPanelWorkingOn.add(wtfKostenstelleNummer, "growx");
 		jPanelWorkingOn.add(wtfKostenstelleBezeichnung, "growx, span");
-		
+
 		jPanelWorkingOn.add(wbuStueckliste, "growx");
 		jPanelWorkingOn.add(wtfStuecklisteNummer, "growx");
 		jPanelWorkingOn.add(wtfStuecklisteBezeichnung, "growx, span");
-		
-		jPanelWorkingOn.add(wtfStuecklisteZusatzBezeichnung, "skip 2, growx, span");
-		
+
+		jPanelWorkingOn.add(wtfStuecklisteZusatzBezeichnung,
+				"skip 2, growx, span");
+
 		jPanelWorkingOn.add(wlaLosgroesse, "growx");
 		jPanelWorkingOn.add(wnfLosgroesse, "growx");
 		jPanelWorkingOn.add(wlaEinheit, "growx");
 		jPanelWorkingOn.add(wbuLager, "growx");
 		jPanelWorkingOn.add(wtfLager, "growx");
-		
+
 		jPanelWorkingOn.add(wlaProduktionsbeginn, "growx");
 		jPanelWorkingOn.add(wdfProduktionsbeginn, "left, growx, split 2");
 		jPanelWorkingOn.add(wlaDauer, "right, growx");
 		jPanelWorkingOn.add(wnfDauer, "growx");
 		jPanelWorkingOn.add(wlaTage, "left, growx 25, split 2, span");
 		jPanelWorkingOn.add(wlaAusgegebenam, "right, growx 75");
-		
+
 		jPanelWorkingOn.add(wlaProduktionsende, "growx");
 		jPanelWorkingOn.add(wdfProduktionsende, "left, growx, split 2");
 
@@ -614,22 +651,97 @@ public class PanelLosKopfdaten extends PanelBasis {
 		jPanelWorkingOn.add(wbuTechniker, "growx");
 		jPanelWorkingOn.add(wtfTechniker, "growx");
 		jPanelWorkingOn.add(wlaGestopptam, "skip, growx, span");
-		
-		jPanelWorkingOn.add(wlaProjekt, "growx");
-		jPanelWorkingOn.add(wtfProjekt, "growx, span 2");
+
+		if (LPMain
+				.getInstance()
+				.getDesktop()
+				.darfAnwenderAufZusatzfunktionZugreifen(
+						MandantFac.ZUSATZFUNKTION_PROJEKTKLAMMER)) {
+
+			jPanelWorkingOn.add(wlaProjekt, "growx");
+			jPanelWorkingOn.add(wtfProjekt, "growx, span 2");
+
+			jPanelWorkingOn.add(wsfProjekt.getWrapperGotoButton(), "growx");
+			jPanelWorkingOn
+					.add(wsfProjekt.getWrapperTextField(), "growx, wrap");
+		} else {
+			jPanelWorkingOn.add(wlaProjekt, "growx");
+			jPanelWorkingOn.add(wtfProjekt, "growx, span 2, wrap");
+		}
+
+		jPanelWorkingOn.add(wlaKommentar, "growx");
+		jPanelWorkingOn.add(wtfKommentar, "growx, span 2");
 		jPanelWorkingOn.add(wlaSollmaterialGeplant, "growx");
 		jPanelWorkingOn.add(wnfSollmaterialGeplant, "growx, wrap");
-		
-		jPanelWorkingOn.add(wlaKommentar, "growx");
-		jPanelWorkingOn.add(wtfKommentar, "growx, span 2, wrap");
 
 		jPanelWorkingOn.add(wbuFertigungsgruppe, "growx");
 		jPanelWorkingOn.add(wtfFertigungsgruppe, "growx");
 		jPanelWorkingOn.add(wbuFertigungsort, "growx, span 2");
 		jPanelWorkingOn.add(wtfFertigungsort, "growx, wrap");
-		
+
 		jPanelWorkingOn.add(wlaText, "growx");
 		jPanelWorkingOn.add(wefText, "grow, span");
+	}
+
+	private void pruefeFertigungssatzgroesse() throws Throwable {
+
+		LosDto losDto = getTabbedPaneLos().getLosDto();
+
+		if (losDto.getStuecklisteIId() != null) {
+
+			StuecklisteDto stklDto = DelegateFactory.getInstance()
+					.getStuecklisteDelegate()
+					.stuecklisteFindByPrimaryKey(losDto.getStuecklisteIId());
+			if (stklDto != null
+					&& stklDto.getArtikelDto() != null
+					&& stklDto.getArtikelDto().getFFertigungssatzgroesse() != null) {
+
+				if (stklDto.getArtikelDto().getFFertigungssatzgroesse() != 0) {
+					int iRest = losDto.getNLosgroesse().intValue()
+							% stklDto.getArtikelDto()
+									.getFFertigungssatzgroesse().intValue();
+
+					BigDecimal bdLosgroesseNeu = losDto.getNLosgroesse().add(
+							new BigDecimal(stklDto.getArtikelDto()
+									.getFFertigungssatzgroesse() - iRest));
+
+					if (iRest > 0) {
+
+						MessageFormat mf = new MessageFormat(
+								LPMain.getTextRespectUISPr("fert.hinweis.fertigungssatzgroesse"));
+						mf.setLocale(LPMain.getTheClient().getLocUi());
+
+						Object pattern[] = {
+								Helper.formatZahl(stklDto.getArtikelDto()
+										.getFFertigungssatzgroesse(), LPMain
+										.getTheClient().getLocUi())
+										+ " "
+										+ stklDto.getArtikelDto()
+												.getEinheitCNr().trim(),
+
+								Helper.formatZahl(bdLosgroesseNeu, LPMain
+										.getTheClient().getLocUi())
+										+ " "
+										+ stklDto.getArtikelDto()
+												.getEinheitCNr().trim() };
+						String sMsg = mf.format(pattern);
+
+						boolean b = DialogFactory.showModalJaNeinDialog(
+								getInternalFrame(), sMsg);
+
+						if (b == true) {
+							getTabbedPaneLos().getLosDto().setNLosgroesse(
+									bdLosgroesseNeu);
+						}
+
+					}
+
+				}
+
+			}
+
+		}
+
 	}
 
 	public void eventActionSave(ActionEvent e, boolean bNeedNoSaveI)
@@ -637,12 +749,77 @@ public class PanelLosKopfdaten extends PanelBasis {
 		if (allMandatoryFieldsSetDlg()) {
 			components2Dto();
 			LosDto losDto = getTabbedPaneLos().getLosDto();
+
+			pruefeFertigungssatzgroesse();
+
 			// wenn alles passt, wird gespeichert
 			if (losDto != null) {
 				boolean bIsNewLos = getTabbedPaneLos().getLosDto().getIId() == null;
 				// speichern
 				LosDto savedDto = null;
 				try {
+
+					// PJ18596 Bei der Neuanlage pruefen, ob bereits ein Los
+					// fuer die Position vorhanden ist
+					if (losDto.getIId() == null
+							&& losDto.getAuftragpositionIId() != null) {
+
+						LosDto[] losDtos = DelegateFactory
+								.getInstance()
+								.getFertigungDelegate()
+								.losFindByAuftragpositionIId(
+										losDto.getAuftragpositionIId());
+
+						if (losDtos.length > 0) {
+							String meldung = LPMain
+									.getTextRespectUISPr("fert.los.anlgen.aufposbereits.vorhanden1");
+
+							for (int i = 0; i < losDtos.length; i++) {
+								meldung += losDtos[i].getCNr();
+
+								if (i != losDtos.length - 1) {
+									meldung += ";";
+								}
+
+							}
+
+							meldung += LPMain
+									.getTextRespectUISPr("fert.los.anlgen.aufposbereits.vorhanden2");
+
+							boolean b = DialogFactory.showModalJaNeinDialog(
+									getInternalFrame(), meldung);
+
+							if (b == false) {
+								return;
+							}
+
+						}
+
+					}
+
+					// PJ18850
+					if (LPMain
+							.getInstance()
+							.getDesktop()
+							.darfAnwenderAufZusatzfunktionZugreifen(
+									MandantFac.ZUSATZFUNKTION_STUECKLISTENFREIGABE)) {
+						if (getTabbedPaneLos().getStuecklisteDto() != null
+								&& getTabbedPaneLos().getStuecklisteDto()
+										.getTFreigabe() == null) {
+
+							boolean b = DialogFactory
+									.showModalJaNeinDialog(
+											getInternalFrame(),
+											LPMain.getTextRespectUISPr("fert.error.losanlegen.stklnichtfreigegeben"));
+
+							if (b == false) {
+								return;
+							}
+
+						}
+
+					}
+
 					savedDto = DelegateFactory.getInstance()
 							.getFertigungDelegate().updateLos(losDto);
 				} catch (ExceptionLP ex) {
@@ -670,7 +847,8 @@ public class PanelLosKopfdaten extends PanelBasis {
 
 				}
 				getTabbedPaneLos().setLosDto(savedDto);
-				getTabbedPaneLos().pruefeStuecklisteAktuellerAlsLosDlg();
+				getTabbedPaneLos().pruefeStuecklisteAktuellerAlsLosDlg(
+						savedDto.getIId());
 				// das Panel aktualisieren
 				super.eventActionSave(e, true);
 				eventYouAreSelected(false);
@@ -697,6 +875,8 @@ public class PanelLosKopfdaten extends PanelBasis {
 
 		if (auftragDto != null || auftragpositionDto != null) {
 			dto.setKundeIId(null);
+		} else {
+			dto.setProjektIId(wsfProjekt.getIKey());
 		}
 
 		if (auftragDto == null && kundeDto != null) {
@@ -783,25 +963,26 @@ public class PanelLosKopfdaten extends PanelBasis {
 		}
 		updateLosart();
 
-		
 		holeKunde(losDto.getKundeIId());
-		
+
 		holeAuftragposition(losDto.getAuftragpositionIId());
 
-		
 		if (auftragpositionDto != null) {
 			holeAuftrag(auftragpositionDto.getBelegIId());
 		} else {
 			holeAuftrag(losDto.getAuftragIId());
 		}
-		
-	
-		
 
 		if (auftragpositionDto == null) {
 			wcbKeinPositionsbezug.setSelected(true);
 			wtfAuftragpositionNummer.setMandatoryField(false);
 		}
+
+		if (auftragpositionDto == null && losDto.getAuftragIId() == null
+				&& losDto.getProjektIId() != null) {
+			wsfProjekt.setKey(losDto.getProjektIId());
+		}
+
 		holeFertigungsort(losDto.getPartnerIIdFertigungsort());
 		holeKostenstelle(losDto.getKostenstelleIId());
 		holeStueckliste(losDto.getStuecklisteIId());
@@ -862,6 +1043,27 @@ public class PanelLosKopfdaten extends PanelBasis {
 			wlaErledigtam.setText("");
 		}
 
+		if (losDto.getPersonalIIdMaterialvollstaendig() != null) {
+			String text = "";
+			if (losDto.getTMaterialvollstaendig() != null) {
+				text = LPMain.getTextRespectUISPr("los.material.vollstaendig")
+						+ " "
+						+ Helper.formatDatumZeit(losDto
+								.getTMaterialvollstaendig(), LPMain
+								.getTheClient().getLocUi());
+			}
+			text += "("
+					+ DelegateFactory
+							.getInstance()
+							.getPersonalDelegate()
+							.personalFindByPrimaryKey(
+									losDto.getPersonalIIdMaterialvollstaendig())
+							.getCKurzzeichen() + ")";
+			wlaMaterialVollstaendig.setText(text);
+		} else {
+			wlaMaterialVollstaendig.setText("");
+		}
+
 		if (losDto.getTAusgabe() != null) {
 
 			String ausg = LPMain.getTextRespectUISPr("fert.ausgegebenam")
@@ -884,17 +1086,15 @@ public class PanelLosKopfdaten extends PanelBasis {
 		} else {
 			wlaAusgegebenam.setText("");
 		}
-		
-		
+
 		if (losDto.getTProduktionsstop() != null) {
 
-			String ausg = LPMain.getTextRespectUISPr("fert.gestopptam")
-					+ ": ";
+			String ausg = LPMain.getTextRespectUISPr("fert.gestopptam") + ": ";
 
 			ausg += Helper.formatDatum(losDto.getTProduktionsstop(), LPMain
 					.getTheClient().getLocUi());
 
-			if (losDto.getPersonalIIdProduktionsstop()!= null) {
+			if (losDto.getPersonalIIdProduktionsstop() != null) {
 				PersonalDto personalDto = DelegateFactory
 						.getInstance()
 						.getPersonalDelegate()
@@ -908,7 +1108,6 @@ public class PanelLosKopfdaten extends PanelBasis {
 		} else {
 			wlaGestopptam.setText("");
 		}
-		
 
 		this.setStatusbarPersonalIIdAnlegen(losDto.getPersonalIIdAnlegen());
 		this.setStatusbarTAnlegen(losDto.getTAnlegen());
@@ -991,6 +1190,11 @@ public class PanelLosKopfdaten extends PanelBasis {
 							auftragDto.getIId())) {
 				holeAuftragposition(null);
 			}
+			wsfProjekt.setKey(auftragDto.getProjektIId());
+			wsfProjekt.getWrapperGotoButton().setEnabled(false);
+
+			wbuAuftrag.setOKey(auftragDto.getIId());
+
 		} else {
 			wtfAuftragNummer.setText(null);
 			wtfAuftragBezeichnung.setText(null);
@@ -998,6 +1202,8 @@ public class PanelLosKopfdaten extends PanelBasis {
 			holeAuftragposition(null);
 			wtfAuftragpositionNummer.setMandatoryField(false);
 			wsfLosbereich.setMandatoryField(false);
+			wsfProjekt.setKey(null);
+			wbuAuftrag.setOKey(null);
 
 		}
 		dto2ComponentsKunde();
@@ -1206,47 +1412,46 @@ public class PanelLosKopfdaten extends PanelBasis {
 					LPMain.getTextRespectUISPr("lp.hint"),
 					"Los ist bereits storniert");
 			return;
-		} 
+		}
 
 		String[] optionen = new String[2];
 		optionen[0] = LPMain.getTextRespectUISPr("lp.ja");
 		optionen[1] = LPMain.getTextRespectUISPr("lp.nein");
 
-		
-		String meldung= LPMain.getTextRespectUISPr("fert.los.stornieren");
-		if(DelegateFactory.getInstance().getZeiterfassungDelegate().sindBelegzeitenVorhanden(LocaleFac.BELEGART_LOS, losDto.getIId())){
-			//PJ17710
-			meldung=LPMain.getTextRespectUISPr("fert.los.stornieren.zeitengebucht");
+		String meldung = LPMain.getTextRespectUISPr("fert.los.stornieren");
+		if (DelegateFactory
+				.getInstance()
+				.getZeiterfassungDelegate()
+				.sindBelegzeitenVorhanden(LocaleFac.BELEGART_LOS,
+						losDto.getIId())) {
+			// PJ17710
+			meldung = LPMain
+					.getTextRespectUISPr("fert.los.stornieren.zeitengebucht");
 		}
-		
-		
-		
-		int choice = JOptionPane.showOptionDialog(this,meldung,
+
+		int choice = JOptionPane.showOptionDialog(this, meldung,
 				LPMain.getTextRespectUISPr("lp.frage"),
 				JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null,
 				optionen, optionen[1]);
 		switch (choice) {
 		case JOptionPane.YES_OPTION: {
-			boolean bAuftragsbezugEntfernen=false;
-			//SP1349
-			if(losDto.getAuftragpositionIId()!=null){
+			boolean bAuftragsbezugEntfernen = false;
+			// SP1349
+			if (losDto.getAuftragpositionIId() != null) {
 				int i = DialogFactory
 						.showModalJaNeinAbbrechenDialog(
 								getInternalFrame(),
 								LPMain.getTextRespectUISPr("fert.los.stornieren.aufposbezugentfernen"),
-								LPMain.getTextRespectUISPr(
-												"lp.frage"));
+								LPMain.getTextRespectUISPr("lp.frage"));
 				if (i == JOptionPane.YES_OPTION) {
 					bAuftragsbezugEntfernen = true;
-				}  else if (i == JOptionPane.CANCEL_OPTION) {
+				} else if (i == JOptionPane.CANCEL_OPTION) {
 					return;
 				}
 			}
-			
-			
-			
+
 			DelegateFactory.getInstance().getFertigungDelegate()
-					.storniereLos(losDto.getIId(),bAuftragsbezugEntfernen);
+					.storniereLos(losDto.getIId(), bAuftragsbezugEntfernen);
 			this.eventYouAreSelected(false);
 		}
 			break;
@@ -1306,7 +1511,8 @@ public class PanelLosKopfdaten extends PanelBasis {
 				LosDto savedDto = DelegateFactory.getInstance()
 						.getFertigungDelegate().updateLos(losDto1);
 				getTabbedPaneLos().setLosDto(savedDto);
-				getTabbedPaneLos().pruefeStuecklisteAktuellerAlsLosDlg();
+				getTabbedPaneLos().pruefeStuecklisteAktuellerAlsLosDlg(
+						savedDto.getIId());
 			}
 		} else if (e.getActionCommand().equals(ACTION_SPECIAL_FERTIGUNGSORT)) {
 			dialogQueryFertigungsort(e);
@@ -1316,7 +1522,8 @@ public class PanelLosKopfdaten extends PanelBasis {
 			// los aktualisieren und Stuecklistenaenderungen pruefen
 			getTabbedPaneLos().reloadLosDto();
 			int iAnswer = getTabbedPaneLos()
-					.pruefeStuecklisteAktuellerAlsLosDlg();
+					.pruefeStuecklisteAktuellerAlsLosDlg(
+							getTabbedPaneLos().getLosDto().getIId());
 			if (iAnswer != JOptionPane.CANCEL_OPTION) {
 				DelegateFactory
 						.getInstance()
@@ -1327,17 +1534,38 @@ public class PanelLosKopfdaten extends PanelBasis {
 								getTabbedPaneLos()
 										.getAbzubuchendeSeriennrChargen(
 												getTabbedPaneLos().getLosDto()
-														.getNLosgroesse()));
+														.getIId(),
+												getTabbedPaneLos().getLosDto()
+														.getNLosgroesse(),
+												false));
 				// refresh aufs panel
 				eventYouAreSelected(false);
 				getTabbedPaneLos()
-						.printAusgabelisteUndFertigungsbegleitscheinDlg();
+						.printAusgabelisteUndFertigungsbegleitscheinDlg(
+								getTabbedPaneLos().getLosDto().getIId(), true);
 			}
+		} else if (e.getActionCommand().equals(
+				ACTION_SPECIAL_MATERIAL_VOLLSTAENDIG)) {
+			DelegateFactory
+					.getInstance()
+					.getFertigungDelegate()
+					.toggleMaterialVollstaendig(
+							getTabbedPaneLos().getLosDto().getIId());
+
+			getTabbedPaneLos().setLosDto(
+					DelegateFactory
+							.getInstance()
+							.getFertigungDelegate()
+							.losFindByPrimaryKey(
+									getTabbedPaneLos().getLosDto().getIId()));
+			eventYouAreSelected(false);
+
 		} else if (e.getActionCommand().equals(ACTION_SPECIAL_HANDAUSGABE)) {
 			// los aktualisieren und Stuecklistenaenderungen pruefen
 			getTabbedPaneLos().reloadLosDto();
 			int iAnswer = getTabbedPaneLos()
-					.pruefeStuecklisteAktuellerAlsLosDlg();
+					.pruefeStuecklisteAktuellerAlsLosDlg(
+							getTabbedPaneLos().getLosDto().getIId());
 			if (iAnswer != JOptionPane.CANCEL_OPTION) {
 				DelegateFactory
 						.getInstance()
@@ -1347,7 +1575,8 @@ public class PanelLosKopfdaten extends PanelBasis {
 				// refresh aufs panel
 				eventYouAreSelected(false);
 				getTabbedPaneLos()
-						.printAusgabelisteUndFertigungsbegleitscheinDlg();
+						.printAusgabelisteUndFertigungsbegleitscheinDlg(
+								getTabbedPaneLos().getLosDto().getIId(), true);
 			}
 		} else if (e.getActionCommand().equals(ACTION_SPECIAL_LOSART)) {
 			updateLosart();
@@ -1446,7 +1675,7 @@ public class PanelLosKopfdaten extends PanelBasis {
 					wtfAuftragpositionNummer.setMandatoryField(true);
 				} else if (bLosnummerIstAuftragsnummer == 2) {
 					wsfLosbereich.setMandatoryField(true);
-					if(letzterBereichIId != null)
+					if (letzterBereichIId != null)
 						wsfLosbereich.setKey(letzterBereichIId);
 				}
 			} else if (e.getSource() == panelQueryFLRKunde) {
@@ -1514,7 +1743,8 @@ public class PanelLosKopfdaten extends PanelBasis {
 							if (artikelDto == null) {
 								bZuorden = false;
 							} else {
-								holeFertigungsgruppe(stuecklisteDto.getFertigungsgruppeIId());
+								holeFertigungsgruppe(stuecklisteDto
+										.getFertigungsgruppeIId());
 							}
 
 						}
@@ -1729,12 +1959,15 @@ public class PanelLosKopfdaten extends PanelBasis {
 				holeAuftrag(null);
 				holeAuftragposition(null);
 				wtfAuftragpositionNummer.setMandatoryField(false);
+				wsfProjekt.getWrapperGotoButton().setEnabled(true);
 			} else if (e.getSource() == panelQueryFLRAuftragposition) {
 				holeAuftragposition(null);
 			} else if (e.getSource() == panelQueryFLRKunde) {
 				getTabbedPaneLos().getLosDto().setKundeIId(null);
-				kundeDto=null;
+				kundeDto = null;
 				dto2ComponentsKunde();
+			} else if (e.getSource() == panelQueryFLRTechniker) {
+				holeTechniker(null);
 			}
 		}
 	}
@@ -1973,7 +2206,8 @@ public class PanelLosKopfdaten extends PanelBasis {
 				DelegateFactory.getInstance().getFertigungDelegate()
 						.storniereLosRueckgaengig(losDto.getIId());
 				eventYouAreSelected(false);
-				getTabbedPaneLos().pruefeStuecklisteAktuellerAlsLosDlg();
+				getTabbedPaneLos().pruefeStuecklisteAktuellerAlsLosDlg(
+						losDto.getIId());
 			} else {
 				return;
 			}
@@ -1995,6 +2229,32 @@ public class PanelLosKopfdaten extends PanelBasis {
 				|| losDto.getStatusCNr().equals(
 						FertigungFac.STATUS_TEILERLEDIGT)) {
 
+			// SP2821
+
+			boolean bNachtraeglicheEntnahmenOhneSollmengenVorhanden = false;
+
+			LossollmaterialDto[] sollDtos = DelegateFactory.getInstance()
+					.getFertigungDelegate()
+					.lossollmaterialFindByLosIId(losDto.getIId());
+			for (int i = 0; i < sollDtos.length; i++) {
+				LossollmaterialDto sollDto = sollDtos[i];
+
+				if (Helper.short2boolean(sollDto.getBNachtraeglich())
+						&& sollDto.getNMenge().doubleValue() == 0) {
+
+					BigDecimal bdMenge = DelegateFactory.getInstance()
+							.getFertigungDelegate()
+							.getAusgegebeneMenge(sollDto.getIId());
+					if (bdMenge != null && bdMenge.doubleValue() > 0) {
+						bNachtraeglicheEntnahmenOhneSollmengenVorhanden = true;
+					}
+
+					break;
+				}
+			}
+
+			boolean bSollmengenBeiNachtraeglichenMaterialentnahmenAktualisieren = false;
+
 			if (bAusgegebenEigenerStatus
 					&& losDto.getStatusCNr().equals(
 							FertigungFac.STATUS_IN_PRODUKTION)) {
@@ -2004,23 +2264,63 @@ public class PanelLosKopfdaten extends PanelBasis {
 						javax.swing.JOptionPane.YES_NO_OPTION) == javax.swing.JOptionPane.YES_OPTION);
 				if (bStornoAufheben) {
 					DelegateFactory.getInstance().getFertigungDelegate()
-							.gebeLosAusRueckgaengig(losDto.getIId());
+							.gebeLosAusRueckgaengig(losDto.getIId(), false);
 					eventYouAreSelected(false);
+					return;
 				} else {
 					return;
 				}
 			} else {
 
-				boolean bStornoAufheben = (DialogFactory
-						.showMeldung(
-								LPMain.getTextRespectUISPr("fert.frage.ausgabenzuruecknehmen"),
-								LPMain.getTextRespectUISPr("lp.frage"),
-								javax.swing.JOptionPane.YES_NO_OPTION) == javax.swing.JOptionPane.YES_OPTION);
+				boolean bStornoAufheben = false;
+
+				// SP2821
+				if (bNachtraeglicheEntnahmenOhneSollmengenVorhanden == false) {
+					bStornoAufheben = (DialogFactory
+							.showMeldung(
+									LPMain.getTextRespectUISPr("fert.frage.ausgabenzuruecknehmen"),
+									LPMain.getTextRespectUISPr("lp.frage"),
+									javax.swing.JOptionPane.YES_NO_OPTION) == javax.swing.JOptionPane.YES_OPTION);
+				} else {
+
+					int indexJaAktualisieren = 0;
+					int indexJaOhneAktualisieren = 1;
+					int indexNein = 2;
+					int iAnzahlOptionen = 3;
+
+					Object[] aOptionen = new Object[iAnzahlOptionen];
+					aOptionen[indexJaAktualisieren] = LPMain
+							.getTextRespectUISPr("fert.frage.nachtraeglicheentnahmene.sollmengenaktualisieren.option1");
+					aOptionen[indexJaOhneAktualisieren] = LPMain
+							.getTextRespectUISPr("fert.frage.nachtraeglicheentnahmene.sollmengenaktualisieren.option2");
+					aOptionen[indexNein] = LPMain
+							.getTextRespectUISPr("fert.frage.nachtraeglicheentnahmene.sollmengenaktualisieren.option3");
+
+					int iAuswahl = DialogFactory
+							.showModalDialog(
+									getInternalFrame(),
+									LPMain.getTextRespectUISPr("fert.frage.nachtraeglicheentnahmene.sollmengenaktualisieren"),
+									LPMain.getTextRespectUISPr("lp.frage"),
+									aOptionen, aOptionen[0]);
+
+					if (iAuswahl == indexJaAktualisieren) {
+						bStornoAufheben = true;
+						bSollmengenBeiNachtraeglichenMaterialentnahmenAktualisieren = true;
+					} else if (iAuswahl == indexJaOhneAktualisieren) {
+						bStornoAufheben = true;
+						bSollmengenBeiNachtraeglichenMaterialentnahmenAktualisieren = false;
+					}
+				}
+
 				if (bStornoAufheben) {
-					DelegateFactory.getInstance().getFertigungDelegate()
-							.gebeLosAusRueckgaengig(losDto.getIId());
+					DelegateFactory
+							.getInstance()
+							.getFertigungDelegate()
+							.gebeLosAusRueckgaengig(losDto.getIId(),
+									bSollmengenBeiNachtraeglichenMaterialentnahmenAktualisieren);
 					eventYouAreSelected(false);
-					getTabbedPaneLos().pruefeStuecklisteAktuellerAlsLosDlg();
+					getTabbedPaneLos().pruefeStuecklisteAktuellerAlsLosDlg(
+							losDto.getIId());
 				} else {
 					return;
 				}
@@ -2031,6 +2331,10 @@ public class PanelLosKopfdaten extends PanelBasis {
 		super.eventActionUpdate(aE, bNeedNoUpdateI);
 
 		wsfLosbereich.setEnabled(false);
+		if (losDto.getAuftragIId() != null || losDto.getAuftragIId() != null) {
+			wsfProjekt.getWrapperGotoButton().setEnabled(false);
+
+		}
 
 	}
 

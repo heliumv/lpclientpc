@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -34,10 +34,13 @@ package com.lp.client.frame.delegate;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -74,6 +77,7 @@ import com.lp.server.system.service.ParameterFac;
 import com.lp.server.system.service.ParametermandantDto;
 import com.lp.server.system.service.ReportJournalKriterienDto;
 import com.lp.server.system.service.TheClientDto;
+import com.lp.server.util.DatumsfilterVonBis;
 import com.lp.server.util.report.JasperPrintLP;
 import com.lp.util.EJBExceptionLP;
 import com.lp.util.Helper;
@@ -204,6 +208,16 @@ public class FertigungDelegate extends Delegate {
 		} catch (Throwable t) {
 			handleThrowable(t);
 			return null;
+		}
+	}
+
+	public void toggleMaterialVollstaendig(Integer losIId) throws ExceptionLP {
+		try {
+			fertigungFac.toggleMaterialVollstaendig(losIId,
+					LPMain.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+
 		}
 	}
 
@@ -352,6 +366,16 @@ public class FertigungDelegate extends Delegate {
 		}
 	}
 
+	public LosDto[] losFindByAuftragpositionIId(Integer auftragpositionIId)
+			throws ExceptionLP {
+		try {
+			return fertigungFac.losFindByAuftragpositionIId(auftragpositionIId);
+		} catch (Throwable t) {
+			handleThrowable(t);
+			return null;
+		}
+	}
+
 	public BigDecimal getMengeDerLetztenLosablieferungEinerAuftragsposition(
 			Integer auftragIId, Integer artikelIId) throws ExceptionLP {
 		try {
@@ -447,10 +471,11 @@ public class FertigungDelegate extends Delegate {
 	}
 
 	public JasperPrintLP printFehlerstatistik(java.sql.Timestamp tVon,
-			java.sql.Timestamp tBis, Integer iSortierung) throws ExceptionLP {
+			java.sql.Timestamp tBis, Integer iSortierung, boolean bAlleAnzeigen)
+			throws ExceptionLP {
 		try {
 			return fertigungReportFac.printFehlerstatistik(tVon, tBis,
-					iSortierung, LPMain.getTheClient());
+					iSortierung, bAlleAnzeigen, LPMain.getTheClient());
 		} catch (Throwable t) {
 			handleThrowable(t);
 			return null;
@@ -466,7 +491,7 @@ public class FertigungDelegate extends Delegate {
 	 *            boolean
 	 * @throws ExceptionLP
 	 */
-	public void gebeLosAus(Integer losIId, boolean bHandausgabe,
+	public boolean gebeLosAus(Integer losIId, boolean bHandausgabe,
 			ArrayList<BucheSerienChnrAufLosDto> bucheSerienChnrAufLosDtos)
 			throws ExceptionLP {
 		try {
@@ -485,11 +510,18 @@ public class FertigungDelegate extends Delegate {
 						.getArtikelkommentarDelegate()
 						.getArtikelhinweise(stklDto.getArtikelIId(),
 								LocaleFac.BELEGART_LOS);
+
 				if (hinweise != null) {
 					for (int i = 0; i < hinweise.length; i++) {
-						DialogFactory.showModalDialog(
-								LPMain.getTextRespectUISPr("lp.hinweis"),
-								Helper.strippHTML(hinweise[i]));
+						DialogFactory
+								.showModalDialog(
+										LPMain.getTextRespectUISPr("lp.hinweis")
+												+ " "
+												+ LPMain.getTextRespectUISPr("fert.losausgabe.fuerstueckliste")
+												+ " "
+												+ stklDto.getArtikelDto()
+														.getCNr(), Helper
+												.strippHTML(hinweise[i]));
 					}
 				}
 
@@ -509,17 +541,24 @@ public class FertigungDelegate extends Delegate {
 							|| Helper.short2boolean(sperrenDto
 									.getBGesperrtlos())) {
 
+						MessageFormat mf = new MessageFormat(
+								LPMain.getTextRespectUISPr("fertl.los.ausgabe.stklgesperrt"));
+						mf.setLocale(LPMain.getTheClient().getLocUi());
+
+						Object pattern[] = { stklDto.getArtikelDto().getCNr() };
+						String sMsg = mf.format(pattern);
+
 						boolean b = DialogFactory
 								.showModalJaNeinDialog(
 										null,
-										LPMain.getTextRespectUISPr("fertl.los.ausgabe.stklgesperrt")
+										sMsg
 												+ "\n"
 												+ LPMain.getTextRespectUISPr("lp.grund")
 												+ ": "
 												+ artikelsperrenDtos[i]
 														.getCGrund());
 						if (b == false) {
-							return;
+							return false;
 						}
 
 					}
@@ -541,16 +580,21 @@ public class FertigungDelegate extends Delegate {
 				} catch (EJBExceptionLP e) {
 					if (e.getCode() == EJBExceptionLP.FEHLER_FERTIGUNG_AUSGABE_ES_WUERDEN_FEHLMENGEN_ENTSTEHEN) {
 
-						boolean bAntwort = DialogFactory
-								.showModalJaNeinDialog(
-										null,
-										LPMain.getTextRespectUISPr("fert.ausgabe.fehlmengenentstehen"));
+						MessageFormat mf = new MessageFormat(
+								LPMain.getTextRespectUISPr("fert.ausgabe.fehlmengenentstehen"));
+						mf.setLocale(LPMain.getTheClient().getLocUi());
+
+						Object pattern[] = { losDto.getCNr() };
+						String sMsg = mf.format(pattern);
+
+						boolean bAntwort = DialogFactory.showModalJaNeinDialog(
+								null, sMsg);
 						if (bAntwort == true) {
 							fertigungFac.gebeLosAus(losIId, bHandausgabe,
 									false, LPMain.getTheClient(),
 									bucheSerienChnrAufLosDtos);
 						} else {
-							return;
+							return false;
 						}
 
 					} else {
@@ -567,8 +611,21 @@ public class FertigungDelegate extends Delegate {
 			// PJ13767
 			DelegateFactory.getInstance().getFertigungDelegate()
 					.zeigeArtikelhinweiseAllerLossollpositionen(losIId);
+			return true;
 		} catch (Throwable t) {
 			handleThrowable(t);
+			return false;
+		}
+	}
+
+	public TreeSet<Integer> getLoseEinesStuecklistenbaums(Integer losIId)
+			throws ExceptionLP {
+		try {
+			return fertigungFac.getLoseEinesStuecklistenbaums(losIId,
+					LPMain.getTheClient());
+		} catch (Throwable t) {
+			handleThrowable(t);
+			return null;
 		}
 	}
 
@@ -608,7 +665,7 @@ public class FertigungDelegate extends Delegate {
 						boolean bAntwort = DialogFactory
 								.showModalJaNeinDialog(
 										null,
-										LPMain.getTextRespectUISPr("fert.ausgabe.fehlmengenentstehen"));
+										LPMain.getTextRespectUISPr("fert.ausgabe.fehlmengenentstehen2"));
 						if (bAntwort == true) {
 							fertigungFac.gebeMehrereLoseAus(
 									fertigungsgruppeIId, false, false,
@@ -648,9 +705,15 @@ public class FertigungDelegate extends Delegate {
 	 *            Integer
 	 * @throws ExceptionLP
 	 */
-	public void gebeLosAusRueckgaengig(Integer losIId) throws ExceptionLP {
+	public void gebeLosAusRueckgaengig(Integer losIId,
+			boolean bSollmengenBeiNachtraeglichenMaterialentnahmenAktualisieren)
+			throws ExceptionLP {
 		try {
-			fertigungFac.gebeLosAusRueckgaengig(losIId, LPMain.getTheClient());
+			fertigungFac
+					.gebeLosAusRueckgaengig(
+							losIId,
+							bSollmengenBeiNachtraeglichenMaterialentnahmenAktualisieren,
+							LPMain.getTheClient());
 		} catch (Throwable t) {
 			handleThrowable(t);
 		}
@@ -948,11 +1011,13 @@ public class FertigungDelegate extends Delegate {
 
 	public JasperPrintLP printAblieferungsstatistik(java.sql.Date dVon,
 			java.sql.Date dBis, Integer artikelIId,
-			boolean bSortiertNachArtikel, boolean bVerdichtetNachArtikel)
-			throws ExceptionLP {
+			int iSortierungAblieferungsstatistik,
+			boolean bVerdichtetNachArtikel,
+			boolean bNurKopfloseanhandStueckliste) throws ExceptionLP {
 		try {
 			return fertigungReportFac.printAblieferungsstatistik(dVon, dBis,
-					artikelIId, bSortiertNachArtikel, bVerdichtetNachArtikel,
+					artikelIId, iSortierungAblieferungsstatistik,
+					bVerdichtetNachArtikel, bNurKopfloseanhandStueckliste,
 					LPMain.getTheClient());
 		} catch (Throwable t) {
 			handleThrowable(t);
@@ -1039,6 +1104,17 @@ public class FertigungDelegate extends Delegate {
 		}
 	}
 
+	public JasperPrintLP printMaschineUndMaterial(Integer maschineIId,
+			DatumsfilterVonBis vonBis) throws ExceptionLP {
+		try {
+			return fertigungReportFac.printMaschineUndMaterial(maschineIId,
+					vonBis, LPMain.getTheClient());
+		} catch (Throwable t) {
+			handleThrowable(t);
+			return null;
+		}
+	}
+
 	public JasperPrintLP printMonatsauswertung(java.sql.Timestamp tVon,
 			java.sql.Timestamp tBis, boolean bVerdichtet) throws ExceptionLP {
 		try {
@@ -1067,6 +1143,17 @@ public class FertigungDelegate extends Delegate {
 		try {
 			return fertigungReportFac.printAuslastungsvorschau(tStichtag,
 					bSortiertNachArtikelgruppe, LPMain.getTheClient());
+		} catch (Throwable t) {
+			handleThrowable(t);
+			return null;
+		}
+	}
+
+	public JasperPrintLP printAuslastungsvorschauDetailliert(
+			java.sql.Timestamp tStichtag) throws ExceptionLP {
+		try {
+			return fertigungReportFac.printAuslastungsvorschauDetailliert(
+					tStichtag, LPMain.getTheClient());
 		} catch (Throwable t) {
 			handleThrowable(t);
 			return null;
@@ -1388,11 +1475,13 @@ public class FertigungDelegate extends Delegate {
 
 	public JasperPrintLP printHalbfertigfabrikatsinventur(
 			java.sql.Timestamp tStichtag, int iSortierung, boolean bVerdichtet,
-			Integer partnerIIdFertigungsort) throws ExceptionLP {
+			Integer partnerIIdFertigungsort,
+			boolean bSortiertNachFertigungsgruppe) throws ExceptionLP {
 		try {
 			return fertigungReportFac.printHalbfertigfabrikatsinventur(
 					tStichtag, iSortierung, bVerdichtet,
-					partnerIIdFertigungsort, LPMain.getTheClient());
+					partnerIIdFertigungsort, bSortiertNachFertigungsgruppe,
+					LPMain.getTheClient());
 		} catch (Throwable t) {
 			handleThrowable(t);
 			return null;
@@ -1458,12 +1547,13 @@ public class FertigungDelegate extends Delegate {
 	public void erzeugeInterneBestellung(boolean bVorhandeneLoeschen,
 			Integer iVorlaufzeit, Integer iToleranz,
 			java.sql.Date dLieferterminFuerArtikelOhneReservierung,
-			Boolean bVerdichten, Integer iVerdichtungstage) throws ExceptionLP {
+			Boolean bVerdichten, Integer iVerdichtungstage, Integer losIId)
+			throws ExceptionLP {
 		try {
 			internebestellungFac.erzeugeInterneBestellung(bVorhandeneLoeschen,
 					iVorlaufzeit, iToleranz,
 					dLieferterminFuerArtikelOhneReservierung, bVerdichten,
-					iVerdichtungstage, true, LPMain.getTheClient());
+					iVerdichtungstage, true, losIId, LPMain.getTheClient());
 		} catch (Throwable t) {
 			handleThrowable(t);
 		}
@@ -1519,10 +1609,11 @@ public class FertigungDelegate extends Delegate {
 		}
 	}
 
-	public void removeInternebestellungEinesMandanten() throws ExceptionLP {
+	public void removeInternebestellungEinesMandanten(
+			boolean bNurHilfsstuecklisten) throws ExceptionLP {
 		try {
-			internebestellungFac.removeInternebestellungEinesMandanten(LPMain
-					.getTheClient());
+			internebestellungFac.removeInternebestellungEinesMandanten(
+					bNurHilfsstuecklisten, LPMain.getTheClient());
 		} catch (Throwable t) {
 			handleThrowable(t);
 		}
@@ -1625,6 +1716,17 @@ public class FertigungDelegate extends Delegate {
 		}
 	}
 
+	public JasperPrintLP printGesamtkalkulation(Integer losIId)
+			throws ExceptionLP {
+		try {
+			return fertigungReportFac.printGesamtkalkulation(losIId,
+					LPMain.getTheClient());
+		} catch (Throwable t) {
+			handleThrowable(t);
+			return null;
+		}
+	}
+
 	public JasperPrintLP printFehlteile(Integer losIId,
 			boolean bNurPositionenMitFehlmengen) throws ExceptionLP {
 		try {
@@ -1664,11 +1766,12 @@ public class FertigungDelegate extends Delegate {
 			handleThrowable(t);
 		}
 	}
-	public void erledigteLoseImZeitraumNachkalkulieren(
-			java.sql.Date tVon, java.sql.Date tBis) throws ExceptionLP {
+
+	public void erledigteLoseImZeitraumNachkalkulieren(java.sql.Date tVon,
+			java.sql.Date tBis) throws ExceptionLP {
 		try {
-			fertigungFac.erledigteLoseImZeitraumNachkalkulieren(
-					tVon,tBis, LPMain.getTheClient());
+			fertigungFac.erledigteLoseImZeitraumNachkalkulieren(tVon, tBis,
+					LPMain.getTheClient());
 		} catch (Throwable t) {
 			handleThrowable(t);
 		}
@@ -1682,7 +1785,8 @@ public class FertigungDelegate extends Delegate {
 		}
 	}
 
-	public Set<?> getInternebestellungIIdsEinesMandanten() throws ExceptionLP {
+	public Set<Integer> getInternebestellungIIdsEinesMandanten()
+			throws ExceptionLP {
 		try {
 			return internebestellungFac
 					.getInternebestellungIIdsEinesMandanten(LPMain
@@ -1704,6 +1808,16 @@ public class FertigungDelegate extends Delegate {
 			throws ExceptionLP {
 		try {
 			internebestellungFac.verdichteInterneBestellung(iVerdichtungstage,
+					LPMain.getTheClient());
+		} catch (Throwable t) {
+			handleThrowable(t);
+		}
+	}
+
+	public void verdichteInterneBestellung(HashSet<Integer> stuecklisteIIds)
+			throws ExceptionLP {
+		try {
+			internebestellungFac.verdichteInterneBestellung(stuecklisteIIds,
 					LPMain.getTheClient());
 		} catch (Throwable t) {
 			handleThrowable(t);
@@ -1814,5 +1928,25 @@ public class FertigungDelegate extends Delegate {
 
 		}
 	}
+
+	public void offenAgsUmreihen(Integer lossollarbeitsplanIId,
+			boolean bNachUntenReihen) throws ExceptionLP {
+		try {
+			fertigungFac.offenAgsUmreihen(lossollarbeitsplanIId,
+					bNachUntenReihen);
+		} catch (Throwable t) {
+			handleThrowable(t);
+
+		}
+	}
+	public void sollpreiseAllerSollmaterialpositionenNeuKalkulieren(Integer losIId) throws ExceptionLP {
+		try {
+			fertigungFac.sollpreiseAllerSollmaterialpositionenNeuKalkulieren(losIId,LPMain.getTheClient());
+		} catch (Throwable t) {
+			handleThrowable(t);
+
+		}
+	}
+
 
 }

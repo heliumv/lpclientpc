@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -38,8 +38,6 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.HashMap;
-import java.util.Map;
 
 import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
@@ -49,6 +47,9 @@ import com.lp.client.anfrage.InternalFrameAnfrage;
 import com.lp.client.anfrage.TabbedPaneAnfrage;
 import com.lp.client.angebot.InternalFrameAngebot;
 import com.lp.client.angebot.TabbedPaneAngebot;
+import com.lp.client.angebotstkl.AngebotstklFilterFactory;
+import com.lp.client.angebotstkl.InternalFrameAngebotstkl;
+import com.lp.client.angebotstkl.TabbedPaneAngebotstkl;
 import com.lp.client.artikel.ArtikelFilterFactory;
 import com.lp.client.artikel.InternalFrameArtikel;
 import com.lp.client.artikel.TabbedPaneArtikel;
@@ -119,8 +120,11 @@ public class WrapperGotoButton extends JPanel implements ActionListener,
 	private static final long serialVersionUID = 1L;
 	private WrapperButton wrapperButton = null;
 	private Object oKey = null;
+	private Object detailKey = null ;
 	private WrapperButton buttonGoto = null;
 	private int iWhereToGo = -1;
+	private Dialog dialogToClose = null;
+
 	public static final String ACTION_GOTO = "ACTION_GOTO";
 
 	// gotobutton: 1 Hier neue GOTO- Konstante definieren
@@ -146,16 +150,16 @@ public class WrapperGotoButton extends JPanel implements ActionListener,
 	public static final int GOTO_INSERAT_AUSWAHL = 20;
 	public static final int GOTO_ANFRAGE_AUSWAHL = 21;
 	public static final int GOTO_GUTSCHRIFT_AUSWAHL = 22;
-
-
-	private static Map<String, Integer> kvpKontoTypPanel;
+	public static final int GOTO_PROJEKT_HISTORY = 23 ;
+	public static final int GOTO_PARTNER_KURZBRIEF = 24;
+	public static final int GOTO_LIEFERANT_KURZBRIEF = 25;
+	public static final int GOTO_KUNDE_KURZBRIEF = 26 ;
+	public static final int GOTO_ANGEBOTSTKL_AUSWAHL = 27;
 
 	public WrapperGotoButton(int iWhereToGo) {
 		this.iWhereToGo = iWhereToGo;
 		jbInit();
 	}
-
-	Dialog dialogToClose = null;
 
 	public void closeDialogOnGoto(Dialog dialogToClose) {
 		this.dialogToClose = dialogToClose;
@@ -342,6 +346,24 @@ public class WrapperGotoButton extends JPanel implements ActionListener,
 															(Integer) oKey));
 						}
 
+					} else if(iWhereToGo == GOTO_PARTNER_KURZBRIEF) {
+						if (LPMain
+								.getInstance()
+								.getDesktop()
+								.darfAnwenderAufModulZugreifen(
+										LocaleFac.BELEGART_PARTNER)) {
+							InternalFramePartner ifPartner = (InternalFramePartner) LPMain
+									.getInstance().getDesktop()
+									.holeModul(LocaleFac.BELEGART_PARTNER);
+							ifPartner
+									.geheZu(InternalFramePartner.IDX_PANE_PARTNER,
+											TabbedPanePartner.IDX_PANE_KURZBRIEF_SP,
+											oKey,
+											detailKey,
+											PartnerFilterFactory.getInstance()
+													.createFKPartnerKey(
+															(Integer) oKey));
+						}						
 					} else if (iWhereToGo == GOTO_KUNDE_AUSWAHL) {
 						if (LPMain
 								.getInstance()
@@ -355,6 +377,24 @@ public class WrapperGotoButton extends JPanel implements ActionListener,
 									TabbedPaneKunde.IDX_PANE_KUNDE, oKey, null,
 									PartnerFilterFactory.getInstance()
 											.createFKPartnerKey((Integer) oKey));
+						}
+					} else if (iWhereToGo == GOTO_KUNDE_KURZBRIEF) {
+						if (LPMain
+								.getInstance()
+								.getDesktop()
+								.darfAnwenderAufModulZugreifen(
+										LocaleFac.BELEGART_KUNDE)) {
+							InternalFrameKunde ifKunde = (InternalFrameKunde) LPMain
+									.getInstance().getDesktop()
+									.holeModul(LocaleFac.BELEGART_KUNDE);
+							ifKunde
+									.geheZu(InternalFrameKunde.IDX_PANE_KUNDE,
+											TabbedPaneKunde.IDX_PANE_KURZBRIEF,
+											oKey,
+											detailKey,
+											PartnerFilterFactory.getInstance()
+													.createFKPartnerKey(
+															(Integer) oKey));
 						}
 					} else if (iWhereToGo == GOTO_INSERAT_AUSWAHL) {
 						if (LPMain
@@ -386,9 +426,7 @@ public class WrapperGotoButton extends JPanel implements ActionListener,
 											.createFKPartnerKey((Integer) oKey));
 							ifKunde.getTpKunde().getOnlyPanelKundeQP1().restoreDefaultFilters();
 						}
-					}
-
-					else if (iWhereToGo == GOTO_LIEFERANT_AUSWAHL) {
+					} else if (iWhereToGo == GOTO_LIEFERANT_AUSWAHL) {
 						if (LPMain
 								.getInstance()
 								.getDesktop()
@@ -402,6 +440,24 @@ public class WrapperGotoButton extends JPanel implements ActionListener,
 											TabbedPaneLieferant.IDX_PANE_LIEFERANT,
 											oKey,
 											null,
+											PartnerFilterFactory.getInstance()
+													.createFKPartnerKey(
+															(Integer) oKey));
+						}
+					} else if (iWhereToGo == GOTO_LIEFERANT_KURZBRIEF) {
+						if (LPMain
+								.getInstance()
+								.getDesktop()
+								.darfAnwenderAufModulZugreifen(
+										LocaleFac.BELEGART_LIEFERANT)) {
+							InternalFrameLieferant ifLieferant = (InternalFrameLieferant) LPMain
+									.getInstance().getDesktop()
+									.holeModul(LocaleFac.BELEGART_LIEFERANT);
+							ifLieferant
+									.geheZu(InternalFrameLieferant.IDX_PANE_LIEFERANT,
+											TabbedPaneLieferant.IDX_PANE_KURZBRIEF,
+											oKey,
+											detailKey,
 											PartnerFilterFactory.getInstance()
 													.createFKPartnerKey(
 															(Integer) oKey));
@@ -477,6 +533,25 @@ public class WrapperGotoButton extends JPanel implements ActionListener,
 											LieferscheinFilterFactory
 													.getInstance()
 													.createFKLieferscheinKey(
+															(Integer) oKey));
+						}
+					}else if (iWhereToGo == GOTO_ANGEBOTSTKL_AUSWAHL) {
+						if (LPMain
+								.getInstance()
+								.getDesktop()
+								.darfAnwenderAufModulZugreifen(
+										LocaleFac.BELEGART_AGSTUECKLISTE)) {
+							InternalFrameAngebotstkl ifAgstkl = (InternalFrameAngebotstkl) LPMain
+									.getInstance().getDesktop()
+									.holeModul(LocaleFac.BELEGART_AGSTUECKLISTE);
+							ifAgstkl
+									.geheZu(InternalFrameAngebotstkl.IDX_TABBED_PANE_ANGEBOTSTKL,
+											TabbedPaneAngebotstkl.IDX_PANEL_AUSWAHL,
+											oKey,
+											null,
+											AngebotstklFilterFactory
+													.getInstance()
+													.createFKAgstklKey(
 															(Integer) oKey));
 						}
 					} else if (iWhereToGo == GOTO_BUCHUNGDETAIL) {
@@ -570,6 +645,24 @@ public class WrapperGotoButton extends JPanel implements ActionListener,
 									TabbedPaneProjekt.IDX_PANEL_PROJEKTAUSWAHL,
 									oKey,
 									null,
+									SystemFilterFactory.getInstance()
+											.createFKKeyAuswahlliste(
+													(Integer) oKey));
+						}
+					} else if (iWhereToGo == GOTO_PROJEKT_HISTORY) {
+						if (LPMain
+								.getInstance()
+								.getDesktop()
+								.darfAnwenderAufModulZugreifen(
+										LocaleFac.BELEGART_PROJEKT)) {
+							InternalFrameProjekt ifPJ = (InternalFrameProjekt) LPMain
+									.getInstance().getDesktop()
+									.holeModul(LocaleFac.BELEGART_PROJEKT);
+							ifPJ.geheZu(
+									InternalFrameProjekt.IDX_TABBED_PANE_PROJEKT,
+									TabbedPaneProjekt.IDX_PANEL_PROJEKTHISTORY,
+									oKey,
+									detailKey,
 									SystemFilterFactory.getInstance()
 											.createFKKeyAuswahlliste(
 													(Integer) oKey));
@@ -681,7 +774,7 @@ public class WrapperGotoButton extends JPanel implements ActionListener,
 									.holeModul(
 											LocaleFac.BELEGART_FINANZBUCHHALTUNG);
 							ifAB.geheZu(
-									InternalFrameFinanz.IDX_TABBED_PANE_DEBITORENKONTEN,
+									ifAB.IDX_TABBED_PANE_DEBITORENKONTEN,
 									TabbedPaneKonten.iDX_KONTEN, oKey, null,
 									FinanzFilterFactory.getInstance()
 											.createFKKontoKey((Integer) oKey));
@@ -698,7 +791,7 @@ public class WrapperGotoButton extends JPanel implements ActionListener,
 									.holeModul(
 											LocaleFac.BELEGART_FINANZBUCHHALTUNG);
 							ifAB.geheZu(
-									InternalFrameFinanz.IDX_TABBED_PANE_KREDITORENKONTEN,
+									ifAB.IDX_TABBED_PANE_KREDITORENKONTEN,
 									TabbedPaneKonten.iDX_KONTEN, oKey, null,
 									FinanzFilterFactory.getInstance()
 											.createFKKontoKey((Integer) oKey));
@@ -717,6 +810,18 @@ public class WrapperGotoButton extends JPanel implements ActionListener,
 
 	}
 
+	private int getKvpKontoTypPanel(InternalFrameFinanz ifFinanz, String kontotypCNr) {
+		if(FinanzServiceFac.KONTOTYP_DEBITOR.equals(kontotypCNr)) {
+			return ifFinanz.IDX_TABBED_PANE_DEBITORENKONTEN;
+		} else if(FinanzServiceFac.KONTOTYP_KREDITOR.equals(kontotypCNr)) {
+			return ifFinanz.IDX_TABBED_PANE_KREDITORENKONTEN;
+		} else if(FinanzServiceFac.KONTOTYP_SACHKONTO.equals(kontotypCNr)) {
+			return ifFinanz.IDX_TABBED_PANE_SACHKONTEN;
+		}
+		
+		return -1 ;		
+	}
+	
 	protected void gotoBuchungdetail() throws Throwable, ExceptionLP {
 		if (!LPMain
 				.getInstance()
@@ -736,16 +841,7 @@ public class WrapperGotoButton extends JPanel implements ActionListener,
 		KontoDto kontoDto = DelegateFactory.getInstance().getFinanzDelegate()
 				.kontoFindByPrimaryKey(bdDto.getKontoIId());
 
-		if(null == kvpKontoTypPanel) {
-			kvpKontoTypPanel = new HashMap<String, Integer>();
-			kvpKontoTypPanel.put(FinanzServiceFac.KONTOTYP_DEBITOR,
-					InternalFrameFinanz.IDX_TABBED_PANE_DEBITORENKONTEN);
-			kvpKontoTypPanel.put(FinanzServiceFac.KONTOTYP_KREDITOR,
-					InternalFrameFinanz.IDX_TABBED_PANE_KREDITORENKONTEN);
-			kvpKontoTypPanel.put(FinanzServiceFac.KONTOTYP_SACHKONTO,
-					InternalFrameFinanz.IDX_TABBED_PANE_SACHKONTEN);
-		}
-		Integer panelIndex = kvpKontoTypPanel.get(kontoDto.getKontotypCNr());
+		Integer panelIndex = getKvpKontoTypPanel(ifFinanz, kontoDto.getKontotypCNr());
 		if (null != panelIndex) {
 			ifFinanz.geheZu(panelIndex, TabbedPaneKonten.iDX_BUCHUNGEN,
 					kontoDto.getIId(), bdDto.getIId(), FinanzFilterFactory
@@ -803,6 +899,14 @@ public class WrapperGotoButton extends JPanel implements ActionListener,
 		return oKey;
 	}
 
+	public void setDetailKey(Object detailKey) {
+		this.detailKey = detailKey ;
+	}
+
+	public Object getDetailKey() {
+		return detailKey ;
+	}
+	
 	public boolean requestFocusInWindow() {
 		return getWrapperButton().requestFocusInWindow();
 	}

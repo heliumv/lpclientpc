@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -66,11 +66,12 @@ import com.lp.server.finanz.service.FinanzReportFac;
 import com.lp.server.finanz.service.FinanzamtDto;
 import com.lp.server.finanz.service.ReportUvaKriterienDto;
 import com.lp.server.finanz.service.UvaverprobungDto;
-import com.lp.server.system.service.GeschaeftsjahrDto;
+import com.lp.server.system.ejb.Parametermandant;
 import com.lp.server.system.service.GeschaeftsjahrMandantDto;
 import com.lp.server.system.service.MailtextDto;
 import com.lp.server.system.service.MandantDto;
 import com.lp.server.system.service.ParameterFac;
+import com.lp.server.system.service.ParametermandantDto;
 import com.lp.server.util.HelperServer;
 import com.lp.server.util.report.JasperPrintLP;
 import com.lp.util.EJBExceptionLP;
@@ -106,6 +107,8 @@ public class ReportUva extends PanelBasis implements PanelReportIfJRDS, IPanelRe
 	private WrapperLabel wlaJaehrlich = null;
 	private WrapperCheckBox wcbJaehrlich = null;
 	private WrapperLabel wlaLetzteVerprobung = null;
+	private WrapperLabel wlaVerprobung = null;
+	private WrapperCheckBox wcbVerprobung = null;
 	
 	private FinanzamtDto[] faDtos = null;
 	private String abrechnungszeitraum = null;
@@ -155,11 +158,23 @@ throws Throwable {
 	wlaJaehrlich = new WrapperLabel(LPMain.getTextRespectUISPr("label.jaehrlich"));
     wcbJaehrlich = new WrapperCheckBox();
 	wcbJaehrlich.setSelected(false);
+	
 	wcoPeriode = new WrapperComboBoxPeriode(geschaeftsjahr);
     if(abrechnungszeitraum.equals(FinanzFac.UVA_ABRECHNUNGSZEITRAUM_JAHR)) {
     	wcbJaehrlich.setSelected(true);
     	wcbJaehrlich.setEnabled(false);
     }
+    wlaVerprobung = new WrapperLabel(LPMain.getTextRespectUISPr("label.verprobung"));
+    wcbVerprobung = new WrapperCheckBox();
+    ParametermandantDto pm = (ParametermandantDto) DelegateFactory.getInstance().getParameterDelegate().getParametermandant(
+    		ParameterFac.PARAMETER_FINANZ_SAMMELBUCHUNG_MANUELL, 
+    		ParameterFac.KATEGORIE_FINANZ,
+    		LPMain.getTheClient().getMandant());
+    if (pm.getCWert().equals("1"))
+        wcbVerprobung.setSelected(false);
+    else    	
+    	wcbVerprobung.setSelected(true);
+    
     wlaLetzteVerprobung = new WrapperLabel(LPMain.getTextRespectUISPr("label.letzteverprobung"));
 	wlaFinanzamt = new WrapperLabel(LPMain.getTextRespectUISPr("label.finanzamt"));
 	wcoFinanzamt = new WrapperComboBox();
@@ -233,12 +248,27 @@ throws Throwable {
 					GridBagConstraints.BOTH,
 					new Insets(2, 2, 2, 2),
 					0, 0));
+
 	jpaWorkingOn.add(wlaLetzteVerprobung,
-			new GridBagConstraints(2, iZeile, 3, 1, 0.0, 0.0,
+			new GridBagConstraints(2, iZeile, 2, 1, 0.0, 0.0,
 					GridBagConstraints.WEST,
 					GridBagConstraints.BOTH,
 					new Insets(2, 2, 2, 2),
-					250, 0));
+					150, 0));
+
+	jpaWorkingOn.add(wlaVerprobung,
+			new GridBagConstraints(4, iZeile, 1, 1, 0.0, 0.0,
+					GridBagConstraints.WEST,
+					GridBagConstraints.BOTH,
+					new Insets(2, 2, 2, 2),
+					0, 0));
+
+	jpaWorkingOn.add(wcbVerprobung,
+			new GridBagConstraints(5, iZeile, 1, 1, 0.0, 0.0,
+					GridBagConstraints.WEST,
+					GridBagConstraints.BOTH,
+					new Insets(2, 2, 2, 2),
+					50, 0));
 	
 
 //	this.setEinschraenkungDatumBelegnummerSichtbar(false);
@@ -287,7 +317,7 @@ private void setDefaults() {
 
 
   public String getReportname() {
-    return FinanzReportFac.REPORT_SALDENLISTE;
+    return FinanzReportFac.REPORT_UVA;
   }
 
 
@@ -382,15 +412,17 @@ private void setDefaults() {
 	  if (fehler.size() > 0) {
 		  DialogFactory.showBelegPruefergebnis(getInternalFrame(), fehler, LPMain.getTextRespectUISPr("fb.uvaverprobung.fehlgeschlagen"));
 	  } else {
-		  Integer uvaverprobungIId = DelegateFactory.getInstance().getFinanzServiceDelegate().uvaVerprobung(krit);
-		  if (uvaverprobungIId != null) {
-			  myLogger.info("UVAverprobung " + uvaverprobungIId.intValue() );
-			  tbKonten.updateUvaMenus();
-		  } else {
-			  GeschaeftsjahrMandantDto gj = DelegateFactory.getInstance().getSystemDelegate().geschaeftsjahrFindByPrimaryKey(krit.getIGeschaeftsjahr());
-			  if (gj.getTSperre() != null)
-				  DialogFactory.showMeldung(LPMain.getTextRespectUISPr("finanz.error.geschaeftsjahr.gesperrt"), 
-						  LPMain.getTextRespectUISPr("fb.uvaverprobung.fehlgeschlagen"), JOptionPane.DEFAULT_OPTION );
+		  if (wcbVerprobung.isSelected()) {
+			  Integer uvaverprobungIId = DelegateFactory.getInstance().getFinanzServiceDelegate().uvaVerprobung(krit);
+			  if (uvaverprobungIId != null) {
+				  myLogger.info("UVAverprobung " + uvaverprobungIId.intValue() );
+				  tbKonten.updateUvaMenus();
+			  } else {
+				  GeschaeftsjahrMandantDto gj = DelegateFactory.getInstance().getSystemDelegate().geschaeftsjahrFindByPrimaryKey(krit.getIGeschaeftsjahr());
+				  if (gj.getTSperre() != null)
+					  DialogFactory.showMeldung(LPMain.getTextRespectUISPr("finanz.error.geschaeftsjahr.gesperrt"), 
+							  LPMain.getTextRespectUISPr("fb.uvaverprobung.fehlgeschlagen"), JOptionPane.DEFAULT_OPTION );
+			  }
 		  }
 	  }
   }

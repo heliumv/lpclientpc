@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -85,6 +85,7 @@ import com.lp.server.bestellung.service.BestellvorschlagDto;
 import com.lp.server.bestellung.service.BestellvorschlagUeberleitungKriterienDto;
 import com.lp.server.partner.service.LieferantDto;
 import com.lp.server.system.service.LocaleFac;
+import com.lp.server.system.service.MandantFac;
 import com.lp.server.system.service.ParameterFac;
 import com.lp.server.system.service.ParametermandantDto;
 import com.lp.server.util.fastlanereader.service.query.FilterKriterium;
@@ -207,6 +208,10 @@ public class TabbedPaneBestellvorschlag extends TabbedPane {
 
 	public InternalFrameBestellung getInternalFrameBestellung() {
 		return (InternalFrameBestellung) getInternalFrame();
+	}
+
+	public PanelSplit getPanelBestellungVorschlagSP1() {
+		return panelBestellungVorschlagSP1;
 	}
 
 	/**
@@ -427,7 +432,9 @@ public class TabbedPaneBestellvorschlag extends TabbedPane {
 										pdKritBestellvorschlag
 												.isbMitNichtlagerbeweirtschaftetenArtikeln(),
 										pdKritBestellvorschlag
-												.isbNurBetroffeneLospositionen());
+												.isbNurBetroffeneLospositionen(),
+										pdKritBestellvorschlag
+												.isbVormerklisteLoeschen());
 					}
 					panelBestellungVorschlagSP1.eventYouAreSelected(false);
 					pdKritBestellvorschlag.eventYouAreSelected(false);
@@ -451,7 +458,9 @@ public class TabbedPaneBestellvorschlag extends TabbedPane {
 							.getBestellvorschlagDelegate()
 							.erstelleBestellvorschlagAnhandStuecklistenmindestlagerstand(
 									pdKritBestellvorschlagAnhandStuecklistenmindestlagerstand
-											.getLiefertermin());
+											.getLiefertermin(),
+									pdKritBestellvorschlagAnhandStuecklistenmindestlagerstand
+											.isbVormerklisteLoeschen());
 
 					panelBestellungVorschlagSP1.eventYouAreSelected(false);
 					pdKritBestellvorschlagAnhandStuecklistenmindestlagerstand
@@ -610,19 +619,21 @@ public class TabbedPaneBestellvorschlag extends TabbedPane {
 				if (panelQueryLieferantenoptimieren.getSelectedId() != null
 						&& panelQueryLieferantenoptimieren
 								.getKeyOfFilterComboBox() != null) {
-					Integer selectedId = (Integer) panelQueryLieferantenoptimieren
-							.getSelectedId();
+					Object[] selectedIds = panelQueryLieferantenoptimieren
+							.getSelectedIds();
 					Integer keyVorher = (Integer) panelQueryLieferantenoptimieren
 							.getKeyOfFilterComboBox();
 
-					DelegateFactory
-							.getInstance()
-							.getBestellvorschlagDelegate()
-							.uebernimmLieferantAusLieferantOptimieren(
-									(Integer) panelQueryLieferantenoptimieren
-											.getSelectedId(),
-									(Integer) panelQueryLieferantenoptimieren
-											.getKeyOfFilterComboBox());
+					for (int i = 0; i < selectedIds.length; i++) {
+
+						DelegateFactory
+								.getInstance()
+								.getBestellvorschlagDelegate()
+								.uebernimmLieferantAusLieferantOptimieren(
+										(Integer) selectedIds[i],
+										(Integer) panelQueryLieferantenoptimieren
+												.getKeyOfFilterComboBox());
+					}
 
 					refreshLieferantenOptimieren();
 
@@ -630,7 +641,9 @@ public class TabbedPaneBestellvorschlag extends TabbedPane {
 							.setKeyOfFilterComboBox(keyVorher);
 
 					panelQueryLieferantenoptimieren.eventYouAreSelected(false);
-					panelQueryLieferantenoptimieren.setSelectedId(selectedId);
+					panelQueryLieferantenoptimieren
+							.setSelectedId(selectedIds[0]);
+					panelQueryLieferantenoptimieren.updateButtons();
 				}
 
 			} else if (sAspectInfo
@@ -651,6 +664,7 @@ public class TabbedPaneBestellvorschlag extends TabbedPane {
 
 					panelQueryLieferantenoptimieren.eventYouAreSelected(false);
 					panelQueryLieferantenoptimieren.setSelectedId(selectedId);
+					panelQueryLieferantenoptimieren.updateButtons();
 				}
 
 			} else if (sAspectInfo.equals(ACTION_SPECIAL_MONATSSTATISTIK)) {
@@ -938,8 +952,15 @@ public class TabbedPaneBestellvorschlag extends TabbedPane {
 	}
 
 	private PanelSplit refreshPanelBestellungVorschlag() throws Throwable {
-		FilterKriterium[] fkBestellvorschlag = SystemFilterFactory
-				.getInstance().createFKMandantCNr();
+		FilterKriterium[] fkBestellvorschlag = null;
+
+		if (!LPMain
+				.getInstance()
+				.getDesktop()
+				.darfAnwenderAufZusatzfunktionZugreifen(
+						MandantFac.ZUSATZFUNKTION_ZENTRALER_ARTIKELSTAMM)) {
+			SystemFilterFactory.getInstance().createFKMandantCNr();
+		}
 
 		if (panelBestellungVorschlagSP1 == null) {
 			panelBestellungVorschlagBottomD1 = new PanelPositionenBestellvorschlag(
@@ -1105,8 +1126,10 @@ public class TabbedPaneBestellvorschlag extends TabbedPane {
 		panelQueryLieferantenoptimieren.setFilterComboBox(DelegateFactory
 				.getInstance().getBestellvorschlagDelegate()
 				.getAllLieferantenDesBestellvorschlages(), new FilterKriterium(
-				"lieferant_i_id_artikellieferant", true, "" + "",
+				"flrLieferantenoptimieren.lieferant_i_id_artikellieferant", true, "" + "",
 				FilterKriterium.OPERATOR_EQUAL, false), true);
+
+		panelQueryLieferantenoptimieren.setMultipleRowSelectionEnabled(true);
 
 		panelQueryLieferantenoptimieren
 				.createAndSaveAndShowButton(
@@ -1238,7 +1261,7 @@ public class TabbedPaneBestellvorschlag extends TabbedPane {
 		return pdLoeschenBis;
 	}
 
-	public Object getInseratDto() {
+	public Object getDto() {
 		return bestellvorschlagDto;
 	}
 }

@@ -1,38 +1,37 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
- * 
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
+ *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published 
- * by the Free Software Foundation, either version 3 of theLicense, or 
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of theLicense, or
  * (at your option) any later version.
- * 
- * According to sec. 7 of the GNU Affero General Public License, version 3, 
+ *
+ * According to sec. 7 of the GNU Affero General Public License, version 3,
  * the terms of the AGPL are supplemented with the following terms:
- * 
- * "HELIUM V" and "HELIUM 5" are registered trademarks of 
- * HELIUM V IT-Solutions GmbH. The licensing of the program under the 
+ *
+ * "HELIUM V" and "HELIUM 5" are registered trademarks of
+ * HELIUM V IT-Solutions GmbH. The licensing of the program under the
  * AGPL does not imply a trademark license. Therefore any rights, title and
  * interest in our trademarks remain entirely with us. If you want to propagate
  * modified versions of the Program under the name "HELIUM V" or "HELIUM 5",
- * you may only do so if you have a written permission by HELIUM V IT-Solutions 
+ * you may only do so if you have a written permission by HELIUM V IT-Solutions
  * GmbH (to acquire a permission please contact HELIUM V IT-Solutions
  * at trademark@heliumv.com).
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Affero General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Contact: developers@heliumv.com
  ******************************************************************************/
 package com.lp.client.bestellung;
 
-import java.awt.Component;
 import java.awt.HeadlessException;
 import java.awt.event.ActionEvent;
 import java.io.File;
@@ -51,6 +50,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JSeparator;
+import javax.swing.KeyStroke;
 import javax.swing.event.ChangeEvent;
 import javax.swing.table.TableModel;
 import javax.xml.parsers.ParserConfigurationException;
@@ -58,9 +58,8 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.xml.sax.SAXException;
 
 import com.lp.client.anfrage.AnfrageFilterFactory;
-import com.lp.client.anfrage.PanelAnfrageKopfdaten;
-import com.lp.client.artikel.DialogLagercockpitUmbuchen;
 import com.lp.client.auftrag.AuftragFilterFactory;
+import com.lp.client.frame.Defaults;
 import com.lp.client.frame.ExceptionLP;
 import com.lp.client.frame.HelperClient;
 import com.lp.client.frame.ICopyPaste;
@@ -77,6 +76,7 @@ import com.lp.client.frame.component.PanelQuery;
 import com.lp.client.frame.component.PanelQueryFLR;
 import com.lp.client.frame.component.PanelSplit;
 import com.lp.client.frame.component.TabbedPane;
+import com.lp.client.frame.component.WrapperMenu;
 import com.lp.client.frame.component.WrapperMenuBar;
 import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.frame.dialog.DialogFactory;
@@ -97,6 +97,7 @@ import com.lp.server.bestellung.service.BestellungFac;
 import com.lp.server.bestellung.service.BestellungServiceFac;
 import com.lp.server.bestellung.service.BestellungsartDto;
 import com.lp.server.bestellung.service.BestellungtextDto;
+import com.lp.server.bestellung.service.EinstandspreiseEinesWareneingangsDto;
 import com.lp.server.bestellung.service.ImportMonatsbestellungDto;
 import com.lp.server.bestellung.service.WareneingangDto;
 import com.lp.server.bestellung.service.WareneingangspositionDto;
@@ -107,6 +108,7 @@ import com.lp.server.system.service.MandantFac;
 import com.lp.server.system.service.MediaFac;
 import com.lp.server.system.service.ParameterFac;
 import com.lp.server.system.service.ParametermandantDto;
+import com.lp.server.system.service.StatusDto;
 import com.lp.server.util.fastlanereader.service.query.FilterKriterium;
 import com.lp.server.util.fastlanereader.service.query.QueryParameters;
 import com.lp.service.BelegpositionDto;
@@ -129,7 +131,7 @@ public class TabbedPaneBestellung
 // copypaste: 0 Interface Implementieren
 		extends TabbedPane implements ICopyPaste {
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = 1L;
 	private PanelQuery panelBestellungAuswahlQP1 = null;
@@ -149,6 +151,8 @@ public class TabbedPaneBestellung
 	private PanelBasis panelBestellungWEPBottomD5 = null;
 	private PanelSplit panelBestellungWEPSP5 = null;
 
+	private PanelQueryFLR panelQueryFLRRechnungsadresse = null;
+
 	public String sRechtModulweit = null;
 
 	private static final String MY_OWN_NEW_ALLE_ANGELEGTEN_BESTELLUNGEN_VERSENDEN = PanelBasis.ACTION_MY_OWN_NEW
@@ -160,6 +164,8 @@ public class TabbedPaneBestellung
 
 	private static final String ACTION_SPECIAL_NEU_AUS_PROJEKT = PanelBasis.ACTION_MY_OWN_NEW
 			+ "ACTION_SPECIAL_NEU_AUS_PROJEKT";
+
+	private final String MENUE_ACTION_INFO_RAHMENUEBERSICHT = "MENUE_ACTION_INFO_RAHMENUEBERSICHT";
 
 	private PanelQuery panelBestellungPositionSichtRahmenTopQP6 = null; // FLR
 	// 1:n
@@ -232,6 +238,11 @@ public class TabbedPaneBestellung
 	private final static String FUER_MEHRERE_BESTELLUNGEN_ALLE_PREISE_ERFASSEN = PanelBasis.ACTION_MY_OWN_NEW
 			+ "FUER_MEHRER_BESTELLUNGEN_ALLE_PREISE_ERFASSEN";
 
+	private final static String VORHERIGER_WE = PanelBasis.ACTION_MY_OWN_NEW
+			+ "VORHERIGER_WE";
+	private final static String NAECHSTER_WE = PanelBasis.ACTION_MY_OWN_NEW
+			+ "NAECHSTER_WE";
+
 	// dtos, die in mehr als einem panel benoetigt werden
 	private BestellungDto besDto = null;
 	private BestellungDto rahmBesDto = null;
@@ -244,10 +255,15 @@ public class TabbedPaneBestellung
 	private static final String MENU_ACTION_DATEI_ABHOLAUFTRAG = "MENU_ACTION_DATEI_ABHOLAUFTRAG";
 	private static final String MENU_ACTION_DATEI_MONATSBESTELLUNG = "MENU_ACTION_DATEI_MONATSBESTELLUNG";
 	private static final String MENU_BEARBEITEN_MANUELL_ERLEDIGEN = "MENU_BEARBEITEN_MANUELL_ERLEDIGEN";
+	private final static String MENU_BEARBEITEN_RE_ADRESSE_AENDERN = "MENU_BEARBEITEN_RE_ADRESSE_AENDERN";
+
 	private static final String MENU_BEARBEITEN_MANUELL_ERLEDIGEN_AUFHEBEN = "MENU_BEARBEITEN_MANUELL_ERLEDIGEN_AUFHEBEN";
 	private static final String MENU_BEARBEITEN_STORNO_AUFHEBEN = "MENU_BEARBEITEN_STORNO_AUFHEBEN";
 
-	private boolean lieferantenTermin = true;
+	private static final String ACTION_SPECIAL_SCHNELLERFASSUNG_POSITIONEN = "ACTION_SPECIAL_SCHNELLERFASSUNG_POSITIONEN";
+
+	private final String BUTTON_SCHNELLERFASSUNG_POSITIONEN = PanelBasis.ACTION_MY_OWN_NEW
+			+ ACTION_SPECIAL_SCHNELLERFASSUNG_POSITIONEN;
 
 	private boolean bHatRahmenBestellungen = false;
 
@@ -263,15 +279,6 @@ public class TabbedPaneBestellung
 
 	private BestellungtextDto kopftextDto = null;
 	private BestellungtextDto fusstextDto = null;
-
-	protected void setBooleanVonSichtLieferantenTermin(
-			boolean lieferantenTerminI) {
-		lieferantenTermin = lieferantenTerminI;
-	}
-
-	protected boolean getBooleanVonSichtLieferantenTermin() {
-		return lieferantenTermin;
-	}
 
 	public PanelQuery getBestellungPositionenTop() {
 		return panelBestellungPositionenTopQP3;
@@ -738,6 +745,15 @@ public class TabbedPaneBestellung
 			this.panelBestellungSichtLieferTermineTopQP7
 					.updateButtons(this.panelBestellungSichtLieferTermineBottomD7
 							.getLockedstateDetailMainKey());
+
+			// Aufgrund von PJ18833
+			if (panelBestellungSichtLieferTermineTopQP7.getHmOfButtons().get(
+					MY_OWN_NEW_ALLE_ABTERMINE_VORBELEGEN) != null) {
+				panelBestellungSichtLieferTermineTopQP7.getHmOfButtons()
+						.get(MY_OWN_NEW_ALLE_ABTERMINE_VORBELEGEN).getButton()
+						.setEnabled(true);
+			}
+
 		}
 	}
 
@@ -998,6 +1014,7 @@ public class TabbedPaneBestellung
 					LPMain.getInstance().getDesktop()
 							.platziereDialogInDerMitteDesFensters(dialog);
 					dialog.setVisible(true);
+
 				}
 			} else if (sAspectInfo.equals(MY_OWN_NEW_ALLE_ABTERMINE_VORBELEGEN)) {
 				refreshPanelDialogKriteriensetABTermin();
@@ -1074,6 +1091,38 @@ public class TabbedPaneBestellung
 			} else if (sAspectInfo
 					.equals(FUER_MEHRERE_BESTELLUNGEN_ALLE_PREISE_ERFASSEN)) {
 				dialogQueryBestellungFromListe();
+			} else if (sAspectInfo.equals(VORHERIGER_WE)
+					|| sAspectInfo.equals(NAECHSTER_WE)) {
+
+				if (eI.getSource() == panelBestellungWEPTopQP5) {
+
+					if (panelBestellungWareneingangTopQP4 != null) {
+
+						Object o = null;
+
+						if (sAspectInfo.equals(NAECHSTER_WE) == true) {
+							o = panelBestellungWareneingangTopQP4
+									.holeKeyNaechsteZeile();
+						} else {
+							o = panelBestellungWareneingangTopQP4
+									.holeKeyVorherigeZeile();
+						}
+
+						if (o != null) {
+							panelBestellungWareneingangTopQP4.setSelectedId(o);
+							lPEventItemChanged(new ItemChangedEvent(
+									panelBestellungWareneingangTopQP4,
+									ItemChangedEvent.ITEM_CHANGED));
+							panelBestellungWEPTopQP5.eventYouAreSelected(false);
+
+							if (getSelectedComponent() instanceof PanelSplit) {
+								lPEventObjectChanged(null);
+							}
+
+						}
+					}
+				}
+
 			} else if (sAspectInfo.equals(BUTTON_SORTIERE_NACH_IDENT)) {
 				if (istAktualisierenBestellungErlaubt()) {
 					DelegateFactory.getInstance().getBestellungDelegate()
@@ -1081,7 +1130,19 @@ public class TabbedPaneBestellung
 					getPanelBestellungPositionenTopQP3().eventYouAreSelected(
 							false);
 				}
+			} else if (sAspectInfo.equals(BUTTON_SCHNELLERFASSUNG_POSITIONEN)) {
+
+				if (istAktualisierenBestellungErlaubt()) {
+
+					DialogBestellpositionenSchnellerfassung d = new DialogBestellpositionenSchnellerfassung(
+							panelBestellungPositionenSP3, getBesDto());
+					LPMain.getInstance().getDesktop()
+							.platziereDialogInDerMitteDesFensters(d);
+					d.setVisible(true);
+				}
+				panelBestellungPositionenSP3.eventYouAreSelected(false); // refresh
 			}
+
 		}
 	}
 
@@ -1311,7 +1372,8 @@ public class TabbedPaneBestellung
 							.getInstance()
 							.getBestellungDelegate()
 							.erzeugeBestellungAusAnfrage(iIdAnfrage,
-									LPMain.getInstance().getTheClient());
+									LPMain.getInstance().getTheClient(),
+									getInternalFrame());
 					panelBestellungAuswahlQP1.eventYouAreSelected(false);
 					initializeDtos(iIdBestellung);
 
@@ -1401,7 +1463,21 @@ public class TabbedPaneBestellung
 					setSelectedComponent(panelBestellungKopfdatenD);
 
 				}
+			} else if (eI.getSource() == panelQueryFLRRechnungsadresse) {
+				Integer pkRechnungsadrNeu = (Integer) ((ISourceEvent) eI
+						.getSource()).getIdSelected();
+				DelegateFactory
+						.getInstance()
+						.getBestellungDelegate()
+						.updateBestellungRechnungsadresse(getBesDto().getIId(),
+								pkRechnungsadrNeu);
+				getBesDto().setLieferantIIdRechnungsadresse(pkRechnungsadrNeu);
+				if (panelBestellungKopfdatenD != null) {
+					panelBestellungKopfdatenD.eventYouAreSelected(false);
+				}
+
 			}
+
 		} else if (eI.getID() == ItemChangedEvent.ACTION_LEEREN) {
 			if (eI.getSource() == panelQueryFLRAuftrag) {
 				getBesDto().setAuftragIId(null);
@@ -1600,12 +1676,21 @@ public class TabbedPaneBestellung
 			 * ); } else if (eI.getSource() == pdABTerminABKommentar) {
 			 */
 			if (eI.getSource() == pdABTerminABKommentar) {
+				Integer[] ids = new Integer[panelBestellungSichtLieferTermineTopQP7
+						.getSelectedIds().length];
+
+				for (int i = 0; i < panelBestellungSichtLieferTermineTopQP7
+						.getSelectedIds().length; i++) {
+					ids[i] = (Integer) panelBestellungSichtLieferTermineTopQP7
+							.getSelectedIds()[i];
+				}
+
 				DelegateFactory
 						.getInstance()
 						.getBestellungDelegate()
-						.setForAllPositionenABTermin(getBesDto().getIId(),
+						.setForAllPositionenABTermin(getBesDto().getIId(), ids,
 								getABDate(), getABNummer(),
-								getBooleanVonSichtLieferantenTermin());
+								pdABTerminABKommentar.getOptionAbTerminSetzen());
 
 				panelBestellungSichtLieferTermineSP7.eventYouAreSelected(false);
 			}
@@ -1949,39 +2034,49 @@ public class TabbedPaneBestellung
 						RechteFac.RECHT_MODULWEIT_UPDATE);
 			}
 
-			// hole id von bestellung
-			refreshBestellungWareneingang(getBesDto().getIId());
-
-			panelBestellungWareineingangSP4.eventYouAreSelected(false);
-
-			if (getBesDto().getStatusCNr().equals(
-					BestellungFac.BESTELLSTATUS_ERLEDIGT)) {
-				panelBestellungWareneingangTopQP4
-						.updateButtons(new LockStateValue(
-								PanelBasis.LOCK_DISABLE_ALL));
-
-				if (panelBestellungWareneingangTopQP4.getHmOfButtons()
-						.containsKey(PanelQuery.LEAVEALONE_DOKUMENTE)) {
-					LPButtonAction bu = (LPButtonAction) panelBestellungWareneingangTopQP4
-							.getHmOfButtons().get(
-									PanelQuery.LEAVEALONE_DOKUMENTE);
-					bu.setEnable(true);
-					bu.getButton().setEnabled(true);
-				}
-
-				if (panelBestellungWareneingangTopQP4.getHmOfButtons()
-						.containsKey(PanelQuery.LEAVEALONE_PRINTPANELQUERY)) {
-
-					LPButtonAction bu = (LPButtonAction) panelBestellungWareneingangTopQP4
-							.getHmOfButtons().get(
-									PanelQuery.LEAVEALONE_PRINTPANELQUERY);
-					bu.setEnable(true);
-					bu.getButton().setEnabled(true);
-				}
+			if (getBesDto().getBestellungartCNr().equals(
+					BestellungFac.BESTELLUNGART_RAHMENBESTELLUNG_C_NR)) {
+				DialogFactory
+						.showModalDialog(
+								LPMain.getTextRespectUISPr("lp.warning"),
+								LPMain.getTextRespectUISPr("bes.wareneingang.nichmoeglich.rahmenbestellung"));
+				setSelectedComponent(panelBestellungAuswahlQP1);
 			} else {
-				panelBestellungWareneingangTopQP4
-						.updateButtons(panelBestellungWareneingangBottomD4
-								.getLockedstateDetailMainKey());
+
+				// hole id von bestellung
+				refreshBestellungWareneingang(getBesDto().getIId());
+
+				panelBestellungWareineingangSP4.eventYouAreSelected(false);
+
+				if (getBesDto().getStatusCNr().equals(
+						BestellungFac.BESTELLSTATUS_ERLEDIGT)) {
+					panelBestellungWareneingangTopQP4
+							.updateButtons(new LockStateValue(
+									PanelBasis.LOCK_DISABLE_ALL));
+
+					if (panelBestellungWareneingangTopQP4.getHmOfButtons()
+							.containsKey(PanelQuery.LEAVEALONE_DOKUMENTE)) {
+						LPButtonAction bu = (LPButtonAction) panelBestellungWareneingangTopQP4
+								.getHmOfButtons().get(
+										PanelQuery.LEAVEALONE_DOKUMENTE);
+						bu.setEnable(true);
+						bu.getButton().setEnabled(true);
+					}
+
+					if (panelBestellungWareneingangTopQP4.getHmOfButtons()
+							.containsKey(PanelQuery.LEAVEALONE_PRINTPANELQUERY)) {
+
+						LPButtonAction bu = (LPButtonAction) panelBestellungWareneingangTopQP4
+								.getHmOfButtons().get(
+										PanelQuery.LEAVEALONE_PRINTPANELQUERY);
+						bu.setEnable(true);
+						bu.getButton().setEnabled(true);
+					}
+				} else {
+					panelBestellungWareneingangTopQP4
+							.updateButtons(panelBestellungWareneingangBottomD4
+									.getLockedstateDetailMainKey());
+				}
 			}
 		}
 
@@ -1994,37 +2089,49 @@ public class TabbedPaneBestellung
 						RechteFac.RECHT_MODULWEIT_UPDATE);
 			}
 
-			// refreshen von WE damit key auch bei direktem click gesetzt werden
-			// kann in handleItemChanged()
-			if (getWareneingangDto() == null
-					|| getWareneingangDto().getIId() == null) {
-				// warnung dasS kein we selektiert ist
-				DialogFactory.showModalDialog(
-						LPMain.getTextRespectUISPr("lp.warning"),
-						LPMain.getTextRespectUISPr("bes.wareneingangwaehlen"));
-				Object bestellId = panelBestellungAuswahlQP1.getSelectedId();
-				refreshBestellungWareneingang((Integer) bestellId);
-				setSelectedComponent(panelBestellungWareineingangSP4);
-			}
-			refreshBestellungWareneingang(iIdBestellung);
-			refreshBestellungWEP(iIdBestellung);
+			if (getBesDto().getBestellungartCNr().equals(
+					BestellungFac.BESTELLUNGART_RAHMENBESTELLUNG_C_NR)) {
+				DialogFactory
+						.showModalDialog(
+								LPMain.getTextRespectUISPr("lp.warning"),
+								LPMain.getTextRespectUISPr("bes.wareneingang.nichmoeglich.rahmenbestellung"));
+				setSelectedComponent(panelBestellungAuswahlQP1);
+			} else {
 
-			// flrextradata 3: Extra Daten, die man im FLR auswerten kann,
-			// setzen
-			if (panelBestellungWareneingangTopQP4.getSelectedId() != null) {
+				// refreshen von WE damit key auch bei direktem click gesetzt
+				// werden
+				// kann in handleItemChanged()
+				if (getWareneingangDto() == null
+						|| getWareneingangDto().getIId() == null) {
+					// warnung dasS kein we selektiert ist
+					DialogFactory.showModalDialog(LPMain
+							.getTextRespectUISPr("lp.warning"), LPMain
+							.getTextRespectUISPr("bes.wareneingangwaehlen"));
+					Object bestellId = panelBestellungAuswahlQP1
+							.getSelectedId();
+					refreshBestellungWareneingang((Integer) bestellId);
+					setSelectedComponent(panelBestellungWareineingangSP4);
+				}
+				refreshBestellungWareneingang(iIdBestellung);
+				refreshBestellungWEP(iIdBestellung);
 
-				ArrayList<Object> listOfExtraDataForFLR = new ArrayList<Object>();
-				listOfExtraDataForFLR.add(
-						BestellpositionFac.FLR_EXTRA_DATA_WARENEINGANGIID,
-						panelBestellungWareneingangTopQP4.getSelectedId());
-				panelBestellungWEPTopQP5
-						.setListOfExtraData(listOfExtraDataForFLR);
+				// flrextradata 3: Extra Daten, die man im FLR auswerten kann,
+				// setzen
+				if (panelBestellungWareneingangTopQP4.getSelectedId() != null) {
 
-				panelBestellungWEPTopQP5.eventYouAreSelected(false);
+					ArrayList<Object> listOfExtraDataForFLR = new ArrayList<Object>();
+					listOfExtraDataForFLR.add(
+							BestellpositionFac.FLR_EXTRA_DATA_WARENEINGANGIID,
+							panelBestellungWareneingangTopQP4.getSelectedId());
+					panelBestellungWEPTopQP5
+							.setListOfExtraData(listOfExtraDataForFLR);
 
-				panelBestellungWEPTopQP5
-						.updateButtons(panelBestellungWEPBottomD5
-								.getLockedstateDetailMainKey());
+					panelBestellungWEPTopQP5.eventYouAreSelected(false);
+
+					panelBestellungWEPTopQP5
+							.updateButtons(panelBestellungWEPBottomD5
+									.getLockedstateDetailMainKey());
+				}
 			}
 		}
 
@@ -2143,6 +2250,17 @@ public class TabbedPaneBestellung
 							MY_OWN_NEW_NEUER_WARENEINGANG_AUS_WEP,
 							RechteFac.RECHT_BES_BESTELLUNG_CUD);
 
+			panelBestellungWEPTopQP5.createAndSaveAndShowButton(
+					"/com/lp/client/res/navigate_left.png", LPMain
+							.getTextRespectUISPr("bes.vorherigerwe"),
+					VORHERIGER_WE, KeyStroke.getKeyStroke('K',
+							java.awt.event.InputEvent.CTRL_MASK), null);
+			panelBestellungWEPTopQP5.createAndSaveAndShowButton(
+					"/com/lp/client/res/navigate_right.png", LPMain
+							.getTextRespectUISPr("bes.naechsterwe"),
+					NAECHSTER_WE, KeyStroke.getKeyStroke('L',
+							java.awt.event.InputEvent.CTRL_MASK), null);
+
 			panelBestellungWEPSP5 = new PanelSplit(getInternalFrame(),
 					panelBestellungWEPBottomD5, panelBestellungWEPTopQP5, 170);
 
@@ -2210,6 +2328,8 @@ public class TabbedPaneBestellung
 					LPMain.getTextRespectUISPr("bes.allelieferterminesetzen"),
 					MY_OWN_NEW_ALLE_ABTERMINE_VORBELEGEN,
 					RechteFac.RECHT_BES_BESTELLUNG_CUD);
+			panelBestellungSichtLieferTermineTopQP7
+					.setMultipleRowSelectionEnabled(true);
 
 			panelBestellungSichtLieferTermineSP7 = new PanelSplit(
 					getInternalFrame(),
@@ -2261,6 +2381,13 @@ public class TabbedPaneBestellung
 							"/com/lp/client/res/navigate_close.png",
 							LPMain.getTextRespectUISPr("bes.positionen.sortierenachartikel"),
 							BUTTON_SORTIERE_NACH_IDENT, null);
+
+			panelBestellungPositionenTopQP3
+					.createAndSaveAndShowButton(
+							"/com/lp/client/res/scanner16x16.png",
+							LPMain.getTextRespectUISPr("auftrag.positionen.schnelleingabe"),
+							BUTTON_SCHNELLERFASSUNG_POSITIONEN,
+							RechteFac.RECHT_AUFT_AUFTRAG_CUD);
 
 			// mehrfachselekt: fuer dieses QP aktivieren
 			// copypaste: 4
@@ -2637,6 +2764,39 @@ public class TabbedPaneBestellung
 			getInternalFrame().showReportKriterien(
 					new ReportBestellungOffeneBestellungen(getInternalFrame(),
 							LPMain.getTextRespectUISPr("bes.menu.offene")));
+		} else if (e.getActionCommand().equals(
+				MENUE_ACTION_INFO_RAHMENUEBERSICHT)) {
+
+			String add2Title = LPMain
+					.getTextRespectUISPr("bestellung.report.rahmenuebersicht");
+			if (getBesDto().getBestellungartCNr().equals(
+					BestellungFac.BESTELLUNGART_RAHMENBESTELLUNG_C_NR)) {
+
+				getInternalFrame().showReportKriterien(
+						new ReportBestellungRahmenuebersicht(
+								getInternalFrameBestellung(), getBesDto()
+										.getIId(), add2Title));
+
+			} else {
+				DialogFactory
+						.showModalDialog(
+								LPMain.getTextRespectUISPr("lp.info"),
+								LPMain.getTextRespectUISPr("bestellung.rahmenauftragwaehlen"));
+			}
+		} else if (e.getActionCommand().equals(
+				MENU_BEARBEITEN_RE_ADRESSE_AENDERN)) {
+			if (getBesDto() != null) {
+				panelQueryFLRRechnungsadresse = PartnerFilterFactory
+						.getInstance()
+						.createPanelFLRLieferantGoto(
+								getInternalFrame(),
+								getBesDto().getLieferantIIdRechnungsadresse(),
+								true,
+								false,
+								LPMain.getTextRespectUISPr("title.rechnungsadresseauswahlliste"));
+				new DialogQuery(panelQueryFLRRechnungsadresse);
+			}
+
 		} else if (e.getActionCommand().equals(
 				MENU_BEARBEITEN_MANUELL_ERLEDIGEN)) {
 			// nur, wenn auch eine Bestellung ausgewaehlt ist.
@@ -3212,15 +3372,23 @@ public class TabbedPaneBestellung
 							options[1]);
 					if (iOption == JOptionPane.YES_OPTION) {
 						bIstAenderungErlaubtO = true;
+						getBesDto().setTGedruckt(null);
+						getBesDto().setStatusCNr(
+								BestellungFac.BESTELLSTATUS_ANGELEGT);
+						DelegateFactory.getInstance().getBestellungDelegate()
+								.updateBestellung(getBesDto(), true);
 					} else if (iOption == JOptionPane.NO_OPTION) {
 						bIstAenderungErlaubtO = false;
 					} else if (iOption == JOptionPane.CANCEL_OPTION) {
 						// TODO tAenderungsbestellung setzen
 						bIstAenderungErlaubtO = true;
+						getBesDto().setTGedruckt(null);
+						getBesDto().setStatusCNr(
+								BestellungFac.BESTELLSTATUS_ANGELEGT);
 						getBesDto().setTAenderungsbestellung(
 								new Timestamp(System.currentTimeMillis()));
 						DelegateFactory.getInstance().getBestellungDelegate()
-								.updateBestellung(getBesDto());
+								.updateBestellung(getBesDto(), true);
 					}
 				} else {
 					bIstAenderungErlaubtO = true;
@@ -3303,7 +3471,7 @@ public class TabbedPaneBestellung
 	 * @return boolean
 	 * @throws Throwable
 	 */
-	private boolean pruefeKonditionen() throws Throwable {
+	protected boolean pruefeKonditionen() throws Throwable {
 
 		boolean bHatKF = true;
 		// parameter holen und dann ein if rund um das was schon da war
@@ -3478,6 +3646,13 @@ public class TabbedPaneBestellung
 
 		jmBearbeiten.add(new JSeparator(), 0);
 
+		JMenuItem menuItemBearbeitenReAdresseAendern = new JMenuItem(
+				LPMain.getTextRespectUISPr("bes.menu.bearbeiten.readresse.aendern"));
+		menuItemBearbeitenReAdresseAendern.addActionListener(this);
+		menuItemBearbeitenReAdresseAendern
+				.setActionCommand(MENU_BEARBEITEN_RE_ADRESSE_AENDERN);
+		jmBearbeiten.add(menuItemBearbeitenReAdresseAendern, 0);
+
 		JMenuItem menuItemBearbeitenManuellErledigen = new JMenuItem(
 				LPMain.getTextRespectUISPr("bes.menu.bearbeiten.manuellerledigen"));
 		menuItemBearbeitenManuellErledigen.addActionListener(this);
@@ -3518,6 +3693,18 @@ public class TabbedPaneBestellung
 		menuItemWareneingang.addActionListener(this);
 		menuItemWareneingang.setActionCommand(MENU_ACTION_JOURNAL_WARENEINGANG);
 		journal.add(menuItemWareneingang);
+
+		// Menue Info
+		JMenu menuInfo = new WrapperMenu("lp.info", this);
+
+		JMenuItem menuItemRahmenuebersicht = new JMenuItem(
+				LPMain.getTextRespectUISPr("bestellung.report.rahmenuebersicht"));
+		menuItemRahmenuebersicht.addActionListener(this);
+		menuItemRahmenuebersicht
+				.setActionCommand(MENUE_ACTION_INFO_RAHMENUEBERSICHT);
+		menuInfo.add(menuItemRahmenuebersicht);
+
+		wrapperMenuBar.addJMenuItem(menuInfo);
 
 		return wrapperMenuBar;
 	}
@@ -3664,6 +3851,13 @@ public class TabbedPaneBestellung
 						.equals(BestellungFac.BESTELLUNGART_RAHMENBESTELLUNG_C_NR) || (cBSArtTemp
 						.equals(BestellungFac.BESTELLUNGART_ABRUFBESTELLUNG_C_NR)));
 
+		// SP3262
+		boolean bWareneingangAnzeigen = true;
+		if (cBSArtTemp
+				.equals(BestellungFac.BESTELLUNGART_RAHMENBESTELLUNG_C_NR)) {
+			bWareneingangAnzeigen = false;
+		}
+
 		if (bDisableOnlyI) {
 			// disable mode: dh. nur die false sind "nachfalsen" -> noch mehr
 			// abdrehen.
@@ -3680,12 +3874,23 @@ public class TabbedPaneBestellung
 			if (!bRahmen) {
 				enableSichtRahmen(bRahmen);
 			}
+			if (!bRahmen) {
+				enableSichtRahmen(bRahmen);
+			}
+			if (!bWareneingangAnzeigen) {
+				enableWE(bWareneingangAnzeigen);
+				setEnabledAt(IDX_PANEL_WARENEINGANGSPOSITIONEN,
+						bWareneingangAnzeigen);
+			}
 		} else {
 			enableBSPOS(bBSPOS);
 			enableKonditionen(bKonditionen);
 
 			enableSichLieferantenTermine(bSichLieferantenTermine);
 			enableSichtRahmen(bRahmen);
+			enableWE(bWareneingangAnzeigen);
+			setEnabledAt(IDX_PANEL_WARENEINGANGSPOSITIONEN,
+					bWareneingangAnzeigen);
 		}
 	}
 
@@ -3779,7 +3984,7 @@ public class TabbedPaneBestellung
 		return panelBestellungSichtLieferTermineSP7;
 	}
 
-	public Object getInseratDto() {
+	public Object getDto() {
 		return getBesDto();
 	}
 
@@ -3858,7 +4063,8 @@ public class TabbedPaneBestellung
 		}
 	}
 
-	public BigDecimal getWareneingangWertsumme(WareneingangDto wareneingangDto) {
+	public BigDecimal getWareneingangWertsumme(WareneingangDto wareneingangDto)
+			throws Throwable {
 		BigDecimal bdReturn = new BigDecimal(0);
 		if (wareneingangDto != null && wareneingangDto.getIId() != null) {
 			try {
@@ -3870,22 +4076,30 @@ public class TabbedPaneBestellung
 								iWareneingangIId);
 				if (wePos.length > 0) {
 
+					EinstandspreiseEinesWareneingangsDto preiseDtos = DelegateFactory
+							.getInstance()
+							.getWareneingangDelegate()
+							.getBerechnetenEinstandspreisEinerWareneingangsposition(
+									iWareneingangIId);
+
 					for (int i = 0; i < wePos.length; i++) {
 
-						BigDecimal bdEinstandspreisUngerundet = DelegateFactory
-								.getInstance()
-								.getWareneingangDelegate()
-								.getBerechnetenEinstandspreisEinerWareneingangsposition(
-										wePos[i].getIId());
+						if (preiseDtos.getHmEinstandpreiseAllerPositionen()
+								.containsKey(wePos[i].getIId())) {
+							BigDecimal bdEinstandspreisUngerundet = preiseDtos
+									.getHmEinstandpreiseAllerPositionen().get(
+											wePos[i].getIId());
 
-						if (bdEinstandspreisUngerundet != null) {
-							if (wePos[i].getNGeliefertemenge() != null) {
-								BigDecimal bdPosSumme = wePos[i]
-										.getNGeliefertemenge().multiply(
-												bdEinstandspreisUngerundet);
-								bdReturn = bdReturn.add(bdPosSumme);
+							if (bdEinstandspreisUngerundet != null) {
+								if (wePos[i].getNGeliefertemenge() != null) {
+									BigDecimal bdPosSumme = wePos[i]
+											.getNGeliefertemenge().multiply(
+													bdEinstandspreisUngerundet);
+									bdReturn = bdReturn.add(bdPosSumme);
+								}
 							}
 						}
+
 					}
 				}
 
@@ -3894,9 +4108,16 @@ public class TabbedPaneBestellung
 			}
 		}
 		if (bdReturn != null) {
-			bdReturn = bdReturn.setScale(4, BigDecimal.ROUND_HALF_EVEN);
+			bdReturn = bdReturn.setScale(Defaults.getInstance()
+					.getIUINachkommastellenPreiseWE(),
+					BigDecimal.ROUND_HALF_EVEN);
 		}
 		return bdReturn;
+	}
+
+	public String getBestellungStatus() throws Throwable {
+		return DelegateFactory.getInstance().getLocaleDelegate()
+				.getStatusCBez(getBesDto().getStatusCNr());
 	}
 
 }

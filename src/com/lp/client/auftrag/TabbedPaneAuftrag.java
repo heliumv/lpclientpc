@@ -1,33 +1,33 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
- * 
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
+ *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published 
- * by the Free Software Foundation, either version 3 of theLicense, or 
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of theLicense, or
  * (at your option) any later version.
- * 
- * According to sec. 7 of the GNU Affero General Public License, version 3, 
+ *
+ * According to sec. 7 of the GNU Affero General Public License, version 3,
  * the terms of the AGPL are supplemented with the following terms:
- * 
- * "HELIUM V" and "HELIUM 5" are registered trademarks of 
- * HELIUM V IT-Solutions GmbH. The licensing of the program under the 
+ *
+ * "HELIUM V" and "HELIUM 5" are registered trademarks of
+ * HELIUM V IT-Solutions GmbH. The licensing of the program under the
  * AGPL does not imply a trademark license. Therefore any rights, title and
  * interest in our trademarks remain entirely with us. If you want to propagate
  * modified versions of the Program under the name "HELIUM V" or "HELIUM 5",
- * you may only do so if you have a written permission by HELIUM V IT-Solutions 
+ * you may only do so if you have a written permission by HELIUM V IT-Solutions
  * GmbH (to acquire a permission please contact HELIUM V IT-Solutions
  * at trademark@heliumv.com).
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Affero General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Contact: developers@heliumv.com
  ******************************************************************************/
 package com.lp.client.auftrag;
@@ -60,6 +60,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.xml.sax.SAXException;
 
 import com.lp.client.angebot.AngebotFilterFactory;
+import com.lp.client.artikel.DialogNeueArtikelnummer;
 import com.lp.client.bestellung.BestellungFilterFactory;
 import com.lp.client.fertigung.FertigungFilterFactory;
 import com.lp.client.frame.ExceptionLP;
@@ -90,7 +91,10 @@ import com.lp.client.projekt.ProjektFilterFactory;
 import com.lp.client.rechnung.RechnungFilterFactory;
 import com.lp.client.system.SystemFilterFactory;
 import com.lp.client.util.fastlanereader.gui.QueryType;
+import com.lp.server.angebot.service.AngebotServiceFac;
+import com.lp.server.angebot.service.AngebotpositionDto;
 import com.lp.server.artikel.service.ArtikelDto;
+import com.lp.server.artikel.service.ArtikelFac;
 import com.lp.server.artikel.service.VerkaufspreisDto;
 import com.lp.server.auftrag.service.AuftragDto;
 import com.lp.server.auftrag.service.AuftragFac;
@@ -106,9 +110,9 @@ import com.lp.server.system.service.MandantFac;
 import com.lp.server.system.service.MwstsatzDto;
 import com.lp.server.system.service.PanelFac;
 import com.lp.server.system.service.PanelbeschreibungDto;
+import com.lp.server.system.service.PaneldatenDto;
 import com.lp.server.system.service.ParameterFac;
 import com.lp.server.system.service.ParametermandantDto;
-import com.lp.server.system.service.StatusDto;
 import com.lp.server.util.fastlanereader.service.query.FilterKriterium;
 import com.lp.server.util.fastlanereader.service.query.FilterKriteriumDirekt;
 import com.lp.server.util.fastlanereader.service.query.QueryParameters;
@@ -120,15 +124,13 @@ import com.lp.util.csv.LPCSVReader;
 /*
  * <p>Tabbed pane fuer Komponente Auftrag.</p> <p>Copyright Logistik Pur
  * Software GmbH (c) 2004-2008</p> <p>Erstellungsdatum 2004-10-28</p> <p> </p>
- * 
+ *
  * @author Uli Walch
- * 
+ *
  * @version $Revision: 1.61 $
  */
 public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
-	/**
-	 * 
-	 */
+
 	private static final long serialVersionUID = 1L;
 
 	private JLabel bestellungenSumme = null;
@@ -145,6 +147,28 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 	private PanelQuery auftragTeilnehmerTop = null;
 	private PanelBasis auftragTeilnehmerBottom = null;
 	private PanelSplit auftragTeilnehmer = null; // FLR 1:n Liste
+
+	private PanelQuery auftragZeitplanTop = null;
+	private PanelBasis auftragZeitplanBottom = null;
+	private PanelSplit auftragZeitplan = null; // FLR 1:n Liste
+
+	private PanelQuery auftragZahlungsplanTop = null;
+
+	public PanelQuery getAuftragZahlungsplanTop() {
+		return auftragZahlungsplanTop;
+	}
+
+	private PanelBasis auftragZahlungsplanBottom = null;
+	private PanelSplit auftragZahlungsplan = null; // FLR 1:n Liste
+
+	private PanelQuery auftragZahlungsplanmeilensteinTop = null;
+
+	public PanelQuery getAuftragZahlungsplanmeilensteinTop() {
+		return auftragZahlungsplanmeilensteinTop;
+	}
+
+	private PanelBasis auftragZahlungsplanmeilensteinBottom = null;
+	private PanelSplit auftragZahlungsplanmeilenstein = null; // FLR 1:n Liste
 
 	private PanelQuery sichtAuftragAufAndereBelegartenTop = null;
 	private PanelBasis sichtAuftragAufAndereBelegartenBottom = null;
@@ -167,6 +191,8 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 	private PanelTabelleAuftragzeiten ptAuftragzeiten = null;
 
 	private PanelBasis panelDetailAuftragseigenschaft = null;
+
+	private PanelDialogAuftragArtikelSchnellanlage panelDialogAuftragArtikelSchnellanlageArtikelAendern = null;
 
 	// private PanelQuery auftragRechnungen = null;
 	// private PanelQuery auftragLieferschein = null;
@@ -193,7 +219,10 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 	private final int IDX_PANEL_LOSE = 11;
 	private final int IDX_PANEL_BESTELLUNGEN = 12;
 	private final int IDX_PANEL_EINGANGSRECHNUNGEN = 13;
-	private final int IDX_PANEL_AUFTRAGEIGENSCHAFTEN = 14;
+	private int IDX_PANEL_AUFTRAGEIGENSCHAFTEN = -1;
+	private int IDX_PANEL_ZEITPLAN = -1;
+	private int IDX_PANEL_ZAHLUNGSPLAN = -1;
+	private int IDX_PANEL_ZAHLUNGSPLANMEILENSTEIN = -1;
 
 	// dtos, die in mehr als einem panel benoetigt werden
 	private AuftragDto auftragDto = null;
@@ -214,7 +243,6 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 	private final String MENU_ACTION_JOURNAL_OFFEN = "MENU_ACTION_JOURNAL_OFFEN";
 	private final String MENU_ACTION_JOURNAL_OFFEN_DETAILS = "MENU_ACTION_JOURNAL_OFFEN_DETAILS";
 	private final String MENU_ACTION_JOURNAL_OFFEN_POSITIONEN = "MENU_ACTION_JOURNAL_OFFEN_POSITIONEN";
-	private final String MENU_ACTION_JOURNAL_TEILLIEFERBAR = "MENU_ACTION_JOURNAL_TEILLIEFERBAR";
 	private final String MENU_ACTION_JOURNAL_UEBERSICHT = "MENU_ACTION_JOURNAL_UEBERSICHT";
 	private final String MENU_ACTION_JOURNAL_STATISTIK = "MENU_ACTION_JOURNAL_STATISTIK";
 	private final String MENU_ACTION_JOURNAL_ERFUELLUNGSGRAD = "MENU_ACTION_JOURNAL_ERFUELLUNGSGRAD";
@@ -238,26 +266,46 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 	private final String MENUE_ACTION_INFO_ROLLIERENDEPLANUNG = "MENUE_ACTION_INFO_ROLLIERENDEPLANUNG";
 	private final String MENUE_ACTION_INFO_RAHMENERFUELLUNG = "MENUE_ACTION_INFO_RAHMENERFUELLUNG";
 	private final String MENUE_ACTION_INFO_RAHMENUEBERSICHT = "MENUE_ACTION_INFO_RAHMENUEBERSICHT";
+	private final String MENUE_ACTION_INFO_AUFTRAGSUEBERSICHT = "MENU_ACTION_INFO_AUFTRAGSUEBERSICHT";
+	private final String MENUE_ACTION_INFO_PROJEKTBLATT = "MENU_ACTION_INFO_PROJEKTBLATT";
 
 	private static final String ACTION_SPECIAL_CSVIMPORT_POSITIONEN = "ACTION_SPECIAL_CSVIMPORT_POSITIONEN";
 	private static final String ACTION_SPECIAL_SCHNELLERFASSUNG_POSITIONEN = "ACTION_SPECIAL_SCHNELLERFASSUNG_POSITIONEN";
 
+	private final String MENU_BEARBEITEN_HANDARTIKEL_UMANDELN = "MENU_BEARBEITEN_HANDARTIKEL_UMANDELN";
+
 	private static final String ACTION_SPECIAL_NEU_AUS_PROJEKT = PanelBasis.ACTION_MY_OWN_NEW
 			+ "ACTION_SPECIAL_NEU_AUS_PROJEKT";
 
+	private static final String ACTION_SPECIAL_PREISE_NEU_KALKULIEREN = PanelBasis.ACTION_MY_OWN_NEW
+			+ "ACTION_SPECIAL_PREISE_NEU_KALKULIEREN";
+
 	public final static String EXTRA_NEU_EXTERNER_TEILNEHMER = "externer_teilnehmer";
 	public final static String EXTRA_NEU_AUS_ANGEBOT = "aus_angebot";
+	public final static String EXTRA_RAHMENAUFTRAG_NEU_AUS_ANGEBOT = "rahmenauftrag_aus_angebot";
 	public final static String EXTRA_NEU_AUS_AUFTRAG = "aus_auftrag";
 	public final static String EXTRA_ABRUF_ZU_RAHMEN = "extra_abruf_zu_rahmen";
+	public final static String EXTRA_NEU_AUS_SCHNELLANLAGE = "aus_schnellanlage";
+	public final static String EXTRA_ARTIKEL_AUS_SCHNELLANLAGE_BEARBEITEN = "aus_schnellanlage_bearbeiten";
 
 	private final String MENU_BEARBEITEN_BEGRUENDUNG = "MENU_BEARBEITEN_BEGRUENDUNG";
 
 	private String MY_OWN_NEW_NEU_EXTERNER_TEILNEHMER = PanelBasis.ACTION_MY_OWN_NEW
 			+ EXTRA_NEU_EXTERNER_TEILNEHMER;
+	private String MY_OWN_NEW_RAHMENAUFTRAG_NEU_AUS_ANGEBOT = PanelBasis.ACTION_MY_OWN_NEW
+			+ EXTRA_RAHMENAUFTRAG_NEU_AUS_ANGEBOT;
+
 	private String MY_OWN_NEW_NEU_AUS_ANGEBOT = PanelBasis.ACTION_MY_OWN_NEW
 			+ EXTRA_NEU_AUS_ANGEBOT;
+
 	private String MY_OWN_NEW_NEU_AUS_AUFTRAG = PanelBasis.ACTION_MY_OWN_NEW
 			+ EXTRA_NEU_AUS_AUFTRAG;
+
+	private String MY_OWN_NEW_NEU_AUS_SCHNELLANLAGE = PanelBasis.ACTION_MY_OWN_NEW
+			+ EXTRA_NEU_AUS_SCHNELLANLAGE;
+
+	private String MY_OWN_NEW_NEU_ARTIKEL_AUS_SCHNELLANLAGE_BEARBEITEN = PanelBasis.ACTION_MY_OWN_NEW
+			+ EXTRA_ARTIKEL_AUS_SCHNELLANLAGE_BEARBEITEN;
 
 	private String MY_OWN_NEW_TOGGLE_VERRECHENBAR = PanelBasis.ACTION_MY_OWN_NEW
 			+ "TOGGLE_VERRECHENBAR";
@@ -278,6 +326,7 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 
 	private PanelQueryFLR panelQueryFLRAuftragauswahl = null;
 	private PanelQueryFLR panelQueryFLRAngebotauswahl = null;
+	private PanelQueryFLR panelQueryFLRAngebotauswahlFuerRahmenauftrag = null;
 
 	private PanelQueryFLR panelQueryFLRProjekt = null;
 
@@ -285,7 +334,7 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 	private PanelDialogAuftragKommentar pdAuftragExternerKommentar = null;
 
 	// Bitmuster fuer das Enable der Panels
-	boolean[] aPanelsEnabled = new boolean[12];
+	boolean[] aPanelsEnabled = new boolean[16];
 
 	private boolean bAuftragTerminStundenMinuten = false;
 
@@ -477,6 +526,8 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 				null, LPMain.getTextRespectUISPr("er.modulname.tooltip"),
 				IDX_PANEL_EINGANGSRECHNUNGEN);
 
+		int tabIndexAbEingangsrechnung = IDX_PANEL_EINGANGSRECHNUNGEN;
+
 		// Wenn keine Panelbeschriebung vorhanden, dann ausblenden
 		PanelbeschreibungDto[] dtos = DelegateFactory
 				.getInstance()
@@ -484,9 +535,36 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 				.panelbeschreibungFindByPanelCNrMandantCNr(
 						PanelFac.PANEL_AUFTRAGSEIGENSCHAFTEN, null);
 		if (dtos != null && dtos.length > 0) {
+			tabIndexAbEingangsrechnung++;
+			IDX_PANEL_AUFTRAGEIGENSCHAFTEN = tabIndexAbEingangsrechnung;
+
 			insertTab(LPMain.getTextRespectUISPr("lp.eigenschaften"), null,
 					null, LPMain.getTextRespectUISPr("lp.eigenschaften"),
 					IDX_PANEL_AUFTRAGEIGENSCHAFTEN);
+		}
+
+		if (LPMain
+				.getInstance()
+				.getDesktop()
+				.darfAnwenderAufZusatzfunktionZugreifen(
+						MandantFac.ZUSATZFUNKTION_ERWEITERTE_PROJEKTSTEUERUNG)) {
+			tabIndexAbEingangsrechnung++;
+			IDX_PANEL_ZEITPLAN = tabIndexAbEingangsrechnung;
+			insertTab(LPMain.getTextRespectUISPr("auft.zeitplan"), null, null,
+					LPMain.getTextRespectUISPr("auft.zeitplan"),
+					IDX_PANEL_ZEITPLAN);
+			tabIndexAbEingangsrechnung++;
+			IDX_PANEL_ZAHLUNGSPLAN = tabIndexAbEingangsrechnung;
+			insertTab(LPMain.getTextRespectUISPr("auft.zahlungsplan"), null,
+					null, LPMain.getTextRespectUISPr("auft.zahlungsplan"),
+					IDX_PANEL_ZAHLUNGSPLAN);
+			tabIndexAbEingangsrechnung++;
+			IDX_PANEL_ZAHLUNGSPLANMEILENSTEIN = tabIndexAbEingangsrechnung;
+			insertTab(
+					LPMain.getTextRespectUISPr("auft.zahlungsplanmeilenstein"),
+					null, null,
+					LPMain.getTextRespectUISPr("auft.zahlungsplanmeilenstein"),
+					IDX_PANEL_ZAHLUNGSPLANMEILENSTEIN);
 		}
 
 		if (LPMain
@@ -517,7 +595,8 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 					QueryParameters.UC_ID_AUFTRAG, aWhichButtonIUse,
 					getInternalFrame(),
 					LPMain.getTextRespectUISPr("auft.title.panel.auswahl"),
-					true, AuftragFilterFactory.getInstance().createFKVAuftrag()); // liste
+					true,
+					AuftragFilterFactory.getInstance().createFKVAuftrag(), null); // liste
 																					// refresh
 																					// wenn
 																					// lasche
@@ -546,6 +625,13 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 							"/com/lp/client/res/presentation_chart16x16.png",
 							LPMain.getTextRespectUISPr("lp.tooltip.datenausbestehendemangebot"),
 							MY_OWN_NEW_NEU_AUS_ANGEBOT,
+							RechteFac.RECHT_AUFT_AUFTRAG_CUD);
+
+			auftragAuswahl
+					.createAndSaveAndShowButton(
+							"/com/lp/client/res/presentation.png",
+							LPMain.getTextRespectUISPr("lp.tooltip.rahmenauftragausbestehendemangebot"),
+							MY_OWN_NEW_RAHMENAUFTRAG_NEU_AUS_ANGEBOT,
 							RechteFac.RECHT_AUFT_AUFTRAG_CUD);
 
 			auftragAuswahl
@@ -605,6 +691,24 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 						LPMain.getTextRespectUISPr("angb.neuausprojekt"),
 						ACTION_SPECIAL_NEU_AUS_PROJEKT,
 						RechteFac.RECHT_AUFT_AUFTRAG_CUD);
+			}
+
+			if (LPMain
+					.getInstance()
+					.getDesktop()
+					.darfAnwenderAufZusatzfunktionZugreifen(
+							MandantFac.ZUSATZFUNKTION_AUFTRAG_SCHNELLANLAGE)) {
+				auftragAuswahl.createAndSaveAndShowButton(
+						"/com/lp/client/res/flash.png",
+						LPMain.getTextRespectUISPr("auft.schnellanlage"),
+						MY_OWN_NEW_NEU_AUS_SCHNELLANLAGE,
+						RechteFac.RECHT_AUFT_AUFTRAG_CUD);
+				auftragAuswahl
+						.createAndSaveAndShowButton(
+								"/com/lp/client/res/nut_and_bolt24x24.png",
+								LPMain.getTextRespectUISPr("auftrag.schnellanlage.artikel.bearbeiten"),
+								MY_OWN_NEW_NEU_ARTIKEL_AUS_SCHNELLANLAGE_BEARBEITEN,
+								RechteFac.RECHT_AUFT_AUFTRAG_CUD);
 			}
 
 		}
@@ -761,6 +865,18 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 		new DialogQuery(panelQueryFLRAngebotauswahl);
 	}
 
+	public void dialogQueryAngebotFuerRahmenauftragFromListe(ActionEvent e)
+			throws Throwable {
+		panelQueryFLRAngebotauswahlFuerRahmenauftrag = AngebotFilterFactory
+				.getInstance().createPanelFLRAngebotErledigteVersteckt(
+						getInternalFrame(), true, false); // pro Angebot 1
+															// Auftrag -> FK
+															// offene
+		// Angebote eines Mandanten
+
+		new DialogQuery(panelQueryFLRAngebotauswahlFuerRahmenauftrag);
+	}
+
 	/**
 	 * AGILPRO CHANGES Changed visiblity from protected to public
 	 * 
@@ -777,8 +893,7 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 
 		int selectedIndex = getSelectedIndex();
 
-		switch (selectedIndex) {
-		case IDX_PANEL_AUFTRAGAUSWAHL:
+		if (selectedIndex == IDX_PANEL_AUFTRAGAUSWAHL) {
 			setTitleAuftrag(LPMain
 					.getTextRespectUISPr("auft.title.panel.auswahl"));
 			refreshAuftragAuswahl();
@@ -797,28 +912,25 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 				getInternalFrame().enableAllOberePanelsExceptMe(this,
 						IDX_PANEL_AUFTRAGAUSWAHL, false);
 			}
-			break;
+		} else if (selectedIndex == IDX_PANEL_AUFTRAGKOPFDATEN) {
 
-		case IDX_PANEL_AUFTRAGKOPFDATEN:
 			refreshAuftragKopfdaten();
 			auftragKopfdaten.eventYouAreSelected(false); // sonst werden die
 			// buttons nicht
 			// richtig gesetzt!
-			break;
 
-		case IDX_PANEL_AUFTRAGPOSITIONEN:
+		} else if (selectedIndex == IDX_PANEL_AUFTRAGPOSITIONEN) {
+
 			refreshAuftragPositionen();
 			auftragPositionen.eventYouAreSelected(false);
 			auftragPositionenTop.updateButtons(auftragPositionenBottom
 					.getLockedstateDetailMainKey());
-			break;
+		} else if (selectedIndex == IDX_PANEL_AUFTRAGKONDITIONEN) {
 
-		case IDX_PANEL_AUFTRAGKONDITIONEN:
 			refreshAuftragKonditionen();
 			auftragKonditionen.eventYouAreSelected(false);
-			break;
+		} else if (selectedIndex == IDX_PANEL_AUFTRAGTEILNEHMER) {
 
-		case IDX_PANEL_AUFTRAGTEILNEHMER:
 			refreshAuftragTeilnehmer();
 
 			// pqaddbutton: 2 Nachdem das PanelSplit erzeugt wurde, muss
@@ -830,17 +942,55 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 			// im QP die Buttons setzen.
 			auftragTeilnehmerTop.updateButtons(auftragTeilnehmerBottom
 					.getLockedstateDetailMainKey());
-			break;
 
-		case IDX_PANEL_SICHTLIEFERSTATUS:
+		} else if (selectedIndex == IDX_PANEL_ZEITPLAN) {
+
+			refreshZeitplan();
+			auftragZeitplan.eventYouAreSelected(false);
+			auftragZeitplanTop.updateButtons(auftragZeitplanBottom
+					.getLockedstateDetailMainKey());
+
+		} else if (selectedIndex == IDX_PANEL_ZAHLUNGSPLAN) {
+
+			refreshZahlungsplan();
+			auftragZahlungsplan.eventYouAreSelected(false);
+			auftragZahlungsplanTop.updateButtons(auftragZahlungsplanBottom
+					.getLockedstateDetailMainKey());
+
+		} else if (selectedIndex == IDX_PANEL_ZAHLUNGSPLANMEILENSTEIN) {
+			refreshZahlungsplan();
+
+			auftragZahlungsplanTop.eventYouAreSelected(false);
+			auftragZahlungsplanBottom
+					.setKeyWhenDetailPanel(auftragZahlungsplanTop
+							.getSelectedId());
+			auftragZahlungsplanBottom.eventYouAreSelected(false);
+
+			if (auftragZahlungsplanTop.getSelectedId() != null) {
+				refreshZahlungsplanmeilenstein();
+				auftragZahlungsplanmeilenstein.eventYouAreSelected(false);
+				auftragZahlungsplanmeilensteinTop
+						.updateButtons(auftragZahlungsplanmeilensteinBottom
+								.getLockedstateDetailMainKey());
+			} else {
+				DialogFactory
+						.showModalDialog(
+								LPMain.getTextRespectUISPr("lp.info"),
+								LPMain.getTextRespectUISPr("auft.zahlungsplanmeilenstein.keinzahlungsplanausgewaehlt"));
+
+				setSelectedIndex(IDX_PANEL_ZAHLUNGSPLAN);
+				lPEventObjectChanged(e);
+			}
+
+		} else if (selectedIndex == IDX_PANEL_SICHTLIEFERSTATUS) {
+
 			setTitleAuftrag(LPMain
 					.getTextRespectUISPr("auft.title.panel.sichtlieferstatus"));
 			refreshSichtLieferstatus();
 			auftragSichtLieferstatus.eventYouAreSelected(false);
 			auftragSichtLieferstatus.updateButtons();
-			break;
+		} else if (selectedIndex == IDX_PANEL_SICHTAUFTRAGAUFANDEREBELEGARTEN) {
 
-		case IDX_PANEL_SICHTAUFTRAGAUFANDEREBELEGARTEN:
 			// Nur wenn in Sicht Lieferstatus bereits ein Lieferschein
 			// selektiert wurde
 			if (auftragSichtLieferstatus != null
@@ -906,32 +1056,28 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 				setSelectedComponent(auftragSichtLieferstatus);
 			}
 
-			break;
+		} else if (selectedIndex == IDX_PANEL_SICHTRAHMEN) {
 
-		case IDX_PANEL_SICHTRAHMEN:
 			setTitleAuftrag(LPMain.getTextRespectUISPr("lp.sichtrahmen"));
 			refreshAuftragSichtRahmen();
 			auftragSichtRahmen.eventYouAreSelected(false);
 			auftragSichtRahmenTop.updateButtons(auftragSichtRahmenBottom
 					.getLockedstateDetailMainKey());
-			break;
+		} else if (selectedIndex == IDX_PANEL_AUFTRAGUEBERSICHT) {
 
-		case IDX_PANEL_AUFTRAGUEBERSICHT:
 			if (!bKriterienAuftragUebersichtUeberMenueAufgerufen) {
 				getKriterienAuftragUebersicht();
 				getInternalFrame()
 						.showPanelDialog(pdKriterienAuftragUebersicht);
 			}
-			break;
+		} else if (selectedIndex == IDX_PANEL_AUFTRAGZEITEN) {
 
-		case IDX_PANEL_AUFTRAGZEITEN:
 			if (!pdKriterienAuftragzeitenUeberMenueAufgerufen) {
 				getKriterienAuftragzeiten();
 				getInternalFrame().showPanelDialog(pdKriterienAuftragzeiten);
 			}
-			break;
 
-		case IDX_PANEL_LSRE:
+		} else if (selectedIndex == IDX_PANEL_LSRE) {
 
 			getPanelTabelleLoszeiten().eventYouAreSelected(false);
 
@@ -939,36 +1085,35 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 
 			auftragLSRE.updateButtons(new LockStateValue(null, null,
 					PanelBasis.LOCK_IS_NOT_LOCKED));
+		} else if (selectedIndex == IDX_PANEL_LOSE) {
 
-			break;
-		case IDX_PANEL_LOSE:
 			refreshLose();
 			auftragLose.eventYouAreSelected(false);
-			break;
-		case IDX_PANEL_BESTELLUNGEN:
+		} else if (selectedIndex == IDX_PANEL_BESTELLUNGEN) {
+
 			refreshBestellungen();
 			auftragBestellungen.eventYouAreSelected(false);
-			break;
+		} else if (selectedIndex == IDX_PANEL_EINGANGSRECHNUNGEN) {
 
-		case IDX_PANEL_EINGANGSRECHNUNGEN:
 			refreshEingangsrechnungen();
 			auftragEingangsrechnung.eventYouAreSelected(false);
-			break;
 
-		case IDX_PANEL_AUFTRAGEIGENSCHAFTEN:
+		} else if (selectedIndex == IDX_PANEL_AUFTRAGEIGENSCHAFTEN) {
+
 			refreshEigenschaften(getAuftragDto().getIId());
 			panelDetailAuftragseigenschaft.eventYouAreSelected(false);
 			if (getAuftragDto() != null) {
 				LPButtonAction item = null;
-				if (getAuftragDto().getAuftragstatusCNr() != null) {
-					boolean bEnable = getAuftragDto().getAuftragstatusCNr()
-							.equals(LocaleFac.STATUS_ANGELEGT);
-					item = (LPButtonAction) panelDetailAuftragseigenschaft
-							.getHmOfButtons().get(PanelBasis.ACTION_UPDATE);
-					item.getButton().setEnabled(bEnable);
+				if (getAuftragDto().getStatusCNr() != null) {
+					if (getAuftragDto().getStatusCNr().equals(
+							LocaleFac.STATUS_ERLEDIGT)) {
+						item = (LPButtonAction) panelDetailAuftragseigenschaft
+								.getHmOfButtons().get(PanelBasis.ACTION_UPDATE);
+						item.getButton().setEnabled(false);
+					}
 				}
 			}
-			break;
+
 		}
 
 		enablePanelsNachBitmuster();
@@ -1013,6 +1158,22 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 				auftragTeilnehmerTop.updateButtons(new LockStateValue(
 						PanelBasis.LOCK_FOR_NEW));
 				;
+			} else if (e.getSource() == auftragZeitplanBottom) {
+				// im QP die Buttons in den Zustand neu setzen.
+				auftragZeitplanTop.updateButtons(new LockStateValue(
+						PanelBasis.LOCK_FOR_NEW));
+				;
+			} else if (e.getSource() == auftragZahlungsplanBottom) {
+				// im QP die Buttons in den Zustand neu setzen.
+				auftragZahlungsplanTop.updateButtons(new LockStateValue(
+						PanelBasis.LOCK_FOR_NEW));
+				;
+			} else if (e.getSource() == auftragZahlungsplanmeilensteinBottom) {
+				// im QP die Buttons in den Zustand neu setzen.
+				auftragZahlungsplanmeilensteinTop
+						.updateButtons(new LockStateValue(
+								PanelBasis.LOCK_FOR_NEW));
+				;
 			} else if (e.getSource() == sichtAuftragAufAndereBelegartenBottom) {
 				// im QP die Buttons in den Zustand neu setzen.
 				sichtAuftragAufAndereBelegartenTop
@@ -1055,10 +1216,54 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 				if (e.getSource() == auftragAuswahl) {
 					dialogQueryAngebotFromListe(null);
 				}
+			} else if (sAspectInfo
+					.equals(MY_OWN_NEW_RAHMENAUFTRAG_NEU_AUS_ANGEBOT)) {
+				if (e.getSource() == auftragAuswahl) {
+					dialogQueryAngebotFuerRahmenauftragFromListe(null);
+				}
 			} else if (sAspectInfo.equals(MY_OWN_NEW_NEU_AUS_AUFTRAG)) {
 				if (e.getSource() == auftragAuswahl) {
 					dialogQueryAuftragFromListe(null);
 				}
+			} else if (sAspectInfo
+					.equals(MY_OWN_NEW_NEU_ARTIKEL_AUS_SCHNELLANLAGE_BEARBEITEN)) {
+				if (getAuftragDto() != null && getAuftragDto().getIId() != null) {
+					AuftragpositionDto[] aufposDtos = DelegateFactory
+							.getInstance()
+							.getAuftragpositionDelegate()
+							.auftragpositionFindByAuftrag(
+									getAuftragDto().getIId());
+
+					if (aufposDtos != null && aufposDtos.length > 0
+							&& aufposDtos[0].getArtikelIId() != null) {
+						panelDialogAuftragArtikelSchnellanlageArtikelAendern = new PanelDialogAuftragArtikelSchnellanlage(
+								getInternalFrame(),
+								aufposDtos[0].getArtikelIId());
+						getInternalFrame()
+								.showPanelDialog(
+										panelDialogAuftragArtikelSchnellanlageArtikelAendern);
+					}
+
+				}
+
+			} else if (sAspectInfo.equals(MY_OWN_NEW_NEU_AUS_SCHNELLANLAGE)) {
+				// In KopfdatenWechseln
+				// um mit Auftraegen arbeiten zu koennen, muss das Hauptlager
+				// des Mandanten definiert sein
+				DelegateFactory.getInstance().getLagerDelegate()
+						.getHauptlagerDesMandanten();
+
+				// emptytable: 1 wenn es bisher keinen eintrag gibt, die
+				// restlichen
+				// panels aktivieren
+				if (auftragAuswahl.getSelectedId() == null) {
+					getInternalFrame().enableAllOberePanelsExceptMe(this,
+							IDX_PANEL_AUFTRAGAUSWAHL, true);
+				}
+
+				refreshAuftragKopfdaten().eventActionNew(e, true, false);
+				auftragKopfdaten.setSchnellanlage(true);
+				setSelectedComponent(auftragKopfdaten);
 			} else if (sAspectInfo.equals(MY_OWN_NEW_TOGGLE_VERRECHENBAR)) {
 				if (e.getSource() == auftragAuswahl && getAuftragDto() != null
 						&& getAuftragDto().getIId() != null) {
@@ -1082,10 +1287,10 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 					if (pruefeAktuellenAuftrag()) {
 						if (getAuftragDto().getAuftragartCNr().equals(
 								AuftragServiceFac.AUFTRAGART_RAHMEN)) {
-							if (getAuftragDto().getAuftragstatusCNr().equals(
+							if (getAuftragDto().getStatusCNr().equals(
 									AuftragServiceFac.AUFTRAGSTATUS_OFFEN)
 									|| getAuftragDto()
-											.getAuftragstatusCNr()
+											.getStatusCNr()
 											.equals(AuftragServiceFac.AUFTRAGSTATUS_TEILERLEDIGT)) {
 								refreshAuftragKopfdaten();
 
@@ -1123,6 +1328,41 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 					// copypaste
 					einfuegenHV();
 				}
+			}else if (sAspectInfo
+					.endsWith(ACTION_SPECIAL_PREISE_NEU_KALKULIEREN)) {
+
+				if (getAuftragDto().getStatusCNr().equals(
+						AuftragServiceFac.AUFTRAGSTATUS_ANGELEGT)) {
+
+					//
+					PanelPositionenArtikelVerkauf panelBottom = ((PanelPositionenArtikelVerkauf) auftragPositionenBottom.panelArtikel);
+
+					AuftragpositionDto[] dtos = DelegateFactory
+							.getInstance()
+							.getAuftragpositionDelegate()
+							.auftragpositionFindByAuftrag(
+									getAuftragDto().getIId());
+
+					for (int i = 0; i < dtos.length; i++) {
+						if (dtos[i].getPositionsartCNr().equals(
+								AngebotServiceFac.ANGEBOTPOSITIONART_IDENT)) {
+							auftragPositionenTop
+									.setSelectedId(dtos[i].getIId());
+							auftragPositionenTop.eventYouAreSelected(false);
+							panelBottom.setKeyWhenDetailPanel(dtos[i].getIId());
+							panelBottom.update();
+							panelBottom.berechneVerkaufspreis(false);
+							auftragPositionenBottom
+									.eventActionSave(null, false);
+						}
+					}
+				} else {
+					DialogFactory.showModalDialog(
+							LPMain.getTextRespectUISPr("lp.error"),
+							LPMain.getTextRespectUISPr(
+									"auft.error.neuberechnen"));
+				}
+
 			} else if (sAspectInfo.equals(BUTTON_IMPORTCSV_AUFTRAGPOSITIONEN)) {
 				importCSVAuftragPositionen();
 				auftragPositionen.eventYouAreSelected(false); // refresh
@@ -1222,11 +1462,10 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 					}
 				} else {
 					if (auftragsnummer != null) {
-						DialogFactory
-								.showModalDialog(
-										LPMain.getTextRespectUISPr("lp.error"),
-										"Keine g\u00FCltige Autragsnummer "
-												+ auftragsnummer);
+						DialogFactory.showModalDialog(
+								LPMain.getTextRespectUISPr("lp.error"),
+								"Keine g\u00FCltige Autragsnummer "
+										+ auftragsnummer);
 						return;
 					}
 				}
@@ -1247,6 +1486,8 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 				}
 
 				refreshAuftragKopfdaten().eventActionNew(e, true, false);
+				auftragKopfdaten.setSchnellanlage(false);
+
 				setSelectedComponent(auftragKopfdaten);
 			} else if (e.getSource() == auftragPositionenTop) {
 				// pqnewnotallowed: 0 das Anlegen einer neuen Position nur
@@ -1265,6 +1506,19 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 				auftragTeilnehmerBottom.eventActionNew(e, true, false);
 				auftragTeilnehmerBottom.eventYouAreSelected(false);
 				setSelectedComponent(auftragTeilnehmer); // ui
+			} else if (e.getSource() == auftragZeitplanTop) {
+				auftragZeitplanBottom.eventActionNew(e, true, false);
+				auftragZeitplanBottom.eventYouAreSelected(false);
+				setSelectedComponent(auftragZeitplan); // ui
+			} else if (e.getSource() == auftragZahlungsplanTop) {
+				auftragZahlungsplanBottom.eventActionNew(e, true, false);
+				auftragZahlungsplanBottom.eventYouAreSelected(false);
+				setSelectedComponent(auftragZahlungsplan); // ui
+			} else if (e.getSource() == auftragZahlungsplanmeilensteinTop) {
+				auftragZahlungsplanmeilensteinBottom.eventActionNew(e, true,
+						false);
+				auftragZahlungsplanmeilensteinBottom.eventYouAreSelected(false);
+				setSelectedComponent(auftragZahlungsplanmeilenstein); // ui
 			} else if (e.getSource() == panelAuftragsnrnrnTopQP) {
 				panelAuftragsnrnrnBottomD.eventActionNew(e, true, false);
 				panelAuftragsnrnrnBottomD.eventYouAreSelected(false);
@@ -1285,6 +1539,12 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 				// neu aufbauen
 			} else if (e.getSource() == auftragTeilnehmerBottom) {
 				auftragTeilnehmer.eventYouAreSelected(false);
+			} else if (e.getSource() == auftragZeitplanBottom) {
+				auftragZeitplan.eventYouAreSelected(false);
+			} else if (e.getSource() == auftragZahlungsplanBottom) {
+				auftragZahlungsplan.eventYouAreSelected(false);
+			} else if (e.getSource() == auftragZahlungsplanmeilensteinBottom) {
+				auftragZahlungsplanmeilenstein.eventYouAreSelected(false);
 			} else if (e.getSource() == auftragSichtRahmenBottom) {
 				auftragSichtRahmen.eventYouAreSelected(false);
 			} else if (e.getSource() == panelAuftragsnrnrnBottomD) {
@@ -1319,6 +1579,31 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 					auftragTeilnehmerTop.setSelectedId(oNaechster);
 				}
 				auftragTeilnehmer.eventYouAreSelected(false);
+			} else if (e.getSource() == auftragZeitplanBottom) {
+				setKeyWasForLockMe();
+				if (auftragZeitplanBottom.getKeyWhenDetailPanel() == null) {
+					Object oNaechster = auftragZeitplanTop
+							.getId2SelectAfterDelete();
+					auftragZeitplanTop.setSelectedId(oNaechster);
+				}
+				auftragZeitplan.eventYouAreSelected(false);
+			} else if (e.getSource() == auftragZahlungsplanBottom) {
+				setKeyWasForLockMe();
+				if (auftragZahlungsplanBottom.getKeyWhenDetailPanel() == null) {
+					Object oNaechster = auftragZahlungsplanTop
+							.getId2SelectAfterDelete();
+					auftragZahlungsplanTop.setSelectedId(oNaechster);
+				}
+				auftragZahlungsplan.eventYouAreSelected(false);
+			} else if (e.getSource() == auftragZahlungsplanmeilensteinBottom) {
+				setKeyWasForLockMe();
+				if (auftragZahlungsplanmeilensteinBottom
+						.getKeyWhenDetailPanel() == null) {
+					Object oNaechster = auftragZahlungsplanmeilensteinTop
+							.getId2SelectAfterDelete();
+					auftragZahlungsplanmeilensteinTop.setSelectedId(oNaechster);
+				}
+				auftragZahlungsplanmeilenstein.eventYouAreSelected(false);
 			} else if (e.getSource() == auftragSichtRahmenBottom) {
 				setKeyWasForLockMe();
 				auftragSichtRahmen.eventYouAreSelected(false);
@@ -1392,10 +1677,28 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 				ptAuftragzeiten.updateButtons(new LockStateValue(null, null,
 						PanelBasis.LOCK_IS_NOT_LOCKED));
 				enablePanelsNachBitmuster();
+			} else if (e.getSource() == panelDialogAuftragArtikelSchnellanlageArtikelAendern) {
+				// Artikel updaten
+				ArtikelDto aDto = panelDialogAuftragArtikelSchnellanlageArtikelAendern
+						.getArtikelDtoVorhandenMitNeuenBezeichnungen();
+
+				DelegateFactory.getInstance().getArtikelDelegate()
+						.updateArtikel(aDto);
+
+				PaneldatenDto[] paneldatenDtos = panelDialogAuftragArtikelSchnellanlageArtikelAendern
+						.getPaneldatenDtos();
+
+				for (int i = 0; i < paneldatenDtos.length; i++) {
+					paneldatenDtos[i].setCKey(aDto.getIId() + "");
+				}
+
+				DelegateFactory.getInstance().getPanelDelegate()
+						.createPaneldaten(paneldatenDtos);
 			}
+
 		} else if (e.getID() == ItemChangedEvent.ACTION_POSITION_VONNNACHNMINUS1) {
 			if (e.getSource() == auftragPositionenTop) {
-				if (getAuftragDto().getAuftragstatusCNr().equals(
+				if (getAuftragDto().getStatusCNr().equals(
 						AuftragServiceFac.AUFTRAGSTATUS_ANGELEGT)) {
 					int iPos = auftragPositionenTop.getTable().getSelectedRow();
 
@@ -1458,7 +1761,7 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 
 		if (e.getID() == ItemChangedEvent.ACTION_POSITION_VONNNACHNPLUS1) {
 			if (e.getSource() == auftragPositionenTop) {
-				if (getAuftragDto().getAuftragstatusCNr().equals(
+				if (getAuftragDto().getStatusCNr().equals(
 						AuftragServiceFac.AUFTRAGSTATUS_ANGELEGT)) {
 					int iPos = auftragPositionenTop.getTable().getSelectedRow();
 
@@ -1589,6 +1892,22 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 			auftragTeilnehmerTop.eventYouAreSelected(false);
 			auftragTeilnehmerTop.setSelectedId(oKey);
 			auftragTeilnehmer.eventYouAreSelected(false);
+		} else if (e.getSource() == auftragZeitplanBottom) {
+			Object oKey = auftragZeitplanBottom.getKeyWhenDetailPanel();
+			auftragZeitplanTop.eventYouAreSelected(false);
+			auftragZeitplanTop.setSelectedId(oKey);
+			auftragZeitplan.eventYouAreSelected(false);
+		} else if (e.getSource() == auftragZahlungsplanBottom) {
+			Object oKey = auftragZahlungsplanBottom.getKeyWhenDetailPanel();
+			auftragZahlungsplanTop.eventYouAreSelected(false);
+			auftragZahlungsplanTop.setSelectedId(oKey);
+			auftragZahlungsplan.eventYouAreSelected(false);
+		} else if (e.getSource() == auftragZahlungsplanmeilensteinBottom) {
+			Object oKey = auftragZahlungsplanmeilensteinBottom
+					.getKeyWhenDetailPanel();
+			auftragZahlungsplanmeilensteinTop.eventYouAreSelected(false);
+			auftragZahlungsplanmeilensteinTop.setSelectedId(oKey);
+			auftragZahlungsplanmeilenstein.eventYouAreSelected(false);
 		} else if (e.getSource() == auftragSichtRahmenBottom) {
 			auftragSichtRahmen.eventYouAreSelected(false);
 
@@ -1650,9 +1969,11 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 					.getIdSelected();
 
 			if (iIdAuftragBasis != null) {
-				Integer auftragIId = DelegateFactory.getInstance()
+				Integer auftragIId = DelegateFactory
+						.getInstance()
 						.getAuftragDelegate()
-						.erzeugeAuftragAusAuftrag(iIdAuftragBasis);
+						.erzeugeAuftragAusAuftrag(iIdAuftragBasis,
+								getInternalFrame());
 
 				initializeDtos(auftragIId); // befuellt den Auftrag und den
 				// Kunden
@@ -1696,9 +2017,54 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 						.getInstance()
 						.getAngebotDelegate()
 						.erzeugeAuftragAusAngebot(iIdAngebotBasis,
-								bMitZeitDaten);
+								bMitZeitDaten, false, getInternalFrame());
 
 				// MB 080.05.06 IMS 1964
+				auftragKopfdaten.setKeyWhenDetailPanel(auftragIId);
+
+				initializeDtos(auftragIId); // befuellt den Auftrag und den
+				// Kunden
+				getInternalFrame().setKeyWasForLockMe(auftragIId + "");
+				auftragAuswahl.setSelectedId(auftragIId);
+
+				// wenn es bisher keinen Auftrag gegeben hat
+				if (auftragAuswahl.getSelectedId() == null) {
+					getInternalFrame().enableAllOberePanelsExceptMe(this,
+							IDX_PANEL_AUFTRAGAUSWAHL, false);
+				}
+
+				setSelectedComponent(refreshAuftragKopfdaten()); // auf die
+				// Kopfdaten
+				// wechseln
+			}
+		} else if (e.getSource() == panelQueryFLRAngebotauswahlFuerRahmenauftrag) {
+			Integer iIdAngebotBasis = (Integer) ((ISourceEvent) e.getSource())
+					.getIdSelected();
+
+			if (iIdAngebotBasis != null) {
+
+				boolean bMitZeitDaten = false;
+
+				boolean bZeitdatenVorhanden = DelegateFactory
+						.getInstance()
+						.getZeiterfassungDelegate()
+						.sindBelegzeitenVorhanden(LocaleFac.BELEGART_ANGEBOT,
+								iIdAngebotBasis);
+
+				if (bZeitdatenVorhanden == true) {
+					bMitZeitDaten = DialogFactory
+							.showModalJaNeinDialog(
+									getInternalFrame(),
+									LPMain.getTextRespectUISPr("auft.hint.zeitdatenvonangebot")
+											+ "?", LPMain
+											.getTextRespectUISPr("lp.frage"));
+				}
+
+				Integer auftragIId = DelegateFactory
+						.getInstance()
+						.getAngebotDelegate()
+						.erzeugeAuftragAusAngebot(iIdAngebotBasis,
+								bMitZeitDaten, true, getInternalFrame());
 				auftragKopfdaten.setKeyWhenDetailPanel(auftragIId);
 
 				initializeDtos(auftragIId); // befuellt den Auftrag und den
@@ -1773,6 +2139,27 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 
 			// im QP die Buttons in den Zustand nolocking/save setzen.
 			auftragTeilnehmerTop.updateButtons();
+		} else if (e.getSource() == auftragZeitplanTop) {
+			Object key = ((ISourceEvent) e.getSource()).getIdSelected();
+			auftragZeitplanBottom.setKeyWhenDetailPanel(key);
+			auftragZeitplanBottom.eventYouAreSelected(false);
+
+			// im QP die Buttons in den Zustand nolocking/save setzen.
+			auftragZeitplanTop.updateButtons();
+		} else if (e.getSource() == auftragZahlungsplanTop) {
+			Object key = ((ISourceEvent) e.getSource()).getIdSelected();
+			auftragZahlungsplanBottom.setKeyWhenDetailPanel(key);
+			auftragZahlungsplanBottom.eventYouAreSelected(false);
+
+			// im QP die Buttons in den Zustand nolocking/save setzen.
+			auftragZahlungsplanTop.updateButtons();
+		} else if (e.getSource() == auftragZahlungsplanmeilensteinTop) {
+			Object key = ((ISourceEvent) e.getSource()).getIdSelected();
+			auftragZahlungsplanmeilensteinBottom.setKeyWhenDetailPanel(key);
+			auftragZahlungsplanmeilensteinBottom.eventYouAreSelected(false);
+
+			// im QP die Buttons in den Zustand nolocking/save setzen.
+			auftragZahlungsplanmeilensteinTop.updateButtons();
 		} else if (e.getSource() == sichtAuftragAufAndereBelegartenTop) {
 			Object key = ((ISourceEvent) e.getSource()).getIdSelected(); // key
 			// der
@@ -1807,7 +2194,7 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 	protected void initDtos() throws Throwable {
 		initializeDtos(auftragDto.getIId());
 	}
-	
+
 	public void initializeDtos(Integer iIdAuftragI) throws Throwable {
 		if (iIdAuftragI != null) {
 			auftragDto = DelegateFactory.getInstance().getAuftragDelegate()
@@ -1939,6 +2326,12 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 							LPMain.getTextRespectUISPr("auftrag.positionen.schnelleingabe"),
 							BUTTON_SCHNELLERFASSUNG_AUFTRAGPOSITIONEN,
 							RechteFac.RECHT_AUFT_AUFTRAG_CUD);
+
+			auftragPositionenTop.createAndSaveAndShowButton(
+					"/com/lp/client/res/calculator16x16.png",
+					LPMain.getTextRespectUISPr("auft.preise.neuberechnen"),
+					ACTION_SPECIAL_PREISE_NEU_KALKULIEREN,
+					RechteFac.RECHT_AUFT_AUFTRAG_CUD);
 
 			auftragPositionen = new PanelSplit(getInternalFrame(),
 					auftragPositionenBottom, auftragPositionenTop, 160);
@@ -2127,6 +2520,96 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 		auftragTeilnehmerTop.setDefaultFilter(filtersTeilnehmer);
 
 		return auftragTeilnehmer;
+	}
+
+	private PanelSplit refreshZeitplan() throws Throwable {
+
+		FilterKriterium[] filtersTeilnehmer = AuftragFilterFactory
+				.getInstance().createFKFlrauftragiid(auftragDto.getIId());
+
+		if (auftragZeitplan == null) {
+
+			auftragZeitplanBottom = new PanelZeitplan(getInternalFrame(),
+					LPMain.getTextRespectUISPr("auft.zeitplan"), null); // eventuell
+
+			String[] aWhichButtonIUse = { PanelBasis.ACTION_NEW };
+
+			auftragZeitplanTop = new PanelQuery(null, filtersTeilnehmer,
+					QueryParameters.UC_ID_ZEITPLAN, aWhichButtonIUse,
+					getInternalFrame(),
+					LPMain.getTextRespectUISPr("auft.zeitplan"), true);
+
+			auftragZeitplan = new PanelSplit(getInternalFrame(),
+					auftragZeitplanBottom, auftragZeitplanTop, 200);
+
+			setComponentAt(IDX_PANEL_ZEITPLAN, auftragZeitplan);
+		}
+
+		auftragZeitplanTop.setDefaultFilter(filtersTeilnehmer);
+
+		return auftragZeitplan;
+	}
+
+	private PanelSplit refreshZahlungsplan() throws Throwable {
+		FilterKriterium[] filtersTeilnehmer = AuftragFilterFactory
+				.getInstance().createFKFlrauftragiid(auftragDto.getIId());
+
+		if (auftragZahlungsplan == null) {
+
+			auftragZahlungsplanBottom = new PanelZahlungsplan(
+					getInternalFrame(),
+					LPMain.getTextRespectUISPr("auft.zahlungsplan"), null); // eventuell
+
+			String[] aWhichButtonIUse = { PanelBasis.ACTION_NEW };
+
+			auftragZahlungsplanTop = new PanelQuery(null, filtersTeilnehmer,
+					QueryParameters.UC_ID_ZAHLUNGSPLAN, aWhichButtonIUse,
+					getInternalFrame(),
+					LPMain.getTextRespectUISPr("auft.zahlungsplan"), true);
+
+			auftragZahlungsplan = new PanelSplit(getInternalFrame(),
+					auftragZahlungsplanBottom, auftragZahlungsplanTop, 200);
+
+			setComponentAt(IDX_PANEL_ZAHLUNGSPLAN, auftragZahlungsplan);
+		}
+
+		auftragZahlungsplanTop.setDefaultFilter(filtersTeilnehmer);
+
+		return auftragZahlungsplan;
+	}
+
+	private PanelSplit refreshZahlungsplanmeilenstein() throws Throwable {
+		FilterKriterium[] filtersTeilnehmer = AuftragFilterFactory
+				.getInstance().createFKZahlungsplanmeilenstein(
+						(Integer) auftragZahlungsplanTop.getSelectedId());
+
+		if (auftragZahlungsplanmeilenstein == null) {
+
+			auftragZahlungsplanmeilensteinBottom = new PanelZahlungsplanmeilenstein(
+					getInternalFrame(),
+					LPMain.getTextRespectUISPr("auft.zahlungsplanmeilenstein"),
+					null); // eventuell
+
+			String[] aWhichButtonIUse = { PanelBasis.ACTION_NEW };
+
+			auftragZahlungsplanmeilensteinTop = new PanelQuery(null,
+					filtersTeilnehmer,
+					QueryParameters.UC_ID_ZAHLUNGSPLANMEILENSTEIN,
+					aWhichButtonIUse, getInternalFrame(),
+					LPMain.getTextRespectUISPr("auft.zahlungsplanmeilenstein"),
+					true);
+
+			auftragZahlungsplanmeilenstein = new PanelSplit(getInternalFrame(),
+					auftragZahlungsplanmeilensteinBottom,
+					auftragZahlungsplanmeilensteinTop, 200);
+
+			setComponentAt(IDX_PANEL_ZAHLUNGSPLANMEILENSTEIN,
+					auftragZahlungsplanmeilenstein);
+		}
+
+		auftragZahlungsplanmeilensteinTop.setDefaultFilter(filtersTeilnehmer);
+
+		return auftragZahlungsplanmeilenstein;
 	}
 
 	private void refreshEigenschaften(Integer key) throws Throwable {
@@ -2327,7 +2810,7 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 		} else if (e.getActionCommand()
 				.equals(MENU_ACTION_INFO_NACHKALKULATION)) {
 			if (auftragDto != null && auftragDto.getIId() != null) {
-				if (auftragDto.getAuftragstatusCNr().equals(
+				if (auftragDto.getStatusCNr().equals(
 						AuftragServiceFac.AUFTRAGSTATUS_STORNIERT)) {
 					showStatusMessage("lp.warning",
 							"auft.storno.wurdestorniert");
@@ -2342,10 +2825,10 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 
 					// Statuswechsel 'Offen' -> 'Erledigt' : Ausgeloest durch
 					// Menue
-					if (auftragDto.getAuftragstatusCNr().equals(
+					if (auftragDto.getStatusCNr().equals(
 							AuftragServiceFac.AUFTRAGSTATUS_OFFEN)
 							|| auftragDto
-									.getAuftragstatusCNr()
+									.getStatusCNr()
 									.equals(AuftragServiceFac.AUFTRAGSTATUS_TEILERLEDIGT)) {
 						if (DialogFactory
 								.showMeldung(
@@ -2367,10 +2850,7 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 
 		else if (e.getActionCommand().equals(
 				MENUE_ACTION_BEARBEITEN_TERMINVERSCHIEBEN)) {
-
-			initializeDtos(iIdAuftrag);
-			
-			if (auftragDto != null) {
+			if (auftragDto != null && auftragDto.getIId() != null) {
 				refreshAuftragKopfdaten();
 				getPanelKopfdaten().eventActionLock(null);
 				DialogTerminverschiebenAuftrag d = new DialogTerminverschiebenAuftrag(
@@ -2386,7 +2866,7 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 			// nur, wenn auch eine Bestellung ausgewaehlt ist.
 			if (auftragDto != null && auftragDto.getIId() != null) {
 				// Statuswechsel 'Erledigt' -> 'Offen' : Ausgeloest durch Menue
-				if (auftragDto.getAuftragstatusCNr().equals(
+				if (auftragDto.getStatusCNr().equals(
 						AuftragServiceFac.AUFTRAGPOSITIONSTATUS_ERLEDIGT)) {
 					if (DialogFactory
 							.showMeldung(
@@ -2404,11 +2884,14 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 
 					mf.setLocale(LPMain.getTheClient().getLocUi());
 
-					Object pattern[] = { auftragDto.getAuftragstatusCNr() };
+					Object pattern[] = { auftragDto.getStatusCNr().trim() };
 
-					DialogFactory.showModalDialog(
-							LPMain.getTextRespectUISPr("lp.warning"),
-							mf.format(pattern));
+					DialogFactory
+							.showModalDialog(
+									LPMain.getTextRespectUISPr("lp.warning"),
+									mf.format(pattern)
+											+ ". "
+											+ LPMain.getTextRespectUISPr("auf.erledigung.aufheben.hinweis"));
 				}
 			}
 		} else if (e.getActionCommand().equals(
@@ -2486,15 +2969,6 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 									LPMain.getTextRespectUISPr("auft.print.listeoffenedetails")),
 							getKundeAuftragDto().getPartnerDto(),
 							getAuftragDto().getAnsprechparnterIId(), false);
-		} else if (e.getActionCommand().equals(
-				MENU_ACTION_JOURNAL_TEILLIEFERBAR)) {
-			getInternalFrame()
-					.showReportKriterien(
-							new ReportAuftragTeillieferbar(
-									getInternalFrame(),
-									LPMain.getTextRespectUISPr("auft.print.teilliferbar")),
-							getKundeAuftragDto().getPartnerDto(),
-							getAuftragDto().getAnsprechparnterIId(), false);
 		} else if (e.getActionCommand().equals(MENU_ACTION_JOURNAL_UEBERSICHT)) {
 			// wenn man diese Auswahl zuliesse, waeren danach die Panels
 			// verfuegbar
@@ -2557,6 +3031,21 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 					new ReportErfuellungsjournal(getInternalFrameAuftrag(),
 							add2Title));
 		} else if (e.getActionCommand().equals(
+				MENUE_ACTION_INFO_AUFTRAGSUEBERSICHT)) {
+
+			String add2Title = LPMain
+					.getTextRespectUISPr("auft.auftrag.info.auftragsuebersicht");
+			getInternalFrame().showReportKriterien(
+					new ReportAuftragsuebersicht(getInternalFrameAuftrag(),
+							add2Title));
+		} else if (e.getActionCommand().equals(MENUE_ACTION_INFO_PROJEKTBLATT)) {
+
+			String add2Title = LPMain
+					.getTextRespectUISPr("auft.report.projektblatt");
+			getInternalFrame().showReportKriterien(
+					new ReportProjektblatt(getInternalFrameAuftrag(),
+							getAuftragDto().getIId(), add2Title));
+		} else if (e.getActionCommand().equals(
 				MENUE_ACTION_INFO_RAHMENUEBERSICHT)) {
 
 			String add2Title = LPMain
@@ -2611,9 +3100,69 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 		} else if (e.getActionCommand().equals(
 				MENU_ACTION_DATEI_VERSANDWEGBESTAETIGUNG)) {
 			printAuftragbestaetigungClevercure();
+		} else if (e.getActionCommand().equals(
+				MENU_BEARBEITEN_HANDARTIKEL_UMANDELN)) {
+			if (auftragPositionenTop != null
+					&& auftragPositionenTop.getSelectedId() != null) {
+
+				AuftragpositionDto posDto = DelegateFactory
+						.getInstance()
+						.getAuftragpositionDelegate()
+						.auftragpositionFindByPrimaryKey(
+								(Integer) auftragPositionenTop.getSelectedId());
+
+				if (posDto.getArtikelIId() != null
+						&& auftragDto != null
+						&& posDto.getAuftragpositionstatusCNr().equals(
+								AuftragServiceFac.AUFTRAGPOSITIONSTATUS_OFFEN)) {
+
+					ArtikelDto aDto = DelegateFactory.getInstance()
+							.getArtikelDelegate()
+							.artikelFindByPrimaryKey(posDto.getArtikelIId());
+					if (aDto.getArtikelartCNr().equals(
+							ArtikelFac.ARTIKELART_HANDARTIKEL)) {
+						DialogNeueArtikelnummer d = new DialogNeueArtikelnummer(
+								getInternalFrame());
+						LPMain.getInstance().getDesktop()
+								.platziereDialogInDerMitteDesFensters(d);
+						d.setVisible(true);
+						if (d.getArtikelnummerNeu() != null) {
+
+							DelegateFactory
+									.getInstance()
+									.getArtikelDelegate()
+									.wandleHandeingabeInArtikelUm(
+											posDto.getIId(),
+											ArtikelFac.HANDARTIKEL_UMWANDELN_AUFTRAG,
+											d.getArtikelnummerNeu());
+						}
+
+					} else {
+						DialogFactory
+								.showModalDialog(
+										LPMain.getInstance()
+												.getTextRespectUISPr("lp.info"),
+										LPMain.getInstance()
+												.getTextRespectUISPr(
+														"auftrag.bearbeiten.handartikelumwandeln.error"));
+					}
+
+				} else {
+					DialogFactory
+							.showModalDialog(
+									LPMain.getInstance().getTextRespectUISPr(
+											"lp.info"),
+									LPMain.getInstance()
+											.getTextRespectUISPr(
+													"auftrag.bearbeiten.handartikelumwandeln.error"));
+				}
+				auftragPositionen.eventYouAreSelected(false);
+				auftragPositionenTop.setSelectedId(posDto.getIId());
+			}
+
 		}
 	}
-	
+
 	public void eventActionUnlock() throws Throwable {
 		getPanelKopfdaten().eventActionUnlock(null);
 		refreshAuftragKopfdaten().eventActionRefresh(null, false);
@@ -2692,14 +3241,14 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 		if (pruefeAktuellenAuftrag()) {
 
 			// im Status 'Angelegt' duerfen die Kopfdaten geaendert werden
-			if (auftragDto.getAuftragstatusCNr().equals(
+			if (auftragDto.getStatusCNr().equals(
 					AuftragServiceFac.AUFTRAGSTATUS_ANGELEGT)) {
 				bIstAktualisierenErlaubt = true;
-			} else if (auftragDto.getAuftragstatusCNr().equals(
+			} else if (auftragDto.getStatusCNr().equals(
 					AuftragServiceFac.AUFTRAGSTATUS_OFFEN)) {
 				// im Status 'Offen' duerfen die Kopfdaten geaendert werden
 				bIstAktualisierenErlaubt = true;
-			} else if (auftragDto.getAuftragstatusCNr().equals(
+			} else if (auftragDto.getStatusCNr().equals(
 					AuftragServiceFac.AUFTRAGSTATUS_STORNIERT)) {
 				if (DialogFactory.showMeldung(LPMain
 						.getTextRespectUISPr("auft.auftragstatus.offensetzen"),
@@ -2723,7 +3272,7 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 							.auftragFindByPrimaryKey(auftragDto.getIId()));
 					auftragKopfdaten.eventYouAreSelected(false);
 				}
-			} else if (auftragDto.getAuftragstatusCNr().equals(
+			} else if (auftragDto.getStatusCNr().equals(
 					AuftragServiceFac.AUFTRAGSTATUS_TEILERLEDIGT)) {
 				if (DialogFactory.showMeldung(LPMain
 						.getTextRespectUISPr("auft.auftragstatus.offensetzen"),
@@ -2746,7 +3295,7 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 							.auftragFindByPrimaryKey(auftragDto.getIId()));
 					auftragKopfdaten.eventYouAreSelected(false);
 				}
-			} else if (auftragDto.getAuftragstatusCNr().equals(
+			} else if (auftragDto.getStatusCNr().equals(
 					AuftragServiceFac.AUFTRAGSTATUS_ERLEDIGT)) {
 				if (DialogFactory
 						.showMeldung(
@@ -2776,10 +3325,10 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 		boolean bIstAenderungErlaubtO = false;
 
 		if (pruefeAktuellenAuftrag()) {
-			if (auftragDto.getAuftragstatusCNr().equals(
+			if (auftragDto.getStatusCNr().equals(
 					AuftragServiceFac.AUFTRAGSTATUS_ANGELEGT)) {
 				bIstAenderungErlaubtO = true;
-			} else if (auftragDto.getAuftragstatusCNr().equals(
+			} else if (auftragDto.getStatusCNr().equals(
 					AuftragServiceFac.AUFTRAGSTATUS_OFFEN)) {
 				boolean bZuruecknehmen = (DialogFactory.showMeldung(LPMain
 						.getTextRespectUISPr("auft.hint.offennachangelegt"),
@@ -2793,15 +3342,17 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 									AuftragServiceFac.AUFTRAGSTATUS_ANGELEGT);
 				}
 				return bZuruecknehmen;
-			} else if (auftragDto.getAuftragstatusCNr().equals(
+			} else if (auftragDto.getStatusCNr().equals(
 					AuftragServiceFac.AUFTRAGSTATUS_TEILERLEDIGT)) {
-				if (AuftragServiceFac.AUFTRAGART_RAHMEN.equals(auftragDto
-						.getAuftragartCNr())) {
-					bIstAenderungErlaubtO = true;
-				} else {
-					showStatusMessage("lp.warning",
-							"auft.warning.auftragkannnichtgeaendertwerden");
-				}
+				/*
+				 * SP2553 if
+				 * (AuftragServiceFac.AUFTRAGART_RAHMEN.equals(auftragDto
+				 * .getAuftragartCNr())) { bIstAenderungErlaubtO = true; } else
+				 * {
+				 */
+				showStatusMessage("lp.warning",
+						"auft.warning.auftragkannnichtgeaendertwerden");
+				// }
 			} else {
 				showStatusMessage("lp.warning",
 						"auft.warning.auftragkannnichtgeaendertwerden");
@@ -2890,7 +3441,8 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 								.checkPositionFormat(auftragDto.getIId());
 						if (ok) {
 							getInternalFrame().showReportKriterien(
-									new ReportAuftrag(getInternalFrame(), getAktuellesPanel(),
+									new ReportAuftrag(getInternalFrame(),
+											getAktuellesPanel(),
 											getAuftragDto(), getTitleDruck()),
 									getKundeAuftragDto().getPartnerDto(),
 									getAuftragDto().getAnsprechparnterIId(),
@@ -2917,7 +3469,7 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 	 * @throws Throwable
 	 *             Ausnahme
 	 */
-	private boolean pruefeKonditionen() throws Throwable {
+	protected boolean pruefeKonditionen() throws Throwable {
 		boolean bErfasst = true;
 
 		ParametermandantDto parameter = DelegateFactory
@@ -3061,6 +3613,13 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 			jmBearbeiten.add(menuItemTerminverschieben);
 		}
 
+		JMenuItem menuItemHandartikelUmwandeln = new JMenuItem(
+				LPMain.getTextRespectUISPr("angebot.bearbeiten.handartikelumwandeln"));
+		menuItemHandartikelUmwandeln.addActionListener(this);
+		menuItemHandartikelUmwandeln
+				.setActionCommand(MENU_BEARBEITEN_HANDARTIKEL_UMANDELN);
+		jmBearbeiten.add(menuItemHandartikelUmwandeln);
+
 		jmBearbeiten.add(new JSeparator(), 0);
 
 		JMenuItem menuItemBearbeitenExternerKommentar = new JMenuItem(
@@ -3087,7 +3646,7 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 		jmBearbeiten.add(menuItemBearbeitenBegruendung, 0);
 
 		if (bSchreibrecht) {
-			//PJ18288
+			// PJ18288
 			ParametermandantDto parameter = DelegateFactory
 					.getInstance()
 					.getParameterDelegate()
@@ -3270,6 +3829,26 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 		menuItemRahmenuebersicht
 				.setActionCommand(MENUE_ACTION_INFO_RAHMENUEBERSICHT);
 		menuInfo.add(menuItemRahmenuebersicht);
+		// 18766
+		JMenuItem menuItemAuftragsubersicht = new JMenuItem(
+				LPMain.getTextRespectUISPr("auft.auftrag.info.auftragsuebersicht"));
+		menuItemAuftragsubersicht.addActionListener(this);
+		menuItemAuftragsubersicht
+				.setActionCommand(MENUE_ACTION_INFO_AUFTRAGSUEBERSICHT);
+		menuInfo.add(menuItemAuftragsubersicht);
+
+		if (LPMain
+				.getInstance()
+				.getDesktop()
+				.darfAnwenderAufZusatzfunktionZugreifen(
+						MandantFac.ZUSATZFUNKTION_ERWEITERTE_PROJEKTSTEUERUNG)) {
+			JMenuItem menuItemProjektblatt = new JMenuItem(
+					LPMain.getTextRespectUISPr("auft.report.projektblatt"));
+			menuItemProjektblatt.addActionListener(this);
+			menuItemProjektblatt
+					.setActionCommand(MENUE_ACTION_INFO_PROJEKTBLATT);
+			menuInfo.add(menuItemProjektblatt);
+		}
 
 		menuBar.addJMenuItem(menuInfo);
 
@@ -3296,27 +3875,18 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 	}
 
 	public String getAuftragStatus() throws Throwable {
-		StatusDto statusDto = DelegateFactory.getInstance().getLocaleDelegate()
-				.statusFindByPrimaryKey(getAuftragDto().getAuftragstatusCNr());
-
-		String cNrStatus = statusDto.getCNr();
-
-		if (statusDto.getStatussprDto() != null) {
-			if (statusDto.getStatussprDto().getCBez() != null)
-				cNrStatus = statusDto.getStatussprDto().getCBez();
-		}
-
-		return cNrStatus;
+		return DelegateFactory.getInstance().getLocaleDelegate()
+				.getStatusCBez(getAuftragDto().getStatusCNr());
 	}
 
 	public boolean getLockStateEnableRefreshOnly() {
 		boolean bLockStateEnableRefreshOnly = false;
 
-		if (getAuftragDto().getAuftragstatusCNr().equals(
+		if (getAuftragDto().getStatusCNr().equals(
 				AuftragServiceFac.AUFTRAGSTATUS_TEILERLEDIGT)
-				|| getAuftragDto().getAuftragstatusCNr().equals(
+				|| getAuftragDto().getStatusCNr().equals(
 						AuftragServiceFac.AUFTRAGSTATUS_ERLEDIGT)
-				|| getAuftragDto().getAuftragstatusCNr().equals(
+				|| getAuftragDto().getStatusCNr().equals(
 						AuftragServiceFac.AUFTRAGSTATUS_STORNIERT)) {
 			bLockStateEnableRefreshOnly = true;
 		}
@@ -3385,71 +3955,56 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 		// geschalten
 		if (auftragAuswahl.getSelectedId() != null) {
 			for (int i = 0; i < aPanelsEnabled.length; i++) {
-				switch (i) {
-				case IDX_PANEL_AUFTRAGAUSWAHL:
+
+				if (i == IDX_PANEL_AUFTRAGAUSWAHL) {
 					setEnabledAt(IDX_PANEL_AUFTRAGAUSWAHL,
 							aPanelsEnabled[IDX_PANEL_AUFTRAGAUSWAHL]);
-					break;
-
-				case IDX_PANEL_AUFTRAGKOPFDATEN:
+				} else if (i == IDX_PANEL_AUFTRAGKOPFDATEN) {
 					setEnabledAt(IDX_PANEL_AUFTRAGKOPFDATEN,
 							aPanelsEnabled[IDX_PANEL_AUFTRAGKOPFDATEN]);
-					break;
-
-				case IDX_PANEL_AUFTRAGPOSITIONEN:
+				} else if (i == IDX_PANEL_AUFTRAGPOSITIONEN) {
 					setEnabledAt(IDX_PANEL_AUFTRAGPOSITIONEN,
 							aPanelsEnabled[IDX_PANEL_AUFTRAGPOSITIONEN]);
-					break;
-
-				case IDX_PANEL_AUFTRAGKONDITIONEN:
+				} else if (i == IDX_PANEL_AUFTRAGKONDITIONEN) {
 					setEnabledAt(IDX_PANEL_AUFTRAGKONDITIONEN,
 							aPanelsEnabled[IDX_PANEL_AUFTRAGKONDITIONEN]);
-					break;
-
-				case IDX_PANEL_AUFTRAGTEILNEHMER:
+				} else if (i == IDX_PANEL_AUFTRAGTEILNEHMER) {
 					setEnabledAt(IDX_PANEL_AUFTRAGTEILNEHMER,
 							aPanelsEnabled[IDX_PANEL_AUFTRAGTEILNEHMER]);
-					break;
-
-				case IDX_PANEL_SICHTLIEFERSTATUS:
+				} else if (i == IDX_PANEL_SICHTLIEFERSTATUS) {
 					setEnabledAt(IDX_PANEL_SICHTLIEFERSTATUS,
 							aPanelsEnabled[IDX_PANEL_SICHTLIEFERSTATUS]);
-					break;
-
-				case IDX_PANEL_SICHTAUFTRAGAUFANDEREBELEGARTEN:
+				} else if (i == IDX_PANEL_SICHTAUFTRAGAUFANDEREBELEGARTEN) {
 					setEnabledAt(
 							IDX_PANEL_SICHTAUFTRAGAUFANDEREBELEGARTEN,
 							aPanelsEnabled[IDX_PANEL_SICHTAUFTRAGAUFANDEREBELEGARTEN]);
-					break;
-
-				case IDX_PANEL_SICHTRAHMEN:
+				} else if (i == IDX_PANEL_SICHTRAHMEN) {
 					setEnabledAt(IDX_PANEL_SICHTRAHMEN,
 							aPanelsEnabled[IDX_PANEL_SICHTRAHMEN]);
-					break;
-
-				case IDX_PANEL_AUFTRAGUEBERSICHT:
+				} else if (i == IDX_PANEL_AUFTRAGUEBERSICHT) {
 					setEnabledAt(IDX_PANEL_AUFTRAGUEBERSICHT,
 							aPanelsEnabled[IDX_PANEL_AUFTRAGUEBERSICHT]);
-					break;
-
-				case IDX_PANEL_AUFTRAGZEITEN:
+				} else if (i == IDX_PANEL_AUFTRAGZEITEN) {
 					setEnabledAt(IDX_PANEL_AUFTRAGZEITEN,
 							aPanelsEnabled[IDX_PANEL_AUFTRAGZEITEN]);
-					break;
-
-				case IDX_PANEL_LSRE:
+				} else if (i == IDX_PANEL_LSRE) {
 					setEnabledAt(IDX_PANEL_LSRE, aPanelsEnabled[IDX_PANEL_LSRE]);
-					break;
-
-				case IDX_PANEL_LOSE:
+				} else if (i == IDX_PANEL_LOSE) {
 					setEnabledAt(IDX_PANEL_LOSE, aPanelsEnabled[IDX_PANEL_LOSE]);
-					break;
-
-				case IDX_PANEL_AUFTRAGEIGENSCHAFTEN:
+				} else if (i == IDX_PANEL_AUFTRAGEIGENSCHAFTEN) {
 					setEnabledAt(IDX_PANEL_AUFTRAGEIGENSCHAFTEN,
 							aPanelsEnabled[IDX_PANEL_AUFTRAGEIGENSCHAFTEN]);
-					break;
+				} else if (i == IDX_PANEL_ZEITPLAN) {
+					setEnabledAt(IDX_PANEL_ZEITPLAN,
+							aPanelsEnabled[IDX_PANEL_ZEITPLAN]);
+				} else if (i == IDX_PANEL_ZAHLUNGSPLAN) {
+					setEnabledAt(IDX_PANEL_ZAHLUNGSPLAN,
+							aPanelsEnabled[IDX_PANEL_ZAHLUNGSPLAN]);
+				} else if (i == IDX_PANEL_ZAHLUNGSPLANMEILENSTEIN) {
+					setEnabledAt(IDX_PANEL_ZAHLUNGSPLANMEILENSTEIN,
+							aPanelsEnabled[IDX_PANEL_ZAHLUNGSPLANMEILENSTEIN]);
 				}
+
 			}
 		}
 	}
@@ -3572,7 +4127,7 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 	 * 
 	 * @return Object
 	 */
-	public Object getInseratDto() {
+	public Object getDto() {
 		return auftragDto;
 	}
 
@@ -3604,8 +4159,8 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 		if (auftragpositionDto.getIId() == null) {
 			if (auftragpositionDto.getPositionsartCNr().equals(
 					LocaleFac.POSITIONSART_IDENT)
-					|| auftragpositionDto
-							.equals(LocaleFac.POSITIONSART_HANDEINGABE)) {
+					|| auftragpositionDto.getPositionsartCNr().equals(
+							LocaleFac.POSITIONSART_HANDEINGABE)) {
 				if (getAuftragDto().getAuftragartCNr().equals(
 						AuftragServiceFac.AUFTRAGART_ABRUF)) {
 					// einmalige Warnung aussprechen
@@ -3865,6 +4420,10 @@ public class TabbedPaneAuftrag extends TabbedPane implements ICopyPaste {
 							apo.setNEinzelpreis(vkDto.einzelpreis);
 							apo.setFRabattsatz(vkDto.rabattsatz);
 							apo.setNMaterialzuschlag(vkDto.bdMaterialzuschlag);
+
+							apo.setNMwstbetrag(vkDto.mwstsumme);
+							apo.setNRabattbetrag(vkDto.rabattsumme);
+
 							apo.setFZusatzrabattsatz(vkDto
 									.getDdZusatzrabattsatz());
 							apo.setBNettopreisuebersteuert(Helper

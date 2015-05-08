@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -32,7 +32,6 @@
  ******************************************************************************/
 package com.lp.client.personal;
 
-
 import java.awt.event.ActionEvent;
 
 import javax.swing.event.ChangeEvent;
@@ -49,446 +48,428 @@ import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.pc.LPMain;
 import com.lp.client.system.SystemFilterFactory;
 import com.lp.server.personal.service.ZeiterfassungFac;
+import com.lp.server.system.service.ParameterFac;
+import com.lp.server.system.service.ParametermandantDto;
 import com.lp.server.util.fastlanereader.service.query.FilterKriterium;
 import com.lp.server.util.fastlanereader.service.query.QueryParameters;
 
 @SuppressWarnings("static-access")
-public class TabbedPaneZeitmodell
-    extends TabbedPane
-{
-  /**
+public class TabbedPaneZeitmodell extends TabbedPane {
+	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-private PanelQuery panelQueryZeitmodell = null;
-  private PanelBasis panelDetailZeitmodelll = null;
+	private PanelQuery panelQueryZeitmodell = null;
+	private PanelBasis panelDetailZeitmodelll = null;
 
-  private PanelQuery panelQueryZeitmodelltage = null;
-  private PanelBasis panelBottomZeitmodelltage = null;
-  private PanelSplit panelSplitZeitmodelltage = null;
+	private PanelQuery panelQueryZeitmodelltage = null;
+	private PanelBasis panelBottomZeitmodelltage = null;
+	private PanelSplit panelSplitZeitmodelltage = null;
 
-  private PanelQuery panelQueryZeitmodelltagpause = null;
-  private PanelZeitmodelltagpause panelBottomZeitmodelltagpause = null;
-  private PanelSplit panelSplitZeitmodelltagpause = null;
+	private PanelQuery panelQueryZeitmodelltagpause = null;
+	private PanelZeitmodelltagpause panelBottomZeitmodelltagpause = null;
+	private PanelSplit panelSplitZeitmodelltagpause = null;
 
-  private final static int IDX_PANEL_AUSWAHL = 0;
-  private final static int IDX_PANEL_DETAIL = 1;
-  private final static int IDX_PANEL_TAGE = 2;
-  private final static int IDX_PANEL_PAUSEN = 3;
+	private final static int IDX_PANEL_AUSWAHL = 0;
+	private final static int IDX_PANEL_DETAIL = 1;
+	private final static int IDX_PANEL_TAGE = 2;
+	private final static int IDX_PANEL_PAUSEN = 3;
 
-  private WrapperMenuBar wrapperMenuBar = null;
+	private WrapperMenuBar wrapperMenuBar = null;
 
-  public TabbedPaneZeitmodell(InternalFrame internalFrameI)
-      throws Throwable {
-    super(internalFrameI,
-          LPMain.getInstance().getTextRespectUISPr("pers.title.tab.zeitmodell"));
+	public TabbedPaneZeitmodell(InternalFrame internalFrameI) throws Throwable {
+		super(internalFrameI, LPMain.getInstance().getTextRespectUISPr(
+				"pers.title.tab.zeitmodell"));
 
-    jbInit();
-    initComponents();
-  }
+		jbInit();
+		initComponents();
+	}
 
+	public PanelQuery getPanelQueryZeitmodell() {
+		return panelQueryZeitmodell;
+	}
 
-  public PanelQuery getPanelQueryZeitmodell() {
-    return panelQueryZeitmodell;
-  }
+	private void jbInit() throws Throwable {
 
+		// Zeitmodellauswahlliste
 
-  private void jbInit()
-      throws Throwable {
-
-    //Zeitmodellauswahlliste
-
-	  FilterKriterium[] kriterien = new FilterKriterium[1];
+		FilterKriterium[] kriterien = new FilterKriterium[1];
 		kriterien[0] = new FilterKriterium("zeitmodell.mandant_c_nr", true, "'"
 				+ LPMain.getInstance().getTheClient().getMandant() + "'",
 				FilterKriterium.OPERATOR_EQUAL, false);
-		
 
-    String[] aWhichButtonIUse = {
-        PanelBasis.ACTION_NEW};
-    panelQueryZeitmodell = new PanelQuery(
-        PersonalFilterFactory.getInstance().createQTZeitmodell(),
-        kriterien,
-        QueryParameters.UC_ID_ZEITMODELL,
-        aWhichButtonIUse,
-        getInternalFrame(),
-        LPMain.getInstance().getTextRespectUISPr(
-            "auft.title.panel.auswahl"), true);
+		String[] aWhichButtonIUse = { PanelBasis.ACTION_NEW };
+		panelQueryZeitmodell = new PanelQuery(PersonalFilterFactory
+				.getInstance().createQTZeitmodell(), kriterien,
+				QueryParameters.UC_ID_ZEITMODELL, aWhichButtonIUse,
+				getInternalFrame(), LPMain.getInstance().getTextRespectUISPr(
+						"auft.title.panel.auswahl"), true);
 
-    panelQueryZeitmodell.befuellePanelFilterkriterienDirektUndVersteckte(
-        PersonalFilterFactory.
-        getInstance().createFKDZeitmodellKennung(),
-        PersonalFilterFactory.getInstance().createFKDZeitmodellSpr(),
-        PersonalFilterFactory.getInstance().createFKVZeitmodell());
+		panelQueryZeitmodell.befuellePanelFilterkriterienDirektUndVersteckte(
+				PersonalFilterFactory.getInstance()
+						.createFKDZeitmodellKennung(), PersonalFilterFactory
+						.getInstance().createFKDZeitmodellSpr(),
+				PersonalFilterFactory.getInstance().createFKVZeitmodell());
 
-    addTab(LPMain.getInstance().getTextRespectUISPr(
-        "auft.title.panel.auswahl"),
-           panelQueryZeitmodell);
-    panelQueryZeitmodell.eventYouAreSelected(false);
+		addTab(LPMain.getInstance().getTextRespectUISPr(
+				"auft.title.panel.auswahl"), panelQueryZeitmodell);
+		panelQueryZeitmodell.eventYouAreSelected(false);
 
-    if ( (Integer) panelQueryZeitmodell.getSelectedId() != null) {
-      getInternalFramePersonal().setZeitmodellDto(DelegateFactory.getInstance().
-                                                  getZeiterfassungDelegate().
-                                                  zeitmodellFindByPrimaryKey( (
-          Integer)
-          panelQueryZeitmodell.getSelectedId()));
-    }
+		if ((Integer) panelQueryZeitmodell.getSelectedId() != null) {
+			getInternalFramePersonal().setZeitmodellDto(
+					DelegateFactory
+							.getInstance()
+							.getZeiterfassungDelegate()
+							.zeitmodellFindByPrimaryKey(
+									(Integer) panelQueryZeitmodell
+											.getSelectedId()));
+		}
 
-    //Zeitmodelldetail
-    panelDetailZeitmodelll = new PanelZeitmodell(
-        getInternalFrame(),
-        LPMain.getInstance().getTextRespectUISPr("lp.detail"),
-        panelQueryZeitmodell.getSelectedId());
-    addTab(
-        LPMain.getInstance().getTextRespectUISPr("lp.detail"),
-        panelDetailZeitmodelll);
+		// Zeitmodelldetail
+		panelDetailZeitmodelll = new PanelZeitmodell(getInternalFrame(), LPMain
+				.getInstance().getTextRespectUISPr("lp.detail"),
+				panelQueryZeitmodell.getSelectedId());
+		addTab(LPMain.getInstance().getTextRespectUISPr("lp.detail"),
+				panelDetailZeitmodelll);
 
+		// Zeitmodelltag
+		panelQueryZeitmodelltage = new PanelQuery(null, PersonalFilterFactory
+				.getInstance().createFKZeitmodelltag(
+						(Integer) panelQueryZeitmodell.getSelectedId()),
+				QueryParameters.UC_ID_ZEITMODELLTAG, aWhichButtonIUse,
+				getInternalFrame(), LPMain.getInstance().getTextRespectUISPr(
+						"pers.title.tab.zeitmodelltag"), true);
+		panelBottomZeitmodelltage = new PanelZeitmodelltag(getInternalFrame(),
+				LPMain.getInstance().getTextRespectUISPr(
+						"pers.title.tab.zeitmodelltag"), null);
 
-    //Zeitmodelltag
-    panelQueryZeitmodelltage = new PanelQuery(
-        null,
-        PersonalFilterFactory.getInstance().createFKZeitmodelltag( (Integer)
-        panelQueryZeitmodell.getSelectedId()),
-        QueryParameters.UC_ID_ZEITMODELLTAG,
-        aWhichButtonIUse,
-        getInternalFrame(),
-        LPMain.getInstance().getTextRespectUISPr(
-            "pers.title.tab.zeitmodelltag"), true);
-    panelBottomZeitmodelltage = new PanelZeitmodelltag(
-        getInternalFrame(),
-        LPMain.getInstance().getTextRespectUISPr(
-            "pers.title.tab.zeitmodelltag"),
-        null);
+		panelSplitZeitmodelltage = new PanelSplit(getInternalFrame(),
+				panelBottomZeitmodelltage, panelQueryZeitmodelltage, 185);
+		addTab(LPMain.getInstance().getTextRespectUISPr(
+				"pers.title.tab.zeitmodelltag"), panelSplitZeitmodelltage);
+		// Zeitmodelltagpausen
+		panelQueryZeitmodelltagpause = new PanelQuery(null,
+				PersonalFilterFactory.getInstance().createFKZeitmodelltagpause(
+						(Integer) panelQueryZeitmodelltage.getSelectedId()),
+				QueryParameters.UC_ID_ZEITMODELLTAGPAUSE, aWhichButtonIUse,
+				getInternalFrame(), LPMain.getInstance().getTextRespectUISPr(
+						"pers.title.tab.zeitmodelltagpause"), true);
+		panelBottomZeitmodelltagpause = new PanelZeitmodelltagpause(
+				getInternalFrame(), LPMain.getInstance().getTextRespectUISPr(
+						"pers.title.tab.zeitmodelltagpause"), null);
 
-    panelSplitZeitmodelltage = new PanelSplit(
-        getInternalFrame(),
-        panelBottomZeitmodelltage,
-        panelQueryZeitmodelltage,
-        185);
-    addTab(LPMain.getInstance().getTextRespectUISPr(
-        "pers.title.tab.zeitmodelltag"),
-           panelSplitZeitmodelltage);
-    //Zeitmodelltagpausen
-    panelQueryZeitmodelltagpause = new PanelQuery(
-        null,
-        PersonalFilterFactory.getInstance().createFKZeitmodelltagpause( (Integer)
-        panelQueryZeitmodelltage.getSelectedId()),
-        QueryParameters.UC_ID_ZEITMODELLTAGPAUSE,
-        aWhichButtonIUse,
-        getInternalFrame(),
-        LPMain.getInstance().getTextRespectUISPr(
-            "pers.title.tab.zeitmodelltagpause"), true);
-    panelBottomZeitmodelltagpause = new PanelZeitmodelltagpause(
-        getInternalFrame(),
-        LPMain.getInstance().getTextRespectUISPr(
-            "pers.title.tab.zeitmodelltagpause"),
-        null);
+		if (panelQueryZeitmodelltage.getSelectedId() != null) {
 
-    if (panelQueryZeitmodelltage.getSelectedId() != null) {
+			panelBottomZeitmodelltagpause.zeitmodelltagDto = DelegateFactory
+					.getInstance()
+					.getZeiterfassungDelegate()
+					.zeitmodelltagFindByPrimaryKey(
+							(Integer) panelQueryZeitmodelltage.getSelectedId());
 
-      panelBottomZeitmodelltagpause.zeitmodelltagDto = DelegateFactory.getInstance().
-          getZeiterfassungDelegate().zeitmodelltagFindByPrimaryKey( (Integer)
-          panelQueryZeitmodelltage.getSelectedId());
+		} else {
+			panelBottomZeitmodelltagpause.zeitmodelltagDto = null;
+		}
 
-    }
-    else {
-      panelBottomZeitmodelltagpause.zeitmodelltagDto = null;
-    }
+		panelSplitZeitmodelltagpause = new PanelSplit(getInternalFrame(),
+				panelBottomZeitmodelltagpause, panelQueryZeitmodelltagpause,
+				350);
 
-    panelSplitZeitmodelltagpause = new PanelSplit(
-        getInternalFrame(),
-        panelBottomZeitmodelltagpause,
-        panelQueryZeitmodelltagpause,
-        350);
-    addTab(LPMain.getInstance().getTextRespectUISPr(
-        "pers.title.tab.zeitmodelltagpause"),
-           panelSplitZeitmodelltagpause);
+		// PJ18736
+		ParametermandantDto parameter = (ParametermandantDto) DelegateFactory
+				.getInstance()
+				.getParameterDelegate()
+				.getParametermandant(
+						ParameterFac.PARAMETER_AUTOMATISCHE_PAUSEN_NUR_WARNUNG,
+						ParameterFac.KATEGORIE_PERSONAL,
+						LPMain.getTheClient().getMandant());
 
-    panelQueryZeitmodell.eventYouAreSelected(false);
+		boolean bNurWarnung = (Boolean) parameter.getCWertAsObject();
+		if (bNurWarnung == false) {
 
-    // Itemevents an MEIN Detailpanel senden kann.
-    getInternalFrame().addItemChangedListener(this);
-    refreshTitle();
-    this.addChangeListener(this);
+			addTab(LPMain.getInstance().getTextRespectUISPr(
+					"pers.title.tab.zeitmodelltagpause"),
+					panelSplitZeitmodelltagpause);
+		}
 
+		panelQueryZeitmodell.eventYouAreSelected(false);
 
-  }
+		// Itemevents an MEIN Detailpanel senden kann.
+		getInternalFrame().addItemChangedListener(this);
+		refreshTitle();
+		this.addChangeListener(this);
 
+	}
 
-  public void setKeyWasForLockMe() {
-    Object oKey = panelQueryZeitmodell.getSelectedId();
+	public void setKeyWasForLockMe() {
+		Object oKey = panelQueryZeitmodell.getSelectedId();
 
-    if (oKey != null) {
-      getInternalFrame().setKeyWasForLockMe(oKey.toString());
-    }
-    else {
-      getInternalFrame().setKeyWasForLockMe(null);
-    }
-  }
+		if (oKey != null) {
+			getInternalFrame().setKeyWasForLockMe(oKey.toString());
+		} else {
+			getInternalFrame().setKeyWasForLockMe(null);
+		}
+	}
 
+	private void refreshTitle() {
 
-  private void refreshTitle() {
+		getInternalFrame().setLpTitle(InternalFrame.TITLE_IDX_OHRWASCHLUNTEN,
+				LPMain.getInstance().getTextRespectUISPr("lp.zeitmodell"));
+		getInternalFrame().setLpTitle(InternalFrame.TITLE_IDX_OHRWASCHLOBEN,
+				((PanelBasis) this.getSelectedComponent()).getAdd2Title());
+		if (getInternalFramePersonal().getZeitmodellDto() != null) {
+			getInternalFrame().setLpTitle(InternalFrame.TITLE_IDX_AS_I_LIKE,
+					getInternalFramePersonal().getZeitmodellDto().getCNr());
+		}
 
-    getInternalFrame().setLpTitle(
-        InternalFrame.TITLE_IDX_OHRWASCHLUNTEN,
-        LPMain.getInstance().getTextRespectUISPr("lp.zeitmodell"));
-    getInternalFrame().setLpTitle(
-        InternalFrame.TITLE_IDX_OHRWASCHLOBEN,
-        ( (PanelBasis)this.getSelectedComponent()).getAdd2Title());
-    if (getInternalFramePersonal().getZeitmodellDto() != null) {
-      getInternalFrame().setLpTitle(
-          InternalFrame.TITLE_IDX_AS_I_LIKE,
-          getInternalFramePersonal().getZeitmodellDto().getCNr());
-    }
+	}
 
-  }
+	public InternalFramePersonal getInternalFramePersonal() {
+		return (InternalFramePersonal) getInternalFrame();
+	}
 
+	protected void lPActionEvent(ActionEvent e) {
+	}
 
-  public InternalFramePersonal getInternalFramePersonal() {
-    return (InternalFramePersonal) getInternalFrame();
-  }
+	public void lPEventItemChanged(ItemChangedEvent e) throws Throwable {
 
+		if (e.getID() == ItemChangedEvent.GOTO_DETAIL_PANEL) {
+			if (e.getSource() == panelQueryZeitmodell) {
+				Integer iId = (Integer) panelQueryZeitmodell.getSelectedId();
+				if (iId != null) {
+					setSelectedComponent(panelDetailZeitmodelll);
+				}
+			}
+		} else if (e.getID() == ItemChangedEvent.ACTION_DISCARD) {
+			if (e.getSource() == panelBottomZeitmodelltage) {
+				panelSplitZeitmodelltage.eventYouAreSelected(false);
+			}
+			if (e.getSource() == panelBottomZeitmodelltagpause) {
+				panelSplitZeitmodelltagpause.eventYouAreSelected(false);
+			}
+		} else if (e.getID() == ItemChangedEvent.ACTION_UPDATE) {
+			if (e.getSource() == panelBottomZeitmodelltage) {
+				panelQueryZeitmodelltage.updateButtons(new LockStateValue(
+						PanelBasis.LOCK_FOR_NEW));
+			} else if (e.getSource() == panelBottomZeitmodelltagpause) {
+				panelQueryZeitmodelltagpause.updateButtons(new LockStateValue(
+						PanelBasis.LOCK_FOR_NEW));
+				;
+			}
+		}
 
-  protected void lPActionEvent(ActionEvent e) {
-  }
+		else if (e.getID() == ItemChangedEvent.ACTION_SAVE) {
 
+			if (e.getSource() == panelDetailZeitmodelll) {
+				panelQueryZeitmodell.clearDirektFilter();
+				Object oKey = panelDetailZeitmodelll.getKeyWhenDetailPanel();
 
-  public void lPEventItemChanged(ItemChangedEvent e)
-      throws Throwable {
+				panelQueryZeitmodell.setSelectedId(oKey);
+			}
 
-    if (e.getID() == ItemChangedEvent.GOTO_DETAIL_PANEL) {
-      if (e.getSource() == panelQueryZeitmodell) {
-        Integer iId = (Integer) panelQueryZeitmodell.getSelectedId();
-        if (iId != null) {
-          setSelectedComponent(panelDetailZeitmodelll);
-        }
-      }
-    }
-    else if (e.getID() == ItemChangedEvent.ACTION_DISCARD) {
-      if (e.getSource() == panelBottomZeitmodelltage) {
-        panelSplitZeitmodelltage.eventYouAreSelected(false);
-      }
-      if (e.getSource() == panelBottomZeitmodelltagpause) {
-        panelSplitZeitmodelltagpause.eventYouAreSelected(false);
-      }
-    }
-    else if (e.getID() == ItemChangedEvent.ACTION_UPDATE) {
-      if (e.getSource() == panelBottomZeitmodelltage) {
-        panelQueryZeitmodelltage.updateButtons(new LockStateValue(PanelBasis.LOCK_FOR_NEW));
-      }
-      else if (e.getSource() == panelBottomZeitmodelltagpause) {
-        panelQueryZeitmodelltagpause.updateButtons(new LockStateValue(PanelBasis.
-            LOCK_FOR_NEW)); ;
-      }
-    }
+			else if (e.getSource() == panelBottomZeitmodelltage) {
 
-    else if (e.getID() == ItemChangedEvent.ACTION_SAVE) {
+				panelQueryZeitmodelltage.setDefaultFilter(PersonalFilterFactory
+						.getInstance().createFKZeitmodelltag(
+								getInternalFramePersonal().getZeitmodellDto()
+										.getIId()));
+				Object oKey = panelBottomZeitmodelltage.getKeyWhenDetailPanel();
 
-      if (e.getSource() == panelDetailZeitmodelll) {
-        panelQueryZeitmodell.clearDirektFilter();
-        Object oKey = panelDetailZeitmodelll.getKeyWhenDetailPanel();
+				if (oKey != null) {
+					panelBottomZeitmodelltagpause.zeitmodelltagDto = DelegateFactory
+							.getInstance().getZeiterfassungDelegate()
+							.zeitmodelltagFindByPrimaryKey((Integer) oKey);
+				} else {
+					panelBottomZeitmodelltagpause.zeitmodelltagDto = null;
+				}
 
-        panelQueryZeitmodell.setSelectedId(oKey);
-      }
+				panelQueryZeitmodelltage.eventYouAreSelected(false);
+				panelQueryZeitmodelltage.setSelectedId(oKey);
+				panelSplitZeitmodelltage.eventYouAreSelected(false);
 
-      else if (e.getSource() == panelBottomZeitmodelltage) {
+			}
+			if (e.getSource() == panelBottomZeitmodelltagpause) {
 
-        panelQueryZeitmodelltage.setDefaultFilter(PersonalFilterFactory.getInstance().
-                                                  createFKZeitmodelltag(
-            getInternalFramePersonal().getZeitmodellDto().getIId()));
-        Object oKey = panelBottomZeitmodelltage.getKeyWhenDetailPanel();
+				panelQueryZeitmodelltagpause
+						.setDefaultFilter(PersonalFilterFactory.getInstance()
+								.createFKZeitmodelltagpause(
+										(Integer) panelQueryZeitmodelltage
+												.getSelectedId()));
+				Object oKey = panelBottomZeitmodelltagpause
+						.getKeyWhenDetailPanel();
+				panelQueryZeitmodelltagpause.eventYouAreSelected(false);
+				panelQueryZeitmodelltagpause.setSelectedId(oKey);
+				panelSplitZeitmodelltagpause.eventYouAreSelected(false);
+			}
+		} else if (e.getID() == ItemChangedEvent.ITEM_CHANGED) {
+			if (e.getSource() == panelQueryZeitmodell) {
+				if (panelQueryZeitmodell.getSelectedId() != null) {
+					getInternalFramePersonal().setKeyWasForLockMe(
+							panelQueryZeitmodell.getSelectedId() + "");
 
-        if (oKey != null) {
-          panelBottomZeitmodelltagpause.zeitmodelltagDto = DelegateFactory.getInstance().
-              getZeiterfassungDelegate().zeitmodelltagFindByPrimaryKey( (Integer)
-              oKey);
-        }
-        else {
-          panelBottomZeitmodelltagpause.zeitmodelltagDto = null;
-        }
+					// Dto-setzen
 
-        panelQueryZeitmodelltage.eventYouAreSelected(false);
-        panelQueryZeitmodelltage.setSelectedId(oKey);
-        panelSplitZeitmodelltage.eventYouAreSelected(false);
+					getInternalFramePersonal().setZeitmodellDto(
+							DelegateFactory
+									.getInstance()
+									.getZeiterfassungDelegate()
+									.zeitmodellFindByPrimaryKey(
+											(Integer) panelQueryZeitmodell
+													.getSelectedId()));
+					getInternalFrame().setLpTitle(
+							InternalFrame.TITLE_IDX_AS_I_LIKE,
+							getInternalFramePersonal().getZeitmodellDto()
+									.getCNr());
 
-      }
-      if (e.getSource() == panelBottomZeitmodelltagpause) {
+					// Default- Filter vorbesetzten
+					panelQueryZeitmodelltage
+							.setDefaultFilter(PersonalFilterFactory
+									.getInstance().createFKZeitmodelltag(
+											getInternalFramePersonal()
+													.getZeitmodellDto()
+													.getIId()));
+					if (panelQueryZeitmodelltage.getSelectedId() == null) {
+						panelBottomZeitmodelltagpause.zeitmodelltagDto = null;
+					}
+					if (panelQueryZeitmodell.getSelectedId() == null) {
+						getInternalFrame().enableAllOberePanelsExceptMe(this,
+								IDX_PANEL_AUSWAHL, false);
+					} else {
+						getInternalFrame().enableAllOberePanelsExceptMe(this,
+								IDX_PANEL_AUSWAHL, true);
+					}
 
-        panelQueryZeitmodelltagpause.setDefaultFilter(PersonalFilterFactory.getInstance().
-            createFKZeitmodelltagpause(
-                (Integer) panelQueryZeitmodelltage.getSelectedId()));
-        Object oKey = panelBottomZeitmodelltagpause.getKeyWhenDetailPanel();
-        panelQueryZeitmodelltagpause.eventYouAreSelected(false);
-        panelQueryZeitmodelltagpause.setSelectedId(oKey);
-        panelSplitZeitmodelltagpause.eventYouAreSelected(false);
-      }
-    }
-    else if (e.getID() == ItemChangedEvent.ITEM_CHANGED) {
-      if (e.getSource() == panelQueryZeitmodell) {
-        if (panelQueryZeitmodell.getSelectedId() != null) {
-          getInternalFramePersonal().setKeyWasForLockMe(panelQueryZeitmodell.
-              getSelectedId() + "");
+				} else {
+					getInternalFrame().enableAllOberePanelsExceptMe(this,
+							IDX_PANEL_AUSWAHL, false);
+				}
 
-          //Dto-setzen
+			} else if (e.getSource() == panelQueryZeitmodelltage) {
 
-          getInternalFramePersonal().setZeitmodellDto(DelegateFactory.getInstance().
-              getZeiterfassungDelegate().
-              zeitmodellFindByPrimaryKey( (
-                  Integer) panelQueryZeitmodell.getSelectedId()));
-          getInternalFrame().setLpTitle(
-              InternalFrame.TITLE_IDX_AS_I_LIKE,
-              getInternalFramePersonal().getZeitmodellDto().getCNr());
+				panelQueryZeitmodelltagpause
+						.setDefaultFilter(PersonalFilterFactory.getInstance()
+								.createFKZeitmodelltagpause(
+										(Integer) panelQueryZeitmodelltage
+												.getSelectedId()));
+				if (panelQueryZeitmodelltage.getSelectedId() != null) {
 
-          //Default- Filter vorbesetzten
-          panelQueryZeitmodelltage.setDefaultFilter(PersonalFilterFactory.getInstance().
-              createFKZeitmodelltag(
-                  getInternalFramePersonal().getZeitmodellDto().getIId()));
-          if (panelQueryZeitmodelltage.getSelectedId() == null) {
-            panelBottomZeitmodelltagpause.zeitmodelltagDto = null;
-          }
-          if (panelQueryZeitmodell.getSelectedId() == null) {
-            getInternalFrame().enableAllOberePanelsExceptMe(this, IDX_PANEL_AUSWAHL, false);
-          }
-          else {
-            getInternalFrame().enableAllOberePanelsExceptMe(this, IDX_PANEL_AUSWAHL, true);
-          }
+					panelBottomZeitmodelltagpause.zeitmodelltagDto = DelegateFactory
+							.getInstance()
+							.getZeiterfassungDelegate()
+							.zeitmodelltagFindByPrimaryKey(
+									(Integer) panelQueryZeitmodelltage
+											.getSelectedId());
 
-        }
-        else {
-          getInternalFrame().enableAllOberePanelsExceptMe(this, IDX_PANEL_AUSWAHL, false);
-        }
+				} else {
+					panelBottomZeitmodelltagpause.zeitmodelltagDto = null;
+				}
 
-      }
-      else if (e.getSource() == panelQueryZeitmodelltage) {
+				Integer iId = (Integer) panelQueryZeitmodelltage
+						.getSelectedId();
+				panelBottomZeitmodelltage.setKeyWhenDetailPanel(iId);
+				panelBottomZeitmodelltage.eventYouAreSelected(false);
+				panelQueryZeitmodelltage.updateButtons();
+			} else if (e.getSource() == panelQueryZeitmodelltagpause) {
 
-        panelQueryZeitmodelltagpause.setDefaultFilter(PersonalFilterFactory.getInstance().
-            createFKZeitmodelltagpause( (
-                Integer)
-                                       panelQueryZeitmodelltage.getSelectedId()));
-        if (panelQueryZeitmodelltage.getSelectedId() != null) {
+				Integer iId = (Integer) panelQueryZeitmodelltagpause
+						.getSelectedId();
+				panelBottomZeitmodelltagpause.setKeyWhenDetailPanel(iId);
+				panelBottomZeitmodelltagpause.eventYouAreSelected(false);
+				panelQueryZeitmodelltagpause.updateButtons();
+			}
 
-          panelBottomZeitmodelltagpause.zeitmodelltagDto = DelegateFactory.getInstance().
-              getZeiterfassungDelegate().zeitmodelltagFindByPrimaryKey( (Integer)
-              panelQueryZeitmodelltage.getSelectedId());
+		}
 
-        }
-        else {
-          panelBottomZeitmodelltagpause.zeitmodelltagDto = null;
-        }
+		else if (e.getID() == ItemChangedEvent.ACTION_GOTO_MY_DEFAULT_QP) {
+			// aktiviere ein QP ...
+			if (e.getSource() == panelDetailZeitmodelll) {
+				this.setSelectedComponent(panelQueryZeitmodell);
+				setKeyWasForLockMe();
+				panelQueryZeitmodell.eventYouAreSelected(false);
+			} else if (e.getSource() == panelBottomZeitmodelltage) {
+				setKeyWasForLockMe();
+				if (panelBottomZeitmodelltage.getKeyWhenDetailPanel() == null) {
+					Object oNaechster = panelQueryZeitmodelltage
+							.getId2SelectAfterDelete();
+					panelQueryZeitmodelltage.setSelectedId(oNaechster);
+				}
+				panelSplitZeitmodelltage.eventYouAreSelected(false);
+			} else if (e.getSource() == panelBottomZeitmodelltagpause) {
+				setKeyWasForLockMe();
+				if (panelBottomZeitmodelltagpause.getKeyWhenDetailPanel() == null) {
+					Object oNaechster = panelQueryZeitmodelltagpause
+							.getId2SelectAfterDelete();
+					panelQueryZeitmodelltagpause.setSelectedId(oNaechster);
+				}
+				panelSplitZeitmodelltagpause.eventYouAreSelected(false);
+			}
 
-        Integer iId = (Integer) panelQueryZeitmodelltage.getSelectedId();
-        panelBottomZeitmodelltage.setKeyWhenDetailPanel(iId);
-        panelBottomZeitmodelltage.eventYouAreSelected(false);
-        panelQueryZeitmodelltage.updateButtons();
-      }
-      else if (e.getSource() == panelQueryZeitmodelltagpause) {
+		} else if (e.getID() == ItemChangedEvent.ACTION_YOU_ARE_SELECTED) {
+			refreshTitle();
+			super.lPEventItemChanged(e);
+		} else if (e.getID() == ItemChangedEvent.ACTION_NEW) {
+			if (e.getSource() == panelQueryZeitmodell) {
+				if (panelQueryZeitmodell.getSelectedId() == null) {
+					getInternalFrame().enableAllPanelsExcept(true);
+				}
+				panelDetailZeitmodelll.eventActionNew(null, true, false);
+				setSelectedComponent(panelDetailZeitmodelll);
+			} else if (e.getSource() == panelQueryZeitmodelltage) {
+				panelBottomZeitmodelltage.eventActionNew(e, true, false);
+				panelBottomZeitmodelltage.eventYouAreSelected(false);
+				this.setSelectedComponent(panelSplitZeitmodelltage);
 
-        Integer iId = (Integer) panelQueryZeitmodelltagpause.getSelectedId();
-        panelBottomZeitmodelltagpause.setKeyWhenDetailPanel(iId);
-        panelBottomZeitmodelltagpause.eventYouAreSelected(false);
-        panelQueryZeitmodelltagpause.updateButtons();
-      }
+			} else if (e.getSource() == panelQueryZeitmodelltagpause) {
+				panelBottomZeitmodelltagpause.eventActionNew(e, true, false);
+				panelBottomZeitmodelltagpause.eventYouAreSelected(false);
+				this.setSelectedComponent(panelSplitZeitmodelltagpause);
+			}
+		}
 
-    }
+	}
 
-    else if (e.getID() == ItemChangedEvent.ACTION_GOTO_MY_DEFAULT_QP) {
-      //aktiviere ein QP ...
-      if (e.getSource() == panelDetailZeitmodelll) {
-        this.setSelectedComponent(panelQueryZeitmodell);
-        setKeyWasForLockMe();
-        panelQueryZeitmodell.eventYouAreSelected(false);
-      }
-      else if (e.getSource() == panelBottomZeitmodelltage) {
-        setKeyWasForLockMe();
-        if (panelBottomZeitmodelltage.getKeyWhenDetailPanel() == null) {
-          Object oNaechster = panelQueryZeitmodelltage.getId2SelectAfterDelete();
-          panelQueryZeitmodelltage.setSelectedId(oNaechster);
-        }
-        panelSplitZeitmodelltage.eventYouAreSelected(false);
-      }
-      else if (e.getSource() == panelBottomZeitmodelltagpause) {
-        setKeyWasForLockMe();
-        if (panelBottomZeitmodelltagpause.getKeyWhenDetailPanel() == null) {
-          Object oNaechster = panelQueryZeitmodelltagpause.getId2SelectAfterDelete();
-          panelQueryZeitmodelltagpause.setSelectedId(oNaechster);
-        }
-        panelSplitZeitmodelltagpause.eventYouAreSelected(false);
-      }
+	public void lPEventObjectChanged(ChangeEvent e) throws Throwable {
+		super.lPEventObjectChanged(e);
 
-    }
-    else if (e.getID() == ItemChangedEvent.ACTION_YOU_ARE_SELECTED) {
-      refreshTitle();
-      super.lPEventItemChanged(e);
-    }
-    else if (e.getID() == ItemChangedEvent.ACTION_NEW) {
-      if (e.getSource() == panelQueryZeitmodell) {
-        if (panelQueryZeitmodell.getSelectedId() == null) {
-          getInternalFrame().enableAllPanelsExcept(true);
-        }
-        panelDetailZeitmodelll.eventActionNew(null, true, false);
-        setSelectedComponent(panelDetailZeitmodelll);
-      }
-      else if (e.getSource() == panelQueryZeitmodelltage) {
-        panelBottomZeitmodelltage.eventActionNew(e, true, false);
-        panelBottomZeitmodelltage.eventYouAreSelected(false);
-        this.setSelectedComponent(panelSplitZeitmodelltage);
+		int selectedIndex = this.getSelectedIndex();
 
-      }
-      else if (e.getSource() == panelQueryZeitmodelltagpause) {
-        panelBottomZeitmodelltagpause.eventActionNew(e, true, false);
-        panelBottomZeitmodelltagpause.eventYouAreSelected(false);
-        this.setSelectedComponent(panelSplitZeitmodelltagpause);
-      }
-    }
+		if (selectedIndex == IDX_PANEL_AUSWAHL) {
+			panelQueryZeitmodell.eventYouAreSelected(false);
+			if (panelQueryZeitmodell.getSelectedId() == null) {
+				getInternalFrame().enableAllOberePanelsExceptMe(this,
+						IDX_PANEL_AUSWAHL, false);
+			}
+			panelQueryZeitmodell.updateButtons();
+		} else if (selectedIndex == IDX_PANEL_DETAIL) {
+			panelDetailZeitmodelll.eventYouAreSelected(false);
+		} else if (selectedIndex == IDX_PANEL_TAGE) {
+			if (getInternalFramePersonal().getZeitmodellDto() != null) {
+				panelQueryZeitmodelltage.setDefaultFilter(PersonalFilterFactory
+						.getInstance().createFKZeitmodelltag(
+								getInternalFramePersonal().getZeitmodellDto()
+										.getIId()));
+			}
 
-  }
+			panelSplitZeitmodelltage.eventYouAreSelected(false);
+			panelQueryZeitmodelltage.updateButtons();
+		} else if (selectedIndex == IDX_PANEL_PAUSEN) {
 
+			panelQueryZeitmodelltagpause
+					.setDefaultFilter(PersonalFilterFactory.getInstance()
+							.createFKZeitmodelltagpause(
+									(Integer) panelQueryZeitmodelltage
+											.getSelectedId()));
+			panelSplitZeitmodelltagpause.eventYouAreSelected(false);
+			panelQueryZeitmodelltagpause.updateButtons();
+		}
+		refreshTitle();
 
-  public void lPEventObjectChanged(ChangeEvent e)
-      throws Throwable {
-    super.lPEventObjectChanged(e);
+	}
 
-    int selectedIndex = this.getSelectedIndex();
-
-    if (selectedIndex == IDX_PANEL_AUSWAHL) {
-      panelQueryZeitmodell.eventYouAreSelected(false);
-      if (panelQueryZeitmodell.getSelectedId() == null) {
-        getInternalFrame().enableAllOberePanelsExceptMe(this, IDX_PANEL_AUSWAHL, false);
-      }
-      panelQueryZeitmodell.updateButtons();
-    }
-    else if (selectedIndex == IDX_PANEL_DETAIL) {
-      panelDetailZeitmodelll.eventYouAreSelected(false);
-    }
-    else if (selectedIndex == IDX_PANEL_TAGE) {
-      if (getInternalFramePersonal().getZeitmodellDto() != null) {
-        panelQueryZeitmodelltage.setDefaultFilter(PersonalFilterFactory.getInstance().
-                                                  createFKZeitmodelltag(
-            getInternalFramePersonal().getZeitmodellDto().getIId()));
-      }
-
-      panelSplitZeitmodelltage.eventYouAreSelected(false);
-      panelQueryZeitmodelltage.updateButtons();
-    }
-    else if (selectedIndex == IDX_PANEL_PAUSEN) {
-
-      panelQueryZeitmodelltagpause.setDefaultFilter(PersonalFilterFactory.getInstance().
-          createFKZeitmodelltagpause( (Integer)
-                                     panelQueryZeitmodelltage.getSelectedId()));
-      panelSplitZeitmodelltagpause.eventYouAreSelected(false);
-      panelQueryZeitmodelltagpause.updateButtons();
-    }
-     refreshTitle();
-
-  }
-
-
-  public javax.swing.JMenuBar getJMenuBar()
-      throws Throwable {
-    if (wrapperMenuBar == null) {
-      wrapperMenuBar = new WrapperMenuBar(this);
-    }
-    return wrapperMenuBar;
-  }
+	public javax.swing.JMenuBar getJMenuBar() throws Throwable {
+		if (wrapperMenuBar == null) {
+			wrapperMenuBar = new WrapperMenuBar(this);
+		}
+		return wrapperMenuBar;
+	}
 
 }

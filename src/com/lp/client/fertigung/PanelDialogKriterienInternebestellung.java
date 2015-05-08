@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -32,29 +32,36 @@
  ******************************************************************************/
 package com.lp.client.fertigung;
 
-
 import java.awt.GridBagConstraints;
 import java.awt.HeadlessException;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.sql.Date;
+import java.util.ArrayList;
+import java.util.EventObject;
 
 import javax.swing.JComponent;
 
 import com.lp.client.frame.ExceptionLP;
 import com.lp.client.frame.HelperClient;
+import com.lp.client.frame.component.DialogQuery;
 import com.lp.client.frame.component.InternalFrame;
+import com.lp.client.frame.component.ItemChangedEvent;
 import com.lp.client.frame.component.PanelDialogKriterien;
+import com.lp.client.frame.component.PanelQueryFLR;
+import com.lp.client.frame.component.WrapperButton;
 import com.lp.client.frame.component.WrapperCheckBox;
 import com.lp.client.frame.component.WrapperDateField;
 import com.lp.client.frame.component.WrapperLabel;
 import com.lp.client.frame.component.WrapperNumberField;
+import com.lp.client.frame.component.WrapperTextField;
 import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.pc.LPMain;
+import com.lp.server.fertigung.service.LosDto;
 import com.lp.server.system.service.ParameterFac;
 import com.lp.server.system.service.ParametermandantDto;
 
-@SuppressWarnings("static-access") 
+@SuppressWarnings("static-access")
 /**
  * <p><I>Dialog zur Eingabe der Kriterien fuer die Interne Bestellung.</I></p>
  * <p>Dieser Dialog wird aus den folgenden Modulen aufgerufen:</p>
@@ -65,216 +72,254 @@ import com.lp.server.system.service.ParametermandantDto;
  * @author  Martin Bluehweis
  * @version $Revision: 1.4 $
  */
-public class PanelDialogKriterienInternebestellung
-    extends PanelDialogKriterien
-{
-  /**
+public class PanelDialogKriterienInternebestellung extends PanelDialogKriterien {
+	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-private WrapperLabel wlaVorlaufZeit = null;
-  private WrapperNumberField wnfVorlaufZeit = null;
+	private WrapperLabel wlaVorlaufZeit = null;
+	private WrapperNumberField wnfVorlaufZeit = null;
 
-  private WrapperLabel wlaToleranz = null;
-  private WrapperNumberField wnfToleranz = null;
+	private WrapperLabel wlaToleranz = null;
+	private WrapperNumberField wnfToleranz = null;
 
-  private WrapperLabel wlaLieferterminfuerArtikelOhneReservierung = null;
-  private WrapperDateField wdfLieferterminfuerArtikelOhneReservierung = null;
+	private WrapperLabel wlaLieferterminfuerArtikelOhneReservierung = null;
+	private WrapperDateField wdfLieferterminfuerArtikelOhneReservierung = null;
 
-  private WrapperCheckBox wcbVorhandeneInterneBestellungEintrageLoeschen = null;
-  private WrapperCheckBox wcbVerdichten = null;
+	private WrapperCheckBox wcbVorhandeneInterneBestellungEintrageLoeschen = null;
+	private WrapperCheckBox wcbVerdichten = null;
 
-  private WrapperLabel wlaVerdichtungstage = null;
-  private WrapperNumberField wnfVerdichtungstage = null;
+	private WrapperLabel wlaVerdichtungstage = null;
+	private WrapperNumberField wnfVerdichtungstage = null;
 
-  public PanelDialogKriterienInternebestellung(
-      InternalFrame oInternalFrameI,
-      String title)
-      throws HeadlessException, Throwable {
-    super(oInternalFrameI, title);
-    jbInitPanel();
-    setDefaults();
-    initComponents();
-  }
+	private WrapperButton wbuLos = new WrapperButton();
+	private WrapperTextField wtfLos = new WrapperTextField();
+	private Integer losIId = null;
 
+	static final public String ACTION_SPECIAL_LOS_FROM_LISTE = "action_auftrag_los_liste";
+	private PanelQueryFLR panelQueryFLRLos = null;
 
-  private void jbInitPanel()
-      throws Throwable {
-    wlaVorlaufZeit = new WrapperLabel(LPMain.getTextRespectUISPr("bes.vorlaufzeiten"));
-    wlaToleranz = new WrapperLabel(LPMain.getInstance().getTextRespectUISPr(
-        "bes.toleranz"));
-    wnfVorlaufZeit = new WrapperNumberField();
-    wnfVorlaufZeit.setMandatoryField(true);
-    wnfVorlaufZeit.setMaximumIntegerDigits(3);
-    wnfVorlaufZeit.setFractionDigits(0);
-    wnfVorlaufZeit.setMinimumValue(1);
+	public PanelDialogKriterienInternebestellung(InternalFrame oInternalFrameI,
+			String title) throws HeadlessException, Throwable {
+		super(oInternalFrameI, title);
+		jbInitPanel();
+		setDefaults();
+		initComponents();
+	}
 
-    wlaVerdichtungstage = new WrapperLabel(LPMain.getTextRespectUISPr("lp.tage"));
-    wnfVerdichtungstage = new WrapperNumberField();
-    wnfVerdichtungstage.setMaximumIntegerDigits(3);
-    wnfVerdichtungstage.setFractionDigits(0);
-    wnfVerdichtungstage.setMinimumValue(1);
+	private void jbInitPanel() throws Throwable {
+		wlaVorlaufZeit = new WrapperLabel(
+				LPMain.getTextRespectUISPr("bes.vorlaufzeiten"));
+		wlaToleranz = new WrapperLabel(LPMain.getInstance()
+				.getTextRespectUISPr("bes.toleranz"));
+		wnfVorlaufZeit = new WrapperNumberField();
+		wnfVorlaufZeit.setMandatoryField(true);
+		wnfVorlaufZeit.setMaximumIntegerDigits(3);
+		wnfVorlaufZeit.setFractionDigits(0);
+		wnfVorlaufZeit.setMinimumValue(1);
 
-    wnfToleranz = new WrapperNumberField();
-    wnfToleranz.setMandatoryField(true);
-    wnfToleranz.setMaximumIntegerDigits(3);
-    wnfToleranz.setFractionDigits(0);
-    wnfToleranz.setMinimumValue(0);
-    HelperClient.setDefaultsToComponent(wnfToleranz, 120);
+		wlaVerdichtungstage = new WrapperLabel(
+				LPMain.getTextRespectUISPr("lp.tage"));
+		wnfVerdichtungstage = new WrapperNumberField();
+		wnfVerdichtungstage.setMaximumIntegerDigits(3);
+		wnfVerdichtungstage.setFractionDigits(0);
+		wnfVerdichtungstage.setMinimumValue(1);
 
+		wnfToleranz = new WrapperNumberField();
+		wnfToleranz.setMandatoryField(true);
+		wnfToleranz.setMaximumIntegerDigits(3);
+		wnfToleranz.setFractionDigits(0);
+		wnfToleranz.setMinimumValue(0);
+		HelperClient.setDefaultsToComponent(wnfToleranz, 120);
 
-    HelperClient.setDefaultsToComponent(wnfVorlaufZeit, 120);
+		HelperClient.setDefaultsToComponent(wnfVorlaufZeit, 120);
 
-    wlaLieferterminfuerArtikelOhneReservierung = new WrapperLabel();
-    wlaLieferterminfuerArtikelOhneReservierung.setText(LPMain.getTextRespectUISPr(
-        "bes.lieferdatumfuerartikelohnereservierung"));
-    wdfLieferterminfuerArtikelOhneReservierung = new WrapperDateField();
-    wdfLieferterminfuerArtikelOhneReservierung.setMandatoryField(true);
+		wlaLieferterminfuerArtikelOhneReservierung = new WrapperLabel();
+		wlaLieferterminfuerArtikelOhneReservierung
+				.setText(LPMain
+						.getTextRespectUISPr("bes.lieferdatumfuerartikelohnereservierung"));
+		wdfLieferterminfuerArtikelOhneReservierung = new WrapperDateField();
+		wdfLieferterminfuerArtikelOhneReservierung.setMandatoryField(true);
 
-    wcbVorhandeneInterneBestellungEintrageLoeschen = new WrapperCheckBox(LPMain.getTextRespectUISPr(
-        "fert.internebestellungloeschen"));
+		wcbVorhandeneInterneBestellungEintrageLoeschen = new WrapperCheckBox(
+				LPMain.getTextRespectUISPr("fert.internebestellungloeschen"));
 
-    wcbVerdichten = new WrapperCheckBox(LPMain.getTextRespectUISPr("lp.verdichten"));
+		wcbVerdichten = new WrapperCheckBox(
+				LPMain.getTextRespectUISPr("lp.verdichten"));
 
-    iZeile++;
-    jpaWorkingOn.add(wlaVorlaufZeit,
-                     new GridBagConstraints(0, iZeile, 1, 1, 1.0, 0.0
-                                            , GridBagConstraints.CENTER,
-                                            GridBagConstraints.BOTH,
-                                            new Insets(2, 2, 2, 2), 0, 0));
+		wbuLos.setText(LPMain.getInstance().getTextRespectUISPr(
+				"fert.tab.unten.los.title")
+				+ "...");
 
-    jpaWorkingOn.add(wnfVorlaufZeit,
-                     new GridBagConstraints(1, iZeile, 1, 1, 0.5, 0.0
-                                            , GridBagConstraints.CENTER,
-                                            GridBagConstraints.BOTH,
-                                            new Insets(2, 2, 2, 2), 0, 0));
-    iZeile++;
-    jpaWorkingOn.add(wlaToleranz,
-                     new GridBagConstraints(0, iZeile, 1, 1, 1.0, 0.0
-                                            , GridBagConstraints.CENTER,
-                                            GridBagConstraints.BOTH,
-                                            new Insets(2, 2, 2, 2), 0, 0));
+		wbuLos.setActionCommand(ACTION_SPECIAL_LOS_FROM_LISTE);
+		wbuLos.addActionListener(this);
+		// wtfLos.setActivatable(false);
+		wtfLos.setColumnsMax(com.lp.server.util.Facade.MAX_UNBESCHRAENKT);
+		wtfLos.setActivatable(false);
 
-    jpaWorkingOn.add(wnfToleranz,
-                     new GridBagConstraints(1, iZeile, 1, 1, 0.5, 0.0
-                                            , GridBagConstraints.CENTER,
-                                            GridBagConstraints.BOTH,
-                                            new Insets(2, 2, 2, 2), 0, 0));
+		iZeile++;
+		jpaWorkingOn.add(wlaVorlaufZeit, new GridBagConstraints(0, iZeile, 1,
+				1, 1.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
 
-    iZeile++;
-    jpaWorkingOn.add(wlaLieferterminfuerArtikelOhneReservierung,
-                     new GridBagConstraints(0, iZeile, 1, 1, 0.0, 0.0
-                                            , GridBagConstraints.CENTER,
-                                            GridBagConstraints.BOTH,
-                                            new Insets(2, 2, 2, 2), 0, 0));
-    jpaWorkingOn.add(wdfLieferterminfuerArtikelOhneReservierung,
-                     new GridBagConstraints(1, iZeile, 1, 1, 0.0, 0.0
-                                            , GridBagConstraints.CENTER,
-                                            GridBagConstraints.BOTH,
-                                            new Insets(2, 2, 2, 2), 0, 0));
-    iZeile++;
-    jpaWorkingOn.add(wcbVorhandeneInterneBestellungEintrageLoeschen,
-                     new GridBagConstraints(1, iZeile, 1, 1, 0.0, 0.0
-                                            , GridBagConstraints.CENTER,
-                                            GridBagConstraints.BOTH,
-                                            new Insets(2, 2, 2, 2), 0, 0));
-    iZeile++;
-    jpaWorkingOn.add(wcbVerdichten,
-                     new GridBagConstraints(1, iZeile, 1, 1, 0.0, 0.0
-                                            , GridBagConstraints.CENTER,
-                                            GridBagConstraints.BOTH,
-                                            new Insets(2, 2, 2, 2), 0, 0));
-    iZeile++;
-    jpaWorkingOn.add(wlaVerdichtungstage,
-                     new GridBagConstraints(0, iZeile, 1, 1, 1.0, 0.0
-                                            , GridBagConstraints.CENTER,
-                                            GridBagConstraints.BOTH,
-                                            new Insets(2, 2, 2, 2), 0, 0));
-    jpaWorkingOn.add(wnfVerdichtungstage,
-                     new GridBagConstraints(1, iZeile, 1, 1, 0.5, 0.0
-                                            , GridBagConstraints.CENTER,
-                                            GridBagConstraints.BOTH,
-                                            new Insets(2, 2, 2, 2), 0, 0));
-  }
+		jpaWorkingOn.add(wnfVorlaufZeit, new GridBagConstraints(1, iZeile, 1,
+				1, 0.5, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+		iZeile++;
+		jpaWorkingOn.add(wlaToleranz, new GridBagConstraints(0, iZeile, 1, 1,
+				1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
+				new Insets(2, 2, 2, 2), 0, 0));
 
+		jpaWorkingOn.add(wnfToleranz, new GridBagConstraints(1, iZeile, 1, 1,
+				0.5, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
+				new Insets(2, 2, 2, 2), 0, 0));
 
-  private void setDefaults()
-      throws Throwable {
-    // den Vorschlagswert fuer die Auftragsvorlaufdauer bestimmen
-    ParametermandantDto parameterVorlaufzeit =
-        DelegateFactory.getInstance().getParameterDelegate().getMandantparameter(
-            LPMain.getTheClient().getMandant(),
-            ParameterFac.KATEGORIE_FERTIGUNG,
-            ParameterFac.PARAMETER_DEFAULT_VORLAUFZEIT_INTERNEBESTELLUNG);
-    wnfVorlaufZeit.setInteger( (Integer) parameterVorlaufzeit.getCWertAsObject());
-    wdfLieferterminfuerArtikelOhneReservierung.setDate(new Date(System.currentTimeMillis()));
-    wcbVorhandeneInterneBestellungEintrageLoeschen.setSelected(false);
+		iZeile++;
+		jpaWorkingOn.add(wlaLieferterminfuerArtikelOhneReservierung,
+				new GridBagConstraints(0, iZeile, 1, 1, 0.0, 0.0,
+						GridBagConstraints.CENTER, GridBagConstraints.BOTH,
+						new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wdfLieferterminfuerArtikelOhneReservierung,
+				new GridBagConstraints(1, iZeile, 1, 1, 0.0, 0.0,
+						GridBagConstraints.CENTER, GridBagConstraints.BOTH,
+						new Insets(2, 2, 2, 2), 0, 0));
+		iZeile++;
+		jpaWorkingOn.add(wcbVorhandeneInterneBestellungEintrageLoeschen,
+				new GridBagConstraints(1, iZeile, 1, 1, 0.0, 0.0,
+						GridBagConstraints.CENTER, GridBagConstraints.BOTH,
+						new Insets(2, 2, 2, 2), 0, 0));
+		iZeile++;
+		jpaWorkingOn.add(wcbVerdichten, new GridBagConstraints(1, iZeile, 1, 1,
+				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
+				new Insets(2, 2, 2, 2), 0, 0));
+		iZeile++;
+		jpaWorkingOn.add(wlaVerdichtungstage, new GridBagConstraints(0, iZeile,
+				1, 1, 1.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wnfVerdichtungstage, new GridBagConstraints(1, iZeile,
+				1, 1, 0.5, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+		iZeile++;
+		jpaWorkingOn.add(wbuLos, new GridBagConstraints(0, iZeile,
+				1, 1, 1.0, 0.0, GridBagConstraints.EAST,
+				GridBagConstraints.NONE, new Insets(2, 2, 2, 2), 100, 0));
+		jpaWorkingOn.add(wtfLos, new GridBagConstraints(1, iZeile,
+				1, 1, 0.5, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
+	}
 
-    // den Vorschlagswert fuer die Verdichtungstage bestimmen
-    ParametermandantDto parameterVerdichtungstage =
-        DelegateFactory.getInstance().getParameterDelegate().getMandantparameter(
-            LPMain.getTheClient().getMandant(),
-            ParameterFac.KATEGORIE_FERTIGUNG,
-            ParameterFac.PARAMETER_INTERNEBESTELLUNG_VERDICHTUNGSZEITRAUM);
-    wnfVerdichtungstage.setInteger( (Integer) parameterVerdichtungstage.getCWertAsObject());
-    ParametermandantDto parameterToleranz =
-        DelegateFactory.getInstance().getParameterDelegate().getMandantparameter(
-            LPMain.getInstance().getTheClient().getMandant(),
-            ParameterFac.KATEGORIE_FERTIGUNG,
-            ParameterFac.TOLERANZFRIST_INTERNE_BESTELLUNG);
-    wnfToleranz.setInteger( (Integer) parameterToleranz.getCWertAsObject());
+	void dialogQueryLosFromListe(ActionEvent e) throws Throwable {
+		panelQueryFLRLos = FertigungFilterFactory.getInstance()
+				.createPanelFLRBebuchbareLose(getInternalFrame(), false, true,
+						true, null, true);
+		
+		new DialogQuery(panelQueryFLRLos);
 
-  }
+	}
 
+	private void setDefaults() throws Throwable {
+		// den Vorschlagswert fuer die Auftragsvorlaufdauer bestimmen
+		ParametermandantDto parameterVorlaufzeit = DelegateFactory
+				.getInstance()
+				.getParameterDelegate()
+				.getMandantparameter(
+						LPMain.getTheClient().getMandant(),
+						ParameterFac.KATEGORIE_FERTIGUNG,
+						ParameterFac.PARAMETER_DEFAULT_VORLAUFZEIT_INTERNEBESTELLUNG);
+		wnfVorlaufZeit.setInteger((Integer) parameterVorlaufzeit
+				.getCWertAsObject());
+		wdfLieferterminfuerArtikelOhneReservierung.setDate(new Date(System
+				.currentTimeMillis()));
+		wcbVorhandeneInterneBestellungEintrageLoeschen.setSelected(false);
 
-  public Integer getAuftragsvorlaufzeit()
-      throws Throwable {
-    return wnfVorlaufZeit.getInteger();
-  }
+		// den Vorschlagswert fuer die Verdichtungstage bestimmen
+		ParametermandantDto parameterVerdichtungstage = DelegateFactory
+				.getInstance()
+				.getParameterDelegate()
+				.getMandantparameter(
+						LPMain.getTheClient().getMandant(),
+						ParameterFac.KATEGORIE_FERTIGUNG,
+						ParameterFac.PARAMETER_INTERNEBESTELLUNG_VERDICHTUNGSZEITRAUM);
+		wnfVerdichtungstage.setInteger((Integer) parameterVerdichtungstage
+				.getCWertAsObject());
+		ParametermandantDto parameterToleranz = DelegateFactory
+				.getInstance()
+				.getParameterDelegate()
+				.getMandantparameter(
+						LPMain.getInstance().getTheClient().getMandant(),
+						ParameterFac.KATEGORIE_FERTIGUNG,
+						ParameterFac.TOLERANZFRIST_INTERNE_BESTELLUNG);
+		wnfToleranz.setInteger((Integer) parameterToleranz.getCWertAsObject());
 
+	}
 
-  public Integer getVerdichtungstage()
-      throws Throwable {
-    return wnfVerdichtungstage.getInteger();
-  }
+	public Integer getAuftragsvorlaufzeit() throws Throwable {
+		return wnfVorlaufZeit.getInteger();
+	}
 
+	public Integer getVerdichtungstage() throws Throwable {
+		return wnfVerdichtungstage.getInteger();
+	}
 
-  public Date getLieferterminFuerArtikelOhneReservierung() {
-    return wdfLieferterminfuerArtikelOhneReservierung.getDate();
-  }
+	public Date getLieferterminFuerArtikelOhneReservierung() {
+		return wdfLieferterminfuerArtikelOhneReservierung.getDate();
+	}
 
+	public boolean getVorhandeneLoeschen() {
+		return wcbVorhandeneInterneBestellungEintrageLoeschen.isSelected();
+	}
 
-  public boolean getVorhandeneLoeschen() {
-    return wcbVorhandeneInterneBestellungEintrageLoeschen.isSelected();
-  }
+	public boolean getBVerdichten() {
+		return wcbVerdichten.isSelected();
+	}
 
+	public Integer getToleranz() throws ExceptionLP {
+		return wnfToleranz.getInteger();
+	}
+	public Integer getLosIId(){
+		return losIId;
+	}
 
-  public boolean getBVerdichten() {
-    return wcbVerdichten.isSelected();
-  }
+	protected JComponent getFirstFocusableComponent() throws Exception {
+		return wnfVorlaufZeit;
+	}
 
+	protected void eventActionSpecial(ActionEvent e) throws Throwable {
 
-  public Integer getToleranz()
-      throws ExceptionLP {
-    return wnfToleranz.getInteger();
-  }
+		if (e.getActionCommand().equals(ACTION_SPECIAL_LOS_FROM_LISTE)) {
+			dialogQueryLosFromListe(e);
+		}
 
+		if (e.getActionCommand().equals(ACTION_SPECIAL_OK)) {
+			if (!allMandatoryFieldsSetDlg()) {
+				return;
+			}
+		}
+		// den allgemeine Behandlung.
+		super.eventActionSpecial(e);
+	}
 
+	public void eventItemchanged(EventObject eI) throws Throwable {
+		ItemChangedEvent e = (ItemChangedEvent) eI;
+		if (e.getID() == ItemChangedEvent.GOTO_DETAIL_PANEL) {
+			if (e.getSource() == panelQueryFLRLos) {
+				Object o = panelQueryFLRLos.getSelectedId();
 
-  protected JComponent getFirstFocusableComponent()
-      throws Exception {
-    return wnfVorlaufZeit;
-  }
+				LosDto losDto = DelegateFactory.getInstance()
+						.getFertigungDelegate()
+						.losFindByPrimaryKey((Integer) o);
 
+				losIId = losDto.getIId();
 
-  protected void eventActionSpecial(ActionEvent e) throws Throwable {
-    if (e.getActionCommand().equals(ACTION_SPECIAL_OK)) {
-      if (!allMandatoryFieldsSetDlg()) {
-        return;
-      }
-    }
-    // den allgemeine Behandlung.
-    super.eventActionSpecial(e);
-  }
+				wtfLos.setText(losDto.getCNr());
+			}
+		}else if (e.getID() == ItemChangedEvent.ACTION_LEEREN) {
+			if (e.getSource() == panelQueryFLRLos) {
+				losIId=null;
+				wtfLos.setText(null);
+			}
+		}
+			
+	}
 
 }

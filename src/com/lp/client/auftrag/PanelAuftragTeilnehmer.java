@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -699,11 +699,11 @@ public class PanelAuftragTeilnehmer
     LockStateValue lsv = super.getLockedstateDetailMainKey();
 
     if (tpAuftrag.getAuftragDto().getIId() != null) {
-      if (tpAuftrag.getAuftragDto().getAuftragstatusCNr().equals(AuftragServiceFac.
+      if (tpAuftrag.getAuftragDto().getStatusCNr().equals(AuftragServiceFac.
           AUFTRAGSTATUS_STORNIERT) ||
-          tpAuftrag.getAuftragDto().getAuftragstatusCNr().equals(AuftragServiceFac.
+          tpAuftrag.getAuftragDto().getStatusCNr().equals(AuftragServiceFac.
           AUFTRAGSTATUS_TEILERLEDIGT) ||
-          tpAuftrag.getAuftragDto().getAuftragstatusCNr().equals(AuftragServiceFac.
+          tpAuftrag.getAuftragDto().getStatusCNr().equals(AuftragServiceFac.
           AUFTRAGSTATUS_ERLEDIGT)) {
         lsv = new LockStateValue(PanelBasis.LOCK_ENABLE_REFRESHANDPRINT_ONLY);
       }

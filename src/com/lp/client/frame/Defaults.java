@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -94,6 +94,8 @@ public class Defaults {
 	private int iUINachkommastellenPreise = -1; // MB: wird erst bei bedarf
 												// initialisiert.
 	private int iUINachkommastellenPreiseEK = -1; // MB: wird erst bei bedarf
+	
+	private int iUINachkommastellenPreiseWE = -1; // MB: wird erst bei bedarf
 	// initialisiert.
 	private int iUINachkommastellenPreiseVK = -1; // MB: wird erst bei bedarf
 	// initialisiert.
@@ -104,11 +106,14 @@ public class Defaults {
 	// Lebensdauer des InternalFrames.
 	private boolean bRechtDarfRechteSehen = false;
 
-	// Componenten werden benannt, oder nicht (fuer Testumgebung)
-	private boolean bComponentNamingEnabled = false;
+	// Componenten werden benannt, oder nicht (fuer Testumgebung und Direkthilfe)
+	private boolean bComponentNamingEnabled = true;
 
 	// Verbose logging. -> z.B.: Serverzugriffe
 	private boolean bVerbose = false;
+	
+	// GUI-Constraints zur Laufzeit bearbeitbar
+	private boolean bDebugGUI = false;
 
 	// Componenten werden nach altem Schema benannt
 	// (deprecated, aber noch notwendig fuer alte Tests.
@@ -128,6 +133,11 @@ public class Defaults {
 	
 	private boolean showIIdColumn = false;
 	
+	private String colorVision = HelperClient.COLOR_NORMAL;
+	
+	private boolean useWaitCursor = true ;
+	private boolean refreshTitle = true ;
+	
 	public String getUebersteuerterMandant() {
 		return uebersteuerterMandant;
 	}
@@ -139,6 +149,7 @@ public class Defaults {
 	// default LookAndFeel -> ueber Parameter gesetzt
 	private String defaultLookAndFeel = null;
 	private boolean dirkethilfeEnabled = true;
+	private boolean dirkethilfeVisible = true;
 
 	/**
 	 * @todo JO 5.8.05; kommen bald wieder raus!
@@ -146,6 +157,10 @@ public class Defaults {
 	static public long lUhrQuickDirtyBS = 0;
 	static public long lUhrQuickDirtyART = 0;
 
+	private Defaults() {
+		mapFeiertage = new HashMap<Timestamp, String>() ;
+	}
+	
 	/**
 	 * Hole das Singelton Defaults.
 	 * 
@@ -330,11 +345,13 @@ public class Defaults {
 		}
 		return sUebersetzung;
 	}
+	
+	
 
 	public Border getMandatoryFieldBorder() {
 		if (mandatoryFieldBorder == null) {
 			mandatoryFieldBorder = new javax.swing.border.LineBorder(
-					HelperClient.getMandatoryFieldBorderColor());
+					HelperClient.getMandatoryFieldBorderColor(getColorVision()));
 		}
 		return mandatoryFieldBorder;
 	}
@@ -426,6 +443,21 @@ public class Defaults {
 		return iUINachkommastellenPreiseEK;
 	}
 
+	public final int getIUINachkommastellenPreiseWE() throws Throwable {
+		if (iUINachkommastellenPreiseWE < 0) {
+			ParametermandantDto parameter = DelegateFactory
+					.getInstance()
+					.getParameterDelegate()
+					.getMandantparameter(
+							LPMain.getTheClient().getMandant(),
+							ParameterFac.KATEGORIE_ALLGEMEIN,
+							ParameterFac.PARAMETER_PREISERABATTE_UI_NACHKOMMASTELLEN_WE);
+			iUINachkommastellenPreiseWE = ((Integer) parameter.getCWertAsObject())
+					.intValue();
+		}
+		return iUINachkommastellenPreiseWE;
+	}
+
 	public final int getIUINachkommastellenMenge() throws Throwable {
 		if (iUINachkommastellenMenge < 0) {
 			ParametermandantDto parameter = DelegateFactory
@@ -484,5 +516,46 @@ public class Defaults {
 
 	public void setShowIIdColumn(boolean showIIdColumn) {
 		this.showIIdColumn = showIIdColumn;
+	}
+
+	public String getColorVision() {
+		return colorVision;
+	}
+
+	public void setColorVision(String colorVision) {
+		mandatoryFieldBorder = null;
+		this.colorVision = colorVision == null ? HelperClient.COLOR_NORMAL : colorVision;
+	}
+
+	public boolean isbDebugGUI() {
+		return bDebugGUI;
+	}
+
+	public void setbDebugGUI(boolean bDebugGUI) {
+		this.bDebugGUI = bDebugGUI;
+	}
+
+	public boolean isUseWaitCursor() {
+		return useWaitCursor;
+	}
+
+	public void setUseWaitCursor(boolean useWaitCursor) {
+		this.useWaitCursor = useWaitCursor;
+	}
+
+	public boolean isRefreshTitle() {
+		return refreshTitle;
+	}
+
+	public void setRefreshTitle(boolean refreshTitle) {
+		this.refreshTitle = refreshTitle;
+	}
+
+	public boolean isDirekthilfeVisible() {
+		return dirkethilfeVisible;
+	}
+
+	public void setDirekthilfeVisible(boolean dirkethilfeVisible) {
+		this.dirkethilfeVisible = dirkethilfeVisible;
 	}
 }

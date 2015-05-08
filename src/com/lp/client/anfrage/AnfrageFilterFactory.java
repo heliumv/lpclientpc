@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -32,6 +32,7 @@
  ******************************************************************************/
 package com.lp.client.anfrage;
 
+import com.lp.client.angebot.AngebotFilterFactory;
 import com.lp.client.frame.component.InternalFrame;
 import com.lp.client.frame.component.PanelBasis;
 import com.lp.client.frame.component.PanelQueryFLR;
@@ -305,6 +306,21 @@ public class AnfrageFilterFactory {
 		return types;
 	}
 
+	public PanelQueryFLR createPanelFLRAnfrageerledigungsgrund(
+			InternalFrame internalFrameI, boolean bShowFilterButton,
+			boolean bShowLeerenButton) throws Throwable {
+		String[] aWhichButtonIUse = SystemFilterFactory.getInstance()
+				.createButtonArray(bShowFilterButton, bShowLeerenButton);
+
+		PanelQueryFLR panelQueryFLRAnfrageerledigungsgrund = new PanelQueryFLR(
+				null, SystemFilterFactory.getInstance().createFKMandantCNr(),
+				QueryParameters.UC_ID_ANFRAGEERLEDIGUNGSGRUND,
+				aWhichButtonIUse, internalFrameI, LPMain.getInstance()
+						.getTextRespectUISPr("anf.erledigungsgrund"));
+
+		return panelQueryFLRAnfrageerledigungsgrund;
+	}
+
 	private FilterKriterium[] createFKMandantCNrNichtangelegtNichtstorniertKeineLiefergruppen()
 			throws Throwable {
 		FilterKriterium[] aFilterKriterium = new FilterKriterium[4];
@@ -351,8 +367,33 @@ public class AnfrageFilterFactory {
 		FilterKriterium[] f = createFKMandantCNrNichtangelegtNichtstorniertKeineLiefergruppen();
 		PanelQueryFLR panelQueryFLRAnfrage = new PanelQueryFLR(null, f,
 				QueryParameters.UC_ID_ANFRAGE, aWhichButtonIUse,
-				internalFrameI, LPMain
-						.getTextRespectUISPr("title.anfrageauswahlliste"));
+				internalFrameI,
+				LPMain.getTextRespectUISPr("title.anfrageauswahlliste"));
+		panelQueryFLRAnfrage.befuellePanelFilterkriterienDirekt(
+				createFKDAnfragenummer(), createFKDLieferantName());
+		return panelQueryFLRAnfrage;
+	}
+
+	public PanelQueryFLR createPanelFLRAlleAnfragenOhneLiefergruppenanfragen(
+			InternalFrame internalFrameI, boolean bShowFilterButton,
+			boolean bShowLeerenButton) throws Throwable {
+		String[] aWhichButtonIUse = SystemFilterFactory.getInstance()
+				.createButtonArray(bShowFilterButton, bShowLeerenButton);
+
+		FilterKriterium[] aFilterKriterium = new FilterKriterium[2];
+
+		aFilterKriterium[0] = SystemFilterFactory.getInstance()
+				.createFKMandantCNr()[0];
+
+		aFilterKriterium[1] = new FilterKriterium(
+				AnfrageFac.FLR_ANFRAGE_ANFRAGEART_C_NR, true, "('"
+						+ AnfrageServiceFac.ANFRAGEART_LIEFERGRUPPE + "')",
+				FilterKriterium.OPERATOR_NOT_IN, false);
+
+		PanelQueryFLR panelQueryFLRAnfrage = new PanelQueryFLR(null,
+				aFilterKriterium, QueryParameters.UC_ID_ANFRAGE,
+				aWhichButtonIUse, internalFrameI,
+				LPMain.getTextRespectUISPr("title.anfrageauswahlliste"));
 		panelQueryFLRAnfrage.befuellePanelFilterkriterienDirekt(
 				createFKDAnfragenummer(), createFKDLieferantName());
 		return panelQueryFLRAnfrage;

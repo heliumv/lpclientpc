@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -33,6 +33,7 @@
 package com.lp.client.frame.component.frameposition;
 
 import java.awt.Font;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -41,9 +42,9 @@ import com.lp.server.util.fastlanereader.service.query.SortierKriterium;
 
 public class ClientPerspectiveDataBaseIO implements IClientPerspectiveIO {
 
-	private TheClientDto theClientDto;
+//	private TheClientDto theClientDto;
 	public ClientPerspectiveDataBaseIO(TheClientDto theClientDto) {
-		this.theClientDto = theClientDto;
+//		this.theClientDto = theClientDto;
 	}
 	@Override
 	public void persistFramePositionMap(
@@ -121,5 +122,15 @@ public class ClientPerspectiveDataBaseIO implements IClientPerspectiveIO {
 		// TODO Auto-generated method stub
 		
 	}
-
+	@Override
+	public void persistPropertyMap(HashMap<String, String> properties)
+			throws Exception {
+		// TODO Auto-generated method stub
+		
+	}
+	@Override
+	public HashMap<String, String> readPropertyMap() throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

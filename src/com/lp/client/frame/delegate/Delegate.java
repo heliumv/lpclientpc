@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -40,6 +40,7 @@ import com.lp.client.pc.LPMain;
 import com.lp.client.util.logger.LpLogger;
 import com.lp.server.auftrag.service.AuftragDto;
 import com.lp.server.partner.service.KundeDto;
+import com.lp.server.system.service.BelegPruefungDto;
 import com.lp.util.EJBExceptionLP;
 
 /**
@@ -218,4 +219,19 @@ public class Delegate {
 		}
 	}
 
+	public void dialogBelegpruefung(BelegPruefungDto pruefungDto) {
+		if(pruefungDto.isKundeHatKeineUstAberUstPositionen()) {
+			DialogFactory
+			.showModalDialog(
+					LPMain.getTextRespectUISPr("lp.warning"),
+					LPMain.getTextRespectUISPr("lp.vkbelege.error.kundesteuerfrei"));
+		}
+		
+		if(pruefungDto.isKundeHatUstAberNichtUstPositionen()) {
+			DialogFactory
+					.showModalDialog(
+							LPMain.getTextRespectUISPr("lp.warning"),
+							LPMain.getTextRespectUISPr("lp.vkbelege.error.kundesteuerpflichtig"));			
+		}
+	}
 }

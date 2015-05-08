@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -82,6 +82,8 @@ import com.lp.server.projekt.service.ProjektDto;
 import com.lp.server.system.service.LocaleFac;
 import com.lp.server.system.service.MailtextDto;
 import com.lp.server.system.service.MandantFac;
+import com.lp.server.util.fastlanereader.service.query.FilterKriteriumDirekt;
+import com.lp.server.util.fastlanereader.service.query.QueryParameters;
 import com.lp.server.util.report.JasperPrintLP;
 
 public class ReportArbeitszeitstatistik extends PanelBasis implements
@@ -104,6 +106,7 @@ public class ReportArbeitszeitstatistik extends PanelBasis implements
 	private WrapperRadioButton wrbArtikelgruppe = new WrapperRadioButton();
 	private WrapperRadioButton wrbArtikelklasse = new WrapperRadioButton();
 	private WrapperRadioButton wrbKostenstelle = new WrapperRadioButton();
+	private WrapperRadioButton wrbKundeBelegPersonal = new WrapperRadioButton();
 
 	private WrapperComboBox wcoBeleg = new WrapperComboBox();
 	private WrapperButton wbuBeleg = new WrapperButton();
@@ -182,10 +185,16 @@ public class ReportArbeitszeitstatistik extends PanelBasis implements
 		wrbTaetigkeit.setText(LPMain.getTextRespectUISPr("lp.taetigkeit"));
 		wrbPersonal.setText(LPMain
 				.getTextRespectUISPr("button.personal.tooltip"));
-		wrbBeleg.setText(LPMain.getTextRespectUISPr("pers.arbeitszeitstatistik.sortierung.belegpersonal"));
-		wrbKunde.setText(LPMain.getTextRespectUISPr("pers.arbeitszeitstatistik.sortierung.kundepersonal"));
+		wrbBeleg.setText(LPMain
+				.getTextRespectUISPr("pers.arbeitszeitstatistik.sortierung.belegpersonal"));
+		wrbKunde.setText(LPMain
+				.getTextRespectUISPr("pers.arbeitszeitstatistik.sortierung.kundepersonal"));
 		wrbKostenstelle.setText(LPMain
 				.getTextRespectUISPr("label.kostenstelle"));
+		
+		wrbKundeBelegPersonal.setText(LPMain
+				.getTextRespectUISPr("pers.arbeitszeitstatistik.sortierung.kundebelegpersonal"));
+		
 
 		wbuTaetigkeit.setActionCommand(ACTION_SPECIAL_TAETIGKEIT_FROM_LISTE);
 		wbuTaetigkeit.addActionListener(this);
@@ -219,11 +228,14 @@ public class ReportArbeitszeitstatistik extends PanelBasis implements
 		buttonGroupSortierung.add(wrbArtikelgruppe);
 		buttonGroupSortierung.add(wrbArtikelklasse);
 		buttonGroupSortierung.add(wrbKostenstelle);
+		buttonGroupSortierung.add(wrbKundeBelegPersonal);
 
 		wtfKunde.setActivatable(false);
 		wtfPerson.setActivatable(false);
 		wtfBeleg.setActivatable(false);
 		wtfTaetigkeit.setActivatable(false);
+		wtfArtikelgruppe.setActivatable(false);
+		wtfArtikelklasse.setActivatable(false);
 
 		boolean bHatAngebotszeiterfassung = false;
 		boolean bHatProjektzeiterfassung = false;
@@ -335,7 +347,7 @@ public class ReportArbeitszeitstatistik extends PanelBasis implements
 		jpaWorkingOn.add(wrbKostenstelle, new GridBagConstraints(2, iZeile, 1,
 				1, 0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wrbArtikelgruppe, new GridBagConstraints(3, iZeile, 1,
+		jpaWorkingOn.add(wrbKundeBelegPersonal, new GridBagConstraints(3, iZeile, 1,
 				1, 0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
 
@@ -347,6 +359,9 @@ public class ReportArbeitszeitstatistik extends PanelBasis implements
 				0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
 		jpaWorkingOn.add(wrbArtikelklasse, new GridBagConstraints(2, iZeile, 1,
+				1, 0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
+		jpaWorkingOn.add(wrbArtikelgruppe, new GridBagConstraints(3, iZeile, 1,
 				1, 0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
 
@@ -582,7 +597,7 @@ public class ReportArbeitszeitstatistik extends PanelBasis implements
 	void dialogQueryLosFromListe(ActionEvent e) throws Throwable {
 
 		panelQueryFLRLos = FertigungFilterFactory.getInstance()
-				.createPanelFLRLose(getInternalFrame(), null, false);
+				.createPanelFLRLose(getInternalFrame(), null, true);
 		panelQueryFLRLos.setSelectedId(belegartIId);
 
 		new DialogQuery(panelQueryFLRLos);
@@ -592,7 +607,7 @@ public class ReportArbeitszeitstatistik extends PanelBasis implements
 	void dialogQueryAngebotFromListe(ActionEvent e) throws Throwable {
 
 		panelQueryFLRAngebot = AngebotFilterFactory.getInstance()
-				.createPanelFLRAngebot(getInternalFrame(), false, false,
+				.createPanelFLRAngebot(getInternalFrame(), false, true,
 						SystemFilterFactory.getInstance().createFKMandantCNr(),
 						belegartIId);
 		new DialogQuery(panelQueryFLRAngebot);
@@ -602,7 +617,7 @@ public class ReportArbeitszeitstatistik extends PanelBasis implements
 	void dialogQueryProjektFromListe(ActionEvent e) throws Throwable {
 
 		panelQueryFLRProjekt = ProjektFilterFactory.getInstance()
-				.createPanelFLRProjekt(getInternalFrame(), belegartIId, false);
+				.createPanelFLRProjekt(getInternalFrame(), belegartIId, true);
 		new DialogQuery(panelQueryFLRProjekt);
 
 	}
@@ -618,8 +633,25 @@ public class ReportArbeitszeitstatistik extends PanelBasis implements
 	}
 
 	void dialogQueryArtikelFromListe(ActionEvent e) throws Throwable {
-		panelQueryFLRArtikel = ArtikelFilterFactory.getInstance()
-				.createPanelFLRArtikel(getInternalFrame(), true);
+
+		String[] aWhichButtonIUse = { PanelBasis.ACTION_REFRESH,
+				PanelBasis.ACTION_LEEREN };
+
+		panelQueryFLRArtikel = new PanelQueryFLR(null, ArtikelFilterFactory
+				.getInstance().createFKArtikellisteNurArbeitszeit(),
+				QueryParameters.UC_ID_ARTIKELLISTE, aWhichButtonIUse,
+				getInternalFrame(),
+				LPMain.getTextRespectUISPr("title.artikelauswahlliste"));
+
+		FilterKriteriumDirekt fkDirekt1 = ArtikelFilterFactory.getInstance()
+				.createFKDArtikelnummer(getInternalFrame());
+		FilterKriteriumDirekt fkDirekt2 = ArtikelFilterFactory.getInstance()
+				.createFKDVolltextsuche();
+		panelQueryFLRArtikel.befuellePanelFilterkriterienDirekt(fkDirekt1,
+				fkDirekt2);
+
+		panelQueryFLRArtikel.setSelectedId(artikelIId);
+
 		new DialogQuery(panelQueryFLRArtikel);
 
 	}
@@ -659,6 +691,9 @@ public class ReportArbeitszeitstatistik extends PanelBasis implements
 
 		} else if (wrbArtikelklasse.isSelected()) {
 			iOptionsortierung = ZeiterfassungReportFac.REPORT_ARBEITSZEITSTATISTIK_OPTION_SORTIERUNG_ARTIKELKLASSE;
+
+		}else if (wrbKundeBelegPersonal.isSelected()) {
+			iOptionsortierung = ZeiterfassungReportFac.REPORT_ARBEITSZEITSTATISTIK_OPTION_SORTIERUNG_KUNDE_BELEG_PERSONAL;
 
 		}
 

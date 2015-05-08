@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -34,6 +34,7 @@ package com.lp.client.frame.component;
 
 import java.awt.Dimension;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.event.KeyEvent;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -43,6 +44,8 @@ import javax.swing.Icon;
 import javax.swing.JRadioButton;
 
 import com.lp.client.frame.Defaults;
+import com.lp.client.frame.component.cib.CibIconWrapper;
+import com.lp.client.frame.component.cib.ICibRectangleHolder;
 import com.lp.util.Helper;
 
 /**
@@ -58,7 +61,7 @@ import com.lp.util.Helper;
  * @version $Revision: 1.8 $
  */
 public class WrapperRadioButton extends JRadioButton implements IControl,
-		IDirektHilfe {
+		IDirektHilfe, ICibRectangleHolder {
 
 	/**
 	 * 
@@ -66,6 +69,7 @@ public class WrapperRadioButton extends JRadioButton implements IControl,
 	private static final long serialVersionUID = 1L;
 	private boolean isActivatable = true;
 	private CornerInfoButton cib = new PaintingCornerInfoButton(this) ;
+	private Rectangle iconRect = new Rectangle();
 
 	public WrapperRadioButton() {
 		setDefaults();
@@ -166,10 +170,9 @@ public class WrapperRadioButton extends JRadioButton implements IControl,
 
 	private void setDefaults() {
 		//HelperClient.setDefaultsToComponent(this);
-		//setMargin(new Insets(2, 0, 2, 2));
 		cib = new PaintingCornerInfoButton(this);
 	}
-
+	
 	public void setMinimumSize(Dimension d) {
 		super.setMinimumSize(new Dimension(d.width, Defaults.getInstance()
 				.getControlHeight()));
@@ -206,12 +209,13 @@ public class WrapperRadioButton extends JRadioButton implements IControl,
 			// System.out.println("End position: " + matcher.end());
 		}
 		if (match != null) {
-			if (match.equalsIgnoreCase("b"))
-				setMnemonic(KeyEvent.VK_B);
-			if (match.equalsIgnoreCase("r"))
-				setMnemonic(KeyEvent.VK_R);
-			if (match.equalsIgnoreCase("f"))
-				setMnemonic(KeyEvent.VK_F);
+			setMnemonic(KeyEvent.getExtendedKeyCodeForChar(match.toCharArray()[0]));
+//			if (match.equalsIgnoreCase("b"))
+//				setMnemonic(KeyEvent.VK_B);
+//			if (match.equalsIgnoreCase("r"))
+//				setMnemonic(KeyEvent.VK_R);
+//			if (match.equalsIgnoreCase("f"))
+//				setMnemonic(KeyEvent.VK_F);
 			String[] t = text.split("&");
 			p0 = t[0] + t[1];
 		}
@@ -240,5 +244,52 @@ public class WrapperRadioButton extends JRadioButton implements IControl,
 	@Override
 	public boolean hasContent() throws Throwable {
 		return true;
+	}
+	
+	// override getIcon Methods for CornerInfoButton Position
+	@Override
+	public Icon getIcon() {
+		if(super.getIcon() == null) return null;
+		return new CibIconWrapper(super.getIcon());
+	}
+	
+	@Override
+	public Icon getDisabledIcon() {
+		if(super.getDisabledIcon() == null) return null;
+		return new CibIconWrapper(super.getDisabledIcon());
+	}
+	
+	@Override
+	public Icon getDisabledSelectedIcon() {
+		if(super.getDisabledSelectedIcon() == null) return null;
+		return new CibIconWrapper(super.getDisabledSelectedIcon());
+	}
+	
+	@Override
+	public Icon getPressedIcon() {
+		if(super.getPressedIcon() == null) return null;
+		return new CibIconWrapper(super.getPressedIcon());
+	}
+	
+	@Override
+	public Icon getRolloverIcon() {
+		if(super.getRolloverIcon() == null) return null;
+		return new CibIconWrapper(super.getRolloverIcon());
+	}
+	
+	@Override
+	public Icon getRolloverSelectedIcon() {
+		if(super.getRolloverSelectedIcon() == null) return null;
+		return new CibIconWrapper(super.getRolloverSelectedIcon());
+	}
+	@Override
+	public Icon getSelectedIcon() {
+		if(super.getSelectedIcon() == null) return null;
+		return new CibIconWrapper(super.getSelectedIcon());
+	}
+	
+	@Override
+	public Rectangle getIconRect() {
+		return iconRect;
 	}
 }

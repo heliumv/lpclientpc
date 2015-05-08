@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -360,9 +360,17 @@ public class PanelStuecklistearbeitsplan extends PanelBasis {
 			dStueckzeit = lStueckzeit / 60000;
 			dRuestzeit = lRuestzeit / 60000;
 		} else if (sEinheit.equals(SystemFac.EINHEIT_SEKUNDE.trim())) {
-			dStueckzeit = lStueckzeit / 100;
-			dRuestzeit = lRuestzeit / 100;
+			dStueckzeit = lStueckzeit / 1000;
+			dRuestzeit = lRuestzeit / 1000;
 		}
+		
+		if(internalFrameStueckliste
+		.getStuecklisteDto().getIErfassungsfaktor()!=0){
+			dStueckzeit=dStueckzeit/((double)internalFrameStueckliste
+					.getStuecklisteDto().getIErfassungsfaktor());
+		}
+		
+		
 		if (stuecklistearbeitsplanDto.getMaschineIId() != null) {
 			MaschineDto maschineDto = DelegateFactory
 					.getInstance()
@@ -447,6 +455,16 @@ public class PanelStuecklistearbeitsplan extends PanelBasis {
 
 		}
 
+		//SP2760
+		if (sEinheit.equals(SystemFac.EINHEIT_MINUTE.trim())) {
+			kostenR=kostenR.divide(new BigDecimal(60),BigDecimal.ROUND_HALF_UP);
+			kostenSTK=kostenSTK.divide(new BigDecimal(60),BigDecimal.ROUND_HALF_UP);
+		} else if (sEinheit.equals(SystemFac.EINHEIT_SEKUNDE.trim())) {
+			kostenR=kostenR.divide(new BigDecimal(3600),BigDecimal.ROUND_HALF_UP);
+			kostenSTK=kostenSTK.divide(new BigDecimal(3600),BigDecimal.ROUND_HALF_UP);
+		}
+		
+		
 		wlaRuestzeitUmgewandelt.setText("= "
 				+ Helper.rundeKaufmaennisch(new BigDecimal(dRuestzeit), 2)
 				+ " "

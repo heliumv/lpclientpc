@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -338,8 +338,29 @@ public class PanelDialogPreisvorschlagKundesokomengenstaffel extends
 
 			awnfRabattsatz[i] = new WrapperNumberField();
 			awnfRabattsatz[i].setEditable(false);
-			awnfRabattsatz[i].setDouble(aKundesokomengenstaffelDtos[i]
-					.getFArtikelstandardrabattsatz());
+
+			if (aKundesokomengenstaffelDtos[i].getNArtikelfixpreis() != null) {
+
+				if (panelDialogPreisvorschlagDto.getAktuellerVerkaufspreisDto().einzelpreis
+						.doubleValue() != 0) {
+
+					BigDecimal rabattsatz = new BigDecimal(1)
+							.subtract(aKundesokomengenstaffelDtos[i]
+									.getNArtikelfixpreis()
+									.divide(panelDialogPreisvorschlagDto
+											.getAktuellerVerkaufspreisDto().einzelpreis,
+											4, BigDecimal.ROUND_HALF_EVEN));
+					awnfRabattsatz[i].setBigDecimal(rabattsatz
+							.multiply(new BigDecimal(100)));
+
+				} else {
+					awnfRabattsatz[i].setBigDecimal(BigDecimal.ZERO);
+				}
+
+			} else {
+				awnfRabattsatz[i].setDouble(aKundesokomengenstaffelDtos[i]
+						.getFArtikelstandardrabattsatz());
+			}
 
 			awlaProzent[i] = new WrapperLabel(LPMain.getInstance()
 					.getTextRespectUISPr("label.prozent"));
@@ -385,7 +406,9 @@ public class PanelDialogPreisvorschlagKundesokomengenstaffel extends
 						.berechneVerkaufspreis(
 								nPreisbasis,
 								aKundesokomengenstaffelDtos[i]
-										.getNArtikelfixpreis(),panelDialogPreisvorschlagDto.getNMaterialzuschlag());
+										.getNArtikelfixpreis(),
+								panelDialogPreisvorschlagDto
+										.getNMaterialzuschlag());
 			} else {
 				vkpInMandantenwaehrungDto = DelegateFactory
 						.getInstance()
@@ -393,7 +416,9 @@ public class PanelDialogPreisvorschlagKundesokomengenstaffel extends
 						.berechneVerkaufspreis(
 								nPreisbasis,
 								aKundesokomengenstaffelDtos[i]
-										.getFArtikelstandardrabattsatz(),panelDialogPreisvorschlagDto.getNMaterialzuschlag());
+										.getFArtikelstandardrabattsatz(),
+								panelDialogPreisvorschlagDto
+										.getNMaterialzuschlag());
 				if (aKundesokomengenstaffelDtos[i]
 						.getFArtikelstandardrabattsatz().intValue() == 0)
 					vkpInMandantenwaehrungDto.nettopreis = nPreisbasis;
@@ -406,8 +431,8 @@ public class PanelDialogPreisvorschlagKundesokomengenstaffel extends
 			awnfBerechneterPreis[i] = new WrapperNumberField();
 			awnfBerechneterPreis[i]
 					.setFractionDigits(iPreiseUINachkommastellen);
-			awnfBerechneterPreis[i]
-					.setBigDecimal(aVerkaufspreisDtos[i].getNettpreisOhneMaterialzuschlag());
+			awnfBerechneterPreis[i].setBigDecimal(aVerkaufspreisDtos[i]
+					.getNettpreisOhneMaterialzuschlag());
 			awnfBerechneterPreis[i].setEditable(false);
 
 			// wenn der berechnete Preis unter dem minimalen Verkaufspreis liegt
@@ -588,16 +613,40 @@ public class PanelDialogPreisvorschlagKundesokomengenstaffel extends
 					BigDecimal fixPreis = panelDialogPreisvorschlagDto
 							.getNFixPreis();
 					if (panelDialogPreisvorschlagDto.getNMaterialzuschlag() != null) {
-						fixPreis=fixPreis.subtract(panelDialogPreisvorschlagDto.getNMaterialzuschlag());
+						fixPreis = fixPreis
+								.subtract(panelDialogPreisvorschlagDto
+										.getNMaterialzuschlag());
 					}
 					wrbHandeingabeFixpreis.setSelected(true);
-					wnfHandeingabeFixpreis
-							.setBigDecimal(fixPreis);
+					wnfHandeingabeFixpreis.setBigDecimal(fixPreis);
 					wnfHandeingabeFixpreis.setMandatoryField(true);
 					wnfHandeingabeFixpreis.setEditable(true);
+
+					// Hier nun noch den Rabattsatz berechnen
+
+					if (panelDialogPreisvorschlagDto
+							.getAktuellerVerkaufspreisDto().einzelpreis != null) {
+
+						if (panelDialogPreisvorschlagDto
+								.getAktuellerVerkaufspreisDto().einzelpreis
+								.doubleValue() != 0) {
+
+							BigDecimal rabattsatz = new BigDecimal(1)
+									.subtract(panelDialogPreisvorschlagDto
+											.getNFixPreis()
+											.divide(panelDialogPreisvorschlagDto
+													.getAktuellerVerkaufspreisDto().einzelpreis,
+													4,
+													BigDecimal.ROUND_HALF_EVEN));
+							wnfHandeingabeRabattsatz.setBigDecimal(rabattsatz
+									.multiply(new BigDecimal(100)));
+
+						}
+
+					}
+
 				}
 			}
-
 		}
 
 	}
@@ -739,7 +788,9 @@ public class PanelDialogPreisvorschlagKundesokomengenstaffel extends
 								panelDialogPreisvorschlagDto
 										.getAktuellerVerkaufspreisDto()
 										.getDdZusatzrabattsatz(),
-								mwstsatzDtoAktuell.getIId(),panelDialogPreisvorschlagDto.getNMaterialzuschlag());
+								mwstsatzDtoAktuell.getIId(),
+								panelDialogPreisvorschlagDto
+										.getNMaterialzuschlag());
 
 				verkaufspreisDtoInBelegwaehrung = DelegateFactory
 						.getInstance()

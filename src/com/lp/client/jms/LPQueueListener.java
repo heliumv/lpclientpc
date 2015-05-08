@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -37,11 +37,15 @@ import javax.naming.*;
 
 public class LPQueueListener implements MessageListener
 {
-	  public LPQueueListener() throws Exception
-	  {
-	    final String MEINE_QUEUE = "queue/LPQueue";
-	    Context         ctx      = null;
-	    QueueConnection connect  = null;
+    private QueueConnection connect  = null;
+    private final String MEINE_QUEUE = "queue/LPQueue";
+    
+	public LPQueueListener() throws Exception {
+		createConnection();
+	}
+
+	private boolean createConnection() throws NamingException, JMSException {
+		Context         ctx      = null;
 	    QueueSession    session  = null;
 	    Queue           queue    = null;
 	    QueueReceiver   receiver = null;
@@ -59,24 +63,51 @@ public class LPQueueListener implements MessageListener
 	      }
 	      receiver = session.createReceiver( queue );
 	      receiver.setMessageListener(this);
+	      
+	      connect.setExceptionListener(new ExceptionListenerImpl());
 	      connect.start();
-	     //7 Thread.sleep( 20000 );
+	      return true ;
 	    } finally {
-	    // try { if( null != receiver ) receiver.close(); } catch( Exception ex ) {}
-	    //  try { if( null != session  ) session.close();  } catch( Exception ex ) {}
-	    //  try { if( null != connect  ) connect.close();  } catch( Exception ex ) {}
-	    //  try { if( null != ctx      ) ctx.close();      } catch( Exception ex ) {}
+	    	if(ctx != null) {
+	    		ctx.close() ;
+	    	}
 	    }
-	  }
+	}
 
-	  public void onMessage( Message message )
-	  {
-	    try {
-	      //TextMessage msg = (TextMessage) message;
-	      System.out.println(message.toString() );
-	      message.acknowledge();
-	    } catch( JMSException ex ) {
-	      System.out.println( ex.getMessage() );
-	    }
-	  }
+	public void onMessage(Message message) {
+		try {
+			// TextMessage msg = (TextMessage) message;
+			System.out.println(message.toString());
+			message.acknowledge();
+		} catch (JMSException ex) {
+			System.out.println(ex.getMessage());
+		}
+	}
+	  
+	class ExceptionListenerImpl implements ExceptionListener {
+		@Override
+		public void onException(JMSException arg0) {
+			System.out.println("Should reconnect...");
+
+			for (int i = 0; i < 5; i++) {
+				System.out.println("Reconnecting, try #" + i + "...");
+				
+				try {
+					if (connect != null) {
+						connect.close();
+						connect = null;
+					}
+				} catch (Exception e) {
+				}
+
+				try {
+					if (createConnection()) {
+						return;
+					}
+				} catch (Exception e) {
+
+				}
+			}
+		}
+	}
 }

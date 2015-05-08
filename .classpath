@@ -46,7 +46,6 @@
 	<classpathentry kind="lib" path="lib/jfreechart/jcommon-1.0.16.jar"/>
 	<classpathentry kind="lib" path="lib/grouplayout.jar"/>
 	<classpathentry kind="lib" path="lib/jcommon-1.0.6.jar"/>
-	<classpathentry kind="lib" path="lib/cglib-2.1.jar"/>
 	<classpathentry kind="lib" path="lib/commons-io-1.0.jar"/>
 	<classpathentry kind="lib" path="lib/jxl.jar"/>
 	<classpathentry kind="lib" path="lib/commons-httpclient.jar"/>
@@ -58,6 +57,12 @@
 	<classpathentry kind="lib" path="lib/jfreechart/iText-2.1.7.js2.jar"/>
 	<classpathentry kind="lib" path="lib/jasperreports/jasperreports-5.5.0.jar"/>
 	<classpathentry kind="lib" path="lib/jasperreports/jasperreports-fonts-5.5.0.jar"/>
-	<classpathentry kind="lib" path="lib/postgresql-8.1-405.jdbc3.jar"/>
+	<classpathentry kind="lib" path="lib/jruby.jar"/>
+	<classpathentry kind="lib" path="lib/jackson-core-2.2.3.jar"/>
+	<classpathentry kind="lib" path="lib/jackson-databind-2.2.3.jar"/>
+	<classpathentry kind="lib" path="lib/jackson-annotations-2.2.3.jar"/>
+	<classpathentry kind="lib" path="lib/postgresql-9.3-1101.jdbc4.jar"/>
+	<classpathentry kind="lib" path="lib/pdfbox-app-2.0.0_beta.jar"/>
+	<classpathentry kind="var" path="JFXRT_LIB"/>
 	<classpathentry kind="output" path="classes"/>
 </classpath>

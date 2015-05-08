@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -35,9 +35,12 @@ package com.lp.client.partner;
 import java.util.Map;
 import java.util.TreeMap;
 
+import com.lp.client.artikel.ArtikelFilterFactory;
 import com.lp.client.frame.component.*;
 import com.lp.client.pc.*;
 import com.lp.client.util.fastlanereader.gui.*;
+import com.lp.server.artikel.service.ArtikelFac;
+import com.lp.server.artikel.service.ArtikelkommentarFac;
 import com.lp.server.partner.service.*;
 import com.lp.server.system.service.*;
 import com.lp.server.util.fastlanereader.service.query.*;
@@ -201,9 +204,9 @@ public class PartnerFilterFactory {
 		}
 
 		PanelQueryFLR plPartner = new PanelQueryFLR(createFFirmaNNPartnerart(),
-				null, QueryParameters.UC_ID_PARTNER,
-				aWhichButtonIUse, internalFrameI, LPMain.getInstance()
-						.getTextRespectUISPr("title.partnerauswahlliste"));
+				null, QueryParameters.UC_ID_PARTNER, aWhichButtonIUse,
+				internalFrameI, LPMain.getInstance().getTextRespectUISPr(
+						"title.partnerauswahlliste"));
 
 		plPartner
 				.befuellePanelFilterkriterienDirektUndVersteckte(
@@ -289,6 +292,7 @@ public class PartnerFilterFactory {
 		return fKDPartnername;
 	}
 
+	
 	public FilterKriteriumDirekt createFKDPartnerKurzbezeichnung() {
 
 		FilterKriteriumDirekt fKDPartnername = new FilterKriteriumDirekt(
@@ -306,11 +310,23 @@ public class PartnerFilterFactory {
 				PartnerFac.PARTNERQP1_ERWEITERTE_SUCHE, "",
 				FilterKriterium.OPERATOR_LIKE, LPMain.getInstance()
 						.getTextRespectUISPr("part.erweitertesuche"),
+				FilterKriteriumDirekt.EXTENDED_SEARCH, false, true,
+				Facade.MAX_UNBESCHRAENKT); // wrapWithSingleQuotes
+		return fKDPartnername;
+	}
+
+	public FilterKriteriumDirekt createFKDPartnersucheNachTelefonnummer() {
+
+		FilterKriteriumDirekt fKDPartnername = new FilterKriteriumDirekt(
+				PartnerFac.PARTNERQP1_TELEFONNUMMERN_SUCHE, "",
+				FilterKriterium.OPERATOR_LIKE, LPMain.getInstance()
+						.getTextRespectUISPr("part.telefonnummernsuche"),
 				FilterKriteriumDirekt.PROZENT_BOTH, true, true,
 				Facade.MAX_UNBESCHRAENKT); // wrapWithSingleQuotes
 		return fKDPartnername;
 	}
 
+	
 	public FilterKriteriumDirekt createFKDKundePartnerKurzbezeichnung() {
 
 		FilterKriteriumDirekt fKDPartnername = new FilterKriteriumDirekt(
@@ -628,6 +644,22 @@ public class PartnerFilterFactory {
 		kriterien[0] = krit1;
 		return kriterien;
 	}
+	public FilterKriterium[] createFKPartnerkommentar(Integer iiPAPartnerI, boolean bKunde) {
+		FilterKriterium[] kriterien = new FilterKriterium[2];
+		FilterKriterium krit1 = new FilterKriterium(
+				PartnerServicesFac.FLR_PARTNERKOMMENTAR_PARTNER_I_ID, true, ""
+						+ iiPAPartnerI.toString() + "",
+				FilterKriterium.OPERATOR_EQUAL, false);
+		
+		kriterien[0] = krit1;
+		
+		FilterKriterium krit2 = new FilterKriterium(
+				PartnerServicesFac.FLR_PARTNERKOMMENTAR_B_KUNDE, true, ""+ Helper.boolean2Short(bKunde),
+				FilterKriterium.OPERATOR_EQUAL, false);
+		kriterien[1] = krit2;
+		
+		return kriterien;
+	}
 
 	/**
 	 * Default Filterkriterium fuer Filter nach Partner. <br>
@@ -766,7 +798,7 @@ public class PartnerFilterFactory {
 		FilterKriterium[] kriterien = new FilterKriterium[1];
 		FilterKriterium krit1 = new FilterKriterium(
 				PartnerFac.FLR_SERIENBRIEFSELEKTION_SERIENBRIEF_I_ID, true, "'"
-						+ iIdSerienbriefI.toString() + "'",
+						+ iIdSerienbriefI + "'",
 				FilterKriterium.OPERATOR_EQUAL, false);
 		kriterien[0] = krit1;
 		return kriterien;
@@ -827,8 +859,8 @@ public class PartnerFilterFactory {
 	public FilterKriteriumDirekt createFKDBankLandPLZOrt() {
 		FilterKriteriumDirekt fkDirekt2 = new FilterKriteriumDirekt(
 				BankFac.FLR_PARTNERBANK_LANDPLZORT_ORT_NAME, "",
-				FilterKriterium.OPERATOR_LIKE, LPMain
-						.getTextRespectUISPr("lp.ort"),
+				FilterKriterium.OPERATOR_LIKE,
+				LPMain.getTextRespectUISPr("lp.ort"),
 				FilterKriteriumDirekt.PROZENT_BOTH, true, false,
 				Facade.MAX_UNBESCHRAENKT);
 		return fkDirekt2;
@@ -837,7 +869,8 @@ public class PartnerFilterFactory {
 	public FilterKriteriumDirekt createFKDBankBLZ() {
 		FilterKriteriumDirekt fkDirekt = new FilterKriteriumDirekt(
 				BankFac.FLR_PARTNERBANK_BLZ, "", FilterKriterium.OPERATOR_LIKE,
-				LPMain.getTextRespectUISPr("lp.blz")+"/"+LPMain.getTextRespectUISPr("lp.bic"),
+				LPMain.getTextRespectUISPr("lp.blz") + "/"
+						+ LPMain.getTextRespectUISPr("lp.bic"),
 				FilterKriteriumDirekt.PROZENT_BOTH, true, false,
 				Facade.MAX_UNBESCHRAENKT);
 		return fkDirekt;
@@ -902,6 +935,33 @@ public class PartnerFilterFactory {
 		return panelQueryFLRAnsprechpartner;
 	}
 
+	public PanelQueryFLR createPanelFLRPartnerkommentarart(
+			InternalFrame internalFrameI, Integer selectedId,
+			boolean bMitLeerenButton) throws Throwable {
+
+		String[] aWhichButtonIUse = null;
+		if (bMitLeerenButton) {
+			aWhichButtonIUse = new String[] { PanelBasis.ACTION_REFRESH,
+					PanelBasis.ACTION_LEEREN };
+		} else {
+			aWhichButtonIUse = new String[] { PanelBasis.ACTION_REFRESH };
+		}
+		PanelQueryFLR panelQueryFLRKommentarart = new PanelQueryFLR(
+				ArtikelFilterFactory.getInstance()
+						.createQTArtikelkommentarart(), null,
+				QueryParameters.UC_ID_PARTNERKOMMENTARART, aWhichButtonIUse,
+				internalFrameI, LPMain.getTextRespectUISPr(
+						"lp.kommentarart"));
+
+		panelQueryFLRKommentarart
+				.befuellePanelFilterkriterienDirekt(
+						SystemFilterFactory.getInstance().createFKDBezeichnung(),null);
+		panelQueryFLRKommentarart.setSelectedId(selectedId);
+		return panelQueryFLRKommentarart;
+
+	}
+
+	
 	public Map getMapKundeInteressent() {
 		Map m = new TreeMap();
 		m.put(1, LPMain.getTextRespectUISPr("kunde.filter.alle"));
@@ -1023,17 +1083,19 @@ public class PartnerFilterFactory {
 		FilterKriterium[] kriterien = null;
 		if (kundeIId != null) {
 			kriterien = new FilterKriterium[2];
-			kriterien[0] = new FilterKriterium("flrkunde.mandant_c_nr", true,
-					"'" + LPMain.getInstance().getTheClient().getMandant()
+			kriterien[0] = new FilterKriterium(
+					"kundesoko.flrkunde.mandant_c_nr", true, "'"
+							+ LPMain.getInstance().getTheClient().getMandant()
 							+ "'", FilterKriterium.OPERATOR_EQUAL, false);
-			kriterien[1] = new FilterKriterium("flrkunde.i_id", true, kundeIId
-					+ "", FilterKriterium.OPERATOR_EQUAL, false);
+			kriterien[1] = new FilterKriterium("kundesoko.flrkunde.i_id", true,
+					kundeIId + "", FilterKriterium.OPERATOR_EQUAL, false);
 
 		} else {
 			kriterien = new FilterKriterium[1];
 
-			kriterien[0] = new FilterKriterium("flrkunde.mandant_c_nr", true,
-					"'" + LPMain.getInstance().getTheClient().getMandant()
+			kriterien[0] = new FilterKriterium(
+					"kundesoko.flrkunde.mandant_c_nr", true, "'"
+							+ LPMain.getInstance().getTheClient().getMandant()
 							+ "'", FilterKriterium.OPERATOR_EQUAL, false);
 
 		}
@@ -1044,7 +1106,7 @@ public class PartnerFilterFactory {
 						.getTextRespectUISPr("auft.title.panel.auswahl"));
 
 		panelQueryFLRKundenidentnummer.befuellePanelFilterkriterienDirekt(
-				new FilterKriteriumDirekt("c_kundeartikelnummer", "",
+				new FilterKriteriumDirekt("kundesoko.c_kundeartikelnummer", "",
 						FilterKriterium.OPERATOR_LIKE, LPMain.getInstance()
 								.getTextRespectUISPr(
 										"kunde.soko.kundeartikelnummer"),
@@ -1052,11 +1114,19 @@ public class PartnerFilterFactory {
 																// als '%XX'
 						true, // wrapWithSingleQuotes
 						true, Facade.MAX_UNBESCHRAENKT),
-				new FilterKriteriumDirekt("flrkunde."
+				new FilterKriteriumDirekt("kundesoko.flrkunde."
 						+ KundeFac.FLR_PARTNER_NAME1NACHNAMEFIRMAZEILE1, "",
 						FilterKriterium.OPERATOR_LIKE, LPMain.getInstance()
 								.getTextRespectUISPr("lp.firma"),
 						FilterKriteriumDirekt.PROZENT_TRAILING, true, true,
+						Facade.MAX_UNBESCHRAENKT));
+
+		panelQueryFLRKundenidentnummer
+				.addDirektFilter(new FilterKriteriumDirekt(
+						ArtikelFac.FLR_ARTIKELLISTE_C_VOLLTEXT, "",
+						FilterKriterium.OPERATOR_LIKE, LPMain.getInstance()
+								.getTextRespectUISPr("lp.textsuche"),
+						FilterKriteriumDirekt.EXTENDED_SEARCH, false, true,
 						Facade.MAX_UNBESCHRAENKT));
 
 		return panelQueryFLRKundenidentnummer;
@@ -1199,6 +1269,36 @@ public class PartnerFilterFactory {
 		panelQueryFLRBranche.setSelectedId(selectedId);
 
 		return panelQueryFLRBranche;
+	}
+
+	public PanelQueryFLR createPanelFLRSelektion(InternalFrame internalFrameI,
+			boolean bShowLeerenButton, Integer selectedId) throws Throwable {
+
+		String[] aWhichButtonIUse = SystemFilterFactory.getInstance()
+				.createButtonArray(false, bShowLeerenButton);
+
+		FilterKriterium[] f = null;
+
+		ParametermandantDto parameter = DelegateFactory
+				.getInstance()
+				.getParameterDelegate()
+				.getMandantparameter(LPMain.getTheClient().getMandant(),
+						ParameterFac.KATEGORIE_PARTNER,
+						ParameterFac.PARAMETER_SELEKTIONEN_MANDANTENABHAENGIG);
+		boolean bSelektionenMandantenabhaengig = (java.lang.Boolean) parameter
+				.getCWertAsObject();
+
+		if (bSelektionenMandantenabhaengig == true) {
+			f = SystemFilterFactory.getInstance().createFKMandantCNr();
+		}
+
+		PanelQueryFLR panelQueryFLRSelektionAuswahl = new PanelQueryFLR(null,
+				f, QueryParameters.UC_ID_SELEKTION, aWhichButtonIUse,
+				internalFrameI, LPMain.getTextRespectUISPr("lp.selektion"));
+
+		panelQueryFLRSelektionAuswahl.setSelectedId(selectedId);
+
+		return panelQueryFLRSelektionAuswahl;
 	}
 
 	/**

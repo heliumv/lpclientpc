@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -45,6 +45,7 @@ import com.lp.server.lieferschein.service.LieferscheinServiceFac;
 import com.lp.server.lieferschein.service.LieferscheinartDto;
 import com.lp.server.lieferschein.service.LieferscheinpositionartDto;
 import com.lp.server.lieferschein.service.LieferscheintextDto;
+import com.lp.server.lieferschein.service.VerkettetDto;
 
 @SuppressWarnings("static-access")
 /**
@@ -151,6 +152,19 @@ public class LieferscheinServiceDelegate extends Delegate {
 		return oLieferscheintextDto;
 	}
 
+	public VerkettetDto verkettetFindByPrimaryKey(Integer begruendungIId)
+			throws ExceptionLP {
+		VerkettetDto dto = null;
+
+		try {
+			dto = lsServiceFac.verkettetFindByPrimaryKey(begruendungIId);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+
+		return dto;
+	}
+
 	public LieferscheintextDto lieferscheintextFindByMandantLocaleCNr(
 			String sLocaleI, String sCNrI) throws ExceptionLP {
 		LieferscheintextDto oLieferscheintextDto = null;
@@ -191,6 +205,16 @@ public class LieferscheinServiceDelegate extends Delegate {
 
 	}
 
+	public Integer createVerkettet(VerkettetDto dto) throws ExceptionLP {
+		try {
+			return lsServiceFac.createVerkettet(dto);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+
+	}
+
 	public String createLieferscheinart(LieferscheinartDto lieferscheinartDtoI)
 			throws ExceptionLP {
 		String cNr = null;
@@ -223,11 +247,27 @@ public class LieferscheinServiceDelegate extends Delegate {
 		}
 	}
 
+	public void removeVerkettet(Integer iId) throws ExceptionLP {
+		try {
+			lsServiceFac.removeVerkettet(iId);
+		} catch (Throwable t) {
+			handleThrowable(t);
+		}
+	}
+
 	public void updateLieferscheinart(LieferscheinartDto lieferscheinartDtoI)
 			throws ExceptionLP {
 		try {
 			lsServiceFac.updateLieferscheinart(lieferscheinartDtoI,
 					LPMain.getTheClient());
+		} catch (Throwable t) {
+			handleThrowable(t);
+		}
+	}
+
+	public void updateVerkettet(VerkettetDto dto) throws ExceptionLP {
+		try {
+			lsServiceFac.updateVerkettet(dto);
 		} catch (Throwable t) {
 			handleThrowable(t);
 		}
@@ -301,4 +341,19 @@ public class LieferscheinServiceDelegate extends Delegate {
 
 		return lieferscheinpositionartDto;
 	}
+
+	public VerkettetDto verkettetfindByLieferscheinIIdVerkettetOhneExc(
+			Integer lieferscheinIIdVerkettet) throws ExceptionLP {
+		VerkettetDto verkettetDto = null;
+
+		try {
+			verkettetDto = lsServiceFac
+					.verkettetfindByLieferscheinIIdVerkettetOhneExc(lieferscheinIIdVerkettet);
+		} catch (Throwable t) {
+			handleThrowable(t);
+		}
+
+		return verkettetDto;
+	}
+
 }

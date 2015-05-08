@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -63,6 +63,7 @@ import com.lp.server.util.Facade;
 import com.lp.server.util.fastlanereader.service.query.FilterKriterium;
 import com.lp.server.util.fastlanereader.service.query.FilterKriteriumDirekt;
 import com.lp.server.util.fastlanereader.service.query.QueryParameters;
+import com.lp.server.util.fastlanereader.service.query.SortierKriterium;
 
 @SuppressWarnings("static-access")
 public class ArtikelFilterFactory {
@@ -88,6 +89,28 @@ public class ArtikelFilterFactory {
 				FilterKriterium.OPERATOR_GT, false);
 
 		return kriterien;
+	}
+
+	public FilterKriterium[] createFKLagerlistefuerLagerListeMitMandant()
+			throws Throwable {
+		FilterKriterium[] krit = new FilterKriterium[4];
+
+		krit[0] = new FilterKriterium("flrlager.c_nr", true, "('"
+				+ LagerFac.LAGER_KEINLAGER + "')",
+				FilterKriterium.OPERATOR_NOT_IN, false);
+		krit[1] = new FilterKriterium("flrlager.lagerart_c_nr", true, "('"
+				+ LagerFac.LAGERART_WERTGUTSCHRIFT + "')",
+				FilterKriterium.OPERATOR_NOT_IN, false);
+
+		krit[2] = new FilterKriterium("flrlager.b_versteckt", true, "(1)",
+				FilterKriterium.OPERATOR_NOT_IN, false);
+
+		krit[3] = new FilterKriterium("flrsystemrolle.i_id", true,
+				DelegateFactory.getInstance().getTheJudgeDelegate()
+						.getSystemrolleIId()
+						+ "", FilterKriterium.OPERATOR_EQUAL, false);
+
+		return krit;
 	}
 
 	public FilterKriterium[] createFKLagerliste() throws Throwable {
@@ -290,6 +313,34 @@ public class ArtikelFilterFactory {
 		return kriterien;
 	}
 
+	public FilterKriterium[] createFKArtikelkommentarSuche() throws Throwable {
+		// Handartikel nicht anzeigen
+		FilterKriterium[] kriterien = new FilterKriterium[2];
+		kriterien[0] = new FilterKriterium("x_kommentar", true, "",
+				FilterKriterium.OPERATOR_IS + " "
+						+ FilterKriterium.OPERATOR_NOT_NULL, false);
+
+		if (LPMain
+				.getInstance()
+				.getDesktop()
+				.darfAnwenderAufZusatzfunktionZugreifen(
+						MandantFac.ZUSATZFUNKTION_ZENTRALER_ARTIKELSTAMM)) {
+			kriterien[1] = new FilterKriterium(
+					"artikelkommentar.flrartikel.mandant_c_nr", true, "'"
+							+ DelegateFactory.getInstance().getSystemDelegate()
+									.getHauptmandant() + "'",
+					FilterKriterium.OPERATOR_EQUAL, false);
+		} else {
+			kriterien[1] = new FilterKriterium(
+					"artikelkommentar.flrartikel.mandant_c_nr", true, "'"
+							+ LPMain.getInstance().getTheClient().getMandant()
+							+ "'", FilterKriterium.OPERATOR_EQUAL, false);
+
+		}
+
+		return kriterien;
+	}
+
 	public FilterKriterium[] createFKLagercockpitArtikel(Integer artikelIId)
 			throws Throwable {
 
@@ -324,8 +375,9 @@ public class ArtikelFilterFactory {
 
 		FilterKriterium[] kriterien = new FilterKriterium[1];
 
-		kriterien[0] = new FilterKriterium("umbuchung.flrartikel.b_lagerbewirtschaftet",
-				true, "1", FilterKriterium.OPERATOR_EQUAL, false);
+		kriterien[0] = new FilterKriterium(
+				"umbuchung.flrartikel.b_lagerbewirtschaftet", true, "1",
+				FilterKriterium.OPERATOR_EQUAL, false);
 
 		return kriterien;
 	}
@@ -408,6 +460,14 @@ public class ArtikelFilterFactory {
 	}
 
 	public FilterKriterium[] createFKArtikelshopgruppen(Integer artikelIId)
+			throws Throwable {
+		FilterKriterium[] kriterien = new FilterKriterium[1];
+		kriterien[0] = new FilterKriterium("artikel_i_id", true, artikelIId
+				+ "", FilterKriterium.OPERATOR_EQUAL, false);
+		return kriterien;
+	}
+
+	public FilterKriterium[] createFKArtikelalergen(Integer artikelIId)
 			throws Throwable {
 		FilterKriterium[] kriterien = new FilterKriterium[1];
 		kriterien[0] = new FilterKriterium("artikel_i_id", true, artikelIId
@@ -839,6 +899,34 @@ public class ArtikelFilterFactory {
 				Facade.MAX_UNBESCHRAENKT);
 	}
 
+	public PanelQueryFLR createPanelFLRLagerMitMandant(
+			InternalFrame internalFrameI, Integer selectedId,
+			boolean bMitLeerenButton) throws Throwable {
+		String[] aWhichButtonIUse = null;
+		if (bMitLeerenButton) {
+
+			aWhichButtonIUse = new String[] { PanelBasis.ACTION_REFRESH,
+					PanelBasis.ACTION_LEEREN };
+		} else {
+			aWhichButtonIUse = new String[] { PanelBasis.ACTION_REFRESH };
+
+		}
+		FilterKriterium[] fk = ArtikelFilterFactory.getInstance()
+				.createFKLagerlistefuerLagerListeMitMandant();
+
+		PanelQueryFLR panelQueryFLRLager = new PanelQueryFLR(createQTLager(),
+				fk, QueryParameters.UC_ID_LAGER_MIT_MANDANT, aWhichButtonIUse,
+				internalFrameI, LPMain.getInstance().getTextRespectUISPr(
+						"title.lagerauswahlliste"));
+
+		panelQueryFLRLager.befuellePanelFilterkriterienDirekt(
+				createFKDLagername(), createFKDLagerLagerart());
+		if (selectedId != null) {
+			panelQueryFLRLager.setSelectedId(selectedId);
+		}
+		return panelQueryFLRLager;
+	}
+
 	public PanelQueryFLR createPanelFLRLager(InternalFrame internalFrameI,
 			Integer selectedId) throws Throwable {
 		return createPanelFLRLager(internalFrameI, selectedId, false, false);
@@ -1106,6 +1194,153 @@ public class ArtikelFilterFactory {
 								.getTextRespectUISPr("lp.bezeichnung"),
 						FilterKriteriumDirekt.PROZENT_BOTH, true, true,
 						Facade.MAX_UNBESCHRAENKT));
+
+		panelQuery.setSelectedId(selectedId);
+
+		return panelQuery;
+	}
+
+	public PanelQueryFLR createPanelFLRAlergen(InternalFrame internalFrameI,
+			Integer selectedId, boolean bShowLeerenButton) throws Throwable {
+
+		String[] aWhichButtonIUse;
+		if (bShowLeerenButton) {
+			aWhichButtonIUse = new String[] { PanelBasis.ACTION_REFRESH,
+					PanelBasis.ACTION_LEEREN };
+		} else {
+			aWhichButtonIUse = new String[] { PanelBasis.ACTION_REFRESH };
+		}
+
+		PanelQueryFLR panelQuery = new PanelQueryFLR(null, SystemFilterFactory
+				.getInstance().createFKMandantCNr(),
+				QueryParameters.UC_ID_ALERGEN, aWhichButtonIUse,
+				internalFrameI, LPMain.getTextRespectUISPr("artikel.allergen"));
+
+		panelQuery.befuellePanelFilterkriterienDirekt(
+				new FilterKriteriumDirekt("alergen.c_bez", "",
+						FilterKriterium.OPERATOR_LIKE, LPMain.getInstance()
+								.getTextRespectUISPr("lp.bezeichnung"),
+						FilterKriteriumDirekt.PROZENT_BOTH, true, true,
+						Facade.MAX_UNBESCHRAENKT), null);
+
+		panelQuery.setSelectedId(selectedId);
+
+		return panelQuery;
+	}
+
+	public PanelQueryFLR createPanelFLRArtikellagerplaetze(
+			InternalFrame internalFrameI, Integer artikelIId,
+			boolean bShowLeerenButton) throws Throwable {
+
+		String[] aWhichButtonIUse;
+		if (bShowLeerenButton) {
+			aWhichButtonIUse = new String[] { PanelBasis.ACTION_REFRESH,
+					PanelBasis.ACTION_LEEREN };
+		} else {
+			aWhichButtonIUse = new String[] { PanelBasis.ACTION_REFRESH };
+		}
+
+		FilterKriterium[] kriterien = new FilterKriterium[1];
+		kriterien[0] = new FilterKriterium("artikel_i_id", true, artikelIId
+				+ "", FilterKriterium.OPERATOR_EQUAL, false);
+
+		PanelQueryFLR panelQuery = new PanelQueryFLR(null, kriterien,
+				QueryParameters.UC_ID_ARTIKELLAGERPLAETZE, aWhichButtonIUse,
+				internalFrameI, LPMain.getTextRespectUISPr("lp.lagerplatz"));
+		return panelQuery;
+	}
+
+	public PanelQueryFLR createPanelFLRReach(InternalFrame internalFrameI,
+			Integer selectedId, boolean bShowLeerenButton) throws Throwable {
+
+		String[] aWhichButtonIUse;
+		if (bShowLeerenButton) {
+			aWhichButtonIUse = new String[] { PanelBasis.ACTION_REFRESH,
+					PanelBasis.ACTION_LEEREN };
+		} else {
+			aWhichButtonIUse = new String[] { PanelBasis.ACTION_REFRESH };
+		}
+
+		PanelQueryFLR panelQuery = new PanelQueryFLR(null, SystemFilterFactory
+				.getInstance().createFKMandantCNr(),
+				QueryParameters.UC_ID_REACH, aWhichButtonIUse, internalFrameI,
+				LPMain.getTextRespectUISPr("artikel.reach"));
+
+		panelQuery.befuellePanelFilterkriterienDirekt(SystemFilterFactory
+				.getInstance().createFKDBezeichnung(), null);
+
+		panelQuery.setSelectedId(selectedId);
+
+		return panelQuery;
+	}
+
+	public PanelQueryFLR createPanelFLRRohs(InternalFrame internalFrameI,
+			Integer selectedId, boolean bShowLeerenButton) throws Throwable {
+
+		String[] aWhichButtonIUse;
+		if (bShowLeerenButton) {
+			aWhichButtonIUse = new String[] { PanelBasis.ACTION_REFRESH,
+					PanelBasis.ACTION_LEEREN };
+		} else {
+			aWhichButtonIUse = new String[] { PanelBasis.ACTION_REFRESH };
+		}
+
+		PanelQueryFLR panelQuery = new PanelQueryFLR(null, SystemFilterFactory
+				.getInstance().createFKMandantCNr(),
+				QueryParameters.UC_ID_ROHS, aWhichButtonIUse, internalFrameI,
+				LPMain.getTextRespectUISPr("artikel.rohs"));
+
+		panelQuery.befuellePanelFilterkriterienDirekt(SystemFilterFactory
+				.getInstance().createFKDBezeichnung(), null);
+
+		panelQuery.setSelectedId(selectedId);
+
+		return panelQuery;
+	}
+
+	public PanelQueryFLR createPanelFLRAutomotive(InternalFrame internalFrameI,
+			Integer selectedId, boolean bShowLeerenButton) throws Throwable {
+
+		String[] aWhichButtonIUse;
+		if (bShowLeerenButton) {
+			aWhichButtonIUse = new String[] { PanelBasis.ACTION_REFRESH,
+					PanelBasis.ACTION_LEEREN };
+		} else {
+			aWhichButtonIUse = new String[] { PanelBasis.ACTION_REFRESH };
+		}
+
+		PanelQueryFLR panelQuery = new PanelQueryFLR(null, SystemFilterFactory
+				.getInstance().createFKMandantCNr(),
+				QueryParameters.UC_ID_AUTOMOTIVE, aWhichButtonIUse,
+				internalFrameI,
+				LPMain.getTextRespectUISPr("artikel.automotive"));
+
+		panelQuery.befuellePanelFilterkriterienDirekt(SystemFilterFactory
+				.getInstance().createFKDBezeichnung(), null);
+
+		panelQuery.setSelectedId(selectedId);
+
+		return panelQuery;
+	}
+
+	public PanelQueryFLR createPanelFLRMedical(InternalFrame internalFrameI,
+			Integer selectedId, boolean bShowLeerenButton) throws Throwable {
+
+		String[] aWhichButtonIUse;
+		if (bShowLeerenButton) {
+			aWhichButtonIUse = new String[] { PanelBasis.ACTION_REFRESH,
+					PanelBasis.ACTION_LEEREN };
+		} else {
+			aWhichButtonIUse = new String[] { PanelBasis.ACTION_REFRESH };
+		}
+
+		PanelQueryFLR panelQuery = new PanelQueryFLR(null, SystemFilterFactory
+				.getInstance().createFKMandantCNr(),
+				QueryParameters.UC_ID_MEDICAL, aWhichButtonIUse,
+				internalFrameI, LPMain.getTextRespectUISPr("artikel.medical"));
+
+		panelQuery.befuellePanelFilterkriterienDirekt(SystemFilterFactory
+				.getInstance().createFKDBezeichnung(), null);
 
 		panelQuery.setSelectedId(selectedId);
 
@@ -1598,7 +1833,7 @@ public class ArtikelFilterFactory {
 				ArtikelFilterFactory.getInstance().createFKArtikelliste(),
 				QueryParameters.UC_ID_ARTIKELLISTE, aWhichButtonIUse,
 				internalFrameI, LPMain.getInstance().getTextRespectUISPr(
-						"title.artikelauswahlliste"), createFKVArtikel());
+						"title.artikelauswahlliste"), createFKVArtikel(), null);
 
 		panelQueryArtikel.befuellePanelFilterkriterienDirekt(
 				createFKDArtikelnummer(internalFrameI),
@@ -1607,10 +1842,9 @@ public class ArtikelFilterFactory {
 				.createFKDLieferantennrBezeichnung());
 
 		panelQueryArtikel.setFilterComboBox(DelegateFactory.getInstance()
-				.getArtikelDelegate().getAllSprArtgru(),
-				new FilterKriterium("ag.i_id", true, "" + "",
-						FilterKriterium.OPERATOR_EQUAL, false), false, LPMain
-						.getTextRespectUISPr("lp.alle"));
+				.getArtikelDelegate().getAllSprArtgru(), new FilterKriterium(
+				"ag.i_id", true, "" + "", FilterKriterium.OPERATOR_IN, false),
+				false, LPMain.getTextRespectUISPr("lp.alle"),false);
 
 		ParametermandantDto parameter = DelegateFactory
 				.getInstance()
@@ -1643,21 +1877,41 @@ public class ArtikelFilterFactory {
 			aWhichButtonIUse = new String[] { PanelBasis.ACTION_LEEREN };
 		}
 
-		PanelQueryFLR panelQueryArtikel = new PanelQueryFLR(null,
-				ArtikelFilterFactory.getInstance()
-						.createFKArtikellisteOhneArbeitszeit(),
-				QueryParameters.UC_ID_ARTIKELLISTE, aWhichButtonIUse,
-				internalFrameI, LPMain.getInstance().getTextRespectUISPr(
-						"title.artikelauswahlliste"), createFKVArtikel());
+		PanelQueryFLR panelQueryArtikel = null;
+		if (LPMain
+				.getInstance()
+				.getDesktop()
+				.darfAnwenderAufZusatzfunktionZugreifen(
+						MandantFac.ZUSATZFUNKTION_SI_WERT)) {
+
+			SortierKriterium krit = new SortierKriterium("aspr.c_siwert", true,
+					"ASC");
+			// krit.value
+
+			panelQueryArtikel = new PanelQueryFLR(null, ArtikelFilterFactory
+					.getInstance().createFKArtikellisteOhneArbeitszeit(),
+					QueryParameters.UC_ID_ARTIKELLISTE, aWhichButtonIUse,
+					internalFrameI, LPMain.getInstance().getTextRespectUISPr(
+							"title.artikelauswahlliste"), createFKVArtikel(),
+					null, krit,
+					LPMain.getTextRespectUISPr("artikel.auswahl.sortbysiwert"));
+
+		} else {
+			panelQueryArtikel = new PanelQueryFLR(null, ArtikelFilterFactory
+					.getInstance().createFKArtikellisteOhneArbeitszeit(),
+					QueryParameters.UC_ID_ARTIKELLISTE, aWhichButtonIUse,
+					internalFrameI, LPMain.getInstance().getTextRespectUISPr(
+							"title.artikelauswahlliste"), createFKVArtikel(),
+					null);
+		}
 
 		panelQueryArtikel.befuellePanelFilterkriterienDirekt(
 				createFKDArtikelnummer(internalFrameI),
 				createFKDVolltextsuche());
 		panelQueryArtikel.setFilterComboBox(DelegateFactory.getInstance()
-				.getArtikelDelegate().getAllSprArtgru(),
-				new FilterKriterium("ag.i_id", true, "" + "",
-						FilterKriterium.OPERATOR_EQUAL, false), false, LPMain
-						.getTextRespectUISPr("lp.alle"));
+				.getArtikelDelegate().getAllSprArtgru(), new FilterKriterium(
+				"ag.i_id", true, "" + "", FilterKriterium.OPERATOR_IN, false),
+				false, LPMain.getTextRespectUISPr("lp.alle"),false);
 
 		panelQueryArtikel.addDirektFilter(ArtikelFilterFactory.getInstance()
 				.createFKDLieferantennrBezeichnung());
@@ -1716,7 +1970,7 @@ public class ArtikelFilterFactory {
 				.getArtikelDelegate().getAllSprArtgru(),
 				new FilterKriterium("ag.i_id", true, "" + "",
 						FilterKriterium.OPERATOR_EQUAL, false), false, LPMain
-						.getTextRespectUISPr("lp.alle"));
+						.getTextRespectUISPr("lp.alle"),false);
 
 		ParametermandantDto parameter = DelegateFactory
 				.getInstance()

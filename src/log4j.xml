@@ -52,7 +52,7 @@
 <!-- A time/date based rolling appender -->
    <appender name="LP_CLIENT_LOG_LOCAL" class="org.jboss.logging.appender.DailyRollingFileAppender">
       <errorHandler class="org.jboss.logging.util.OnlyOnceErrorHandler"/>
-      <param name="File" value="./log/lpclient_"/>
+      <param name="File" value="${user.home}/.heliumv/Default/log/lpclient_"/>
       <param name="Append" value="true"/>
 
       <!-- Rollover at midnight each day -->
@@ -182,7 +182,7 @@
 
    <!-- Limit the org.apache.commons category to INFO as its DEBUG is verbose -->
    <logger name="com.lp">
-      <level value="WARN"/>
+      <level value="DEBUG"/>
       <appender-ref ref="LP_CLIENT_LOG_LOCAL"/>
    </logger>
 

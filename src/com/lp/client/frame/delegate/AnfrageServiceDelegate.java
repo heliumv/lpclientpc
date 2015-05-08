@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -42,9 +42,11 @@ import com.lp.client.frame.ExceptionLP;
 import com.lp.client.pc.LPMain;
 import com.lp.server.anfrage.service.AnfrageServiceFac;
 import com.lp.server.anfrage.service.AnfrageartDto;
+import com.lp.server.anfrage.service.AnfrageerledigungsgrundDto;
 import com.lp.server.anfrage.service.AnfragepositionartDto;
 import com.lp.server.anfrage.service.AnfragetextDto;
 import com.lp.server.anfrage.service.ZertifikatartDto;
+import com.lp.server.system.service.TheClientDto;
 
 @SuppressWarnings("static-access")
 /*
@@ -83,6 +85,20 @@ public class AnfrageServiceDelegate extends Delegate {
 		}
 
 		return oAnfragetextDto;
+	}
+
+	public AnfrageerledigungsgrundDto anfrageerledigungsgrundFindByPrimaryKey(
+			Integer iId) throws ExceptionLP {
+		AnfrageerledigungsgrundDto anfrageerledigungsgrundDto = null;
+
+		try {
+			anfrageerledigungsgrundDto = anfrageServiceFac
+					.anfrageerledigungsgrundFindByPrimaryKey(iId);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+
+		return anfrageerledigungsgrundDto;
 	}
 
 	public ZertifikatartDto zertifikatartFindByPrimaryKey(Integer iId)
@@ -156,6 +172,17 @@ public class AnfrageServiceDelegate extends Delegate {
 			throws ExceptionLP {
 		try {
 			anfrageServiceFac.updateAnfragetext(anfragetextDto);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+	}
+
+	public void updateAnfrageerledigungsgrund(
+			AnfrageerledigungsgrundDto anfrageerledigungsgrundDto)
+			throws ExceptionLP {
+		try {
+			anfrageServiceFac
+					.updateAnfrageerledigungsgrund(anfrageerledigungsgrundDto);
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 		}
@@ -275,6 +302,27 @@ public class AnfrageServiceDelegate extends Delegate {
 		return anfrageartCNr;
 	}
 
+	public Integer createAnfrageerledigungsgrund(
+			AnfrageerledigungsgrundDto anfrageerledigungsgrundDto)
+			throws ExceptionLP {
+		try {
+			return anfrageServiceFac.createAnfrageerledigungsgrund(
+					anfrageerledigungsgrundDto, LPMain.getInstance()
+							.getTheClient());
+		} catch (Throwable t) {
+			handleThrowable(t);
+			return null;
+		}
+	}
+
+	public void removeAnfrageerledigungsgrund(Integer iId) throws ExceptionLP {
+		try {
+			anfrageServiceFac.removeAnfrageerledigungsgrund(iId);
+		} catch (Throwable t) {
+			handleThrowable(t);
+		}
+	}
+
 	/**
 	 * Eine bestehende Anfrageart loeschen.
 	 * 
@@ -307,6 +355,17 @@ public class AnfrageServiceDelegate extends Delegate {
 					.getInstance().getTheClient());
 		} catch (Throwable t) {
 			handleThrowable(t);
+		}
+	}
+
+	public boolean sindErledigugnsgruendeVorhanden()
+			throws ExceptionLP {
+		try {
+			return anfrageServiceFac.sindErledigugnsgruendeVorhanden(LPMain
+					.getInstance().getTheClient());
+		} catch (Throwable t) {
+			handleThrowable(t);
+			return false;
 		}
 	}
 

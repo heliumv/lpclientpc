@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -204,7 +204,7 @@ public class PanelArtikelzulage
         QueryParameters.UC_ID_ARTIKELLISTE,
         aWhichButtonIUse,
         internalFramePersonal,
-        LPMain.getInstance().getTextRespectUISPr("title.artikelauswahlliste"),ArtikelFilterFactory.getInstance().createFKVArtikel());
+        LPMain.getInstance().getTextRespectUISPr("title.artikelauswahlliste"),ArtikelFilterFactory.getInstance().createFKVArtikel(), null);
 
     FilterKriteriumDirekt fkDirekt1 = ArtikelFilterFactory.getInstance().
         createFKDArtikelnummer(getInternalFrame());

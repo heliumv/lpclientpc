@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -40,12 +40,14 @@ import javax.swing.JComponent;
 import com.lp.client.frame.component.InternalFrame;
 import com.lp.client.frame.component.PanelBasis;
 import com.lp.client.frame.delegate.DelegateFactory;
+import com.lp.client.frame.delegate.PartnerDelegate;
 import com.lp.client.frame.report.PanelReportAllgemeinIfJRDS;
 import com.lp.client.frame.report.PanelReportIfJRDS;
 import com.lp.client.frame.report.PanelReportKriterien;
 import com.lp.client.pc.LPMain;
 import com.lp.server.partner.service.AnsprechpartnerDto;
 import com.lp.server.partner.service.KurzbriefDto;
+import com.lp.server.partner.service.PartnerDto;
 import com.lp.server.partner.service.PartnerReportFac;
 import com.lp.server.system.service.MailtextDto;
 import com.lp.server.util.report.JasperPrintLP;
@@ -107,6 +109,7 @@ private KurzbriefDto kurzbriefDto = null;
     MailtextDto mailtextDto = PanelReportKriterien.getDefaultMailtextDto(this);
     AnsprechpartnerDto ansprechpartnerDto = null;
     Locale locKunde;
+    
     if (kurzbriefDto.getAnsprechpartnerIId() != null) {
       ansprechpartnerDto = DelegateFactory.getInstance().getAnsprechpartnerDelegate().
           ansprechpartnerFindByPrimaryKey(kurzbriefDto.getAnsprechpartnerIId());
@@ -114,7 +117,11 @@ private KurzbriefDto kurzbriefDto = null;
           ansprechpartnerDto.getPartnerDto().getLocaleCNrKommunikation());
     }
     else {
-      locKunde = LPMain.getInstance().getTheClient().getLocUi();
+        PartnerDto kundePartnerDto = DelegateFactory.getInstance()
+        		.getPartnerDelegate().partnerFindByPrimaryKey(kurzbriefDto.getPartnerIId()) ;
+        locKunde = Helper.string2Locale(
+        		kundePartnerDto.getLocaleCNrKommunikation()) ;
+//      locKunde = LPMain.getInstance().getTheClient().getLocUi();
     }
 
     mailtextDto.setParamLocale(locKunde);

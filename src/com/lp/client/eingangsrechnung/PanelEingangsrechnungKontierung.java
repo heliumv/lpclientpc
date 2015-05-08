@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -32,26 +32,27 @@
  ******************************************************************************/
 package com.lp.client.eingangsrechnung;
 
-import java.awt.Dimension;
+import java.awt.Component;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
-import java.awt.event.FocusEvent;
 import java.math.BigDecimal;
 import java.util.EventObject;
 
-import javax.swing.BorderFactory;
+import javax.swing.ButtonGroup;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
-import javax.swing.border.Border;
+
+import net.miginfocom.swing.MigLayout;
 
 import com.lp.client.finanz.FinanzFilterFactory;
-import com.lp.client.frame.Defaults;
 import com.lp.client.frame.ExceptionLP;
 import com.lp.client.frame.HelperClient;
 import com.lp.client.frame.component.DialogQuery;
+import com.lp.client.frame.component.HvValueHolder;
+import com.lp.client.frame.component.IHvValueHolderListener;
 import com.lp.client.frame.component.ISourceEvent;
 import com.lp.client.frame.component.InternalFrame;
 import com.lp.client.frame.component.ItemChangedEvent;
@@ -61,6 +62,7 @@ import com.lp.client.frame.component.WrapperButton;
 import com.lp.client.frame.component.WrapperComboBox;
 import com.lp.client.frame.component.WrapperLabel;
 import com.lp.client.frame.component.WrapperNumberField;
+import com.lp.client.frame.component.WrapperRadioButton;
 import com.lp.client.frame.component.WrapperTextField;
 import com.lp.client.frame.delegate.DelegateFactory;
 import com.lp.client.frame.dialog.DialogFactory;
@@ -74,6 +76,7 @@ import com.lp.server.finanz.service.FinanzFac;
 import com.lp.server.finanz.service.KontoDto;
 import com.lp.server.partner.service.LieferantDto;
 import com.lp.server.system.service.KostenstelleDto;
+import com.lp.server.system.service.MandantDto;
 import com.lp.server.system.service.MwstsatzDto;
 import com.lp.server.system.service.MwstsatzbezDto;
 import com.lp.server.util.fastlanereader.service.query.FilterKriterium;
@@ -81,7 +84,6 @@ import com.lp.server.util.fastlanereader.service.query.FilterKriteriumDirekt;
 import com.lp.server.util.fastlanereader.service.query.QueryParameters;
 import com.lp.util.Helper;
 
-@SuppressWarnings("static-access")
 /**
  * <p>Panel zum Bearbeiten der Kontierungen einer ER</p>
  * <p>Copyright Logistik Pur Software GmbH (c) 2004-2008</p>
@@ -90,7 +92,7 @@ import com.lp.util.Helper;
  * @author  Martin Bluehweis
  * @version $Revision: 1.16 $
  */
-public class PanelEingangsrechnungKontierung extends PanelBasis {
+public class PanelEingangsrechnungKontierung extends PanelBasis implements IHvValueHolderListener {
 	/**
 	 * 
 	 */
@@ -117,12 +119,12 @@ public class PanelEingangsrechnungKontierung extends PanelBasis {
 	private WrapperButton wbuKonto = new WrapperButton();
 	private WrapperComboBox wcoMwst = new WrapperComboBox();
 
-	private WrapperNumberField wnfBetrag = new WrapperNumberField();
+	private WrapperRadioButton wrbBetragBrutto = new WrapperRadioButton();
+	private WrapperRadioButton wrbBetragNetto = new WrapperRadioButton();
+	private WrapperNumberField wnfBetragBrutto = new WrapperNumberField();
+	private WrapperNumberField wnfBetragNetto = new WrapperNumberField();
 	private WrapperNumberField wnfBetragUst = new WrapperNumberField();
 	private WrapperNumberField wnfBetragOffen = new WrapperNumberField();
-	private JPanel jpaWorkingOn = new JPanel();
-	private GridBagLayout gridBagLayout3 = new GridBagLayout();
-	private WrapperLabel wlaBetrag = new WrapperLabel();
 	private WrapperLabel wlaBetragUst = new WrapperLabel();
 	private WrapperLabel wlaBetragOffen = new WrapperLabel();
 	private WrapperLabel wlaWaehrung1 = new WrapperLabel();
@@ -130,16 +132,20 @@ public class PanelEingangsrechnungKontierung extends PanelBasis {
 	private WrapperLabel wlaWaehrung3 = new WrapperLabel();
 	private WrapperLabel wlaWaehrung4 = new WrapperLabel();
 	private WrapperLabel wlaWaehrung5 = new WrapperLabel();
+	private WrapperLabel wlaWaehrung6 = new WrapperLabel();
 	private WrapperButton wbuRest = new WrapperButton();
-	private Border border1;
-	private WrapperLabel wlaAbstand1 = new WrapperLabel();
-	private WrapperLabel wlaAbstand2 = new WrapperLabel();
-	private WrapperLabel wlaAbstand3 = new WrapperLabel();
 	private WrapperLabel wlaRechnungsbetrag = new WrapperLabel();
 	private WrapperNumberField wnfRechnungsbetrag = new WrapperNumberField();
 	private WrapperLabel wlaBisherKontiert = new WrapperLabel();
 	private WrapperNumberField wnfBisherKontiert = new WrapperNumberField();
 	private boolean bMapSetAktiv = false;
+
+	private MwstsatzDto mwst;
+	private MwstsatzbezDto mwstBez;
+
+	private HvValueHolder<BigDecimal> holderBrutto;
+	private HvValueHolder<BigDecimal> holderNetto;
+	private HvValueHolder<BigDecimal> holderUst;
 	
 	public PanelEingangsrechnungKontierung(InternalFrame internalFrame,
 			String add2TitleI, Object key,
@@ -155,7 +161,6 @@ public class PanelEingangsrechnungKontierung extends PanelBasis {
 	/**
 	 * initPanel
 	 * 
-	 * @throws ExceptionForLPClients
 	 * @throws Throwable
 	 */
 	private void initPanel() throws Throwable {
@@ -173,7 +178,7 @@ public class PanelEingangsrechnungKontierung extends PanelBasis {
 				.getInstance()
 				.getMandantDelegate()
 				.getAllMwstsatz(
-						LPMain.getInstance().getTheClient().getMandant(),
+						LPMain.getTheClient().getMandant(),
 						tDatum, true));
 		bMapSetAktiv = false;
 		// erst jetzt den Listener installieren
@@ -204,57 +209,51 @@ public class PanelEingangsrechnungKontierung extends PanelBasis {
 		JPanel panelButtonAction = getToolsPanel();
 		// wegen Dialogauswahl auf FLR events hoeren
 		getInternalFrame().addItemChangedListener(this);
-
-		border1 = BorderFactory.createEmptyBorder(10, 10, 10, 10);
+		
 		this.setLayout(gridBagLayout1);
 		wtfKostenstelleNummer.setMandatoryField(true);
-		wbuKostenstelle.setText(LPMain.getInstance().getTextRespectUISPr(
+		wbuKostenstelle.setText(LPMain.getTextRespectUISPr(
 				"button.kostenstelle"));
-		wbuKostenstelle.setToolTipText(LPMain.getInstance()
-				.getTextRespectUISPr("button.kostenstelle.tooltip"));
-		wbuKonto.setText(LPMain.getInstance().getTextRespectUISPr(
+		wbuKostenstelle.setToolTipText(LPMain.getTextRespectUISPr(
+				"button.kostenstelle.tooltip"));
+		wbuKonto.setText(LPMain.getTextRespectUISPr(
 				"button.sachkonto"));
-		wbuKonto.setToolTipText(LPMain.getInstance().getTextRespectUISPr(
+		wbuKonto.setToolTipText(LPMain.getTextRespectUISPr(
 				"button.sachkonto.tooltip"));
-		wbuRest.setText(LPMain.getInstance().getTextRespectUISPr(
+		wbuRest.setText(LPMain.getTextRespectUISPr(
 				"er.button.rest"));
-		wbuRest.setToolTipText(LPMain.getInstance().getTextRespectUISPr(
+		wbuRest.setToolTipText(LPMain.getTextRespectUISPr(
 				"er.button.rest.tooltip"));
-		wlaRechnungsbetrag.setText(LPMain.getInstance().getTextRespectUISPr(
+		wlaRechnungsbetrag.setText(LPMain.getTextRespectUISPr(
 				"er.label.rechnungsbetrag"));
-		wlaBisherKontiert.setText(LPMain.getInstance().getTextRespectUISPr(
+		wlaBisherKontiert.setText(LPMain.getTextRespectUISPr(
 				"er.label.bisherkontiert"));
-		wnfBetrag.setMandatoryField(true);
+		wnfBetragBrutto.setMandatoryField(true);
 		wnfBetragOffen.setActivatable(false);
+		
+		wnfBetragNetto.setMandatoryField(true);
 
-		wlaBetrag.setText(LPMain.getInstance().getTextRespectUISPr(
+		wrbBetragBrutto.setText(LPMain.getTextRespectUISPr(
 				"label.bruttobetrag"));
-		wlaBetragUst.setText(LPMain.getInstance().getTextRespectUISPr(
+		wrbBetragBrutto.setSelected(true);
+		wrbBetragBrutto.setHorizontalAlignment(SwingConstants.RIGHT);
+		wrbBetragNetto.setText(LPMain.getTextRespectUISPr(
+				"label.nettobetrag"));
+		wrbBetragNetto.setHorizontalAlignment(SwingConstants.RIGHT);
+		wlaBetragUst.setText(LPMain.getTextRespectUISPr(
 				"label.mwst"));
-		wlaBetragOffen.setText(LPMain.getInstance().getTextRespectUISPr(
+		wlaBetragOffen.setText(LPMain.getTextRespectUISPr(
 				"label.offen"));
 
-		jpaWorkingOn.setLayout(gridBagLayout3);
-		wlaAbstand1.setMinimumSize(new Dimension(120, Defaults.getInstance()
-				.getControlHeight()));
-		wlaAbstand1.setPreferredSize(new Dimension(120, Defaults.getInstance()
-				.getControlHeight()));
-		wlaAbstand2.setMinimumSize(new Dimension(100, Defaults.getInstance()
-				.getControlHeight()));
-		wlaAbstand2.setPreferredSize(new Dimension(100, Defaults.getInstance()
-				.getControlHeight()));
-		wlaAbstand3.setMinimumSize(new Dimension(40, Defaults.getInstance()
-				.getControlHeight()));
-		wlaAbstand3.setPreferredSize(new Dimension(40, Defaults.getInstance()
-				.getControlHeight()));
-		jpaWorkingOn.setBorder(border1);
+		ButtonGroup bg = new ButtonGroup();
+		bg.add(wrbBetragBrutto);
+		bg.add(wrbBetragNetto);
 		wtfKostenstelleBezeichnung.setActivatable(false);
 		wtfKostenstelleNummer.setActivatable(false);
 		wtfKontoBezeichnung.setActivatable(false);
 		wtfKontoNummer.setActivatable(false);
 		wnfBetragOffen.setActivatable(false);
-		wnfBetragUst.setActivatable(false);
-		wnfBetragUst.setMandatoryFieldDB(true);
+		wnfBetragUst.setMandatoryField(true);
 		wnfRechnungsbetrag.setActivatable(false);
 		wnfBisherKontiert.setActivatable(false);
 
@@ -263,7 +262,7 @@ public class PanelEingangsrechnungKontierung extends PanelBasis {
 		wlaWaehrung3.setHorizontalAlignment(SwingConstants.LEFT);
 		wlaWaehrung4.setHorizontalAlignment(SwingConstants.LEFT);
 		wlaWaehrung5.setHorizontalAlignment(SwingConstants.LEFT);
-		wnfBetrag.setMinimumValue(new BigDecimal(0));
+		wlaWaehrung6.setHorizontalAlignment(SwingConstants.LEFT);
 
 		wcoMwst.setMandatoryFieldDB(true);
 		wtfKontoNummer.setMandatoryField(true);
@@ -274,10 +273,17 @@ public class PanelEingangsrechnungKontierung extends PanelBasis {
 		wbuKostenstelle.addActionListener(this);
 		wbuKonto.addActionListener(this);
 		wbuRest.addActionListener(this);
-		wnfBetrag
-				.addFocusListener(new PanelEingangsrechnungKontierung_wnfBetrag_focusAdapter(
-						this));
+		
+		holderBrutto = new HvValueHolder<BigDecimal>(wnfBetragBrutto, null);
+		holderNetto = new HvValueHolder<BigDecimal>(wnfBetragNetto, null);
+		holderUst = new HvValueHolder<BigDecimal>(wnfBetragUst, null);
 
+		holderBrutto.addListener(this);
+		holderNetto.addListener(this);
+		holderUst.addListener(this);
+		
+		JPanel jpaWorkingOn = new JPanel(new MigLayout("wrap 7", "[fill,20%|fill,15%|fill,5%|fill,20%|fill,15%|fill,5%|fill,20%]"));
+		
 		this.add(panelButtonAction, new GridBagConstraints(0, 0, 1, 1, 0.0,
 				0.0, GridBagConstraints.NORTHWEST, GridBagConstraints.NONE,
 				new Insets(0, 0, 0, 0), 0, 0));
@@ -287,93 +293,40 @@ public class PanelEingangsrechnungKontierung extends PanelBasis {
 		this.add(getPanelStatusbar(), new GridBagConstraints(0, 2, 1, 1, 1.0,
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(0, 0, 0, 0), 0, 0));
-		jpaWorkingOn.add(wbuKostenstelle, new GridBagConstraints(0, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wtfKostenstelleNummer, new GridBagConstraints(1,
-				iZeile, 1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wtfKostenstelleBezeichnung, new GridBagConstraints(2,
-				iZeile, 2, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		iZeile++;
-		jpaWorkingOn.add(wbuKonto, new GridBagConstraints(0, iZeile, 1, 1, 0.0,
-				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wtfKontoNummer, new GridBagConstraints(1, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wtfKontoBezeichnung, new GridBagConstraints(2, iZeile,
-				2, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		iZeile++;
-		jpaWorkingOn.add(wlaRechnungsbetrag, new GridBagConstraints(0, iZeile,
-				1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wnfRechnungsbetrag, new GridBagConstraints(1, iZeile,
-				1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wlaWaehrung4, new GridBagConstraints(2, iZeile, 1, 1,
-				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-		iZeile++;
-		jpaWorkingOn.add(wlaBisherKontiert, new GridBagConstraints(0, iZeile,
-				1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wnfBisherKontiert, new GridBagConstraints(1, iZeile,
-				1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wlaWaehrung5, new GridBagConstraints(2, iZeile, 1, 1,
-				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-		iZeile++;
-		jpaWorkingOn.add(wlaBetrag, new GridBagConstraints(0, iZeile, 1, 1,
-				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wnfBetrag, new GridBagConstraints(1, iZeile, 1, 1,
-				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wlaWaehrung1, new GridBagConstraints(2, iZeile, 1, 1,
-				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wbuRest, new GridBagConstraints(3, iZeile, 1, 1, 1.0,
-				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-		iZeile++;
-		jpaWorkingOn.add(wlaBetragOffen, new GridBagConstraints(0, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wnfBetragOffen, new GridBagConstraints(1, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.CENTER,
-				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wlaWaehrung3, new GridBagConstraints(2, iZeile, 1, 1,
-				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-		iZeile++;
-		jpaWorkingOn.add(wcoMwst, new GridBagConstraints(1, iZeile, 2, 1, 0.0,
-				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-		iZeile++;
-		jpaWorkingOn.add(wlaBetragUst, new GridBagConstraints(0, iZeile, 1, 1,
-				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wnfBetragUst, new GridBagConstraints(1, iZeile, 1, 1,
-				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wlaWaehrung2, new GridBagConstraints(2, iZeile, 1, 1,
-				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 0, 0));
-		iZeile++;
-		// Labels zur Kontrolle der Spaltenbreiten
-		jpaWorkingOn.add(wlaAbstand1, new GridBagConstraints(0, iZeile, 1, 1,
-				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.NONE,
-				new Insets(0, 0, 0, 0), 0, 0));
-		jpaWorkingOn.add(wlaAbstand2, new GridBagConstraints(1, iZeile, 1, 1,
-				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.NONE,
-				new Insets(0, 0, 0, 0), 0, 0));
-		jpaWorkingOn.add(wlaAbstand3, new GridBagConstraints(2, iZeile, 1, 1,
-				1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(0, 0, 0, 0), 0, 0));
+		
+		jpaWorkingOn.add(wbuKostenstelle);
+		jpaWorkingOn.add(wtfKostenstelleNummer);
+		jpaWorkingOn.add(wtfKostenstelleBezeichnung, "span");
+		
+		jpaWorkingOn.add(wbuKonto);
+		jpaWorkingOn.add(wtfKontoNummer);
+		jpaWorkingOn.add(wtfKontoBezeichnung, "span");
+		
+		jpaWorkingOn.add(wlaRechnungsbetrag);
+		jpaWorkingOn.add(wnfRechnungsbetrag);
+		jpaWorkingOn.add(wlaWaehrung4, "wrap");
+		
+		jpaWorkingOn.add(wlaBisherKontiert);
+		jpaWorkingOn.add(wnfBisherKontiert);
+		jpaWorkingOn.add(wlaWaehrung5, "wrap");
+
+		jpaWorkingOn.add(wrbBetragBrutto);
+		jpaWorkingOn.add(wnfBetragBrutto);
+		jpaWorkingOn.add(wlaWaehrung1);
+		jpaWorkingOn.add(wrbBetragNetto);
+		jpaWorkingOn.add(wnfBetragNetto);
+		jpaWorkingOn.add(wlaWaehrung6);
+		jpaWorkingOn.add(wbuRest);
+		
+		jpaWorkingOn.add(wlaBetragOffen);
+		jpaWorkingOn.add(wnfBetragOffen);
+		jpaWorkingOn.add(wlaWaehrung3, "wrap");
+		
+		jpaWorkingOn.add(wcoMwst, "skip 1, span 3, wrap");
+		
+		jpaWorkingOn.add(wlaBetragUst);
+		jpaWorkingOn.add(wnfBetragUst);
+		jpaWorkingOn.add(wlaWaehrung2);
 	}
 
 	public String getLockMeWer() {
@@ -402,7 +355,14 @@ public class PanelEingangsrechnungKontierung extends PanelBasis {
 		kostenstelleDto = null;
 		leereAlleFelder(this);
 		setDefaults();
-		// mit offfenem betrag vorbesetzen
+		
+		// mit offenem betrag vorbesetzen
+		BigDecimal bdOffen = DelegateFactory
+			.getInstance()
+			.getEingangsrechnungDelegate()
+			.getWertNochNichtKontiert(
+					getTabbedPane().getEingangsrechnungDto().getIId());
+		setMaximumBruttoCalcNetto(bdOffen);
 		wbuRest.doClick();
 	}
 
@@ -417,8 +377,6 @@ public class PanelEingangsrechnungKontierung extends PanelBasis {
 							lieferantDto.getMwstsatzbezIId());
 			wcoMwst.setKeyOfSelectedItem(mwstsatzDtoAktuell.getIId());
 		}
-		// Kostenstelle vorbesetzen
-		holeKostenstelle(lieferantDto.getIIdKostenstelle());
 	}
 
 	/**
@@ -457,8 +415,7 @@ public class PanelEingangsrechnungKontierung extends PanelBasis {
 						boolean b = DialogFactory
 								.showModalJaNeinDialog(
 										getInternalFrame(),
-										LPMain.getInstance()
-												.getTextRespectUISPr(
+										LPMain.getTextRespectUISPr(
 														"er.eingangsrechnungistbereitserledigt.wirklichaendern"));
 
 						if (b == false) {
@@ -498,21 +455,77 @@ public class PanelEingangsrechnungKontierung extends PanelBasis {
 			boolean b = DialogFactory
 					.showModalJaNeinDialog(
 							getInternalFrame(),
-							LPMain.getInstance()
-									.getTextRespectUISPr(
+							LPMain.getTextRespectUISPr(
 											"er.eingangsrechnungistbereitserledigt.wirklichaendern"));
 
 			if (b == false) {
 				return;
 			}
 		}
+		super.eventActionUpdate(aE, bNeedNoUpdateI);
 
 		// Das Betragsfeld erhaelt einen neuen maximalwert
 		// und zwar den wert, den es schon hat plus den offenen Betrag
-		wnfBetrag.setMaximumValue(wnfBetragOffen.getBigDecimal().add(
+		wnfBisherKontiert.setBigDecimal(wnfBisherKontiert.getBigDecimal().subtract(kontierungDto.getNBetrag()));
+		setMaximumBruttoCalcNetto(wnfBetragOffen.getBigDecimal().add(
 				kontierungDto.getNBetrag()));
+		berechneMwst();
 
-		super.eventActionUpdate(aE, bNeedNoUpdateI);
+	}
+	
+	/**
+	 * Ein positiver max-Wert wird als Maximum gesetzt, das Minimum ist dann 0.
+	 * Ein negativer max-Wert wird als Minimum interpretiert, wobei das Maximum dann 0 ist.
+	 * Die Min/Max-Werte des Nettofeldes werden auch gleich berechnet und gesetzt.
+	 * @param max
+	 * @throws Throwable 
+	 * @throws ExceptionLP 
+	 */
+	private void setMaximumBruttoCalcNetto(BigDecimal max) throws ExceptionLP, Throwable {
+		setMaximum(wnfBetragBrutto, max);
+		updateNettoMaximum();
+	}
+	
+	private void setMaximum(WrapperNumberField field, BigDecimal max) {
+		BigDecimal bruttoMax = null;
+		BigDecimal bruttoMin = null;
+		if(max != null) {
+			if(max.signum() < 0) {
+				bruttoMin = max;
+				bruttoMax = BigDecimal.ZERO;
+			} else {
+				bruttoMin = BigDecimal.ZERO;
+				bruttoMax = max;
+			}
+		}
+		field.setMaximumValue(bruttoMax);
+		field.setMinimumValue(bruttoMin);
+	}
+	
+	/**
+	 * Berechnet anhand der Min/Max-Werte des Bruttofeldes die des Nettofeldes und setzt diese auch gleich.
+	 * @throws ExceptionLP
+	 * @throws Throwable
+	 */
+	private void updateNettoMaximum() throws ExceptionLP, Throwable {
+		BigDecimal maxBrutto = wnfBetragBrutto.getMaximumValue();
+		BigDecimal minBrutto = wnfBetragBrutto.getMinimumValue();
+
+		BigDecimal maxNetto = null;
+		BigDecimal minNetto = null;
+		
+		MwstsatzDto mwst = getSelectedMwstsatz(); //hier schon holen, damit isHandeingabeSatz() die gewaehlte Mwst nimmt
+		if(isHandeingabeSatz()) {
+			maxNetto = maxBrutto;
+			minNetto = minBrutto;
+		} else if(maxBrutto != null){
+			BigDecimal maxUst = Helper.getMehrwertsteuerBetrag(maxBrutto, mwst.getFMwstsatz().doubleValue());
+			maxNetto = maxBrutto.subtract(maxUst);
+			BigDecimal minUst = Helper.getMehrwertsteuerBetrag(minBrutto, mwst.getFMwstsatz().doubleValue());
+			minNetto = minBrutto.subtract(minUst);
+		}
+		wnfBetragNetto.setMaximumValue(maxNetto);
+		wnfBetragNetto.setMinimumValue(minNetto);
 	}
 
 	public void eventActionSave(ActionEvent e, boolean bNeedNoSaveI)
@@ -526,10 +539,6 @@ public class PanelEingangsrechnungKontierung extends PanelBasis {
 				this.kontierungDto = savedDto;
 				setKeyWhenDetailPanel(kontierungDto.getIId());
 
-				// muss den hoechstwert fuer den betrag wieder wegtun
-				wnfBetrag.setMaximumValue(getTabbedPane()
-						.getEingangsrechnungDto().getNBetragfw());
-
 				super.eventActionSave(e, true);
 				if (getInternalFrame().getKeyWasForLockMe() == null) {
 					getInternalFrame().setKeyWasForLockMe(
@@ -538,8 +547,6 @@ public class PanelEingangsrechnungKontierung extends PanelBasis {
 				}
 				// jetz den anzeigen
 				eventYouAreSelected(false);
-				// den Maximalwert wieder auf den offenen Betrag beschraenken
-				wnfBetrag.setMaximumValue(wnfBetragOffen.getBigDecimal());
 				dto2Components();
 			}
 		}
@@ -561,7 +568,7 @@ public class PanelEingangsrechnungKontierung extends PanelBasis {
 		} else {
 			kontierungDto.setKostenstelleIId(null);
 		}
-		kontierungDto.setNBetrag(wnfBetrag.getBigDecimal());
+		kontierungDto.setNBetrag(wnfBetragBrutto.getBigDecimal());
 		kontierungDto.setNBetragUst(wnfBetragUst.getBigDecimal());
 		kontierungDto.setMwstsatzIId((Integer) wcoMwst.getKeyOfSelectedItem());
 	}
@@ -578,19 +585,12 @@ public class PanelEingangsrechnungKontierung extends PanelBasis {
 		if (kontierungDto != null) {
 			holeKostenstelle(kontierungDto.getKostenstelleIId());
 			holeKonto(kontierungDto.getKontoIId());
-			// den maximalwert setzen, denn der ist ja 0, wenn alles zugeordnet
-			// ist
-			wnfBetrag.setMinimumValue(null);
-			wnfBetrag.setMaximumValue(null);
-			if(kontierungDto.getNBetrag().doubleValue()<0){
-				wnfBetrag.setMinimumValue(kontierungDto.getNBetrag().add(wnfBetragOffen.getBigDecimal()));	
-			} else {
-				wnfBetrag.setMaximumValue(kontierungDto.getNBetrag().add(wnfBetragOffen.getBigDecimal()));
-			}
 			
-			wnfBetrag.setBigDecimal(kontierungDto.getNBetrag());
+			wnfBetragBrutto.setBigDecimal(kontierungDto.getNBetrag());
 			wnfBetragUst.setBigDecimal(kontierungDto.getNBetragUst());
+			wnfBetragNetto.setBigDecimal(kontierungDto.getNBetrag().subtract(kontierungDto.getNBetragUst()));
 			wcoMwst.setKeyOfSelectedItem(kontierungDto.getMwstsatzIId());
+			
 			this.setStatusbarPersonalIIdAnlegen(kontierungDto
 					.getPersonalIIdAnlegen());
 			this.setStatusbarTAnlegen(kontierungDto.getTAnlegen());
@@ -600,7 +600,8 @@ public class PanelEingangsrechnungKontierung extends PanelBasis {
 		}
 		dto2ComponentsKonto();
 		dto2ComponentsKostenstelle();
-		//setIGErwerbReverseCharge();
+		wrbBetragBrutto.setSelected(true);
+		wnfBetragNetto.setBigDecimal(kontierungDto.getNBetrag().subtract(kontierungDto.getNBetragUst()));
 	}
 
 	/**
@@ -636,23 +637,23 @@ public class PanelEingangsrechnungKontierung extends PanelBasis {
 			.getNBetragfw();
 			
 			if(bdRechnungsbetrag.doubleValue()<0){
-				wnfBetrag.setBigDecimal(wnfBetrag.getMinimumValue());
+				wnfBetragBrutto.setBigDecimal(wnfBetragBrutto.getMinimumValue());
 			} else {
-				wnfBetrag.setBigDecimal(wnfBetrag.getMaximumValue());
+				wnfBetragBrutto.setBigDecimal(wnfBetragBrutto.getMaximumValue());
 			}
-			
-			
-			wnfBetrag_focusLost();
+			wrbBetragBrutto.setSelected(true);
+			berechneBetraege();
 		} else if (e.getActionCommand().equals(ACTION_SPECIAL_UST)) {
-			wnfBetrag_focusLost();
+			updateNettoMaximum();
+			berechneBetraege();
 			if (wcoMwst.isEnabled() && !bMapSetAktiv) {
 				if (kontoDto != null && Helper.short2boolean(kontoDto.getBOhneUst())) {
 					if (wcoMwst.getSelectedItem() != null) {
-						MwstsatzDto mwst = getMwstsatzForSelected();
+						MwstsatzDto mwst = getSelectedMwstsatz();
 						if (mwst != null && mwst.getFMwstsatz() != 0.0) {
 								DialogFactory.showModalDialog(
-										LPMain.getInstance().getTextRespectUISPr("lp.hint"),
-										LPMain.getInstance().getTextRespectUISPr("er.hint.keinevst"));
+										LPMain.getTextRespectUISPr("lp.hint"),
+										LPMain.getTextRespectUISPr("er.hint.keinevst"));
 						}
 					}
 				}
@@ -670,7 +671,7 @@ public class PanelEingangsrechnungKontierung extends PanelBasis {
 
 		panelQueryFLRKonto = new PanelQueryFLR(qt, filters,
 				QueryParameters.UC_ID_FINANZKONTEN, aWhichButtonIUse,
-				getInternalFrame(), LPMain.getInstance().getTextRespectUISPr(
+				getInternalFrame(), LPMain.getTextRespectUISPr(
 						"finanz.liste.sachkonten"));
 		FilterKriteriumDirekt fkDirekt1 = FinanzFilterFactory.getInstance()
 				.createFKDKontonummer();
@@ -738,16 +739,30 @@ public class PanelEingangsrechnungKontierung extends PanelBasis {
 	public void eventYouAreSelected(boolean bNeedNoYouAreSelectedI)
 			throws Throwable {
 		super.eventYouAreSelected(false);
+		setMaximumBruttoCalcNetto(null);
 		Object key = getKeyWhenDetailPanel();
 		if (key == null
-				|| (key != null && key.equals(LPMain.getLockMeForNew()))) {
+				|| key.equals(LPMain.getLockMeForNew())) {
 			kontierungDto = null;
 			kontoDto = null;
 			kostenstelleDto = null;
+			leereAlleFelder(this);
+			// Kostenstelle vorbesetzen
+			LieferantDto lieferantDto = getTabbedPane().getLieferantDto();
+			MandantDto mandant = DelegateFactory.getInstance().getMandantDelegate()
+				.mandantFindByPrimaryKey(LPMain.getTheClient().getMandant());
+			holeKostenstelle(lieferantDto.getIIdKostenstelle() == null ? mandant.getIIdKostenstelle() : lieferantDto.getIIdKostenstelle());
 			// einen neuen Eintrag anlegen oder die letzte Position wurde
 			// geloescht.
 			initERKopfdaten();
-			// dto2Components();
+			// mit offenem betrag vorbesetzen
+			BigDecimal bdOffen = DelegateFactory
+				.getInstance()
+				.getEingangsrechnungDelegate()
+				.getWertNochNichtKontiert(
+						getTabbedPane().getEingangsrechnungDto().getIId());
+			setMaximumBruttoCalcNetto(bdOffen);
+			wbuRest.doClick();
 		} else {
 			// einen alten Eintrag laden.
 			initERKopfdaten();
@@ -771,16 +786,6 @@ public class PanelEingangsrechnungKontierung extends PanelBasis {
 		wnfBetragOffen.setBigDecimal(bdOffen);
 		wnfBisherKontiert.setBigDecimal(bdRechnungsbetrag.subtract(bdOffen));
 		
-		
-		if(bdRechnungsbetrag.doubleValue()<0){
-			wnfBetrag.setMinimumValue(bdOffen);
-			wnfBetrag.setMaximumValue(0);
-		} else {
-			wnfBetrag.setMaximumValue(bdOffen);
-			wnfBetrag.setMinimumValue(0);
-		}
-		
-		
 		String sWaehrungCNr = getTabbedPane().getEingangsrechnungDto()
 				.getWaehrungCNr();
 		wlaWaehrung1.setText(sWaehrungCNr);
@@ -788,7 +793,8 @@ public class PanelEingangsrechnungKontierung extends PanelBasis {
 		wlaWaehrung3.setText(sWaehrungCNr);
 		wlaWaehrung4.setText(sWaehrungCNr);
 		wlaWaehrung5.setText(sWaehrungCNr);
-		setIGErwerbReverseCharge();
+		wlaWaehrung6.setText(sWaehrungCNr);
+		updateIGErwerbReverseCharge();
 	}
 
 	/**
@@ -796,13 +802,17 @@ public class PanelEingangsrechnungKontierung extends PanelBasis {
 	 * 
 	 * @throws Throwable
 	 */
-	void wnfBetrag_focusLost() throws Throwable {
-		updateMwst();
+	private void berechneBetraege() throws Throwable {
+		getSelectedMwstsatz();
+		berechneMwst();
+		berechneOffen();
+	}
 
-		if (wnfBetrag.isEditable()) {
+	private void berechneOffen() throws ExceptionLP, Throwable {
+		if (wnfBetragBrutto.isEditable()) {
 			// im berabeiten-modus: abziehen
 			wnfBetragOffen.setBigDecimal(wnfRechnungsbetrag.getBigDecimal()
-					.subtract(wnfBisherKontiert.getBigDecimal()));
+					.subtract(wnfBisherKontiert.getBigDecimal()).subtract(wnfBetragBrutto.getBigDecimal()));
 		} else {
 			// nur schauen
 			wnfBetragOffen.setBigDecimal(DelegateFactory
@@ -812,41 +822,74 @@ public class PanelEingangsrechnungKontierung extends PanelBasis {
 							getTabbedPane().getEingangsrechnungDto().getIId()));
 		}
 	}
+	
+	private void berechneMwst() throws Throwable {
+		BigDecimal brutto = wnfBetragBrutto.getBigDecimal();
+		BigDecimal netto = wnfBetragNetto.getBigDecimal();
+		BigDecimal ust = wnfBetragUst.getBigDecimal();
 
-	private void updateMwst() throws Throwable {
-		if (wnfBetrag.getBigDecimal() == null) {
-			wnfBetragUst.setBigDecimal(null);
-		} else {
-			MwstsatzDto mwst = null;
-			mwst = getMwstsatzForSelected();
-			MwstsatzbezDto mwstBezDto = DelegateFactory.getInstance()
-					.getMandantDelegate()
-					.mwstsatzbezFindByPrimaryKey(mwst.getIIMwstsatzbezId());
-			if (mwstBezDto.getBHandeingabe()) {
-				wnfBetragUst.setActivatable(true);
-				wnfBetragUst.setEditable(true);
-			} else {
-				if (isIGErwerbOrReverseCharge()) {
-					// IG Erwerb und Reverse Charge rechnen netto
-					wnfBetragUst.setBigDecimal(Helper.getProzentWert(wnfBetrag.getBigDecimal(), 
-							new BigDecimal(mwst.getFMwstsatz()), FinanzFac.NACHKOMMASTELLEN));
-				} else {
-					wnfBetragUst.setBigDecimal(Helper.getMehrwertsteuerBetrag(wnfBetrag
-						.getBigDecimal(), mwst.getFMwstsatz().doubleValue()));
+		wrbBetragBrutto.setEnabled(!isHandeingabeSatz());
+		wrbBetragNetto.setEnabled(!isHandeingabeSatz());
+		wnfBetragNetto.setEditable(!isHandeingabeSatz() && wnfBetragBrutto.isEditable());
+		wnfBetragUst.setEditable(isHandeingabeSatz() && wnfBetragBrutto.isEditable());
+		
+		if(isHandeingabeSatz()) {
+			if(brutto == null || ust == null)
+				netto = null;
+			if(brutto != null && ust != null) {
+				if(ust.abs().compareTo(brutto.abs()) > 0) {
+					ust = brutto;
 				}
-				wnfBetragUst.setEditable(false);
-				wnfBetragUst.setActivatable(false);
+				netto = brutto.subtract(ust);
+			}
+		} else if(isIGErwerbOrReverseCharge()) {
+			// das brutto Feld wird als netto verwendet
+			// das netto Feld ist egal, da nicht visible
+			if(brutto != null)
+				ust = Helper.getProzentWert(brutto, 
+					new BigDecimal(mwst.getFMwstsatz()), FinanzFac.NACHKOMMASTELLEN);
+			
+		} else if(wrbBetragBrutto.isSelected()) {
+			if(brutto == null) {
+				netto = null;
+				ust = null;
+			} else {
+				ust = Helper.getMehrwertsteuerBetrag(wnfBetragBrutto
+						.getBigDecimal(), mwst.getFMwstsatz().doubleValue());
+				netto = brutto.subtract(ust);
+			}
+		} else if(wrbBetragNetto.isSelected()) {
+			if(netto == null) {
+				brutto = null;
+				ust = null;
+			} else {
+				ust = Helper.getProzentWert(netto, new BigDecimal(mwst.getFMwstsatz()), FinanzFac.NACHKOMMASTELLEN);
+				brutto = netto.add(ust);
 			}
 		}
+		wnfBetragBrutto.setBigDecimal(brutto);
+		wnfBetragNetto.setBigDecimal(netto);
+		wnfBetragUst.setBigDecimal(ust);
+		
+		holderBrutto.updateValueWithoutEvent();
+		holderNetto.updateValueWithoutEvent();
+		holderUst.updateValueWithoutEvent();
+	}
+	
+	private boolean isHandeingabeSatz() throws Throwable {
+		return mwstBez.getBHandeingabe();
 	}
 
-	private MwstsatzDto getMwstsatzForSelected() throws ExceptionLP, Throwable {
-		MwstsatzDto mwst;
-		mwst = DelegateFactory
-				.getInstance()
-				.getMandantDelegate()
-				.mwstsatzFindByPrimaryKey(
-						(Integer) wcoMwst.getKeyOfSelectedItem());
+	private MwstsatzDto getSelectedMwstsatz() throws ExceptionLP, Throwable {
+		if (mwst == null || !mwst.getIId().equals(wcoMwst.getKeyOfSelectedItem())) {
+			mwst = DelegateFactory
+					.getInstance()
+					.getMandantDelegate()
+					.mwstsatzFindByPrimaryKey(
+							(Integer) wcoMwst.getKeyOfSelectedItem());
+			mwstBez = DelegateFactory.getInstance().getMandantDelegate()
+					.mwstsatzbezFindByPrimaryKey(mwst.getIIMwstsatzbezId());
+		}
 		return mwst;
 	}
 	
@@ -870,36 +913,36 @@ public class PanelEingangsrechnungKontierung extends PanelBasis {
 		getTabbedPane().enablePanels();
 	}
 
-	private void setIGErwerbReverseCharge() throws ExceptionLP, Throwable {
-		if (isIGErwerbOrReverseCharge()) {
-			wlaBetrag.setText(LPMain.getInstance().getTextRespectUISPr("label.bruttobetrag.ig"));
-			wlaBetragUst.setText(LPMain.getInstance().getTextRespectUISPr("label.mwst.ig"));
-		} else {
-			wlaBetrag.setText(LPMain.getInstance().getTextRespectUISPr("label.bruttobetrag"));
-			wlaBetragUst.setText(LPMain.getInstance().getTextRespectUISPr("label.mwst"));
-		}
-		updateMwst();
+	private void updateIGErwerbReverseCharge() throws ExceptionLP, Throwable {
+		boolean igeRc = isIGErwerbOrReverseCharge();
+		wrbBetragBrutto.setText(LPMain.getTextRespectUISPr("label.bruttobetrag" + (igeRc ? ".ig" : "")));
+		wlaBetragUst.setText(LPMain.getTextRespectUISPr("label.mwst" + ( igeRc ? ".ig" : "")));
+//		if (igeRc) {
+//			wrbBetragBrutto.setText(LPMain.getTextRespectUISPr("label.bruttobetrag.ig"));
+//			wlaBetragUst.setText(LPMain.getTextRespectUISPr("label.mwst.ig"));
+//		} else {
+//			wrbBetragBrutto.setText(LPMain.getTextRespectUISPr("label.bruttobetrag"));
+//			wlaBetragUst.setText(LPMain.getTextRespectUISPr("label.mwst"));
+//		}
+		wrbBetragNetto.setVisible(!igeRc);
+		wnfBetragNetto.setVisible(!igeRc);
+		wrbBetragNetto.setMandatoryField(!igeRc) ;
+		wnfBetragNetto.setMandatoryField(!igeRc) ;
 	}
-
-}
-
-class PanelEingangsrechnungKontierung_wnfBetrag_focusAdapter implements
-		java.awt.event.FocusListener {
-	PanelEingangsrechnungKontierung adaptee;
-
-	PanelEingangsrechnungKontierung_wnfBetrag_focusAdapter(
-			PanelEingangsrechnungKontierung adaptee) {
-		this.adaptee = adaptee;
-	}
-
-	public void focusLost(FocusEvent e) {
+	
+	@Override
+	public void valueChanged(Component reference, Object oldValue,
+			Object newValue) {
 		try {
-			adaptee.wnfBetrag_focusLost();
-		} catch (Throwable t) {
-			LPMain.getInstance().exitFrame(adaptee.getInternalFrame());
+			if(reference == wnfBetragBrutto)
+				wrbBetragBrutto.setSelected(true);
+			if(reference == wnfBetragNetto)
+				wrbBetragNetto.setSelected(true);
+
+			berechneBetraege();
+		} catch(Throwable t) {
+			handleException(t, false);
 		}
 	}
 
-	public void focusGained(FocusEvent e) {
-	}
 }

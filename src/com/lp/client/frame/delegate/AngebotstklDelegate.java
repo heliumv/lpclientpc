@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -41,11 +41,12 @@ import javax.naming.InitialContext;
 import com.lp.client.frame.ExceptionLP;
 import com.lp.client.pc.LPMain;
 import com.lp.server.angebotstkl.service.AgstklDto;
+import com.lp.server.angebotstkl.service.AgstklarbeitsplanDto;
+import com.lp.server.angebotstkl.service.AgstklmengenstaffelDto;
 import com.lp.server.angebotstkl.service.AngebotstklFac;
 import com.lp.server.angebotstkl.service.AufschlagDto;
 import com.lp.server.angebotstkl.service.EinkaufsangebotDto;
 import com.lp.server.angebotstkl.service.EinkaufsangebotpositionDto;
-import com.lp.server.system.service.TheClientDto;
 import com.lp.server.util.report.JasperPrintLP;
 
 public class AngebotstklDelegate extends Delegate {
@@ -80,6 +81,18 @@ public class AngebotstklDelegate extends Delegate {
 
 	}
 
+	public Integer createAgstklarbeitsplan(
+			AgstklarbeitsplanDto agstklarbeitsplanDto) throws ExceptionLP {
+		try {
+			return stuecklisteFac.createAgstklarbeitsplan(agstklarbeitsplanDto,
+					LPMain.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+
+	}
+
 	public Integer createEinkaufsangebot(EinkaufsangebotDto einkaufsangebotDto)
 			throws ExceptionLP {
 		try {
@@ -97,6 +110,18 @@ public class AngebotstklDelegate extends Delegate {
 		try {
 			return stuecklisteFac.createAufschlag(aufschlagDto,
 					LPMain.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+
+	}
+
+	public Integer createAgstklmengenstaffel(
+			AgstklmengenstaffelDto agstklmengenstaffelDto) throws ExceptionLP {
+		try {
+			return stuecklisteFac.createAgstklmengenstaffel(
+					agstklmengenstaffelDto, LPMain.getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 			return null;
@@ -152,6 +177,19 @@ public class AngebotstklDelegate extends Delegate {
 		return oPrint;
 	}
 
+	public JasperPrintLP printAngebotstklmenenstaffel(Integer iIdAngebotstklI)
+			throws ExceptionLP {
+		JasperPrintLP oPrint = null;
+
+		try {
+			oPrint = stuecklisteFac.printAngebotstklmenenstaffel(
+					iIdAngebotstklI, LPMain.getTheClient());
+		} catch (Throwable t) {
+			handleThrowable(t);
+		}
+		return oPrint;
+	}
+
 	public JasperPrintLP printEinkaufsangebot(Integer einkaufsangebotIId,
 			int iSortierung) throws ExceptionLP {
 		JasperPrintLP oPrint = null;
@@ -168,6 +206,25 @@ public class AngebotstklDelegate extends Delegate {
 	public void removeAgstkl(AgstklDto agstklDto) throws ExceptionLP {
 		try {
 			stuecklisteFac.removeAgstkl(agstklDto);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+	}
+
+	public void removeAgstklmengenstaffel(Integer agstklmengenstaffelIId)
+			throws ExceptionLP {
+		try {
+			stuecklisteFac.removeAgstklmengenstaffel(agstklmengenstaffelIId);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+	}
+
+	public void removeAgstklarbeitsplan(
+			AgstklarbeitsplanDto agstklarbeitsplanDto) throws ExceptionLP {
+		try {
+			stuecklisteFac.removeAgstklarbeitsplan(agstklarbeitsplanDto,
+					LPMain.getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 		}
@@ -201,9 +258,31 @@ public class AngebotstklDelegate extends Delegate {
 
 	}
 
+	public void updateAgstklarbeitsplan(
+			AgstklarbeitsplanDto agstklarbeitsplanDto) throws ExceptionLP {
+		try {
+			stuecklisteFac.updateAgstklarbeitsplan(agstklarbeitsplanDto,
+					LPMain.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+
+	}
+
 	public void updateAufschlag(AufschlagDto aufschlagDto) throws ExceptionLP {
 		try {
 			stuecklisteFac.updateAufschlag(aufschlagDto, LPMain.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+
+	}
+
+	public void updateAgstklmengenstaffel(
+			AgstklmengenstaffelDto agstklmengenstaffelDto) throws ExceptionLP {
+		try {
+			stuecklisteFac.updateAgstklmengenstaffel(agstklmengenstaffelDto,
+					LPMain.getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 		}
@@ -214,6 +293,27 @@ public class AngebotstklDelegate extends Delegate {
 			Integer agstklIId) throws ExceptionLP {
 		try {
 			stuecklisteFac.kopierePositionenAusStueckliste(stuecklisteIId,
+					agstklIId, LPMain.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+
+	}
+
+	public void kopiereArbeitsplanAusStuecklisteInArbeitsplan(Integer stuecklisteIId,
+			Integer agstklIId) throws ExceptionLP {
+		try {
+			stuecklisteFac.kopiereArbeitsplanAusStuecklisteInArbeitsplan(stuecklisteIId,
+					agstklIId, LPMain.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+
+	}
+	public void kopiereArbeitsplanAusStuecklisteInPositionen(Integer stuecklisteIId,
+			Integer agstklIId) throws ExceptionLP {
+		try {
+			stuecklisteFac.kopiereArbeitsplanAusStuecklisteInPositionen(stuecklisteIId,
 					agstklIId, LPMain.getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
@@ -298,6 +398,29 @@ public class AngebotstklDelegate extends Delegate {
 
 	}
 
+	public AgstklmengenstaffelDto agstklmengenstaffelFindByPrimaryKey(
+			Integer iId) throws ExceptionLP {
+		try {
+			return stuecklisteFac.agstklmengenstaffelFindByPrimaryKey(iId);
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+
+	}
+
+	public AgstklarbeitsplanDto agstklarbeitsplanFindByPrimaryKey(Integer iId)
+			throws ExceptionLP {
+		try {
+			return stuecklisteFac.agstklarbeitsplanFindByPrimaryKey(iId,
+					LPMain.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+
+	}
+
 	public EinkaufsangebotDto einkaufsangebotFindByPrimaryKey(Integer iId)
 			throws ExceptionLP {
 		try {
@@ -351,13 +474,13 @@ public class AngebotstklDelegate extends Delegate {
 	 * @return BigDecimal der kalkulatorische Wert
 	 * @throws ExceptionLP
 	 */
-	public BigDecimal berechneKalkulatorischenAgstklwert(Integer iIdAgstklI,
+	public BigDecimal berechneKalkulatorischenAgstklwert(Integer iIdAgstklI,BigDecimal nMengenstaffel,
 			String cNrWaehrungI) throws ExceptionLP {
 		BigDecimal nWert = new BigDecimal(0);
 
 		try {
 			nWert = stuecklisteFac.berechneKalkulatorischenAgstklwert(
-					iIdAgstklI, cNrWaehrungI, LPMain.getTheClient());
+					iIdAgstklI, nMengenstaffel, cNrWaehrungI, LPMain.getTheClient());
 		} catch (Throwable ex) {
 			handleThrowable(ex);
 		}
@@ -380,4 +503,68 @@ public class AngebotstklDelegate extends Delegate {
 		return nWerte;
 	}
 
+	public Integer getNextArbeitsgang(Integer agstklIId) throws ExceptionLP {
+		try {
+			return stuecklisteFac.getNextArbeitsgang(agstklIId,
+					LPMain.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
+
+	public BigDecimal getWareneinsatzLief1(BigDecimal bdMenge, Integer agstklIId)
+			throws ExceptionLP {
+		try {
+			return stuecklisteFac.getWareneinsatzLief1(bdMenge, agstklIId,
+					LPMain.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
+
+	public BigDecimal getAZeinsatzLief1(BigDecimal bdMenge, Integer agstklIId)
+			throws ExceptionLP {
+		try {
+			return stuecklisteFac.getAZeinsatzLief1(bdMenge, agstklIId,
+					LPMain.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
+
+	public BigDecimal[] getVKPreis(BigDecimal bdMenge, Integer agstklIId)
+			throws ExceptionLP {
+		try {
+			return stuecklisteFac.getVKPreis(bdMenge, agstklIId,
+					LPMain.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
+
+	public BigDecimal getVKPreisGewaehlt(BigDecimal bdMenge, Integer agstklIId)
+			throws ExceptionLP {
+		try {
+			return stuecklisteFac.getVKPreisGewaehlt(bdMenge, agstklIId,
+					LPMain.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+			return null;
+		}
+	}
+
+	public void kopiereAgstklArbeitsplan(Integer agstklIId_Quelle,
+			Integer agstklIId_Ziel) throws ExceptionLP {
+		try {
+			stuecklisteFac.kopiereAgstklArbeitsplan(agstklIId_Quelle,
+					agstklIId_Ziel, LPMain.getTheClient());
+		} catch (Throwable ex) {
+			handleThrowable(ex);
+		}
+
+	}
 }

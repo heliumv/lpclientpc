@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -32,24 +32,18 @@
  ******************************************************************************/
 package com.lp.client.finanz;
 
-
 import com.lp.client.frame.component.InternalFrame;
 import com.lp.client.pc.LPMain;
 import com.lp.server.finanz.service.FinanzServiceFac;
 
-@SuppressWarnings("static-access") 
-public class TabbedPaneKontenDebitorenkonten
-    extends TabbedPaneKonten
-{
-  /**
-	 * 
-	 */
+public class TabbedPaneKontenDebitorenkonten extends TabbedPaneKonten {
+	
 	private static final long serialVersionUID = 1L;
 
-public TabbedPaneKontenDebitorenkonten(InternalFrame internalFrame, IGeschaeftsjahrViewController viewController)
-      throws Throwable {
-    super(internalFrame, FinanzServiceFac.KONTOTYP_DEBITOR,
-          LPMain.getInstance().
-          getTextRespectUISPr("finanz.tab.unten.debitorenkonten.title"), viewController);
-  }
+	public TabbedPaneKontenDebitorenkonten(InternalFrame internalFrame,
+			IGeschaeftsjahrViewController viewController) throws Throwable {
+		super(internalFrame, FinanzServiceFac.KONTOTYP_DEBITOR, LPMain
+				.getTextRespectUISPr("finanz.tab.unten.debitorenkonten.title"),
+				viewController);
+	}
 }

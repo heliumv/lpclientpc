@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -32,6 +32,7 @@
  ******************************************************************************/
 package com.lp.client.artikel;
 
+import java.text.MessageFormat;
 import java.util.EventObject;
 
 import javax.swing.ImageIcon;
@@ -40,11 +41,15 @@ import javax.swing.JTabbedPane;
 import com.lp.client.frame.component.InternalFrame;
 import com.lp.client.frame.component.ItemChangedEvent;
 import com.lp.client.frame.delegate.DelegateFactory;
+import com.lp.client.frame.dialog.DialogFactory;
 import com.lp.client.pc.LPMain;
 import com.lp.server.artikel.service.ArtikelDto;
 import com.lp.server.artikel.service.InventurDto;
+import com.lp.server.artikel.service.LagerDto;
+import com.lp.server.artikel.service.LagerFac;
 import com.lp.server.artikel.service.MaterialDto;
 import com.lp.server.benutzer.service.RechteFac;
+import com.lp.server.rechnung.service.RechnungDto;
 import com.lp.server.system.service.MandantFac;
 
 @SuppressWarnings("static-access")
@@ -70,6 +75,7 @@ public class InternalFrameArtikel extends InternalFrame {
 	private TabbedPaneArtikelgrunddaten tabbedPaneGrunddaten = null;
 	private TabbedPaneShopgruppe tabbedPaneShopgruppe = null;
 	private TabbedPaneLagercockpit tabbedPaneLagercockpit = null;
+	private TabbedPaneKundenartikelnummern tabbedPaneKundenartikelnummern = null;
 
 	public static int IDX_TABBED_PANE_ARTIKEL = -1;
 	public int IDX_TABBED_PANE_HANDLAGERBEWEGUNG = -1;
@@ -79,6 +85,7 @@ public class InternalFrameArtikel extends InternalFrame {
 	public int IDX_TABBED_PANE_SHOPGRUPPE = -1;
 	public int IDX_TABBED_PANE_LAGERCOCKPIT = -1;
 	public int IDX_TABBED_PANE_GRUNDDATEN = -1;
+	public static int IDX_TABBED_PANE_KUNDENARTIKELNUMMERN = -1;
 
 	public String sRechtModulweit = null;
 
@@ -102,6 +109,9 @@ public class InternalFrameArtikel extends InternalFrame {
 	public TabbedPaneArtikel getTabbedPaneArtikel() {
 		return tabbedPaneArtikel;
 	}
+	public TabbedPaneKundenartikelnummern getTabbedPaneKundenartikelnummern() {
+		return tabbedPaneKundenartikelnummern;
+	}
 
 	public TabbedPaneShopgruppe getTabbedPaneShopgruppe() {
 		return tabbedPaneShopgruppe;
@@ -123,11 +133,63 @@ public class InternalFrameArtikel extends InternalFrame {
 		return inventurDto;
 	}
 
+	// SP3188
+	private void pruefeHauptlager() throws Throwable {
+
+		String mandantCNr = LPMain.getTheClient().getMandant();
+
+		if (LPMain
+				.getInstance()
+				.getDesktop()
+				.darfAnwenderAufZusatzfunktionZugreifen(
+						MandantFac.ZUSATZFUNKTION_ZENTRALER_ARTIKELSTAMM)
+				&& !LPMain
+						.getInstance()
+						.getDesktop()
+						.darfAnwenderAufZusatzfunktionZugreifen(
+								MandantFac.ZUSATZFUNKTION_GETRENNTE_LAGER)) {
+			mandantCNr= DelegateFactory.getInstance().getSystemDelegate().getHauptmandant();
+		} else {
+
+		}
+
+		LagerDto[] lagerDtos = DelegateFactory.getInstance().getLagerDelegate()
+				.lagerFindByMandantCNr(mandantCNr);
+
+		boolean bHauptlagervorhanden = false;
+		for (LagerDto laDto : lagerDtos) {
+			if (laDto.getLagerartCNr().equals(LagerFac.LAGERART_HAUPTLAGER)) {
+				bHauptlagervorhanden = true;
+			}
+
+		}
+
+		if (bHauptlagervorhanden == false && lagerDtos.length > 0) {
+			// Das erste Lager als Hauptlager deklarieren
+			lagerDtos[0].setLagerartCNr(LagerFac.LAGERART_HAUPTLAGER);
+			DelegateFactory.getInstance().getLagerDelegate()
+					.updateLager(lagerDtos[0]);
+
+			MessageFormat mf = new MessageFormat(
+					LPMain.getTextRespectUISPr("auft.mandant.hauptlager.fehlt.ergaenzt"));
+			mf.setLocale(LPMain.getTheClient().getLocUi());
+
+			Object[] pattern = new Object[] { "\"" + lagerDtos[0].getCNr()
+					+ "\"" };
+			String sMsg = mf.format(pattern);
+
+			DialogFactory.showModalDialog(LPMain.getInstance()
+					.getTextRespectUISPr("lp.hint"), sMsg);
+		}
+
+	}
+
 	public InternalFrameArtikel(String title, String belegartCNr,
 			String sRechtModulweitI) throws Throwable {
 
 		super(title, belegartCNr, sRechtModulweitI);
 		sRechtModulweit = sRechtModulweitI;
+		pruefeHauptlager();
 		jbInit();
 		initComponents();
 	}
@@ -181,16 +243,20 @@ public class InternalFrameArtikel extends InternalFrame {
 							.getTextRespectUISPr("artikel.inventur"),
 					IDX_TABBED_PANE_INVENTUR);
 			// Komponente Preislisten vkpf:
-			tabIndex++;
-			IDX_TABBED_PANE_VKPF_PREISLISTEN = tabIndex;
-			tabbedPaneRoot.insertTab(
-					LPMain.getInstance().getTextRespectUISPr(
-							"vkpf.preislisten.title.tab"),
-					null,
-					null,
-					LPMain.getInstance().getTextRespectUISPr(
-							"vkpf.preislisten.title.tooltip"),
-					IDX_TABBED_PANE_VKPF_PREISLISTEN);
+
+			if (bRechtDarfPreiseSehenVerkauf) {
+
+				tabIndex++;
+				IDX_TABBED_PANE_VKPF_PREISLISTEN = tabIndex;
+				tabbedPaneRoot.insertTab(
+						LPMain.getInstance().getTextRespectUISPr(
+								"vkpf.preislisten.title.tab"),
+						null,
+						null,
+						LPMain.getInstance().getTextRespectUISPr(
+								"vkpf.preislisten.title.tooltip"),
+						IDX_TABBED_PANE_VKPF_PREISLISTEN);
+			}
 			tabIndex++;
 			IDX_TABBED_PANE_SHOPGRUPPE = tabIndex;
 			tabbedPaneRoot.insertTab(
@@ -219,6 +285,25 @@ public class InternalFrameArtikel extends InternalFrame {
 				}
 			}
 
+			// nur anzeigen wenn SOKOs
+			if (LPMain
+					.getInstance()
+					.getDesktop()
+					.darfAnwenderAufZusatzfunktionZugreifen(
+							MandantFac.ZUSATZFUNKTION_KUNDESONDERKONDITIONEN)
+					&& bRechtDarfPreiseSehenVerkauf) {
+				tabIndex++;
+				IDX_TABBED_PANE_KUNDENARTIKELNUMMERN = tabIndex;
+				tabbedPaneRoot.insertTab(
+						LPMain.getInstance().getTextRespectUISPr(
+								"artikel.kundenartikelnummern"),
+						null,
+						null,
+						LPMain.getInstance().getTextRespectUISPr(
+								"artikel.kundenartikelnummern"),
+						IDX_TABBED_PANE_KUNDENARTIKELNUMMERN);
+			}
+
 			// nur anzeigen wenn Benutzer Recht dazu hat
 			if (DelegateFactory.getInstance().getTheJudgeDelegate()
 					.hatRecht(RechteFac.RECHT_LP_DARF_GRUNDDATEN_SEHEN)) {
@@ -230,10 +315,65 @@ public class InternalFrameArtikel extends InternalFrame {
 						null,
 						null,
 						LPMain.getInstance().getTextRespectUISPr(
-								"vkpf.preislisten.title.tooltip"),
-						IDX_TABBED_PANE_GRUNDDATEN);
+								"lp.grunddaten"), IDX_TABBED_PANE_GRUNDDATEN);
 			}
+
 		} else {
+
+			if (LPMain
+					.getInstance()
+					.getDesktop()
+					.darfAnwenderAufZusatzfunktionZugreifen(
+							MandantFac.ZUSATZFUNKTION_ZENTRALER_ARTIKELSTAMM)
+					&& LPMain
+							.getInstance()
+							.getDesktop()
+							.darfAnwenderAufZusatzfunktionZugreifen(
+									MandantFac.ZUSATZFUNKTION_GETRENNTE_LAGER)) {
+				tabIndex++;
+				IDX_TABBED_PANE_INVENTUR = tabIndex;
+				tabbedPaneRoot.insertTab(
+						LPMain.getInstance().getTextRespectUISPr(
+								"artikel.inventur"),
+						null,
+						null,
+						LPMain.getInstance().getTextRespectUISPr(
+								"artikel.inventur"), IDX_TABBED_PANE_INVENTUR);
+			}
+
+			if (bRechtDarfPreiseSehenVerkauf) {
+
+				tabIndex++;
+				IDX_TABBED_PANE_VKPF_PREISLISTEN = tabIndex;
+				tabbedPaneRoot.insertTab(
+						LPMain.getInstance().getTextRespectUISPr(
+								"vkpf.preislisten.title.tab"),
+						null,
+						null,
+						LPMain.getInstance().getTextRespectUISPr(
+								"vkpf.preislisten.title.tooltip"),
+						IDX_TABBED_PANE_VKPF_PREISLISTEN);
+			}
+
+			// nur anzeigen wenn SOKOs und VK-Preis-Recht
+			if (LPMain
+					.getInstance()
+					.getDesktop()
+					.darfAnwenderAufZusatzfunktionZugreifen(
+							MandantFac.ZUSATZFUNKTION_KUNDESONDERKONDITIONEN)
+					&& bRechtDarfPreiseSehenVerkauf) {
+				tabIndex++;
+				IDX_TABBED_PANE_KUNDENARTIKELNUMMERN = tabIndex;
+				tabbedPaneRoot.insertTab(
+						LPMain.getInstance().getTextRespectUISPr(
+								"artikel.kundenartikelnummern"),
+						null,
+						null,
+						LPMain.getInstance().getTextRespectUISPr(
+								"artikel.kundenartikelnummern"),
+						IDX_TABBED_PANE_KUNDENARTIKELNUMMERN);
+			}
+
 			if (LPMain
 					.getInstance()
 					.getDesktop()
@@ -290,6 +430,18 @@ public class InternalFrameArtikel extends InternalFrame {
 		}
 	}
 
+	private void createTabbedPaneKundenartikelnummern(JTabbedPane tabbedPane)
+			throws Throwable { // vkpf:
+		if (tabbedPane == null) {
+			// lazy loading
+			tabbedPaneKundenartikelnummern = new TabbedPaneKundenartikelnummern(
+					this);
+			tabbedPaneRoot.setComponentAt(IDX_TABBED_PANE_KUNDENARTIKELNUMMERN,
+					tabbedPaneKundenartikelnummern);
+			initComponents();
+		}
+	}
+
 	public void lPStateChanged(EventObject e) throws Throwable {
 		JTabbedPane tabbedPane = (JTabbedPane) ((JTabbedPane) e.getSource())
 				.getSelectedComponent();
@@ -333,10 +485,14 @@ public class InternalFrameArtikel extends InternalFrame {
 			createTabbedPaneShopgruppe(tabbedPane);
 			// Info an Tabbedpane, bist selektiert worden.
 			tabbedPaneShopgruppe.lPEventObjectChanged(null);
-		}else if (selectedCur == IDX_TABBED_PANE_LAGERCOCKPIT) {
+		} else if (selectedCur == IDX_TABBED_PANE_LAGERCOCKPIT) {
 			createTabbedPaneLagercockpit(tabbedPane);
 			// Info an Tabbedpane, bist selektiert worden.
 			tabbedPaneLagercockpit.lPEventObjectChanged(null);
+		} else if (selectedCur == IDX_TABBED_PANE_KUNDENARTIKELNUMMERN) {
+			createTabbedPaneKundenartikelnummern(tabbedPane);
+			// Info an Tabbedpane, bist selektiert worden.
+			tabbedPaneKundenartikelnummern.lPEventObjectChanged(null);
 		}
 	}
 

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -114,12 +114,12 @@ public class WrapperMediaControl extends PanelBasis {
 		this.wtfTextFieldFuerDateiname = wtfTextFieldFuerDateiname;
 		jbInit();
 	}
-	
+
 	public WrapperMediaControl(InternalFrame internalFrame, String addTitel,
 			boolean bMitDefaultbildFeld) throws Throwable {
 		this(internalFrame, addTitel, bMitDefaultbildFeld, false);
 	}
-	
+
 	public WrapperMediaControl(InternalFrame internalFrame, String addTitel,
 			boolean bMitDefaultbildFeld, boolean bWithoutButtons)
 			throws Throwable {
@@ -130,7 +130,31 @@ public class WrapperMediaControl extends PanelBasis {
 		initComponents();
 	}
 
-	
+	public void cleanup() {
+		wef.lpEditor.cleanup();
+		wef.lpEditor = null;
+		wef.jspScrollPane.setViewport(null);
+		wef.setToolBar(null);
+
+		wbf.cleanup();
+		paWorkOn.remove(wbf);
+		wbf = null;
+		wtv.cleanup();
+		paWorkOn.remove(wtv);
+		wtv = null;
+
+		wpf.setToolBar(null);
+		ws.setToolBar(null);
+		paWorkOn.remove(rv);
+		rv.cleanup();
+		rv = null;
+
+	}
+
+	protected String getLockMeWer() throws Exception {
+		return null;
+	}
+
 	private void jbInit() throws Throwable {
 		this.setLayout(new GridBagLayout());
 
@@ -198,9 +222,8 @@ public class WrapperMediaControl extends PanelBasis {
 			wbuBildEntfernen.setActionCommand(ACTION_SPECIAL_BILD_ENTFERNEN);
 			wbuBildEntfernen.addActionListener(this);
 
-			wcoArt
-					.addActionListener(new WrapperMediaControl_jComboBoxPositionsart_actionAdapter(
-							this));
+			wcoArt.addActionListener(new WrapperMediaControl_jComboBoxPositionsart_actionAdapter(
+					this));
 			jPanelArt.add(wlaArt, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
 					GridBagConstraints.WEST, GridBagConstraints.NONE,
 					new Insets(2, 2, 2, 2), 50, 0));
@@ -242,7 +265,7 @@ public class WrapperMediaControl extends PanelBasis {
 		paWorkOn.add(rv, new GridBagConstraints(0, 0, 1, 2, 1, 1,
 				GridBagConstraints.CENTER, GridBagConstraints.BOTH, new Insets(
 						2, 2, 2, 2), 0, 0));
-		
+
 		this.add(jPanelArt, new GridBagConstraints(0, 0, 1, 1, 0, 0,
 				GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
 				new Insets(2, 2, 2, 2), 0, 0));
@@ -254,6 +277,7 @@ public class WrapperMediaControl extends PanelBasis {
 
 	/**
 	 * Override um anderen Editor zu Instanzieren.
+	 * 
 	 * @throws Throwable
 	 */
 	protected WrapperEditorField createEditorField() throws Throwable {
@@ -291,8 +315,9 @@ public class WrapperMediaControl extends PanelBasis {
 			if (media != null) {
 				wpf.setPdf(media);
 			}
-		} else if(getMimeType().equals(MediaFac.DATENFORMAT_MIMETYPE_APP_JASPER)){
-			if(media!=null){	
+		} else if (getMimeType().equals(
+				MediaFac.DATENFORMAT_MIMETYPE_APP_JASPER)) {
+			if (media != null) {
 				ByteArrayInputStream bStream = new ByteArrayInputStream(media);
 				ObjectInputStream oStream = new ObjectInputStream(bStream);
 				JasperPrint jPrint = (JasperPrint) oStream.readObject();
@@ -573,7 +598,7 @@ public class WrapperMediaControl extends PanelBasis {
 			wef.setVisible(false);
 			wcbDefaultbild.setVisible(false);
 			ws.setVisible(false);
-			if(rv!=null){
+			if (rv != null) {
 				rv.setVisible(false);
 			}
 		}

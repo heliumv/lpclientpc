@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -78,6 +78,7 @@ import com.lp.server.finanz.service.KassenbuchDto;
 import com.lp.server.finanz.service.KassenbuchungsteuerartDto;
 import com.lp.server.finanz.service.KontoDto;
 import com.lp.server.system.service.KostenstelleDto;
+import com.lp.server.system.service.MandantDto;
 import com.lp.server.system.service.MwstsatzDto;
 import com.lp.server.system.service.MwstsatzbezDto;
 import com.lp.server.util.fastlanereader.service.query.FilterKriterium;
@@ -107,7 +108,7 @@ public class PanelFinanzBuchungDetailsKassenbuch extends PanelBasis {
 	private KostenstelleDto kostenstelleDto = null;
 	private KontoDto kontoDto = null;
 	private BigDecimal bdSteuerbetrag = null;
-	
+
 	private Border border = null;
 	private GridBagLayout gridBagLayoutAll = null;
 
@@ -124,7 +125,7 @@ public class PanelFinanzBuchungDetailsKassenbuch extends PanelBasis {
 	private static final String ACTION_SPECIAL_CO_UST = "action_special_ub_co_ust";
 	private WrapperLabel wlaAusgang = new WrapperLabel();
 	private WrapperNumberField wnfAusgang = new WrapperNumberField();
-	private WrapperGeschaeftsjahrDateField wdfDatum ;
+	private WrapperGeschaeftsjahrDateField wdfDatum;
 	private WrapperLabel wlaEingang = new WrapperLabel();
 	private WrapperNumberField wnfEingang = new WrapperNumberField();
 	private WrapperRadioButton wrbKontoSachkonto = new WrapperRadioButton();
@@ -153,19 +154,18 @@ public class PanelFinanzBuchungDetailsKassenbuch extends PanelBasis {
 	private WrapperRadioButton wrbUst = new WrapperRadioButton();
 	private WrapperRadioButton wrbVst = new WrapperRadioButton();
 	private ButtonGroup buttongroupSteuerart = new ButtonGroup();
-	
+
 	private GridBagLayout gridBagLayoutWorkingPanel = null;
 
-	private java.util.Date previousBookingDate = null ;
-	private BigDecimal previousEingangDecimal = null ;
-	private BigDecimal previousAusgangDecimal = null ;
-	
+	private java.util.Date previousBookingDate = null;
+	private BigDecimal previousEingangDecimal = null;
+	private BigDecimal previousAusgangDecimal = null;
+
 	private WrapperLabel wlaAuszug = new WrapperLabel();
 	private WrapperTextNumberField wnfAuszug = new WrapperTextNumberField();
-	
+
 	public PanelFinanzBuchungDetailsKassenbuch(InternalFrame internalFrame,
-			TabbedPaneKassenbuch tabbedPaneKassenbuch)
-			throws Throwable {
+			TabbedPaneKassenbuch tabbedPaneKassenbuch) throws Throwable {
 		super(internalFrame, LPMain.getInstance().getTextRespectUISPr(
 				"finanz.kassenbuch"));
 		this.tabbedPaneKassenbuch = tabbedPaneKassenbuch;
@@ -175,8 +175,9 @@ public class PanelFinanzBuchungDetailsKassenbuch extends PanelBasis {
 	}
 
 	protected InternalFrameFinanz getInternalFrameFinanz() {
-		return (InternalFrameFinanz) getInternalFrame() ; 
+		return (InternalFrameFinanz) getInternalFrame();
 	}
+
 	
 	private void jbInit() throws Throwable {
 
@@ -192,24 +193,33 @@ public class PanelFinanzBuchungDetailsKassenbuch extends PanelBasis {
 		jpaWorkingOn.setLayout(gridBagLayoutWorkingPanel);
 
 		getInternalFrame().addItemChangedListener(this);
-		wlaAusgang.setText(LPMain.getInstance().getTextRespectUISPr("finanz.ausgang"));
-		wlaEingang.setText(LPMain.getInstance().getTextRespectUISPr("finanz.eingang"));
-		wrbKontoSachkonto.setText(LPMain.getInstance().getTextRespectUISPr("lp.sachkonto"));
+		wlaAusgang.setText(LPMain.getInstance().getTextRespectUISPr(
+				"finanz.ausgang"));
+		wlaEingang.setText(LPMain.getInstance().getTextRespectUISPr(
+				"finanz.eingang"));
+		wrbKontoSachkonto.setText(LPMain.getInstance().getTextRespectUISPr(
+				"lp.sachkonto"));
 		wrbKontoSachkonto.addActionListener(this);
-		wrbKontoDebitorenkonto.setText(LPMain.getInstance().getTextRespectUISPr("lp.debitorenkonto"));
+		wrbKontoDebitorenkonto.setText(LPMain.getInstance()
+				.getTextRespectUISPr("lp.debitorenkonto"));
 		wrbKontoDebitorenkonto.addActionListener(this);
-		wrbKontoKreditorenkonto.setText(LPMain.getInstance().getTextRespectUISPr("lp.kreditorenkonto"));
+		wrbKontoKreditorenkonto.setText(LPMain.getInstance()
+				.getTextRespectUISPr("lp.kreditorenkonto"));
 		wrbKontoKreditorenkonto.addActionListener(this);
-		wbuKonto.setText(LPMain.getInstance().getTextRespectUISPr("button.konto"));
-		wbuKonto.setText(LPMain.getInstance().getTextRespectUISPr("button.konto.tooltip"));
+		wbuKonto.setText(LPMain.getInstance().getTextRespectUISPr(
+				"button.konto"));
+		wbuKonto.setText(LPMain.getInstance().getTextRespectUISPr(
+				"button.konto.tooltip"));
 		wtfKontoNummer.setMinimumSize(new Dimension(100, 23));
 		wtfKontoNummer.setPreferredSize(new Dimension(100, 23));
 		wtfKontoNummer.setActivatable(false);
 		wtfKontoNummer.setMandatoryField(true);
 		wtfKontoBezeichnung.setActivatable(false);
 		wlaDatum.setText(LPMain.getInstance().getTextRespectUISPr("lp.datum"));
-		wbuKostenstelle.setText(LPMain.getInstance().getTextRespectUISPr("button.kostenstelle"));
-		wbuKostenstelle.setToolTipText(LPMain.getInstance().getTextRespectUISPr("button.kostenstelle.tooltip"));
+		wbuKostenstelle.setText(LPMain.getInstance().getTextRespectUISPr(
+				"button.kostenstelle"));
+		wbuKostenstelle.setToolTipText(LPMain.getInstance()
+				.getTextRespectUISPr("button.kostenstelle.tooltip"));
 		wtfKostenstelleNummer.setActivatable(false);
 		wtfKostenstelleNummer.setMandatoryField(true);
 		wlaText.setText(LPMain.getInstance().getTextRespectUISPr("lp.text"));
@@ -221,26 +231,29 @@ public class PanelFinanzBuchungDetailsKassenbuch extends PanelBasis {
 		wnfEingang.setMandatoryField(false);
 		wnfEingang.setDependenceField(true);
 		wlaBeleg.setText(LPMain.getInstance().getTextRespectUISPr("lp.beleg"));
-		wrbBelegAuto.setText(LPMain.getInstance().getTextRespectUISPr("lp.automatisch"));
-		wrbBelegHand.setText(LPMain.getInstance().getTextRespectUISPr("label.handeingabe"));
+		wrbBelegAuto.setText(LPMain.getInstance().getTextRespectUISPr(
+				"lp.automatisch"));
+		wrbBelegHand.setText(LPMain.getInstance().getTextRespectUISPr(
+				"label.handeingabe"));
 		wtfBeleg.setColumnsMax(FinanzFac.MAX_UMBUCHUNG_BELEG);
 		wtfBeleg.setActivatable(false);
 		wtfBeleg.setMandatoryField(true);
 		wlaWaehrungEingang.setHorizontalAlignment(SwingConstants.LEFT);
 		wlaWaehrungAusgang.setHorizontalAlignment(SwingConstants.LEFT);
 		wtfKostenstelleBezeichnung.setActivatable(false);
-		
-		wdfDatum = new WrapperGeschaeftsjahrDateField(getInternalFrameFinanz().getIAktuellesGeschaeftsjahr()) ;
+
+		wdfDatum = new WrapperGeschaeftsjahrDateField(getInternalFrameFinanz()
+				.getIAktuellesGeschaeftsjahr());
 		wdfDatum.setMandatoryField(true);
 		wdfDatum.setMandatoryFieldDB(false);
 		wnfAusgang.setMandatoryField(false);
 		wnfAusgang.setDependenceField(true);
-	
+
 		wrbUst.setText(LPMain.getInstance().getTextRespectUISPr("fb.label.ust"));
 		wrbVst.setText(LPMain.getInstance().getTextRespectUISPr("fb.label.vst"));
 		buttongroupSteuerart.add(wrbUst);
 		buttongroupSteuerart.add(wrbVst);
-		
+
 		buttongroupBeleg.add(wrbBelegAuto);
 		buttongroupBeleg.add(wrbBelegHand);
 		buttongroupKonto.add(wrbKontoDebitorenkonto);
@@ -266,9 +279,10 @@ public class PanelFinanzBuchungDetailsKassenbuch extends PanelBasis {
 		wcoUst.setActionCommand(ACTION_SPECIAL_CO_UST);
 		wcoUst.addActionListener(this);
 
-		wlaAuszug.setText(LPMain.getInstance().getTextRespectUISPr("label.auszug"));
+		wlaAuszug.setText(LPMain.getInstance().getTextRespectUISPr(
+				"label.auszug"));
 		wnfAuszug.setMaximumDigits(FinanzFac.MAX_UMBUCHUNG_AUSZUG);
-//		wnfAuszug.setFractionDigits(0);
+		// wnfAuszug.setFractionDigits(0);
 
 		// jetzt setzen, damit gleich alles richtig initialisiert ist
 		wrbBelegAuto.setSelected(true);
@@ -328,7 +342,7 @@ public class PanelFinanzBuchungDetailsKassenbuch extends PanelBasis {
 				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
 
 		iZeile++;
-		
+
 		jpaWorkingOn.add(wlaEingang, new GridBagConstraints(0, iZeile, 1, 1,
 				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(2, 2, 2, 2), 0, 0));
@@ -343,10 +357,10 @@ public class PanelFinanzBuchungDetailsKassenbuch extends PanelBasis {
 				new Insets(2, 2, 2, 2), 150, 0));
 		jpaWorkingOn.add(wrbUst, new GridBagConstraints(5, iZeile, 1, 1, 0.0,
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 80, 0)); 
+				new Insets(2, 2, 2, 2), 80, 0));
 		jpaWorkingOn.add(wrbVst, new GridBagConstraints(6, iZeile, 1, 1, 0.0,
 				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-				new Insets(2, 2, 2, 2), 80, 0)); 
+				new Insets(2, 2, 2, 2), 80, 0));
 		iZeile++;
 
 		jpaWorkingOn.add(wlaAusgang, new GridBagConstraints(0, iZeile, 1, 1,
@@ -355,8 +369,8 @@ public class PanelFinanzBuchungDetailsKassenbuch extends PanelBasis {
 		jpaWorkingOn.add(wnfAusgang, new GridBagConstraints(1, iZeile, 1, 1,
 				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wlaWaehrungAusgang, new GridBagConstraints(2, iZeile, 1,
-				1, 0.0, 0.0, GridBagConstraints.CENTER,
+		jpaWorkingOn.add(wlaWaehrungAusgang, new GridBagConstraints(2, iZeile,
+				1, 1, 0.0, 0.0, GridBagConstraints.CENTER,
 				GridBagConstraints.BOTH, new Insets(2, 2, 2, 2), 0, 0));
 		iZeile++;
 
@@ -378,19 +392,19 @@ public class PanelFinanzBuchungDetailsKassenbuch extends PanelBasis {
 		jpaWorkingOn.add(wrbBelegHand, new GridBagConstraints(1, iZeile, 1, 1,
 				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(2, 2, 2, 2), 0, 0));
-		
+
 		iZeile++;
-		
+
 		jpaWorkingOn.add(wrbBelegAuto, new GridBagConstraints(1, iZeile, 1, 1,
 				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(2, 2, 2, 2), 0, 0));
-		
+
 		iZeile++;
-		jpaWorkingOn.add(wlaAuszug, new GridBagConstraints(0, iZeile, 1, 1, 0.0,
-				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
+		jpaWorkingOn.add(wlaAuszug, new GridBagConstraints(0, iZeile, 1, 1,
+				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(2, 2, 2, 2), 0, 0));
-		jpaWorkingOn.add(wnfAuszug, new GridBagConstraints(1, iZeile, 1, 1, 0.0,
-				0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
+		jpaWorkingOn.add(wnfAuszug, new GridBagConstraints(1, iZeile, 1, 1,
+				0.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.BOTH,
 				new Insets(2, 2, 2, 2), 0, 0));
 
 		String[] aWhichButtonIUse = new String[] { ACTION_UPDATE, ACTION_SAVE,
@@ -400,30 +414,30 @@ public class PanelFinanzBuchungDetailsKassenbuch extends PanelBasis {
 	}
 
 	private java.util.Date getPreviousBookingDate() {
-		if(null == previousBookingDate) {
-			previousBookingDate = new java.util.Date(System.currentTimeMillis()) ;
+		if (null == previousBookingDate) {
+			previousBookingDate = new java.util.Date(System.currentTimeMillis());
 		}
 
-		return previousBookingDate ;
+		return previousBookingDate;
 	}
 
-	private void setPreviousBookingDate (java.util.Date date) {
-		previousBookingDate = date ;
+	private void setPreviousBookingDate(java.util.Date date) {
+		previousBookingDate = date;
 	}
-	
+
 	private void setPreviousValuesFromComponent() {
 		try {
-			previousEingangDecimal = wnfEingang.getBigDecimal() ;
-			previousAusgangDecimal = wnfAusgang.getBigDecimal() ;				
-		} catch(ExceptionLP e) {}
+			previousEingangDecimal = wnfEingang.getBigDecimal();
+			previousAusgangDecimal = wnfAusgang.getBigDecimal();
+		} catch (ExceptionLP e) {
+		}
 	}
 
 	private void resetPreviousValues() {
-		previousEingangDecimal = null ;
-		previousAusgangDecimal = null ;
+		previousEingangDecimal = null;
+		previousAusgangDecimal = null;
 	}
-	
-	
+
 	/**
 	 * Defaults setzen.
 	 * 
@@ -435,15 +449,17 @@ public class PanelFinanzBuchungDetailsKassenbuch extends PanelBasis {
 		wcoUst.setMap(DelegateFactory.getInstance().getMandantDelegate()
 				.getAllMwstsatzbez(LPMain.getTheClient().getMandant()));
 		wdfDatum.setDate(getPreviousBookingDate());
-		wlaWaehrungEingang.setText(LPMain.getTheClient().getSMandantenwaehrung());
-		wlaWaehrungAusgang.setText(LPMain.getTheClient().getSMandantenwaehrung());
+		wlaWaehrungEingang.setText(LPMain.getTheClient()
+				.getSMandantenwaehrung());
+		wlaWaehrungAusgang.setText(LPMain.getTheClient()
+				.getSMandantenwaehrung());
 	}
 
 	private void setNewGeschaeftsjahr(int newValue) {
-		int previousValue = wdfDatum.getGeschaeftsjahr() ;
-		wdfDatum.setGeschaeftsjahr(newValue) ;
-		if(newValue != previousValue) {
-			setPreviousBookingDate(null) ;
+		int previousValue = wdfDatum.getGeschaeftsjahr();
+		wdfDatum.setGeschaeftsjahr(newValue);
+		if (newValue != previousValue) {
+			setPreviousBookingDate(null);
 		}
 	}
 
@@ -456,6 +472,9 @@ public class PanelFinanzBuchungDetailsKassenbuch extends PanelBasis {
 		if (key == null || (key.equals(LPMain.getLockMeForNew()))) {
 			setNewGeschaeftsjahr(getInternalFrameFinanz().getIAktuellesGeschaeftsjahr()) ;
 			wdfDatum.setDate(getPreviousBookingDate());
+			kostenstelleDto = getInternalFrameFinanz().getDefaultKostenstelle();
+			dto2ComponentsKostenstelle();
+			
 		} else {
 
 			buchungdetailDto = DelegateFactory.getInstance()
@@ -469,13 +488,16 @@ public class PanelFinanzBuchungDetailsKassenbuch extends PanelBasis {
 		}
 	}
 
-	private void getGegenbuchung(BuchungdetailDto detail) throws ExceptionLP, Throwable {
-		BuchungdetailDto[] details = DelegateFactory.getInstance().getBuchenDelegate()
+	private void getGegenbuchung(BuchungdetailDto detail) throws ExceptionLP,
+			Throwable {
+		BuchungdetailDto[] details = DelegateFactory.getInstance()
+				.getBuchenDelegate()
 				.buchungdetailsFindByBuchungIId(buchungDto.getIId());
-		
-		for (int i=0; i<details.length; i++) {
-//			if ((details[i].getKontoIId() != buchungdetailDto.getKontoIId()) never ever compare Integer with ==
-			if (!detail.getKontoIId().equals(details[i].getKontoIId()) 
+
+		for (int i = 0; i < details.length; i++) {
+			// if ((details[i].getKontoIId() != buchungdetailDto.getKontoIId())
+			// never ever compare Integer with ==
+			if (!detail.getKontoIId().equals(details[i].getKontoIId())
 					&& !details[i].getNBetrag().equals(detail.getNUst())) {
 				gegenbuchungDto = details[i];
 				break;
@@ -485,16 +507,19 @@ public class PanelFinanzBuchungDetailsKassenbuch extends PanelBasis {
 
 	protected void dto2Components() throws Throwable {
 		wtfText.setText(buchungDto.getCText());
-		wtfBeleg.setText(buchungDto.getCBelegnummer());
+		wtfBeleg.setText(buchungDto.getCBelegnummer().trim());
 		wdfDatum.setDate(buchungDto.getDBuchungsdatum());
 
 		bdSteuerbetrag = buchungdetailDto.getNUst();
-//		if (buchungdetailDto.getBuchungdetailartCNr().equals(BuchenFac.HabenBuchung)) {
+		// if
+		// (buchungdetailDto.getBuchungdetailartCNr().equals(BuchenFac.HabenBuchung))
+		// {
 
 		kontoDto = DelegateFactory.getInstance().getFinanzDelegate()
-			.kontoFindByPrimaryKey(gegenbuchungDto.getKontoIId());
+				.kontoFindByPrimaryKey(gegenbuchungDto.getKontoIId());
 
-		if (buchungdetailDto.getBuchungdetailartCNr().equals(BuchenFac.SollBuchung)) {
+		if (buchungdetailDto.getBuchungdetailartCNr().equals(
+				BuchenFac.SollBuchung)) {
 			wnfEingang.setBigDecimal(buchungdetailDto.getNBetrag());
 			wnfAusgang.setBigDecimal(null);
 		} else {
@@ -502,7 +527,8 @@ public class PanelFinanzBuchungDetailsKassenbuch extends PanelBasis {
 			wnfAusgang.setBigDecimal(buchungdetailDto.getNBetrag());
 		}
 
-		if (kontoDto.getKontotypCNr().equals(FinanzServiceFac.KONTOTYP_SACHKONTO)) {
+		if (kontoDto.getKontotypCNr().equals(
+				FinanzServiceFac.KONTOTYP_SACHKONTO)) {
 			wrbKontoSachkonto.setSelected(true);
 			showSteuerbuttons(true);
 			if (isBank(kontoDto)) {
@@ -512,7 +538,8 @@ public class PanelFinanzBuchungDetailsKassenbuch extends PanelBasis {
 				showAuszug(false);
 			}
 		}
-		if (kontoDto.getKontotypCNr().equals(FinanzServiceFac.KONTOTYP_KREDITOR)) {
+		if (kontoDto.getKontotypCNr()
+				.equals(FinanzServiceFac.KONTOTYP_KREDITOR)) {
 			wrbKontoKreditorenkonto.setSelected(true);
 			showSteuerbuttons(false);
 			showAuszug(false);
@@ -523,7 +550,8 @@ public class PanelFinanzBuchungDetailsKassenbuch extends PanelBasis {
 			showAuszug(false);
 		}
 
-		KassenbuchungsteuerartDto kbstDto = DelegateFactory.getInstance().getBuchenDelegate()
+		KassenbuchungsteuerartDto kbstDto = DelegateFactory.getInstance()
+				.getBuchenDelegate()
 				.getKassenbuchungSteuerart(buchungdetailDto.getBuchungIId());
 		if (kbstDto != null) {
 			wcoUst.setSelectedItem(kbstDto.getMwstsatzbezBezeichnung());
@@ -532,7 +560,7 @@ public class PanelFinanzBuchungDetailsKassenbuch extends PanelBasis {
 			else
 				wrbVst.setSelected(true);
 		}
-		
+
 		wrbBelegHand.setSelected(true);
 
 		kostenstelleDto = DelegateFactory.getInstance().getSystemDelegate()
@@ -543,15 +571,16 @@ public class PanelFinanzBuchungDetailsKassenbuch extends PanelBasis {
 
 	private boolean isBank(KontoDto kontoDto) throws ExceptionLP {
 		if (kontoDto != null) {
-			BankverbindungDto bankDto = DelegateFactory.getInstance().getFinanzDelegate()
-				.bankverbindungFindByKontoIIdOhneExc(kontoDto.getIId());
+			BankverbindungDto bankDto = DelegateFactory.getInstance()
+					.getFinanzDelegate()
+					.bankverbindungFindByKontoIIdOhneExc(kontoDto.getIId());
 			if (bankDto != null) {
 				return true;
 			}
 		}
 		return false;
 	}
-	
+
 	private void showAuszug(boolean b) {
 		wlaAuszug.setVisible(b);
 		wnfAuszug.setVisible(b);
@@ -566,131 +595,170 @@ public class PanelFinanzBuchungDetailsKassenbuch extends PanelBasis {
 		wrbBelegAuto.setSelected(true);
 		wtfBeleg.setMandatoryField(false);
 		showSteuerbuttons(true);
-		//wrbKontoDebitorenkonto.setSelected(false) ;
-		//wrbKontoKreditorenkonto.setSelected(false) ;
-		refreshKontotyp() ;
-		
-		resetPreviousValues() ;
+		// wrbKontoDebitorenkonto.setSelected(false) ;
+		// wrbKontoKreditorenkonto.setSelected(false) ;
+		refreshKontotyp();
+
+		resetPreviousValues();
 		buchungDto = new BuchungDto();
 		buchungdetailDto = new BuchungdetailDto();
 	}
 
-	
-	private boolean isSaldoAllowed(KassenbuchDto kassenbuchDto, BigDecimal newEingang, BigDecimal newAusgang, BigDecimal oldEingang, BigDecimal oldAusgang) throws Throwable {
-		if(kassenbuchDto.getBNegativErlaubt() != 0) return true ;
-		
-		if(null == newEingang) newEingang = BigDecimal.ZERO ;
-		if(null == newAusgang) newAusgang = BigDecimal.ZERO ;
-		if(null == oldEingang) oldEingang = BigDecimal.ZERO ;
-		if(null == oldAusgang) oldAusgang = BigDecimal.ZERO ;
+	private boolean isSaldoAllowed(KassenbuchDto kassenbuchDto,
+			BigDecimal newEingang, BigDecimal newAusgang,
+			BigDecimal oldEingang, BigDecimal oldAusgang) throws Throwable {
+		if (kassenbuchDto.getBNegativErlaubt() != 0)
+			return true;
 
-		BigDecimal kontoSaldo = DelegateFactory.getInstance().getBuchenDelegate().getSaldoVonKonto(
-					kassenbuchDto.getKontoIId(), getInternalFrameFinanz().getIAktuellesGeschaeftsjahr(), 12, true);
-		if(null == kontoSaldo) kontoSaldo = BigDecimal.ZERO ;
-		
-		BigDecimal ebKonto = DelegateFactory.getInstance().getBuchenDelegate().getSummeEroeffnungKontoIId(
-				kassenbuchDto.getKontoIId(), getInternalFrameFinanz().getIAktuellesGeschaeftsjahr(), 12, true) ;
-		if(null == ebKonto) ebKonto = BigDecimal.ZERO ;
-		kontoSaldo = ebKonto.add(kontoSaldo) ;
-		
-		kontoSaldo = kontoSaldo.subtract(oldEingang).add(oldAusgang) ;
-		kontoSaldo = kontoSaldo.add(newEingang).subtract(newAusgang) ;
+		if (null == newEingang)
+			newEingang = BigDecimal.ZERO;
+		if (null == newAusgang)
+			newAusgang = BigDecimal.ZERO;
+		if (null == oldEingang)
+			oldEingang = BigDecimal.ZERO;
+		if (null == oldAusgang)
+			oldAusgang = BigDecimal.ZERO;
+
+		BigDecimal kontoSaldo = DelegateFactory
+				.getInstance()
+				.getBuchenDelegate()
+				.getSaldoVonKonto(kassenbuchDto.getKontoIId(),
+						getInternalFrameFinanz().getIAktuellesGeschaeftsjahr(),
+						12, true);
+		if (null == kontoSaldo)
+			kontoSaldo = BigDecimal.ZERO;
+
+		BigDecimal ebKonto = DelegateFactory
+				.getInstance()
+				.getBuchenDelegate()
+				.getSummeEroeffnungKontoIId(kassenbuchDto.getKontoIId(),
+						getInternalFrameFinanz().getIAktuellesGeschaeftsjahr(),
+						12, true);
+		if (null == ebKonto)
+			ebKonto = BigDecimal.ZERO;
+		kontoSaldo = ebKonto.add(kontoSaldo);
+
+		kontoSaldo = kontoSaldo.subtract(oldEingang).add(oldAusgang);
+		kontoSaldo = kontoSaldo.add(newEingang).subtract(newAusgang);
 		return kontoSaldo.signum() >= 0;
 	}
-	
+
 	@Override
 	protected void eventActionUpdate(ActionEvent aE, boolean bNeedNoUpdateI)
 			throws Throwable {
 		super.eventActionUpdate(aE, bNeedNoUpdateI);
 
 		// Der Anwender kann das Geschaeftsjahr geaendert haben
-		setNewGeschaeftsjahr(getInternalFrameFinanz().getIAktuellesGeschaeftsjahr()) ;
-		setPreviousValuesFromComponent() ;
+		setNewGeschaeftsjahr(getInternalFrameFinanz()
+				.getIAktuellesGeschaeftsjahr());
+		setPreviousValuesFromComponent();
 	}
 
 	@Override
-	protected void eventActionDelete(ActionEvent e,	boolean bAdministrateLockKeyI, boolean bNeedNoDeleteI)
+	protected void eventActionDelete(ActionEvent e,
+			boolean bAdministrateLockKeyI, boolean bNeedNoDeleteI)
 			throws Throwable {
-		if (buchungDto != null && buchungDto.getIId() != null) 
-			DelegateFactory.getInstance().getBuchenDelegate().storniereBuchung(buchungDto.getIId());
+		if (buchungDto != null && buchungDto.getIId() != null)
+			DelegateFactory.getInstance().getBuchenDelegate()
+					.storniereBuchung(buchungDto.getIId());
 		this.setKeyWhenDetailPanel(null);
-		super.eventActionDelete(e, false, false); // keyWasForLockMe nicht ueberschreiben
+		super.eventActionDelete(e, false, false); // keyWasForLockMe nicht
+													// ueberschreiben
 	}
-	
+
 	public void eventActionSave(ActionEvent e, boolean bNeedNoSaveI)
 			throws Throwable {
 		if (allMandatoryFieldsSetDlg()) {
-			// Eingang oder Ausgang muss <> 0 sein, NICHT beide duerfen einen Betrag haben
-			if (wnfEingang.getDouble() == null && wnfAusgang.getDouble() == null) {
+			// Eingang oder Ausgang muss <> 0 sein, NICHT beide duerfen einen
+			// Betrag haben
+			if (wnfEingang.getDouble() == null
+					&& wnfAusgang.getDouble() == null) {
 				DialogFactory.showModalDialog(LPMain.getInstance()
 						.getTextRespectUISPr("lp.error"), LPMain.getInstance()
 						.getTextRespectUISPr("finanz.error.betragdefinieren"));
 				return;
 			}
-			if (wnfEingang.getDouble() != null && wnfAusgang.getDouble() != null) {
-				DialogFactory.showModalDialog(LPMain.getInstance()
-						.getTextRespectUISPr("lp.error"), LPMain.getInstance()
-						.getTextRespectUISPr("finanz.error.eingangoderausgangwaehlen"));
+			if (wnfEingang.getDouble() != null
+					&& wnfAusgang.getDouble() != null) {
+				DialogFactory.showModalDialog(
+						LPMain.getInstance().getTextRespectUISPr("lp.error"),
+						LPMain.getInstance().getTextRespectUISPr(
+								"finanz.error.eingangoderausgangwaehlen"));
 				return;
 			}
-			if (wnfEingang.getDouble() != null && wnfEingang.getDouble().doubleValue() == 0.0) {	
+			if (wnfEingang.getDouble() != null
+					&& wnfEingang.getDouble().doubleValue() == 0.0) {
 				DialogFactory.showModalDialog(LPMain.getInstance()
 						.getTextRespectUISPr("lp.error"), LPMain.getInstance()
 						.getTextRespectUISPr("finanz.error.betragdefinieren"));
 				return;
 			}
-			if (wnfAusgang.getDouble() != null && wnfAusgang.getDouble().doubleValue() == 0.0) {	
+			if (wnfAusgang.getDouble() != null
+					&& wnfAusgang.getDouble().doubleValue() == 0.0) {
 				DialogFactory.showModalDialog(LPMain.getInstance()
 						.getTextRespectUISPr("lp.error"), LPMain.getInstance()
 						.getTextRespectUISPr("finanz.error.betragdefinieren"));
 				return;
 			}
 
+			boolean buchungDurchfuehren = true;
 
-		    boolean buchungDurchfuehren = true ;
-		    
-		    KassenbuchDto kassenbuchDto = tabbedPaneKassenbuch.getKassenbuchDto();
-		    if(!isSaldoAllowed(kassenbuchDto, wnfEingang.getBigDecimal(), wnfAusgang.getBigDecimal(), previousEingangDecimal, previousAusgangDecimal)) {
-		    	buchungDurchfuehren = DialogFactory.showModalJaNeinDialog(
-		    		getInternalFrame(),
-		    		LPMain.getInstance().getTextRespectUISPr("fb.kassenbuch.saldonegativ.buchen"), 
-		    		LPMain.getInstance().getTextRespectUISPr("fb.kassenbuch.saldonegativ.titel")) ;
-		    }
+			KassenbuchDto kassenbuchDto = tabbedPaneKassenbuch
+					.getKassenbuchDto();
+			if (!isSaldoAllowed(kassenbuchDto, wnfEingang.getBigDecimal(),
+					wnfAusgang.getBigDecimal(), previousEingangDecimal,
+					previousAusgangDecimal)) {
+				buchungDurchfuehren = DialogFactory.showModalJaNeinDialog(
+						getInternalFrame(),
+						LPMain.getInstance().getTextRespectUISPr(
+								"fb.kassenbuch.saldonegativ.buchen"),
+						LPMain.getInstance().getTextRespectUISPr(
+								"fb.kassenbuch.saldonegativ.titel"));
+			}
 
-		    if(buchungDurchfuehren) {
-			    components2Dto();
-				
-			    KassenbuchungsteuerartDto kstDto = new KassenbuchungsteuerartDto();
-			    kstDto.setMwstsatzbezIId((Integer)wcoUst.getKeyOfSelectedItem());
-			    kstDto.setMwstsatzbezBezeichnung(wcoUst.getSelectedItem().toString());
-		    	kstDto.setUstBuchung(wrbUst.isSelected());
-			    buchungDto = DelegateFactory.getInstance().getBuchenDelegate().verbucheKassenbuchung(buchungDto, gegenbuchungDto, kassenbuchDto.getKontoIId(), kstDto);
-				setPreviousBookingDate(buchungDto.getDBuchungsdatum()) ;			
+			if (buchungDurchfuehren) {
+				components2Dto();
+
+				KassenbuchungsteuerartDto kstDto = new KassenbuchungsteuerartDto();
+				kstDto.setMwstsatzbezIId((Integer) wcoUst
+						.getKeyOfSelectedItem());
+				kstDto.setMwstsatzbezBezeichnung(wcoUst.getSelectedItem()
+						.toString());
+				kstDto.setUstBuchung(wrbUst.isSelected());
+				buchungDto = DelegateFactory
+						.getInstance()
+						.getBuchenDelegate()
+						.verbucheKassenbuchung(buchungDto, gegenbuchungDto,
+								kassenbuchDto.getKontoIId(), kstDto);
+				setPreviousBookingDate(buchungDto.getDBuchungsdatum());
 				// setKeyWhenDetailPanel(buchungDto.getIId());
-				setKeyWhenDetailPanel(findIdFuerBuchung(buchungDto, kassenbuchDto)) ;
+				setKeyWhenDetailPanel(findIdFuerBuchung(buchungDto,
+						kassenbuchDto));
 				getGegenbuchung(gegenbuchungDto);
-				
-				super.eventActionSave(e, false);		    	
-		    }
+
+				super.eventActionSave(e, false);
+			}
 		}
 	}
 
-	protected Integer findIdFuerBuchung(BuchungDto buchungDto, KassenbuchDto kassenbuchDto) {
+	protected Integer findIdFuerBuchung(BuchungDto buchungDto,
+			KassenbuchDto kassenbuchDto) {
 		try {
-			BuchungdetailDto[] details = 
-					DelegateFactory.getInstance().getBuchenDelegate().buchungdetailsFindByBuchungIId(buchungDto.getIId()) ;
+			BuchungdetailDto[] details = DelegateFactory.getInstance()
+					.getBuchenDelegate()
+					.buchungdetailsFindByBuchungIId(buchungDto.getIId());
 			for (BuchungdetailDto buchungdetailDto : details) {
-				if(buchungdetailDto.getKontoIId().equals(kassenbuchDto.getKontoIId())) {
-					return buchungdetailDto.getIId() ;
+				if (buchungdetailDto.getKontoIId().equals(
+						kassenbuchDto.getKontoIId())) {
+					return buchungdetailDto.getIId();
 				}
 			}
-		} catch(Throwable t) {
+		} catch (Throwable t) {
 		}
 
-		return buchungDto.getIId() ;
+		return buchungDto.getIId();
 	}
-	
-	
+
 	protected void eventActionSpecial(ActionEvent e) throws Throwable {
 		if (e.getActionCommand().equals(ACTION_SPECIAL_KONTO)) {
 			dialogQueryKonto(e);
@@ -703,7 +771,8 @@ public class PanelFinanzBuchungDetailsKassenbuch extends PanelBasis {
 			if (auto)
 				wtfBeleg.setText(null);
 		} else if (e.getActionCommand().equals(ACTION_SPECIAL_RB_KONTO)) {
-			if (e.getSource().equals(wrbKontoDebitorenkonto) || e.getSource().equals(wrbKontoKreditorenkonto)) {
+			if (e.getSource().equals(wrbKontoDebitorenkonto)
+					|| e.getSource().equals(wrbKontoKreditorenkonto)) {
 				showSteuerbuttons(false);
 			} else if (e.getSource().equals(wrbKontoSachkonto)) {
 				showSteuerbuttons(true);
@@ -722,8 +791,10 @@ public class PanelFinanzBuchungDetailsKassenbuch extends PanelBasis {
 		setSteuersatz(false);
 	}
 
-	private void setSteuersatz(boolean bsetSteuerfrei) throws ExceptionLP, Throwable {
-		MwstsatzbezDto mwstbezDto =DelegateFactory.getInstance().getMandantDelegate().getMwstsatzbezSteuerfrei();
+	private void setSteuersatz(boolean bsetSteuerfrei) throws ExceptionLP,
+			Throwable {
+		MwstsatzbezDto mwstbezDto = DelegateFactory.getInstance()
+				.getMandantDelegate().getMwstsatzbezSteuerfrei();
 		boolean bSteuerzulaessig = wrbKontoSachkonto.isSelected();
 		wcoUst.setActivatable(bSteuerzulaessig);
 		if (bSteuerzulaessig || bsetSteuerfrei)
@@ -753,9 +824,8 @@ public class PanelFinanzBuchungDetailsKassenbuch extends PanelBasis {
 		return HelperClient.LOCKME_FINANZ_KONTO;
 	}
 
-
-
-	private void setDetailBetraege(BuchungdetailDto buchungdetailDto, BigDecimal nbetrag, BigDecimal nust, boolean bucheAufSachkonto) {
+	private void setDetailBetraege(BuchungdetailDto buchungdetailDto,
+			BigDecimal nbetrag, BigDecimal nust, boolean bucheAufSachkonto) {
 		if (nust != null) {
 			if (bucheAufSachkonto)
 				// auf Sachkonten wird Netto gebucht
@@ -765,9 +835,9 @@ public class PanelFinanzBuchungDetailsKassenbuch extends PanelBasis {
 				buchungdetailDto.setNBetrag(nbetrag);
 			buchungdetailDto.setNUst(nust);
 		} else {
-			buchungdetailDto.setNBetrag(nbetrag);		
+			buchungdetailDto.setNBetrag(nbetrag);
 			buchungdetailDto.setNUst(BigDecimal.ZERO);
-		}		
+		}
 	}
 
 	private void components2Dto() throws Throwable {
@@ -778,20 +848,23 @@ public class PanelFinanzBuchungDetailsKassenbuch extends PanelBasis {
 		buchungDto.setCBelegnummer(wtfBeleg.getText());
 		buchungDto.setCText(wtfText.getText());
 		buchungDto.setDBuchungsdatum(wdfDatum.getDate());
-		Integer geschaeftsjahr = getInternalFrameFinanz().getIAktuellesGeschaeftsjahr() ;
+		Integer geschaeftsjahr = getInternalFrameFinanz()
+				.getIAktuellesGeschaeftsjahr();
 		buchungDto.setIGeschaeftsjahr(geschaeftsjahr);
 		buchungDto.setKostenstelleIId(kostenstelleDto.getIId());
-		
-		gegenbuchungDto = new BuchungdetailDto() ;
+
+		gegenbuchungDto = new BuchungdetailDto();
 		// dann Detail Gegenbuchung!!
 		if (wnfEingang.getDouble() != null) {
-//			buchungdetailDto.setBuchungdetailartCNr(BuchenFac.SollBuchung);
+			// buchungdetailDto.setBuchungdetailartCNr(BuchenFac.SollBuchung);
 			gegenbuchungDto.setBuchungdetailartCNr(BuchenFac.HabenBuchung);
-			setDetailBetraege(gegenbuchungDto, wnfEingang.getBigDecimal(), bdSteuerbetrag, wrbKontoSachkonto.isSelected()) ;			
+			setDetailBetraege(gegenbuchungDto, wnfEingang.getBigDecimal(),
+					bdSteuerbetrag, wrbKontoSachkonto.isSelected());
 		} else {
-//			buchungdetailDto.setBuchungdetailartCNr(BuchenFac.HabenBuchung);
+			// buchungdetailDto.setBuchungdetailartCNr(BuchenFac.HabenBuchung);
 			gegenbuchungDto.setBuchungdetailartCNr(BuchenFac.SollBuchung);
-			setDetailBetraege(gegenbuchungDto, wnfAusgang.getBigDecimal(), bdSteuerbetrag, wrbKontoSachkonto.isSelected()) ;
+			setDetailBetraege(gegenbuchungDto, wnfAusgang.getBigDecimal(),
+					bdSteuerbetrag, wrbKontoSachkonto.isSelected());
 		}
 
 		gegenbuchungDto.setKontoIId(kontoDto.getIId());
@@ -900,35 +973,42 @@ public class PanelFinanzBuchungDetailsKassenbuch extends PanelBasis {
 					+ wdfDatum.getTimestamp().toString()
 					+ " kann nicht bestimmt werden");
 		} else {
-//			BigDecimal bdMwstSatz = new BigDecimal(mwstsatzDto.getFMwstsatz()).movePointLeft(2);
-//			if (wnfEingang.getBigDecimal() != null) {
-//				bdSteuerbetrag = Helper.getMehrwertsteuerBetrag(wnfEingang.getBigDecimal(), bdMwstSatz);
-//			} else if (wnfAusgang.getBigDecimal() != null) {
-//				bdSteuerbetrag = Helper.getMehrwertsteuerBetrag(wnfAusgang.getBigDecimal(), bdMwstSatz);
-//			} else {
-//				bdSteuerbetrag = null;
-//			}
-			Double mwstsatz = mwstsatzDto.getFMwstsatz() ;
+			// BigDecimal bdMwstSatz = new
+			// BigDecimal(mwstsatzDto.getFMwstsatz()).movePointLeft(2);
+			// if (wnfEingang.getBigDecimal() != null) {
+			// bdSteuerbetrag =
+			// Helper.getMehrwertsteuerBetrag(wnfEingang.getBigDecimal(),
+			// bdMwstSatz);
+			// } else if (wnfAusgang.getBigDecimal() != null) {
+			// bdSteuerbetrag =
+			// Helper.getMehrwertsteuerBetrag(wnfAusgang.getBigDecimal(),
+			// bdMwstSatz);
+			// } else {
+			// bdSteuerbetrag = null;
+			// }
+			Double mwstsatz = mwstsatzDto.getFMwstsatz();
 			if (wnfEingang.getBigDecimal() != null) {
-				bdSteuerbetrag = Helper.getMehrwertsteuerBetrag(wnfEingang.getBigDecimal(), mwstsatz);
+				bdSteuerbetrag = Helper.getMehrwertsteuerBetrag(
+						wnfEingang.getBigDecimal(), mwstsatz);
 			} else if (wnfAusgang.getBigDecimal() != null) {
-				bdSteuerbetrag = Helper.getMehrwertsteuerBetrag(wnfAusgang.getBigDecimal(), mwstsatz);
+				bdSteuerbetrag = Helper.getMehrwertsteuerBetrag(
+						wnfAusgang.getBigDecimal(), mwstsatz);
 			} else {
 				bdSteuerbetrag = null;
 			}
 		}
 	}
 
-//	void reset() throws Throwable {
-//		this.wnfEingang.setBigDecimal(new BigDecimal(0.00));
-//		this.wnfAusgang.setBigDecimal(new BigDecimal(0.00));
-//		wtfBeleg.removeContent();
-//
-//		if (kontoDto != null) {
-//			kontoDto = DelegateFactory.getInstance().getFinanzDelegate()
-//					.kontoFindByPrimaryKey(kontoDto.getIId());
-//		}
-//	}
+	// void reset() throws Throwable {
+	// this.wnfEingang.setBigDecimal(new BigDecimal(0.00));
+	// this.wnfAusgang.setBigDecimal(new BigDecimal(0.00));
+	// wtfBeleg.removeContent();
+	//
+	// if (kontoDto != null) {
+	// kontoDto = DelegateFactory.getInstance().getFinanzDelegate()
+	// .kontoFindByPrimaryKey(kontoDto.getIId());
+	// }
+	// }
 
 	protected javax.swing.JComponent getFirstFocusableComponent()
 			throws Exception {

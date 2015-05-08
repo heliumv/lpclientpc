@@ -1,33 +1,33 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
- * 
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
+ *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published 
- * by the Free Software Foundation, either version 3 of theLicense, or 
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of theLicense, or
  * (at your option) any later version.
- * 
- * According to sec. 7 of the GNU Affero General Public License, version 3, 
+ *
+ * According to sec. 7 of the GNU Affero General Public License, version 3,
  * the terms of the AGPL are supplemented with the following terms:
- * 
- * "HELIUM V" and "HELIUM 5" are registered trademarks of 
- * HELIUM V IT-Solutions GmbH. The licensing of the program under the 
+ *
+ * "HELIUM V" and "HELIUM 5" are registered trademarks of
+ * HELIUM V IT-Solutions GmbH. The licensing of the program under the
  * AGPL does not imply a trademark license. Therefore any rights, title and
  * interest in our trademarks remain entirely with us. If you want to propagate
  * modified versions of the Program under the name "HELIUM V" or "HELIUM 5",
- * you may only do so if you have a written permission by HELIUM V IT-Solutions 
+ * you may only do so if you have a written permission by HELIUM V IT-Solutions
  * GmbH (to acquire a permission please contact HELIUM V IT-Solutions
  * at trademark@heliumv.com).
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Affero General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  * Contact: developers@heliumv.com
  ******************************************************************************/
 package com.lp.client.artikel;
@@ -37,16 +37,21 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 import java.util.HashMap;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
+import javax.swing.ToolTipManager;
 
+import com.lp.client.frame.Defaults;
 import com.lp.client.frame.HelperClient;
-import com.lp.client.frame.component.WrapperButton;
-import com.lp.client.frame.component.WrapperCheckBox;
+import com.lp.client.frame.component.WrapperButtonWithoutCornerInfo;
+import com.lp.client.frame.component.WrapperCheckBoxWithoutCornerInfo;
 import com.lp.client.frame.component.WrapperLabel;
 import com.lp.client.frame.component.WrapperSelectField;
 import com.lp.client.frame.component.WrapperTextField;
@@ -61,91 +66,98 @@ import com.lp.server.system.service.ParametermandantDto;
 import com.lp.server.system.service.SystemServicesFac;
 import com.lp.util.Helper;
 
-@SuppressWarnings("static-access")
 public class DialogArtikelkopieren extends JDialog implements ActionListener {
 
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = 1L;
+
+	private final int defaultDismissTimeout = ToolTipManager.sharedInstance()
+			.getDismissDelay();
+
 	private GridBagLayout gridBagLayout2 = new GridBagLayout();
 	private WrapperLabel lNeueArtikelnummer = new WrapperLabel();
-	private WrapperTextField neueArtikelnummer = new WrapperTextField();
+	private WrapperTextField neueArtikelnummer = new WrapperTextField(false);
 	private JButton btnOK = new JButton();
 	private JButton btnAbbrechen = new JButton();
-	private WrapperCheckBox cbMitHersteller = new WrapperCheckBox();
-	private WrapperCheckBox cbMitArtikelgruppe = new WrapperCheckBox();
-	private WrapperCheckBox cbMitArtikelklasse = new WrapperCheckBox();
-	private WrapperCheckBox cbMitReferenznummer = new WrapperCheckBox();
 
-	private WrapperCheckBox cbMitBestellmengeneinheit = new WrapperCheckBox();
-	private WrapperCheckBox cbMitLagermindeststand = new WrapperCheckBox();
-	private WrapperCheckBox cbMitLagersollstand = new WrapperCheckBox();
-	private WrapperCheckBox cbMitVerpackungsmenge = new WrapperCheckBox();
+	private WrapperCheckBoxWithoutCornerInfo cbMitHersteller = new WrapperCheckBoxWithoutCornerInfo();
+	private WrapperCheckBoxWithoutCornerInfo cbMitArtikelgruppe = new WrapperCheckBoxWithoutCornerInfo();
+	private WrapperCheckBoxWithoutCornerInfo cbMitArtikelklasse = new WrapperCheckBoxWithoutCornerInfo();
+	private WrapperCheckBoxWithoutCornerInfo cbMitReferenznummer = new WrapperCheckBoxWithoutCornerInfo();
 
-	private WrapperCheckBox cbMitVerschnittfaktor = new WrapperCheckBox();
-	private WrapperCheckBox cbMitVerschnittbasis = new WrapperCheckBox();
-	private WrapperCheckBox cbMitJahresmenge = new WrapperCheckBox();
-	private WrapperCheckBox cbMitMwstsatz = new WrapperCheckBox();
+	private WrapperCheckBoxWithoutCornerInfo cbMitBestellmengeneinheit = new WrapperCheckBoxWithoutCornerInfo();
+	private WrapperCheckBoxWithoutCornerInfo cbMitLagermindeststand = new WrapperCheckBoxWithoutCornerInfo();
+	private WrapperCheckBoxWithoutCornerInfo cbMitLagersollstand = new WrapperCheckBoxWithoutCornerInfo();
+	private WrapperCheckBoxWithoutCornerInfo cbMitVerpackungsmenge = new WrapperCheckBoxWithoutCornerInfo();
 
-	private WrapperCheckBox cbMitMaterial = new WrapperCheckBox();
-	private WrapperCheckBox cbMitGewicht = new WrapperCheckBox();
-	private WrapperCheckBox cbMitMaterialgewicht = new WrapperCheckBox();
-	private WrapperCheckBox cbMitZugehoerigerartikel = new WrapperCheckBox();
+	private WrapperCheckBoxWithoutCornerInfo cbMitVerschnittfaktor = new WrapperCheckBoxWithoutCornerInfo();
+	private WrapperCheckBoxWithoutCornerInfo cbMitVerschnittbasis = new WrapperCheckBoxWithoutCornerInfo();
+	private WrapperCheckBoxWithoutCornerInfo cbMitJahresmenge = new WrapperCheckBoxWithoutCornerInfo();
+	private WrapperCheckBoxWithoutCornerInfo cbMitMwstsatz = new WrapperCheckBoxWithoutCornerInfo();
 
-	private WrapperCheckBox cbMitVertreterprovision = new WrapperCheckBox();
-	private WrapperCheckBox cbMitMinutenfaktor1 = new WrapperCheckBox();
-	private WrapperCheckBox cbMitMinutenfaktor2 = new WrapperCheckBox();
-	private WrapperCheckBox cbMitMindestdeckungsbeitrag = new WrapperCheckBox();
+	private WrapperCheckBoxWithoutCornerInfo cbMitMaterial = new WrapperCheckBoxWithoutCornerInfo();
+	private WrapperCheckBoxWithoutCornerInfo cbMitGewicht = new WrapperCheckBoxWithoutCornerInfo();
+	private WrapperCheckBoxWithoutCornerInfo cbMitMaterialgewicht = new WrapperCheckBoxWithoutCornerInfo();
+	private WrapperCheckBoxWithoutCornerInfo cbMitZugehoerigerartikel = new WrapperCheckBoxWithoutCornerInfo();
 
-	private WrapperCheckBox cbMitVerkaufsean = new WrapperCheckBox();
-	private WrapperCheckBox cbMitWarenverkehrsnummer = new WrapperCheckBox();
-	private WrapperCheckBox cbMitRabattierbar = new WrapperCheckBox();
-	private WrapperCheckBox cbMitGarantiezeit = new WrapperCheckBox();
+	private WrapperCheckBoxWithoutCornerInfo cbMitVertreterprovision = new WrapperCheckBoxWithoutCornerInfo();
+	private WrapperCheckBoxWithoutCornerInfo cbMitMinutenfaktor1 = new WrapperCheckBoxWithoutCornerInfo();
+	private WrapperCheckBoxWithoutCornerInfo cbMitMinutenfaktor2 = new WrapperCheckBoxWithoutCornerInfo();
+	private WrapperCheckBoxWithoutCornerInfo cbMitMindestdeckungsbeitrag = new WrapperCheckBoxWithoutCornerInfo();
 
-	private WrapperCheckBox cbMitFarbcode = new WrapperCheckBox();
-	private WrapperCheckBox cbMitErsatzartikel = new WrapperCheckBox();
-	private WrapperCheckBox cbMitUrsprungsland = new WrapperCheckBox();
+	private WrapperCheckBoxWithoutCornerInfo cbMitVerkaufsean = new WrapperCheckBoxWithoutCornerInfo();
+	private WrapperCheckBoxWithoutCornerInfo cbMitWarenverkehrsnummer = new WrapperCheckBoxWithoutCornerInfo();
+	private WrapperCheckBoxWithoutCornerInfo cbMitRabattierbar = new WrapperCheckBoxWithoutCornerInfo();
+	private WrapperCheckBoxWithoutCornerInfo cbMitGarantiezeit = new WrapperCheckBoxWithoutCornerInfo();
 
-	private WrapperCheckBox cbMitKatalog = new WrapperCheckBox();
-	private WrapperCheckBox cbMitVkpreise = new WrapperCheckBox();
-	private WrapperCheckBox cbMitEkpreise = new WrapperCheckBox();
-	private WrapperCheckBox cbMitKommentare = new WrapperCheckBox();
+	private WrapperCheckBoxWithoutCornerInfo cbMitFarbcode = new WrapperCheckBoxWithoutCornerInfo();
+	private WrapperCheckBoxWithoutCornerInfo cbMitErsatzartikel = new WrapperCheckBoxWithoutCornerInfo();
+	private WrapperCheckBoxWithoutCornerInfo cbMitUrsprungsland = new WrapperCheckBoxWithoutCornerInfo();
 
-	private WrapperCheckBox cbMitEigenschaften = new WrapperCheckBox();
-	private WrapperCheckBox cbMitBreite = new WrapperCheckBox();
-	private WrapperCheckBox cbMitHoehe = new WrapperCheckBox();
-	private WrapperCheckBox cbMitTiefe = new WrapperCheckBox();
+	private WrapperCheckBoxWithoutCornerInfo cbMitKatalog = new WrapperCheckBoxWithoutCornerInfo();
+	private WrapperCheckBoxWithoutCornerInfo cbMitVkpreise = new WrapperCheckBoxWithoutCornerInfo();
+	private WrapperCheckBoxWithoutCornerInfo cbMitEkpreise = new WrapperCheckBoxWithoutCornerInfo();
+	private WrapperCheckBoxWithoutCornerInfo cbMitKommentare = new WrapperCheckBoxWithoutCornerInfo();
 
-	private WrapperCheckBox cbMitBauform = new WrapperCheckBox();
-	private WrapperCheckBox cbMitVerpackungsart = new WrapperCheckBox();
-	private WrapperCheckBox cbMitAufschlag = new WrapperCheckBox();
-	private WrapperCheckBox cbMitSollverkauf = new WrapperCheckBox();
+	private WrapperCheckBoxWithoutCornerInfo cbMitEigenschaften = new WrapperCheckBoxWithoutCornerInfo();
+	private WrapperCheckBoxWithoutCornerInfo cbMitBreite = new WrapperCheckBoxWithoutCornerInfo();
+	private WrapperCheckBoxWithoutCornerInfo cbMitHoehe = new WrapperCheckBoxWithoutCornerInfo();
+	private WrapperCheckBoxWithoutCornerInfo cbMitTiefe = new WrapperCheckBoxWithoutCornerInfo();
 
-	private WrapperCheckBox cbMitRasterliegend = new WrapperCheckBox();
-	private WrapperCheckBox cbMitRasterstehend = new WrapperCheckBox();
-	private WrapperCheckBox cbMitHochstellen = new WrapperCheckBox();
-	private WrapperCheckBox cbMitHochsetzen = new WrapperCheckBox();
+	private WrapperCheckBoxWithoutCornerInfo cbMitBauform = new WrapperCheckBoxWithoutCornerInfo();
+	private WrapperCheckBoxWithoutCornerInfo cbMitVerpackungsart = new WrapperCheckBoxWithoutCornerInfo();
+	private WrapperCheckBoxWithoutCornerInfo cbMitAufschlag = new WrapperCheckBoxWithoutCornerInfo();
+	private WrapperCheckBoxWithoutCornerInfo cbMitSollverkauf = new WrapperCheckBoxWithoutCornerInfo();
 
-	private WrapperCheckBox cbMitIndex = new WrapperCheckBox();
-	private WrapperCheckBox cbMitRevision = new WrapperCheckBox();
+	private WrapperCheckBoxWithoutCornerInfo cbMitRasterliegend = new WrapperCheckBoxWithoutCornerInfo();
+	private WrapperCheckBoxWithoutCornerInfo cbMitRasterstehend = new WrapperCheckBoxWithoutCornerInfo();
+	private WrapperCheckBoxWithoutCornerInfo cbMitHochstellen = new WrapperCheckBoxWithoutCornerInfo();
+	private WrapperCheckBoxWithoutCornerInfo cbMitHochsetzen = new WrapperCheckBoxWithoutCornerInfo();
 
-	private WrapperCheckBox cbMitPolarisiert = new WrapperCheckBox();
-	private WrapperCheckBox cbMitFertigungssatzgroesse = new WrapperCheckBox();
+	private WrapperCheckBoxWithoutCornerInfo cbMitIndex = new WrapperCheckBoxWithoutCornerInfo();
+	private WrapperCheckBoxWithoutCornerInfo cbMitRevision = new WrapperCheckBoxWithoutCornerInfo();
 
-	private WrapperCheckBox cbMitSnrbehaftet = new WrapperCheckBox();
-	private WrapperCheckBox cbMitChnrbehaftet = new WrapperCheckBox();
+	private WrapperCheckBoxWithoutCornerInfo cbMitPolarisiert = new WrapperCheckBoxWithoutCornerInfo();
+	private WrapperCheckBoxWithoutCornerInfo cbMitFertigungssatzgroesse = new WrapperCheckBoxWithoutCornerInfo();
+
+	private WrapperCheckBoxWithoutCornerInfo cbMitSnrbehaftet = new WrapperCheckBoxWithoutCornerInfo();
+	private WrapperCheckBoxWithoutCornerInfo cbMitChnrbehaftet = new WrapperCheckBoxWithoutCornerInfo();
 
 	private JButton btnEinstellungenSpeichern = new JButton();
 
 	private InternalFrameArtikel internalFrame = null;
 
-	private WrapperButton wbuGeneriereArtikelnummer = new WrapperButton();
+	private WrapperButtonWithoutCornerInfo wbuGeneriereArtikelnummer = new WrapperButtonWithoutCornerInfo();
+
 	private HashMap zuKopieren = new HashMap();
 
 	static final public String ACTION_SPECIAL_HERSTELLER_FROM_LISTE = "action_hersteller_from_liste";
 
 	private WrapperSelectField wbuHersteller = null;
+
+	private WrapperLabel lQuestionMark = new WrapperLabel();
 
 	public Integer getHerstellerIIdNeu() {
 
@@ -211,7 +223,31 @@ public class DialogArtikelkopieren extends JDialog implements ActionListener {
 			neueArtikelnummer.setText(arikelDto_AlterArtikel.getCNr());
 		}
 
-		this.setSize(800, 450);
+		if (neueArtikelnummer.getText() != null) {
+
+			String artikelnummerAbschneiden = neueArtikelnummer.getText()
+					.trim();
+
+			ParametermandantDto parameter = DelegateFactory
+					.getInstance()
+					.getParameterDelegate()
+					.getMandantparameter(
+							LPMain.getTheClient().getMandant(),
+							ParameterFac.KATEGORIE_ARTIKEL,
+							ParameterFac.PARAMETER_ARTIKELNUMMER_AUSWAHL_ABSCHNEIDEN);
+			int iAnzahlAbschneiden = (java.lang.Integer) parameter
+					.getCWertAsObject();
+
+			if (iAnzahlAbschneiden > 0
+					&& artikelnummerAbschneiden.length() >= iAnzahlAbschneiden) {
+				artikelnummerAbschneiden = artikelnummerAbschneiden.substring(
+						0, artikelnummerAbschneiden.length()
+								- iAnzahlAbschneiden);
+				neueArtikelnummer.setText(artikelnummerAbschneiden);
+			}
+		}
+
+		this.setSize(Defaults.getInstance().bySizeFactor(800, 450));
 
 	}
 
@@ -269,9 +305,9 @@ public class DialogArtikelkopieren extends JDialog implements ActionListener {
 					if (this.getContentPane().getComponents()[i].getName() != null
 							&& this.getContentPane().getComponents()[i]
 									.getName().equals(dtos[z].getCKey())) {
-						if (this.getContentPane().getComponents()[i] instanceof WrapperCheckBox) {
+						if (this.getContentPane().getComponents()[i] instanceof WrapperCheckBoxWithoutCornerInfo) {
 
-							WrapperCheckBox wcb = (WrapperCheckBox) this
+							WrapperCheckBoxWithoutCornerInfo wcb = (WrapperCheckBoxWithoutCornerInfo) this
 									.getContentPane().getComponents()[i];
 							wcb.setShort(new Short(dtos[z].getCValue()));
 
@@ -293,9 +329,9 @@ public class DialogArtikelkopieren extends JDialog implements ActionListener {
 				reportkonfDto
 						.setCGruppe(SystemServicesFac.KEYVALUE_ARTIKEL_KOPIEREN);
 				if (this.getContentPane().getComponents()[i].getName() != null) {
-					if (this.getContentPane().getComponents()[i] instanceof WrapperCheckBox) {
+					if (this.getContentPane().getComponents()[i] instanceof WrapperCheckBoxWithoutCornerInfo) {
 
-						WrapperCheckBox wcb = (WrapperCheckBox) this
+						WrapperCheckBoxWithoutCornerInfo wcb = (WrapperCheckBoxWithoutCornerInfo) this
 								.getContentPane().getComponents()[i];
 						reportkonfDto.setCValue(wcb.getShort() + "");
 						reportkonfDto.setCKey(this.getContentPane()
@@ -328,7 +364,8 @@ public class DialogArtikelkopieren extends JDialog implements ActionListener {
 
 			int maxLaenge = ((Integer) parameter.getCWertAsObject()).intValue();
 
-			if (wbuHersteller.getWrapperTextField().getText() != null) {
+			if (wbuHersteller.getWrapperTextField().getText() != null
+					&& neueArtikelnummer.getText() != null) {
 
 				if (neueArtikelnummer.getText().length() < maxLaenge) {
 					artikelnummerNeu = Helper.fitString2Length(
@@ -514,23 +551,37 @@ public class DialogArtikelkopieren extends JDialog implements ActionListener {
 
 	private void jbInit() throws Throwable {
 
-		btnEinstellungenSpeichern.setText(LPMain.getInstance()
-				.getTextRespectUISPr("lp.report.save"));
-		btnEinstellungenSpeichern.addActionListener(this);
 		ParametermandantDto parameter = (ParametermandantDto) DelegateFactory
 				.getInstance()
 				.getParameterDelegate()
 				.getParametermandant(
 						ParameterFac.PARAMETER_ARTIKEL_MAXIMALELAENGE_ARTIKELNUMMER,
 						ParameterFac.KATEGORIE_ARTIKEL,
-						LPMain.getInstance().getTheClient().getMandant());
+						LPMain.getTheClient().getMandant());
+
+		lNeueArtikelnummer
+				.setText(getResText("artikel.artikelkopieren.neueartikelnummer"));
+
+		wbuGeneriereArtikelnummer.setText("G");
+		wbuGeneriereArtikelnummer
+				.setToolTipText(getResText("artikel.generiereartikelnummer"));
+		wbuGeneriereArtikelnummer.addActionListener(this);
 
 		if (parameter.getCWertAsObject() != null) {
 			neueArtikelnummer.setColumnsMax(((Integer) parameter
 					.getCWertAsObject()).intValue());
 		}
-		lNeueArtikelnummer.setText(LPMain.getInstance().getTextRespectUISPr(
-				"artikel.artikelkopieren.neueartikelnummer"));
+		neueArtikelnummer.setUppercaseField(true);
+
+		javax.swing.ImageIcon imageIcon = new javax.swing.ImageIcon(getClass()
+				.getResource("/com/lp/client/res/question_mark_16x16.png"));
+		lQuestionMark.setIcon(imageIcon);
+		lQuestionMark.setToolTipText(getResText("artikel.question.mark"));
+		lQuestionMark.addMouseListener(ml);
+
+		btnEinstellungenSpeichern.setText(LPMain
+				.getTextRespectUISPr("artikel.einstellungen.speichern"));
+		btnEinstellungenSpeichern.addActionListener(this);
 
 		wbuHersteller = new WrapperSelectField(WrapperSelectField.HERSTELLER,
 				internalFrame, true);
@@ -602,147 +653,104 @@ public class DialogArtikelkopieren extends JDialog implements ActionListener {
 
 		// -
 
-		cbMitBestellmengeneinheit.setText(LPMain.getInstance()
-				.getTextRespectUISPr("artikel.bestelleinheit")
-				+ "/"
-				+ LPMain.getInstance().getTextRespectUISPr("artikel.umrfkt"));
-		cbMitHersteller.setText(LPMain.getInstance().getTextRespectUISPr(
-				"lp.hersteller"));
-		cbMitArtikelgruppe.setText(LPMain.getInstance().getTextRespectUISPr(
-				"lp.artikelgruppe"));
-		cbMitArtikelklasse.setText(LPMain.getInstance().getTextRespectUISPr(
-				"lp.artikelklasse"));
-		cbMitReferenznummer.setText(LPMain.getInstance().getTextRespectUISPr(
-				"lp.referenznummer"));
-		cbMitLagermindeststand.setText(LPMain.getInstance()
-				.getTextRespectUISPr("artikel.lagermindeststand"));
-		cbMitLagersollstand.setText(LPMain.getInstance().getTextRespectUISPr(
-				"artikel.lagersollstand"));
-		cbMitVerschnittfaktor.setText(LPMain.getInstance().getTextRespectUISPr(
-				"artikel.verschnittfaktor"));
-		cbMitVerschnittbasis.setText(LPMain.getInstance().getTextRespectUISPr(
-				"lp.verschnittbasis"));
-		cbMitJahresmenge.setText(LPMain.getInstance().getTextRespectUISPr(
-				"artikel.jahresmenge"));
-		cbMitMwstsatz.setText(LPMain.getInstance().getTextRespectUISPr(
-				"lp.mwst"));
+		cbMitBestellmengeneinheit.setText(getResText("artikel.bestelleinheit")
+				+ "/" + getResText("artikel.umrfkt"));
 
-		cbMitVerpackungsmenge.setText(LPMain.getInstance().getTextRespectUISPr(
-				"artikel.sonstiges.verpackungsmenge"));
-		cbMitMaterial.setText(LPMain.getInstance().getTextRespectUISPr(
-				"label.material"));
-		cbMitGewicht.setText(LPMain.getInstance().getTextRespectUISPr(
-				"lp.gewicht"));
-		cbMitMaterialgewicht.setText(LPMain.getInstance().getTextRespectUISPr(
-				"artikel.technik.materialgewicht"));
-		cbMitZugehoerigerartikel.setText(LPMain.getInstance()
-				.getTextRespectUISPr("artikel.sonstiges.zugehoerigerartikel"));
+		cbMitHersteller.setText(getResText("lp.hersteller"));
+
+		cbMitArtikelgruppe.setText(getResText("lp.artikelgruppe"));
+		cbMitArtikelklasse.setText(getResText("lp.artikelklasse"));
+		cbMitReferenznummer.setText(getResText("lp.referenznummer"));
+		cbMitLagermindeststand.setText(getResText("artikel.lagermindeststand"));
+		cbMitLagersollstand.setText(getResText("artikel.lagersollstand"));
+		cbMitVerschnittfaktor.setText(getResText("artikel.verschnittfaktor"));
+		cbMitVerschnittbasis.setText(getResText("lp.verschnittbasis"));
+		cbMitJahresmenge.setText(getResText("artikel.jahresmenge"));
+		cbMitMwstsatz.setText(getResText("lp.mwst"));
+
+		cbMitVerpackungsmenge
+				.setText(getResText("artikel.sonstiges.verpackungsmenge"));
+		cbMitMaterial.setText(getResText("label.material"));
+		cbMitGewicht.setText(getResText("lp.gewicht"));
+		cbMitMaterialgewicht
+				.setText(getResText("artikel.technik.materialgewicht"));
+		cbMitZugehoerigerartikel
+				.setText(getResText("artikel.sonstiges.zugehoerigerartikel"));
 		cbMitVertreterprovision
-				.setText(LPMain.getInstance().getTextRespectUISPr(
-						"artikel.sonstiges.maxvertreterprovision"));
-		cbMitMinutenfaktor1.setText(LPMain.getInstance().getTextRespectUISPr(
-				"artikel.sonstiges.minutenfaktor")
-				+ " 1");
-		cbMitMinutenfaktor2.setText(LPMain.getInstance().getTextRespectUISPr(
-				"artikel.sonstiges.minutenfaktor")
-				+ " 2");
+				.setText(getResText("artikel.sonstiges.maxvertreterprovision"));
+		cbMitMinutenfaktor1
+				.setText(getResText("artikel.sonstiges.minutenfaktor") + " 1");
+		cbMitMinutenfaktor2
+				.setText(getResText("artikel.sonstiges.minutenfaktor") + " 2");
 		cbMitMindestdeckungsbeitrag
-				.setText(LPMain.getInstance().getTextRespectUISPr(
-						"artikel.sonstiges.mindestdeckungsbeitrag"));
-		cbMitVerkaufsean.setText(LPMain.getInstance().getTextRespectUISPr(
-				"artikel.sonstiges.verkaufsean"));
-		cbMitWarenverkehrsnummer.setText(LPMain.getInstance()
-				.getTextRespectUISPr("artikel.sonstiges.warenverkehrsnummer"));
-		cbMitRabattierbar.setText(LPMain.getInstance().getTextRespectUISPr(
-				"artikel.sonstiges.rabattierbar"));
-		cbMitGarantiezeit.setText(LPMain.getInstance().getTextRespectUISPr(
-				"artikel.sonstiges.garantiezeit"));
-		cbMitFarbcode.setText(LPMain.getInstance().getTextRespectUISPr(
-				"artikel.farbcode"));
-		cbMitErsatzartikel.setText(LPMain.getInstance().getTextRespectUISPr(
-				"artikel.sonstiges.ersatzartikel"));
-		cbMitUrsprungsland.setText(LPMain.getInstance().getTextRespectUISPr(
-				"artikel.ursprungsland"));
-		cbMitKatalog.setText(LPMain.getInstance().getTextRespectUISPr(
-				"lp.katalog"));
-		cbMitVkpreise.setText(LPMain.getInstance().getTextRespectUISPr(
-				"artikel.title.panel.preise"));
-		cbMitEkpreise.setText(LPMain.getInstance().getTextRespectUISPr(
-				"artikel.title.panel.artikellieferant"));
-		cbMitKommentare.setText(LPMain.getInstance().getTextRespectUISPr(
-				"artikel.artikelkopieren.mitkommentar"));
-		cbMitEigenschaften.setText(LPMain.getInstance().getTextRespectUISPr(
-				"lp.eigenschaften"));
-		cbMitBreite.setText(LPMain.getInstance().getTextRespectUISPr(
-				"artikel.technik.breite"));
-		cbMitHoehe.setText(LPMain.getInstance().getTextRespectUISPr(
-				"artikel.technik.hoehe"));
-		cbMitTiefe.setText(LPMain.getInstance().getTextRespectUISPr(
-				"artikel.technik.tiefe"));
-		cbMitBauform.setText(LPMain.getInstance().getTextRespectUISPr(
-				"artikel.technik.bauform"));
-		cbMitVerpackungsart.setText(LPMain.getInstance().getTextRespectUISPr(
-				"artikel.technik.verpackungsart"));
-		cbMitAufschlag.setText(LPMain.getInstance().getTextRespectUISPr(
-				"artikel.sonstiges.aufschlag"));
-		cbMitSollverkauf.setText(LPMain.getInstance().getTextRespectUISPr(
-				"artikel.sonstiges.soll"));
-		cbMitRasterliegend.setText(LPMain.getInstance().getTextRespectUISPr(
-				"artikel.technik.rasterliegend"));
-		cbMitRasterstehend.setText(LPMain.getInstance().getTextRespectUISPr(
-				"artikel.technik.rasterstehend"));
-		cbMitHochstellen.setText(LPMain.getInstance().getTextRespectUISPr(
-				"artikel.technik.hochstellen"));
-		cbMitHochsetzen.setText(LPMain.getInstance().getTextRespectUISPr(
-				"artikel.technik.hochsetzen"));
-		cbMitPolarisiert.setText(LPMain.getInstance().getTextRespectUISPr(
-				"artikel.technik.antistatic"));
-		cbMitFertigungssatzgroesse.setText(LPMain.getInstance()
-				.getTextRespectUISPr("artikel.fertigungssatzgroesse"));
-		cbMitIndex.setText(LPMain.getInstance().getTextRespectUISPr(
-				"artikel.index"));
-		cbMitRevision.setText(LPMain.getInstance().getTextRespectUISPr(
-				"artikel.revision"));
+				.setText(getResText("artikel.sonstiges.mindestdeckungsbeitrag"));
+		cbMitVerkaufsean.setText(getResText("artikel.sonstiges.verkaufsean"));
+		cbMitWarenverkehrsnummer
+				.setText(getResText("artikel.sonstiges.warenverkehrsnummer"));
+		cbMitRabattierbar.setText(getResText("artikel.sonstiges.rabattierbar"));
+		cbMitGarantiezeit.setText(getResText("artikel.sonstiges.garantiezeit"));
+		cbMitFarbcode.setText(getResText("artikel.farbcode"));
+		cbMitErsatzartikel
+				.setText(getResText("artikel.sonstiges.ersatzartikel"));
+		cbMitUrsprungsland.setText(getResText("artikel.ursprungsland"));
+		cbMitKatalog.setText(getResText("lp.katalog"));
+		cbMitVkpreise.setText(getResText("artikel.title.panel.preise"));
+		cbMitEkpreise
+				.setText(getResText("artikel.title.panel.artikellieferant"));
+		cbMitKommentare
+				.setText(getResText("artikel.artikelkopieren.mitkommentar"));
+		cbMitEigenschaften.setText(getResText("lp.eigenschaften"));
+		cbMitBreite.setText(getResText("artikel.technik.breite"));
+		cbMitHoehe.setText(getResText("artikel.technik.hoehe"));
+		cbMitTiefe.setText(getResText("artikel.technik.tiefe"));
+		cbMitBauform.setText(getResText("artikel.technik.bauform"));
+		cbMitVerpackungsart
+				.setText(getResText("artikel.technik.verpackungsart"));
+		cbMitAufschlag.setText(getResText("artikel.sonstiges.aufschlag"));
+		cbMitSollverkauf.setText(getResText("artikel.sonstiges.soll"));
+		cbMitRasterliegend.setText(getResText("artikel.technik.rasterliegend"));
+		cbMitRasterstehend.setText(getResText("artikel.technik.rasterstehend"));
+		cbMitHochstellen.setText(getResText("artikel.technik.hochstellen"));
+		cbMitHochsetzen.setText(getResText("artikel.technik.hochsetzen"));
+		cbMitPolarisiert.setText(getResText("artikel.technik.antistatic"));
+		cbMitFertigungssatzgroesse
+				.setText(getResText("artikel.fertigungssatzgroesse"));
+		cbMitIndex.setText(getResText("artikel.index"));
+		cbMitRevision.setText(getResText("artikel.revision"));
 
-		cbMitSnrbehaftet.setText(LPMain.getInstance().getTextRespectUISPr(
-				"artikel.sonstiges.seriennummernbehaftet"));
-		cbMitChnrbehaftet.setText(LPMain.getInstance().getTextRespectUISPr(
-				"artikel.sonstiges.chargennummernbehaftet"));
+		cbMitSnrbehaftet
+				.setText(getResText("artikel.sonstiges.seriennummernbehaftet"));
+		cbMitChnrbehaftet
+				.setText(getResText("artikel.sonstiges.chargennummernbehaftet"));
 
-		btnOK.setText(LPMain.getInstance().getTextRespectUISPr("button.ok"));
-		btnAbbrechen.setText(LPMain.getInstance().getTextRespectUISPr(
-				"lp.abbrechen"));
-		neueArtikelnummer.setUppercaseField(true);
+		btnOK.setText(getResText("button.ok"));
+		btnAbbrechen.setText(getResText("lp.abbrechen"));
+
 		btnOK.addActionListener(this);
 		btnAbbrechen.addActionListener(this);
 
-		wbuGeneriereArtikelnummer.setText("G");
-		wbuGeneriereArtikelnummer.setToolTipText(LPMain.getInstance()
-				.getTextRespectUISPr("artikel.generiereartikelnummer"));
-		wbuGeneriereArtikelnummer.addActionListener(this);
-
 		this.getContentPane().setLayout(gridBagLayout2);
 
+		// --------------------------
 		int iZeile = 0;
 
 		this.getContentPane().add(
 				lNeueArtikelnummer,
 				new GridBagConstraints(0, iZeile, 1, 1, 0, 0,
-						GridBagConstraints.CENTER,
-						GridBagConstraints.HORIZONTAL, new Insets(5, 5, 5, 50),
-						0, 0));
+						GridBagConstraints.EAST, GridBagConstraints.HORIZONTAL,
+						new Insets(5, 5, 5, 50), 0, 0));
 
 		this.getContentPane().add(
 				wbuGeneriereArtikelnummer,
 				new GridBagConstraints(0, iZeile, 1, 1, 0, 0,
 						GridBagConstraints.EAST, GridBagConstraints.NONE,
-						new Insets(5, 5, 5, 5), 30, 0));
+						new Insets(5, 5, 5, 5), 20, 0));
+
 		this.getContentPane().add(
 				neueArtikelnummer,
 				new GridBagConstraints(1, iZeile, 1, 1, 0, 0,
-						GridBagConstraints.CENTER,
-						GridBagConstraints.HORIZONTAL, new Insets(5, 5, 5, 5),
-						0, 0));
+						GridBagConstraints.EAST, GridBagConstraints.HORIZONTAL,
+						new Insets(5, 5, 5, 5), 0, 0));
 
 		if (LPMain
 				.getInstance()
@@ -763,13 +771,14 @@ public class DialogArtikelkopieren extends JDialog implements ActionListener {
 							GridBagConstraints.HORIZONTAL, new Insets(5, 50, 5,
 									5), 30, 0));
 		}
+
 		this.getContentPane().add(
 				btnEinstellungenSpeichern,
 				new GridBagConstraints(3, iZeile, 1, 1, 0, 0,
-						GridBagConstraints.EAST, GridBagConstraints.NONE,
+						GridBagConstraints.EAST, GridBagConstraints.BOTH,
 						new Insets(5, 5, 5, 5), 20, 0));
 
-		// --
+		// --------------------------
 		iZeile++;
 		this.getContentPane().add(
 				cbMitHersteller,
@@ -1129,6 +1138,29 @@ public class DialogArtikelkopieren extends JDialog implements ActionListener {
 						GridBagConstraints.CENTER, GridBagConstraints.NONE,
 						new Insets(5, 5, 5, 5), 0, 0));
 
+		this.getContentPane().add(
+				lQuestionMark,
+				new GridBagConstraints(3, iZeile, 1, 1, 0, 0,
+						GridBagConstraints.WEST, GridBagConstraints.BOTH,
+						new Insets(5, 5, 5, 50), 0, 0));
+
 	}
+
+	private String getResText(String str) {
+		return LPMain.getTextRespectUISPr(str);
+	}
+
+	MouseListener ml = new MouseAdapter() {
+
+		public void mouseEntered(MouseEvent me) {
+			ToolTipManager.sharedInstance().setDismissDelay(60000);
+		}
+
+		public void mouseExited(MouseEvent me) {
+			ToolTipManager.sharedInstance().setDismissDelay(
+					defaultDismissTimeout);
+		}
+
+	};
 
 }

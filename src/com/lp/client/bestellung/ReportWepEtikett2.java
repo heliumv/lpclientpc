@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -48,6 +48,7 @@ import com.lp.client.frame.component.DialogQuery;
 import com.lp.client.frame.component.ISourceEvent;
 import com.lp.client.frame.component.InternalFrame;
 import com.lp.client.frame.component.ItemChangedEvent;
+import com.lp.client.frame.component.PanelDialog;
 import com.lp.client.frame.component.PanelQueryFLR;
 import com.lp.client.frame.component.WrapperButton;
 import com.lp.client.frame.component.WrapperFormattedTextField;
@@ -120,6 +121,7 @@ public class ReportWepEtikett2 extends ReportEtikett implements
 	private WrapperNumberField wnfHandmenge = null;
 
 	private PanelQueryFLR panelQueryFLRLagerplatz = null;
+	private PanelQueryFLR panelQueryFLRArtikellagerplatz = null;
 	private Integer lagerplatzIId = null;
 
 	// protected JPanel jpaWorkingOn = new JPanel();
@@ -139,6 +141,15 @@ public class ReportWepEtikett2 extends ReportEtikett implements
 		this.artikellieferantDto = artikellieferantDto;
 		jbInit();
 		setDefaults();
+	}
+
+	public void unlock() throws Throwable {
+
+		try {
+			eventActionUnlock(null);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+		}
 	}
 
 	public ReportWepEtikett2(InternalFrame internalFrame, String sAdd2Title)
@@ -278,7 +289,9 @@ public class ReportWepEtikett2 extends ReportEtikett implements
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
 
 		ParametermandantDto parameter = (ParametermandantDto) DelegateFactory
-				.getInstance().getParameterDelegate().getParametermandant(
+				.getInstance()
+				.getParameterDelegate()
+				.getParametermandant(
 						ParameterFac.PARAMETER_LAGERBEWEGUNG_MIT_URSPRUNG,
 						ParameterFac.KATEGORIE_ARTIKEL,
 						LPMain.getTheClient().getMandant());
@@ -348,7 +361,8 @@ public class ReportWepEtikett2 extends ReportEtikett implements
 			wnfVerpackungseinheit.setBigDecimal(artikellieferantDto
 					.getNVerpackungseinheit());
 
-		ArtikellagerplaetzeDto dto = DelegateFactory.getInstance()
+		ArtikellagerplaetzeDto dto = DelegateFactory
+				.getInstance()
 				.getLagerDelegate()
 				.artikellagerplaetzeFindByArtikelIIdLagerIId(
 						artikelDto.getIId(), wareneingangDto.getLagerIId());
@@ -375,7 +389,9 @@ public class ReportWepEtikett2 extends ReportEtikett implements
 	}
 
 	public JasperPrintLP getReport(String sDrucktype) throws Throwable {
-		return DelegateFactory.getInstance().getBestellungDelegate()
+		return DelegateFactory
+				.getInstance()
+				.getBestellungDelegate()
 				.printWepEtikett(weposDto.getIId(),
 						bestellpositionDto.getIId(),
 						wareneingangDto.getLagerIId(),
@@ -415,6 +431,12 @@ public class ReportWepEtikett2 extends ReportEtikett implements
 	}
 
 	protected void eventActionSpecial(ActionEvent e) throws Throwable {
+
+		if (e.getActionCommand().equals(
+				PanelDialog.ACTION_SPECIAL_CLOSE_PANELDIALOG)) {
+			int z = 0;
+		}
+
 		if (e.getActionCommand().equals(
 				ACTION_SPECIAL_WARENVERKEHRSNUMMER_FROM_LISTE)) {
 			dialogQueryWarenverkehrsnummerFromListe(e);
@@ -422,7 +444,22 @@ public class ReportWepEtikett2 extends ReportEtikett implements
 			dialogQueryLandFromListe(e);
 		} else if (e.getActionCommand().equals(
 				ACTION_SPECIAL_LAGERPLATZ_FROM_LISTE)) {
-			dialogQueryLagerplatzFromListe(e);
+
+			ParametermandantDto parameter = (ParametermandantDto) DelegateFactory
+					.getInstance()
+					.getParameterDelegate()
+					.getParametermandant(
+							ParameterFac.PARAMETER_WARENEINGANG_LAGERPLATZ_NUR_DEFINIERTE,
+							ParameterFac.KATEGORIE_BESTELLUNG,
+							LPMain.getTheClient().getMandant());
+			boolean bWareneingangNurDefinierte = ((Boolean) parameter
+					.getCWertAsObject());
+			if (bWareneingangNurDefinierte == true) {
+				dialogQueryArtikellagerplatzFromListe(e);
+			} else {
+				dialogQueryLagerplatzFromListe(e);
+			}
+
 		}
 	}
 
@@ -432,6 +469,14 @@ public class ReportWepEtikett2 extends ReportEtikett implements
 						true);
 
 		new DialogQuery(panelQueryFLRLagerplatz);
+	}
+
+	void dialogQueryArtikellagerplatzFromListe(ActionEvent e) throws Throwable {
+		panelQueryFLRArtikellagerplatz = ArtikelFilterFactory.getInstance()
+				.createPanelFLRArtikellagerplaetze(getInternalFrame(),
+						bestellpositionDto.getArtikelIId(), true);
+
+		new DialogQuery(panelQueryFLRArtikellagerplatz);
 	}
 
 	protected void eventItemchanged(EventObject eI) throws Throwable {
@@ -449,13 +494,28 @@ public class ReportWepEtikett2 extends ReportEtikett implements
 				Object key = ((ISourceEvent) e.getSource()).getIdSelected();
 
 				LagerplatzDto lagerplatzDto = DelegateFactory.getInstance()
-						.getLagerDelegate().lagerplatzFindByPrimaryKey(
-								(Integer) key);
+						.getLagerDelegate()
+						.lagerplatzFindByPrimaryKey((Integer) key);
+				wtfLagerplatz.setText(lagerplatzDto.getCLagerplatz());
+				lagerplatzIId = lagerplatzDto.getIId();
+			} else if (e.getSource() == panelQueryFLRArtikellagerplatz) {
+				Object key = ((ISourceEvent) e.getSource()).getIdSelected();
+
+				ArtikellagerplaetzeDto apDto = DelegateFactory.getInstance()
+						.getLagerDelegate()
+						.artikellagerplaetzeFindByPrimaryKey((Integer) key);
+
+				LagerplatzDto lagerplatzDto = DelegateFactory.getInstance()
+						.getLagerDelegate()
+						.lagerplatzFindByPrimaryKey(apDto.getLagerplatzIId());
 				wtfLagerplatz.setText(lagerplatzDto.getCLagerplatz());
 				lagerplatzIId = lagerplatzDto.getIId();
 			}
 		} else if (e.getID() == ItemChangedEvent.ACTION_LEEREN) {
 			if (e.getSource() == panelQueryFLRLagerplatz) {
+				wtfLagerplatz.setText(null);
+				lagerplatzIId = null;
+			} else if (e.getSource() == panelQueryFLRArtikellagerplatz) {
 				wtfLagerplatz.setText(null);
 				lagerplatzIId = null;
 			}
@@ -470,11 +530,18 @@ public class ReportWepEtikett2 extends ReportEtikett implements
 		if (artikellieferantDto != null)
 			DelegateFactory.getInstance().getArtikelDelegate()
 					.updateArtikellieferant(artikellieferantDto);
-		DelegateFactory.getInstance().getArtikelDelegate().updateArtikel(
-				artikelDto);
-		DelegateFactory.getInstance().getLagerDelegate().artikellagerplatzCRUD(
-				artikelDto.getIId(), wareneingangDto.getLagerIId(),
-				lagerplatzIId);
+		DelegateFactory.getInstance().getArtikelDelegate()
+				.updateArtikel(artikelDto);
+		DelegateFactory
+				.getInstance()
+				.getLagerDelegate()
+				.artikellagerplatzCRUD(artikelDto.getIId(),
+						wareneingangDto.getLagerIId(), lagerplatzIId);
+
+	}
+
+	protected void eventActionDiscard(ActionEvent e) throws Throwable {
+		super.eventActionDiscard(e);
 
 	}
 

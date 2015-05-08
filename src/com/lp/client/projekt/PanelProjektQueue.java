@@ -1,7 +1,7 @@
 /*******************************************************************************
  * HELIUM V, Open Source ERP software for sustained success
  * at small and medium-sized enterprises.
- * Copyright (C) 2004 - 2014 HELIUM V IT-Solutions GmbH
+ * Copyright (C) 2004 - 2015 HELIUM V IT-Solutions GmbH
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published 
@@ -158,7 +158,7 @@ private final InternalFrameProjekt intFrame;
 
   private void dto2Components()
       throws Throwable {
-   panelText.getLpEditor().setText(tpProjekt.getProjektDto().getXFreetext());
+   panelText.setText(tpProjekt.getProjektDto().getXFreetext());
    wtfTitel.setText(tpProjekt.getProjektDto().getCTitel());
   }
 
@@ -173,19 +173,17 @@ private final InternalFrameProjekt intFrame;
   }
 
 
-  public void eventActionSave(ActionEvent e, boolean bNeedNoSaveI)
-      throws Throwable {
-    if (allMandatoryFieldsSetDlg()) {
-      if (panelText.getLpEditor().getText()==null ||
-          panelText.getLpEditor().getText().trim().equals("")) {
-        showDialogPflichtfelderAusfuellen();
-        return;
-      }
-      super.eventActionSave(e, true);
-      eventYouAreSelected(false);
-    }
-  }
-
+	public void eventActionSave(ActionEvent e, boolean bNeedNoSaveI)
+			throws Throwable {
+		if (allMandatoryFieldsSetDlg()) {
+			if (!panelText.hasContent()) {
+				showDialogPflichtfelderAusfuellen();
+				return;
+			}
+			super.eventActionSave(e, true);
+			eventYouAreSelected(false);
+		}
+	}
 
   protected void eventActionDelete(ActionEvent e, boolean bAdministrateLockKeyI,
                                    boolean bNeedNoDeleteI)
@@ -203,11 +201,9 @@ private final InternalFrameProjekt intFrame;
     if (key == null || key.equals(LPMain.getLockMeForNew())) {
       // Neu.
       leereAlleFelder(this);
-      panelText.getLpEditor().setText("");
+      panelText.setText("");
       clearStatusbar();
-    }
-    else {
-      // Update.
+    } else {
       dto2Components();
     }
     tpProjekt.setTitleProjekt(LPMain.getTextRespectUISPr("proj.projekt.details"));
